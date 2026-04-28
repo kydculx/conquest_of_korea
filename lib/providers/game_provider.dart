@@ -87,6 +87,12 @@ class GameProvider extends ChangeNotifier {
 
   Future<void> _init() async {
     try {
+      final prefs = await SharedPreferences.getInstance();
+      final savedTeam = prefs.getString(_teamKey);
+      if (savedTeam != null) {
+        _selectedTeam = TileOwner.fromString(savedTeam);
+      }
+
       final tiles = await _supabase.fetchAllCapturedTiles();
       for (final tile in tiles) {
         _capturedTiles[tile.id] = tile;

@@ -1,11 +1,12 @@
 import 'package:conquest_mobile/core/constants.dart';
 import 'package:flame/components.dart';
 import 'package:flutter/material.dart';
+import '../../models/hub_model.dart';
 import '../conquest_game.dart';
 
 class HubComponent extends PositionComponent with HasGameReference<ConquestGame> {
   final String name;
-  final String type;
+  final HubType type;
   final Offset screenPosition;
 
   HubComponent({
@@ -28,7 +29,7 @@ class HubComponent extends PositionComponent with HasGameReference<ConquestGame>
       return;
     }
 
-    final isMajor = type == 'special' || type == 'metropolitan' || type == 'provincial';
+    final isMajor = type == HubType.special || type == HubType.metropolitan || type == HubType.provincial;
     final hubColor = _getHubColor();
     final hubSize = _getHubSize();
     final center = Offset.zero;
@@ -96,11 +97,11 @@ class HubComponent extends PositionComponent with HasGameReference<ConquestGame>
 
   double _getHubSize() {
     switch (type) {
-      case 'special':
+      case HubType.special:
         return 12;
-      case 'metropolitan':
+      case HubType.metropolitan:
         return 10;
-      case 'provincial':
+      case HubType.provincial:
         return 8;
       default:
         return 6;
@@ -109,11 +110,11 @@ class HubComponent extends PositionComponent with HasGameReference<ConquestGame>
 
   Color _getHubColor() {
     switch (type) {
-      case 'special':
+      case HubType.special:
         return GameConstants.colorAccent;
-      case 'metropolitan':
+      case HubType.metropolitan:
         return Colors.amber;
-      case 'provincial':
+      case HubType.provincial:
         return Colors.orange;
       default:
         return Colors.white.withAlpha(200);

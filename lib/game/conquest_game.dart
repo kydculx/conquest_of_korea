@@ -28,7 +28,7 @@ class ConquestGame extends FlameGame {
     for (final hub in tacticalHubs) {
       final component = HubComponent(
         name: hub.name,
-        type: hub.type.name,
+        type: hub.type,
         screenPosition: Offset.zero,
       )..priority = 10;
       _hubComponents.add(component);
