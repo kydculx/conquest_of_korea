@@ -42,7 +42,7 @@ class _GameScreenState extends State<GameScreen> {
     final flameGame = context.read<ConquestGame>();
     final loc = context.watch<LocationProvider>();
 
-    // Flame 엔진에 최신 상태 전달 (Provider 직접 참조 없이)
+    // Flame 엔진에 최신 상태 전달
     flameGame.updateCapturedTiles(
       capturedTiles: game.capturedTiles,
       capturingTileId: game.capturingTileId,

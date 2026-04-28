@@ -274,8 +274,53 @@ const List<TacticalHub> tacticalHubs = [
   TacticalHub(id: 'hub-gn-hadong', name: '하동군청', location: LatLng(35.0673, 127.7513), type: HubType.county, region: '경남'),
   TacticalHub(id: 'hub-gn-sancheong', name: '산청군청', location: LatLng(35.4156, 127.8735), type: HubType.county, region: '경남'),
   TacticalHub(id: 'hub-gn-hamyang', name: '함양군청', location: LatLng(35.5205, 127.7252), type: HubType.county, region: '경남'),
-  TacticalHub(id: 'hub-gn-geochang', name: '거창군청', location: LatLng(35.6866, 127.9095), type: HubType.county, region: '경남'),
-  TacticalHub(id: 'hub-gn-hapcheon', name: '합천군청', location: LatLng(35.5667, 128.1658), type: HubType.county, region: '경남'),
+  TacticalHub(id: 'hub-gyeongnam-geochang', name: '거창군청', location: LatLng(35.6867, 127.9095), type: HubType.county, region: '경남'),
+  TacticalHub(id: 'hub-gyeongnam-hapcheon', name: '합천군청', location: LatLng(35.5666, 128.1658), type: HubType.county, region: '경남'),
+
+  // --- 추가: 대도시 행정구청 (32개) ---
+  // 수원시
+  TacticalHub(id: 'hub-suwon-jangan', name: '수원시 장안구청', location: LatLng(37.3034, 127.0118), type: HubType.district, region: '경기'),
+  TacticalHub(id: 'hub-suwon-gwonseon', name: '수원시 권선구청', location: LatLng(37.2576, 126.9719), type: HubType.district, region: '경기'),
+  TacticalHub(id: 'hub-suwon-paldal', name: '수원시 팔달구청', location: LatLng(37.2821, 127.0195), type: HubType.district, region: '경기'),
+  TacticalHub(id: 'hub-suwon-yeongtong', name: '수원시 영통구청', location: LatLng(37.2596, 127.0465), type: HubType.district, region: '경기'),
+  // 성남시
+  TacticalHub(id: 'hub-seongnam-sujeong', name: '성남시 수정구청', location: LatLng(37.4519, 127.1401), type: HubType.district, region: '경기'),
+  TacticalHub(id: 'hub-seongnam-jungwon', name: '성남시 중원구청', location: LatLng(37.4320, 127.1565), type: HubType.district, region: '경기'),
+  TacticalHub(id: 'hub-seongnam-bundang', name: '성남시 분당구청', location: LatLng(37.3828, 127.1189), type: HubType.district, region: '경기'),
+  // 안양시
+  TacticalHub(id: 'hub-anyang-manan', name: '안양시 만안구청', location: LatLng(37.3835, 126.9317), type: HubType.district, region: '경기'),
+  TacticalHub(id: 'hub-anyang-dongan', name: '안양시 동안구청', location: LatLng(37.3915, 126.9531), type: HubType.district, region: '경기'),
+  // 안산시
+  TacticalHub(id: 'hub-ansan-sangnok', name: '안산시 상록구청', location: LatLng(37.3012, 126.8465), type: HubType.district, region: '경기'),
+  TacticalHub(id: 'hub-ansan-danwon', name: '안산시 단원구청', location: LatLng(37.3200, 126.8273), type: HubType.district, region: '경기'),
+  // 고양시
+  TacticalHub(id: 'hub-goyang-deogyang', name: '고양시 덕양구청', location: LatLng(37.6322, 126.8319), type: HubType.district, region: '경기'),
+  TacticalHub(id: 'hub-goyang-ilsandong', name: '고양시 일산동구청', location: LatLng(37.6583, 126.7731), type: HubType.district, region: '경기'),
+  TacticalHub(id: 'hub-goyang-ilsanseo', name: '고양시 일산서구청', location: LatLng(37.6750, 126.7454), type: HubType.district, region: '경기'),
+  // 용인시
+  TacticalHub(id: 'hub-yongin-cheoin', name: '용인시 처인구청', location: LatLng(37.2344, 127.2013), type: HubType.district, region: '경기'),
+  TacticalHub(id: 'hub-yongin-giheung', name: '용인시 기흥구청', location: LatLng(37.2803, 127.1147), type: HubType.district, region: '경기'),
+  TacticalHub(id: 'hub-yongin-suji', name: '용인시 수지구청', location: LatLng(37.3223, 127.0975), type: HubType.district, region: '경기'),
+  // 청주시
+  TacticalHub(id: 'hub-cheongju-sangdang', name: '청주시 상당구청', location: LatLng(36.6225, 127.4947), type: HubType.district, region: '충북'),
+  TacticalHub(id: 'hub-cheongju-seowon', name: '청주시 서원구청', location: LatLng(36.6253, 127.4641), type: HubType.district, region: '충북'),
+  TacticalHub(id: 'hub-cheongju-heungdeok', name: '청주시 흥덕구청', location: LatLng(36.6341, 127.4323), type: HubType.district, region: '충북'),
+  TacticalHub(id: 'hub-cheongju-cheongwon', name: '청주시 청원구청', location: LatLng(36.6548, 127.4851), type: HubType.district, region: '충북'),
+  // 천안시
+  TacticalHub(id: 'hub-cheonan-dongnam', name: '천안시 동남구청', location: LatLng(36.8049, 127.1517), type: HubType.district, region: '충남'),
+  TacticalHub(id: 'hub-cheonan-seobuk', name: '천안시 서북구청', location: LatLng(36.8335, 127.1132), type: HubType.district, region: '충남'),
+  // 전주시
+  TacticalHub(id: 'hub-jeonju-wansan', name: '전주시 완산구청', location: LatLng(35.8166, 127.1326), type: HubType.district, region: '전북'),
+  TacticalHub(id: 'hub-jeonju-deokjin', name: '전주시 덕진구청', location: LatLng(35.8441, 127.1215), type: HubType.district, region: '전북'),
+  // 포항시
+  TacticalHub(id: 'hub-pohang-namgu', name: '포항시 남구청', location: LatLng(36.0096, 129.3516), type: HubType.district, region: '경북'),
+  TacticalHub(id: 'hub-pohang-bukgu', name: '포항시 북구청', location: LatLng(36.0412, 129.3664), type: HubType.district, region: '경북'),
+  // 창원시
+  TacticalHub(id: 'hub-changwon-uichang', name: '창원시 의창구청', location: LatLng(35.2449, 128.6328), type: HubType.district, region: '경남'),
+  TacticalHub(id: 'hub-changwon-seongsan', name: '창원시 성산구청', location: LatLng(35.2212, 128.6836), type: HubType.district, region: '경남'),
+  TacticalHub(id: 'hub-changwon-masanhappo', name: '창원시 마산합포구청', location: LatLng(35.1917, 128.5678), type: HubType.district, region: '경남'),
+  TacticalHub(id: 'hub-changwon-masanhoewon', name: '창원시 마산회원구청', location: LatLng(35.2231, 128.5794), type: HubType.district, region: '경남'),
+  TacticalHub(id: 'hub-changwon-jinhae', name: '창원시 진해구청', location: LatLng(35.1457, 128.7067), type: HubType.district, region: '경남'),
 
   // 제주 2개 시
   TacticalHub(id: 'hub-jeju-jeju', name: '제주시청', location: LatLng(33.4996, 126.5312), type: HubType.city, region: '제주'),

@@ -9,13 +9,15 @@ import '../services/hex_service.dart';
 import '../data/hubs_data.dart';
 import '../models/tile_model.dart';
 
-/// Flame 게임 엔진 — Provider 의존성 없이 순수 렌더링만 담당
+/// Flame 게임 엔진 — 거점 마커 및 점령 타일 렌더링 담당
 class ConquestGame extends FlameGame {
   late PlayerComponent player;
   final List<HubComponent> _hubComponents = [];
   MapController? _mapController;
   Map<String, HexTile> _lastCapturedTiles = {};
   final Map<String, HexTileComponent> _tileMap = {};
+
+  MapController? get mapController => _mapController;
 
   @override
   Color backgroundColor() => const Color(0x00000000);
@@ -44,8 +46,7 @@ class ConquestGame extends FlameGame {
     _updateAllPositions();
   }
 
-  /// 점령 타일 렌더링 업데이트
-  /// GameProvider와 완전히 분리 — 필요한 데이터만 파라미터로 전달
+  /// 점령 타일 렌더링 업데이트 (복구)
   void updateCapturedTiles({
     required Map<String, HexTile> capturedTiles,
     String? capturingTileId,
