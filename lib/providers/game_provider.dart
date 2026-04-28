@@ -1,124 +1,95 @@
 import 'dart:async';
-import 'package:geolocator/geolocator.dart';
-import 'package:latlong2/latlong.dart';
+import 'package:flutter/foundation.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:vibration/vibration.dart';
-import 'package:flutter/widgets.dart';
-import 'package:flutter_compass/flutter_compass.dart';
-import '../services/supabase_service.dart';
+import '../controllers/capture_controller.dart';
+import '../models/alert_model.dart';
+import '../models/tile_model.dart';
+import '../providers/location_provider.dart';
 import '../services/hex_service.dart';
-import '../services/geo_service.dart';
+import '../services/supabase_service.dart';
 import '../core/constants.dart';
 
-class GameProvider with ChangeNotifier, WidgetsBindingObserver {
-  final SupabaseService _supabase = SupabaseService();
+/// 게임 핵심 상태 관리 Provider
+/// 위치/나침반은 LocationProvider에 위임, 점령 로직은 CaptureController에 위임
+class GameProvider extends ChangeNotifier {
   static const String _teamKey = 'conquest_selected_team';
 
-  // 상태 관리
-  String? _selectedTeam;
-  final Map<String, Map<String, dynamic>> _capturedTiles = {};
-  final List<Map<String, dynamic>> _alerts = [];
+  final SupabaseService _supabase;
+  late final CaptureController _captureController;
+  StreamSubscription<List<HexTile>>? _tilesStreamSub;
+
+  // --- 상태 ---
+  TileOwner? _selectedTeam;
+  final Map<String, HexTile> _capturedTiles = {};
+  final List<GameAlert> _alerts = [];
   bool _isInitialized = false;
   bool _isAutoCapture = false;
-  LatLng? _currentLocation;
-  double _currentAccuracy = 999.0;
-  double _heading = 0.0; // 기기 방향 (0~360도)
-  bool _isGpsActive = false;
   int _currentMapStyleIndex = 0;
-  Timer? _gpsSignalTimer;
-  StreamSubscription<CompassEvent>? _compassSubscription;
 
-  // Getters
-  String? get selectedTeam => _selectedTeam;
-  Map<String, Map<String, dynamic>> get capturedTiles => _capturedTiles;
-  List<Map<String, dynamic>> get alerts => _alerts;
+  // LocationProvider 참조 (위치 읽기 전용)
+  LocationProvider? _locationProvider;
+
+  // --- Getters ---
+  TileOwner? get selectedTeam => _selectedTeam;
+  Map<String, HexTile> get capturedTiles => Map.unmodifiable(_capturedTiles);
+  List<GameAlert> get alerts => List.unmodifiable(_alerts);
   bool get isInitialized => _isInitialized;
   bool get isAutoCapture => _isAutoCapture;
-  LatLng? get currentLocation => _currentLocation;
-  double get heading => _heading;
-  bool get isGpsActive => _isGpsActive;
   int get currentMapStyleIndex => _currentMapStyleIndex;
   MapStyle get currentMapStyle => GameConstants.mapStyles[_currentMapStyleIndex];
   bool get showMap => currentMapStyle.url.isNotEmpty;
-  double get currentAccuracy => _currentAccuracy;
 
-  /// 현재 위치한 타일을 점령할 수 있는지 여부
-  bool get canCapture {
-    if (!_isGpsActive || _currentLocation == null || _selectedTeam == null)
-      return false;
+  // CaptureController 위임 Getters
+  String? get capturingTileId => _captureController.capturingTileId;
+  double get captureProgress => _captureController.captureProgress;
+  bool get isCapturing => _captureController.isCapturing;
 
-    // if (_currentAccuracy > GameConstants.captureAccuracyThreshold) return false;
-
-    final hex = HexService.latLngToHex(_currentLocation!);
-    final tileId = 'hex_${hex['q']}_${hex['r']}';
-    return _capturedTiles[tileId]?['owner'] != _selectedTeam;
-  }
-
-  // 실시간 점수 계산
+  /// 실시간 점수 (팀별 점령 타일 수)
   Map<String, int> get score {
-    int blue = 0;
-    int red = 0;
-    for (var tile in _capturedTiles.values) {
-      if (tile['owner'] == GameConstants.teamBlueId) blue++;
-      if (tile['owner'] == GameConstants.teamRedId) red++;
+    int blue = 0, red = 0;
+    for (final tile in _capturedTiles.values) {
+      if (tile.owner == TileOwner.blue) blue++;
+      if (tile.owner == TileOwner.red) red++;
     }
     return {'blue': blue, 'red': red};
   }
 
-  // 서비스 참조
-  GeoService? _geoService;
-  StreamSubscription<Position>? _locationSubscription;
+  /// 현재 위치에서 점령 가능 여부
+  bool get canCapture {
+    final loc = _locationProvider;
+    if (loc == null || !loc.isGpsActive || loc.currentLocation == null) {
+      return false;
+    }
+    if (_selectedTeam == null) return false;
+    final hex = HexService.latLngToHex(loc.currentLocation!);
+    final tileId = 'hex_${hex['q']}_${hex['r']}';
+    return _capturedTiles[tileId]?.owner != _selectedTeam;
+  }
 
-  GameProvider() {
-    WidgetsBinding.instance.addObserver(this); // 생명주기 감시 시작
+  GameProvider({required SupabaseService supabase}) : _supabase = supabase {
+    _captureController = CaptureController(
+      supabase: supabase,
+      onAlert: addAlert,
+      onTileCaptured: (id, tile) {
+        _capturedTiles[id] = tile;
+        notifyListeners();
+      },
+      onStateChanged: notifyListeners,
+    );
     _init();
   }
 
-  @override
-  void didChangeAppLifecycleState(AppLifecycleState state) {
-    _handleLifecycleChange(state);
+  /// LocationProvider 연결 (ProxyProvider에서 호출)
+  void setLocationProvider(LocationProvider loc) {
+    _locationProvider = loc;
   }
 
-  /// 서버에서 최신 점령 정보를 강제로 다시 가져옴
-  void _startCompass() {
-    _compassSubscription = FlutterCompass.events?.listen((event) {
-      if (event.heading != null) {
-        _heading = event.heading!;
-        notifyListeners();
-      }
-    });
-  }
-
-  void _handleLifecycleChange(AppLifecycleState state) {
-    if (state == AppLifecycleState.resumed) {
-      _refreshServerData();
-      _startCompass(); // 백그라운드 복귀 시 나침반 재시작
-    } else if (state == AppLifecycleState.paused) {
-      _compassSubscription?.cancel(); // 리소스 절약을 위해 중단
-    }
-  }
-
-  Future<void> _refreshServerData() async {
+  Future<void> _init() async {
     try {
       final tiles = await _supabase.fetchAllCapturedTiles();
-      for (var tile in tiles) {
-        _capturedTiles[tile['id']] = tile;
-      }
-      notifyListeners();
-    } catch (e) {
-      debugPrint('데이터 갱신 실패: $e');
-    }
-  }
-
-  void _init() async {
-    _selectedTeam = null;
-    _startCompass();
-    notifyListeners();
-
-    try {
-      final initialData = await _supabase.fetchAllCapturedTiles();
-      for (var tile in initialData) {
-        _capturedTiles[tile['id']] = tile;
+      for (final tile in tiles) {
+        _capturedTiles[tile.id] = tile;
       }
     } catch (e) {
       debugPrint('초기 데이터 로드 실패: $e');
@@ -127,249 +98,130 @@ class GameProvider with ChangeNotifier, WidgetsBindingObserver {
       notifyListeners();
     }
 
-    _supabase.capturedTilesStream.listen((List<Map<String, dynamic>> data) {
-      bool stateChanged = false;
-      for (var tile in data) {
-        final String tileId = tile['id'];
-        final String? oldOwner = _capturedTiles[tileId]?['owner'];
-        final String newOwner = tile['owner'];
-
-        // 실시간 알림 로직 (초기화 완료 및 팀 선택 후)
-        if (_isInitialized && _selectedTeam != null && oldOwner != newOwner) {
-          if (oldOwner == _selectedTeam) {
-            // 아군 구역 소실
-            addAlert('경보! 아군 구역이 적군에게 점령당했습니다!', 'error');
-            Vibration.vibrate(pattern: [0, 200, 100, 200]);
-          } else if (newOwner != _selectedTeam) {
-            // 적군 세력 확장
-            addAlert('적군이 새로운 구역을 확보했습니다.', 'warn');
-          }
-        }
-
-        _capturedTiles[tileId] = tile;
-        stateChanged = true;
-      }
-      if (stateChanged) notifyListeners();
-    });
+    // 실시간 업데이트 구독
+    _tilesStreamSub = _supabase.capturedTilesStream.listen(_onTilesUpdated);
   }
 
-  void setGeoService(GeoService geo) {
-    _geoService = geo;
-    _locationSubscription?.cancel();
-    _locationSubscription = _geoService!.locationStream.listen((position) {
-      updateLocation(position);
-    });
+  void _onTilesUpdated(List<HexTile> tiles) {
+    bool changed = false;
+    for (final tile in tiles) {
+      final oldOwner = _capturedTiles[tile.id]?.owner;
+      if (_isInitialized && _selectedTeam != null && oldOwner != tile.owner) {
+        if (oldOwner == _selectedTeam) {
+          addAlert('경보! 아군 구역이 적에게 점령당했습니다!', AlertType.error);
+          Vibration.vibrate(pattern: [0, 200, 100, 200]);
+        } else if (tile.owner != _selectedTeam) {
+          addAlert('적군이 새로운 구역을 확보했습니다.', AlertType.warn);
+        }
+      }
+      _capturedTiles[tile.id] = tile;
+      changed = true;
+    }
+    if (changed) notifyListeners();
+  }
+
+  /// 위치 업데이트 시 자동 점령 처리 (GameScreen에서 LocationProvider 변경 시 호출)
+  void onLocationUpdated() {
+    if (!_isInitialized || _selectedTeam == null) return;
+    final loc = _locationProvider;
+    if (loc == null || !loc.isGpsActive || loc.currentLocation == null) return;
+
+    final hex = HexService.latLngToHex(loc.currentLocation!);
+    final tileId = 'hex_${hex['q']}_${hex['r']}';
+
+    // 이미 내 팀 타일이면 점령 취소
+    if (_capturedTiles[tileId]?.owner == _selectedTeam) {
+      _captureController.cancelCapture();
+      return;
+    }
+
+    // 자동 점령 모드이고, 다른 타일 점령 중이 아닐 때
+    if (_isAutoCapture && _captureController.capturingTileId != tileId) {
+      _captureController.startCapture(
+        tileId: tileId,
+        location: loc.currentLocation!,
+        team: _selectedTeam!,
+        isEnemyTile: _capturedTiles.containsKey(tileId),
+      );
+    }
+  }
+
+  /// 수동 점령 시작
+  void startManualCapture() {
+    final loc = _locationProvider;
+    if (!canCapture || loc?.currentLocation == null) {
+      if (loc == null || !loc.isGpsActive) {
+        addAlert('GPS 신호가 없습니다.', AlertType.error);
+      }
+      return;
+    }
+    final hex = HexService.latLngToHex(loc!.currentLocation!);
+    final tileId = 'hex_${hex['q']}_${hex['r']}';
+    _captureController.startCapture(
+      tileId: tileId,
+      location: loc.currentLocation!,
+      team: _selectedTeam!,
+      isEnemyTile: _capturedTiles.containsKey(tileId),
+    );
+  }
+
+  /// 자동/수동 모드 전환
+  void toggleAutoCapture() {
+    _isAutoCapture = !_isAutoCapture;
+    addAlert(
+      _isAutoCapture ? '자동 점령 모드 활성화' : '수동 점령 모드 활성화',
+      AlertType.info,
+    );
+    notifyListeners();
+  }
+
+  /// 지도 스타일 순환
+  void cycleMapStyle() {
+    _currentMapStyleIndex =
+        (_currentMapStyleIndex + 1) % GameConstants.mapStyles.length;
+    addAlert('지도 변경: ${currentMapStyle.name}', AlertType.info);
+    notifyListeners();
+  }
+
+  /// 팀 선택
+  Future<void> setSelectedTeam(TileOwner team) async {
+    _selectedTeam = team;
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setString(_teamKey, team.id);
+    notifyListeners();
+  }
+
+  /// 서버 데이터 강제 갱신
+  Future<void> refreshServerData() async {
+    try {
+      final tiles = await _supabase.fetchAllCapturedTiles();
+      for (final tile in tiles) {
+        _capturedTiles[tile.id] = tile;
+      }
+      notifyListeners();
+    } catch (e) {
+      debugPrint('데이터 갱신 실패: $e');
+    }
+  }
+
+  /// 전술 알림 추가 (5개 초과 시 가장 오래된 것 제거, 3초 후 자동 삭제)
+  void addAlert(String message, AlertType type) {
+    final alert = GameAlert.create(message: message, type: type);
+    _alerts.insert(0, alert);
+    if (_alerts.length > 5) _alerts.removeLast();
+    notifyListeners();
+    Timer(const Duration(seconds: 3), () => _removeAlert(alert.id));
+  }
+
+  void _removeAlert(String id) {
+    _alerts.removeWhere((a) => a.id == id);
+    notifyListeners();
   }
 
   @override
   void dispose() {
-    WidgetsBinding.instance.removeObserver(this); // 앱 상태 감시 종료
-    _locationSubscription?.cancel(); // 위치 알림 구독 취소
-    _gpsSignalTimer?.cancel(); // GPS 신호 타이머 취소
-    _captureTimer?.cancel(); // 점령 타이머 취소
-    _compassSubscription?.cancel(); // 나침반 구독 취소
+    _tilesStreamSub?.cancel();
+    _captureController.dispose();
     super.dispose();
-  }
-
-  // 점령 진행 상태
-  String? _capturingTileId;
-  double _captureProgress = 0.0;
-  Timer? _captureTimer;
-
-  String? get capturingTileId => _capturingTileId;
-  double get captureProgress => _captureProgress;
-  bool get isCapturing => _capturingTileId != null;
-
-  void toggleAutoCapture() {
-    _isAutoCapture = !_isAutoCapture;
-    addAlert(_isAutoCapture ? '자동 점령 모드 활성화' : '수동 점령 모드 활성화', 'info');
-    notifyListeners();
-  }
-
-  /// 지도 스타일 순환 (다크 -> 라이트 -> 위성 -> 숨김)
-  void cycleMapStyle() {
-    _currentMapStyleIndex = (_currentMapStyleIndex + 1) % GameConstants.mapStyles.length;
-    addAlert('지도 변경: ${currentMapStyle.name}', 'info');
-    notifyListeners();
-  }
-
-  /// GPS 하드웨어 강제 재시작 (와이파이 고착 현상 해결용)
-  void resetGps() async {
-    if (_geoService == null) return;
-
-    addAlert('GPS 하드웨어를 재시작합니다...', 'warn');
-    _locationSubscription?.cancel();
-    _geoService!.stopTracking();
-
-    // 짧은 대기 후 다시 시작하여 하드웨어 리셋 유도
-    await Future.delayed(const Duration(milliseconds: 500));
-
-    await _geoService!.startTracking();
-    _locationSubscription = _geoService!.locationStream.listen((position) {
-      updateLocation(position);
-    });
-
-    addAlert('GPS 캘리브레이션 완료', 'success');
-    notifyListeners();
-  }
-
-  void startManualCapture() {
-    if (!canCapture) {
-      if (!_isGpsActive) addAlert('GPS 신호가 없습니다.', 'error');
-      // else if (_currentAccuracy > GameConstants.captureAccuracyThreshold) addAlert('GPS 정확도가 너무 낮습니다.', 'warn');
-      return;
-    }
-
-    final hex = HexService.latLngToHex(_currentLocation!);
-    final tileId = 'hex_${hex['q']}_${hex['r']}';
-    _startCapture(tileId, _currentLocation!);
-  }
-
-  /// 현재 위치 정보를 받아 점령 로직 수행
-  void updateLocation(Position position) {
-    final newLocation = LatLng(position.latitude, position.longitude);
-
-    // 이전 위치와 차이가 거의 없으면 (약 1m 미만) 리빌드 생략하여 발열 억제
-    if (_currentLocation != null) {
-      final distance = Geolocator.distanceBetween(
-        _currentLocation!.latitude,
-        _currentLocation!.longitude,
-        newLocation.latitude,
-        newLocation.longitude,
-      );
-      if (distance < 1.0 && _currentAccuracy == position.accuracy) return;
-    }
-
-    _currentLocation = newLocation;
-    _currentAccuracy = position.accuracy;
-    _isGpsActive = true;
-
-    // GPS 신호 유효성 타이머 (10초간 업데이트 없으면 신호 유실로 판단)
-    _gpsSignalTimer?.cancel();
-    _gpsSignalTimer = Timer(const Duration(seconds: 10), () {
-      _isGpsActive = false;
-      notifyListeners();
-    });
-
-    notifyListeners();
-
-    if (!_isInitialized || _selectedTeam == null) return;
-
-    // 정확도가 낮아도 자동 점령 수행하도록 주석 처리
-    /*
-    if (_currentAccuracy > GameConstants.captureAccuracyThreshold) {
-      _cancelCapture();
-      return;
-    }
-    */
-
-    final hex = HexService.latLngToHex(_currentLocation!);
-    final tileId = 'hex_${hex['q']}_${hex['r']}';
-
-    if (_capturedTiles[tileId]?['owner'] == _selectedTeam) {
-      _cancelCapture();
-      return;
-    }
-
-    if (_isAutoCapture && _capturingTileId != tileId) {
-      _startCapture(tileId, _currentLocation!);
-    }
-  }
-
-  void _startCapture(String tileId, LatLng location) {
-    _cancelCapture();
-    _capturingTileId = tileId;
-    _captureProgress = 0.0;
-
-    Vibration.vibrate(pattern: [0, 50, 30, 50]);
-
-    final isEnemyTile = _capturedTiles[tileId] != null;
-    final duration = isEnemyTile
-        ? GameConstants.enemyTileDuration
-        : GameConstants.emptyTileDuration;
-    final totalSteps = duration.inMilliseconds / GameConstants.updateIntervalMs;
-    final stepIncrement = 1.0 / totalSteps;
-
-    _captureTimer = Timer.periodic(
-      const Duration(milliseconds: GameConstants.updateIntervalMs),
-      (timer) {
-        _captureProgress += stepIncrement;
-        if (_captureProgress >= 1.0) {
-          _captureProgress = 1.0;
-          _finishCapture(tileId, location);
-          timer.cancel();
-        }
-        notifyListeners();
-      },
-    );
-  }
-
-  void _cancelCapture() {
-    if (_capturingTileId != null) {
-      _captureTimer?.cancel();
-      _capturingTileId = null;
-      _captureProgress = 0.0;
-      notifyListeners();
-    }
-  }
-
-  Future<void> _finishCapture(String tileId, LatLng location) async {
-    Vibration.vibrate(duration: 500);
-
-    final hex = HexService.latLngToHex(location);
-    final corners = HexService.getHexCorners(hex['q']!, hex['r']!);
-    final bounds = corners
-        .map((latLng) => [latLng.latitude, latLng.longitude])
-        .toList();
-
-    final tileData = {
-      'id': tileId,
-      'q': hex['q'],
-      'r': hex['r'],
-      'owner': _selectedTeam,
-      'bounds': bounds,
-      'captured_at': DateTime.now().toIso8601String(),
-      'capture_status': 'captured',
-    };
-
-    try {
-      final success = await _supabase.captureTile(tileData);
-      
-      if (success) {
-        _capturedTiles[tileId] = tileData;
-        addAlert('구역을 점령했습니다!', 'success');
-      } else {
-        addAlert('점령 실패: 이미 다른 팀이 점령 중일 수 있습니다.', 'error');
-      }
-    } catch (e) {
-      debugPrint('점령 서버 전송 실패: $e');
-      addAlert('통신 오류: 점령 정보 전송에 실패했습니다.', 'error');
-    } finally {
-      // 어떤 상황에서도 점령 상태는 초기화하여 다음 점령이 가능하게 함
-      _capturingTileId = null;
-      _captureProgress = 0.0;
-      notifyListeners();
-    }
-  }
-
-  void setSelectedTeam(String teamId) async {
-    _selectedTeam = teamId;
-    final prefs = await SharedPreferences.getInstance();
-    await prefs.setString(_teamKey, teamId);
-    notifyListeners();
-  }
-
-  void addAlert(String message, String type) {
-    final String id = DateTime.now().millisecondsSinceEpoch.toString();
-    final alert = {'id': id, 'message': message, 'type': type};
-    _alerts.insert(0, alert);
-    if (_alerts.length > 5) _alerts.removeLast();
-    notifyListeners();
-    Timer(const Duration(seconds: 3), () => removeAlert(id));
-  }
-
-  void removeAlert(String id) {
-    _alerts.removeWhere((a) => a['id'] == id);
-    notifyListeners();
   }
 }
