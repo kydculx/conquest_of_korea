@@ -1,0 +1,122 @@
+import 'package:conquest_mobile/core/constants.dart';
+import 'package:flame/components.dart';
+import 'package:flutter/material.dart';
+import '../conquest_game.dart';
+
+class HubComponent extends PositionComponent with HasGameReference<ConquestGame> {
+  final String name;
+  final String type;
+  final Offset screenPosition;
+
+  HubComponent({
+    required this.name,
+    required this.type,
+    required this.screenPosition,
+  }) {
+    final s = _getHubSize() * 2;
+    size = Vector2(s, s);
+    position = Vector2(screenPosition.dx, screenPosition.dy);
+    anchor = Anchor.center;
+  }
+
+  @override
+  void render(Canvas canvas) {
+    // 0. 프러스텀 컬링: 화면 밖의 거점은 렌더링 생략 (여유 마진 50px)
+    final gameSize = game.size;
+    if (position.x < -50 || position.x > gameSize.x + 50 || 
+        position.y < -50 || position.y > gameSize.y + 50) {
+      return;
+    }
+
+    final isMajor = type == 'special' || type == 'metropolitan' || type == 'provincial';
+    final hubColor = _getHubColor();
+    final hubSize = _getHubSize();
+    final center = Offset.zero;
+
+    // 1. 네온 글로우 효과
+    final glowPaint = Paint()
+      ..color = hubColor.withAlpha(isMajor ? 180 : 120)
+      ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 6);
+    canvas.drawCircle(center, hubSize * 1.5, glowPaint);
+
+    // 2. 중심 마커
+    final mainPaint = Paint()
+      ..color = hubColor
+      ..style = PaintingStyle.fill;
+    
+    if (isMajor) {
+      // 주요 거점은 사각형(다이아몬드) 형태
+      canvas.save();
+      canvas.rotate(0.785398); // 45도 회전
+      canvas.drawRect(Rect.fromCenter(center: Offset.zero, width: hubSize * 1.2, height: hubSize * 1.2), mainPaint);
+      canvas.restore();
+    } else {
+      canvas.drawCircle(center, hubSize * 0.8, mainPaint);
+    }
+
+    // 3. 테두리
+    final strokePaint = Paint()
+      ..color = Colors.white
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = 1.2;
+    if (isMajor) {
+      canvas.save();
+      canvas.rotate(0.785398);
+      canvas.drawRect(Rect.fromCenter(center: Offset.zero, width: hubSize * 1.2, height: hubSize * 1.2), strokePaint);
+      canvas.restore();
+    } else {
+      canvas.drawCircle(center, hubSize * 0.8, strokePaint);
+    }
+
+    // 4. 이름 라벨
+    final textPainter = TextPainter(
+      text: TextSpan(
+        text: name,
+        style: TextStyle(
+          color: Colors.white,
+          fontSize: isMajor ? 11 : 9,
+          fontWeight: isMajor ? FontWeight.bold : FontWeight.normal,
+          shadows: const [Shadow(blurRadius: 2, color: Colors.black)],
+        ),
+      ),
+      textDirection: TextDirection.ltr,
+    );
+    textPainter.layout();
+    
+    final bgPaint = Paint()..color = Colors.black.withAlpha(160);
+    final bgRect = Rect.fromLTWH(
+      -textPainter.width / 2 - 4,
+      hubSize + 4,
+      textPainter.width + 8,
+      textPainter.height + 2,
+    );
+    canvas.drawRRect(RRect.fromRectAndRadius(bgRect, const Radius.circular(4)), bgPaint);
+    textPainter.paint(canvas, Offset(-textPainter.width / 2, hubSize + 5));
+  }
+
+  double _getHubSize() {
+    switch (type) {
+      case 'special':
+        return 12;
+      case 'metropolitan':
+        return 10;
+      case 'provincial':
+        return 8;
+      default:
+        return 6;
+    }
+  }
+
+  Color _getHubColor() {
+    switch (type) {
+      case 'special':
+        return GameConstants.colorAccent;
+      case 'metropolitan':
+        return Colors.amber;
+      case 'provincial':
+        return Colors.orange;
+      default:
+        return Colors.white.withAlpha(200);
+    }
+  }
+}
