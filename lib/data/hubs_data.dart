@@ -2,6 +2,7 @@ import 'package:latlong2/latlong.dart';
 import '../models/hub_model.dart';
 
 const List<TacticalHub> tacticalHubs = [
+  // 1. 주요 광역/도청 (17개)
   TacticalHub(id: 'hub-city-seoul', name: '서울특별시청', location: LatLng(37.5665, 126.9780), type: HubType.special, region: '서울'),
   TacticalHub(id: 'hub-city-busan', name: '부산광역시청', location: LatLng(35.1798, 129.0749), type: HubType.metropolitan, region: '부산'),
   TacticalHub(id: 'hub-city-daegu', name: '대구광역시청', location: LatLng(35.8711, 128.6014), type: HubType.metropolitan, region: '대구'),
@@ -19,6 +20,7 @@ const List<TacticalHub> tacticalHubs = [
   TacticalHub(id: 'hub-prov-gyeongbuk', name: '경상북도청', location: LatLng(36.5760, 128.5056), type: HubType.provincial, region: '경북'),
   TacticalHub(id: 'hub-prov-gyeongnam', name: '경상남도청', location: LatLng(35.2378, 128.6917), type: HubType.provincial, region: '경남'),
   TacticalHub(id: 'hub-prov-jeju', name: '제주특별자치도청', location: LatLng(33.4890, 126.4983), type: HubType.provincial, region: '제주'),
+
   // 서울 25개 구
   TacticalHub(id: 'hub-seoul-jongno', name: '종로구청', location: LatLng(37.5735, 126.9790), type: HubType.district, region: '서울'),
   TacticalHub(id: 'hub-seoul-junggu', name: '중구청', location: LatLng(37.5641, 126.9972), type: HubType.district, region: '서울'),
@@ -45,6 +47,7 @@ const List<TacticalHub> tacticalHubs = [
   TacticalHub(id: 'hub-seoul-gangnam', name: '강남구청', location: LatLng(37.5173, 127.0474), type: HubType.district, region: '서울'),
   TacticalHub(id: 'hub-seoul-songpa', name: '송파구청', location: LatLng(37.5145, 127.1058), type: HubType.district, region: '서울'),
   TacticalHub(id: 'hub-seoul-gangdong', name: '강동구청', location: LatLng(37.5301, 127.1237), type: HubType.district, region: '서울'),
+
   // 부산 16개 구·군
   TacticalHub(id: 'hub-busan-junggu', name: '중구청', location: LatLng(35.1062, 129.0324), type: HubType.district, region: '부산'),
   TacticalHub(id: 'hub-busan-seogu', name: '서구청', location: LatLng(35.1012, 129.0223), type: HubType.district, region: '부산'),
@@ -62,7 +65,8 @@ const List<TacticalHub> tacticalHubs = [
   TacticalHub(id: 'hub-busan-suyonggu', name: '수영구청', location: LatLng(35.1457, 129.1130), type: HubType.district, region: '부산'),
   TacticalHub(id: 'hub-busan-sasanggu', name: '사상구청', location: LatLng(35.1526, 128.9904), type: HubType.district, region: '부산'),
   TacticalHub(id: 'hub-busan-gijang', name: '기장군청', location: LatLng(35.2447, 129.2223), type: HubType.county, region: '부산'),
-  // 대구 8개 구·군
+
+  // 대구 9개 구·군
   TacticalHub(id: 'hub-daegu-junggu', name: '중구청', location: LatLng(35.8694, 128.6062), type: HubType.district, region: '대구'),
   TacticalHub(id: 'hub-daegu-donggu', name: '동구청', location: LatLng(35.8864, 128.6355), type: HubType.district, region: '대구'),
   TacticalHub(id: 'hub-daegu-seogu', name: '서구청', location: LatLng(35.8719, 128.5592), type: HubType.district, region: '대구'),
@@ -71,6 +75,8 @@ const List<TacticalHub> tacticalHubs = [
   TacticalHub(id: 'hub-daegu-suseonggu', name: '수성구청', location: LatLng(35.8582, 128.6272), type: HubType.district, region: '대구'),
   TacticalHub(id: 'hub-daegu-dalseogu', name: '달서구청', location: LatLng(35.8299, 128.5326), type: HubType.district, region: '대구'),
   TacticalHub(id: 'hub-daegu-dalseong', name: '달성군청', location: LatLng(35.7745, 128.4312), type: HubType.county, region: '대구'),
+  TacticalHub(id: 'hub-daegu-gunwi', name: '군위군청', location: LatLng(36.2393, 128.5728), type: HubType.county, region: '대구'),
+
   // 인천 10개 구·군
   TacticalHub(id: 'hub-incheon-junggu', name: '중구청', location: LatLng(37.4739, 126.6215), type: HubType.district, region: '인천'),
   TacticalHub(id: 'hub-incheon-donggu', name: '동구청', location: LatLng(37.4738, 126.6432), type: HubType.district, region: '인천'),
@@ -82,25 +88,29 @@ const List<TacticalHub> tacticalHubs = [
   TacticalHub(id: 'hub-incheon-seogu', name: '서구청', location: LatLng(37.5452, 126.6750), type: HubType.district, region: '인천'),
   TacticalHub(id: 'hub-incheon-ganghwa', name: '강화군청', location: LatLng(37.7466, 126.4879), type: HubType.county, region: '인천'),
   TacticalHub(id: 'hub-incheon-ongjin', name: '옹진군청', location: LatLng(37.4465, 126.6370), type: HubType.county, region: '인천'),
+
   // 광주 5개 구
   TacticalHub(id: 'hub-gwangju-donggu', name: '동구청', location: LatLng(35.1461, 126.9231), type: HubType.district, region: '광주'),
   TacticalHub(id: 'hub-gwangju-seogu', name: '서구청', location: LatLng(35.1520, 126.8900), type: HubType.district, region: '광주'),
   TacticalHub(id: 'hub-gwangju-namgu', name: '남구청', location: LatLng(35.1329, 126.9025), type: HubType.district, region: '광주'),
   TacticalHub(id: 'hub-gwangju-bukgu', name: '북구청', location: LatLng(35.1741, 126.9121), type: HubType.district, region: '광주'),
   TacticalHub(id: 'hub-gwangju-gwangsan', name: '광산구청', location: LatLng(35.1396, 126.7938), type: HubType.district, region: '광주'),
+
   // 대전 5개 구
   TacticalHub(id: 'hub-daejeon-donggu', name: '동구청', location: LatLng(36.3339, 127.4520), type: HubType.district, region: '대전'),
   TacticalHub(id: 'hub-daejeon-junggu', name: '중구청', location: LatLng(36.3250, 127.4215), type: HubType.district, region: '대전'),
   TacticalHub(id: 'hub-daejeon-seogu', name: '서구청', location: LatLng(36.3504, 127.3848), type: HubType.district, region: '대전'),
   TacticalHub(id: 'hub-daejeon-yuseong', name: '유성구청', location: LatLng(36.3622, 127.3563), type: HubType.district, region: '대전'),
   TacticalHub(id: 'hub-daejeon-daedeok', name: '대덕구청', location: LatLng(36.3467, 127.4157), type: HubType.district, region: '대전'),
+
   // 울산 5개 구·군
   TacticalHub(id: 'hub-ulsan-junggu', name: '중구청', location: LatLng(35.5684, 129.3323), type: HubType.district, region: '울산'),
   TacticalHub(id: 'hub-ulsan-namgu', name: '남구청', location: LatLng(35.5442, 129.3304), type: HubType.district, region: '울산'),
   TacticalHub(id: 'hub-ulsan-donggu', name: '동구청', location: LatLng(35.5053, 129.4172), type: HubType.district, region: '울산'),
   TacticalHub(id: 'hub-ulsan-bukgu', name: '북구청', location: LatLng(35.5828, 129.3610), type: HubType.district, region: '울산'),
   TacticalHub(id: 'hub-ulsan-ulju', name: '울주군청', location: LatLng(35.5230, 129.2435), type: HubType.county, region: '울산'),
-  // 경기도 주요 시·군
+
+  // 경기도 31개 시·군
   TacticalHub(id: 'hub-gyeonggi-suwon', name: '수원시청', location: LatLng(37.2635, 127.0286), type: HubType.city, region: '경기'),
   TacticalHub(id: 'hub-gyeonggi-seongnam', name: '성남시청', location: LatLng(37.4200, 127.1267), type: HubType.city, region: '경기'),
   TacticalHub(id: 'hub-gyeonggi-uijeongbu', name: '의정부시청', location: LatLng(37.7381, 127.0337), type: HubType.city, region: '경기'),
@@ -113,34 +123,161 @@ const List<TacticalHub> tacticalHubs = [
   TacticalHub(id: 'hub-gyeonggi-paju', name: '파주시청', location: LatLng(37.7601, 126.7799), type: HubType.city, region: '경기'),
   TacticalHub(id: 'hub-gyeonggi-hwaseong', name: '화성시청', location: LatLng(37.1995, 126.8314), type: HubType.city, region: '경기'),
   TacticalHub(id: 'hub-gyeonggi-gimpo', name: '김포시청', location: LatLng(37.6152, 126.7156), type: HubType.city, region: '경기'),
-  // 강원도 주요 시·군
+  TacticalHub(id: 'hub-gyeonggi-dongducheon', name: '동두천시청', location: LatLng(37.9036, 127.0607), type: HubType.city, region: '경기'),
+  TacticalHub(id: 'hub-gyeonggi-ansan', name: '안산시청', location: LatLng(37.3218, 126.8308), type: HubType.city, region: '경기'),
+  TacticalHub(id: 'hub-gyeonggi-gwacheon', name: '과천시청', location: LatLng(37.4292, 126.9877), type: HubType.city, region: '경기'),
+  TacticalHub(id: 'hub-gyeonggi-guri', name: '구리시청', location: LatLng(37.5943, 127.1296), type: HubType.city, region: '경기'),
+  TacticalHub(id: 'hub-gyeonggi-namyangju', name: '남양주시청', location: LatLng(37.6360, 127.2165), type: HubType.city, region: '경기'),
+  TacticalHub(id: 'hub-gyeonggi-osan', name: '오산시청', location: LatLng(37.1499, 127.0768), type: HubType.city, region: '경기'),
+  TacticalHub(id: 'hub-gyeonggi-siheung', name: '시흥시청', location: LatLng(37.3801, 126.8029), type: HubType.city, region: '경기'),
+  TacticalHub(id: 'hub-gyeonggi-gunpo', name: '군포시청', location: LatLng(37.3614, 126.9351), type: HubType.city, region: '경기'),
+  TacticalHub(id: 'hub-gyeonggi-uiwang', name: '의왕시청', location: LatLng(37.3448, 126.9683), type: HubType.city, region: '경기'),
+  TacticalHub(id: 'hub-gyeonggi-hanam', name: '하남시청', location: LatLng(37.5393, 127.2149), type: HubType.city, region: '경기'),
+  TacticalHub(id: 'hub-gyeonggi-icheon', name: '이천시청', location: LatLng(37.2723, 127.4350), type: HubType.city, region: '경기'),
+  TacticalHub(id: 'hub-gyeonggi-anseong', name: '안성시청', location: LatLng(37.0080, 127.2798), type: HubType.city, region: '경기'),
+  TacticalHub(id: 'hub-gyeonggi-gwangju', name: '광주시청', location: LatLng(37.4294, 127.2551), type: HubType.city, region: '경기'),
+  TacticalHub(id: 'hub-gyeonggi-yangju', name: '양주시청', location: LatLng(37.7853, 127.0458), type: HubType.city, region: '경기'),
+  TacticalHub(id: 'hub-gyeonggi-pocheon', name: '포천시청', location: LatLng(37.8949, 127.2003), type: HubType.city, region: '경기'),
+  TacticalHub(id: 'hub-gyeonggi-yeoju', name: '여주시청', location: LatLng(37.2984, 127.6371), type: HubType.city, region: '경기'),
+  TacticalHub(id: 'hub-gyeonggi-yeoncheon', name: '연천군청', location: LatLng(38.0964, 127.0744), type: HubType.county, region: '경기'),
+  TacticalHub(id: 'hub-gyeonggi-gapyeong', name: '가평군청', location: LatLng(37.8315, 127.5095), type: HubType.county, region: '경기'),
+  TacticalHub(id: 'hub-gyeonggi-yangpyeong', name: '양평군청', location: LatLng(37.4917, 127.4876), type: HubType.county, region: '경기'),
+
+  // 강원도 18개 시·군
   TacticalHub(id: 'hub-gangwon-chuncheon', name: '춘천시청', location: LatLng(37.8813, 127.7298), type: HubType.city, region: '강원'),
   TacticalHub(id: 'hub-gangwon-wonju', name: '원주시청', location: LatLng(37.3422, 127.9202), type: HubType.city, region: '강원'),
   TacticalHub(id: 'hub-gangwon-gangneung', name: '강릉시청', location: LatLng(37.7518, 128.8761), type: HubType.city, region: '강원'),
   TacticalHub(id: 'hub-gangwon-sokcho', name: '속초시청', location: LatLng(38.2070, 128.5918), type: HubType.city, region: '강원'),
-  // 충청북도
+  TacticalHub(id: 'hub-gangwon-donghae', name: '동해시청', location: LatLng(37.5247, 129.1143), type: HubType.city, region: '강원'),
+  TacticalHub(id: 'hub-gangwon-taebaek', name: '태백시청', location: LatLng(37.1640, 128.9856), type: HubType.city, region: '강원'),
+  TacticalHub(id: 'hub-gangwon-samcheok', name: '삼척시청', location: LatLng(37.4499, 129.1652), type: HubType.city, region: '강원'),
+  TacticalHub(id: 'hub-gangwon-hongcheon', name: '홍천군청', location: LatLng(37.6970, 127.8886), type: HubType.county, region: '강원'),
+  TacticalHub(id: 'hub-gangwon-hoengseong', name: '횡성군청', location: LatLng(37.4896, 127.9844), type: HubType.county, region: '강원'),
+  TacticalHub(id: 'hub-gangwon-yeongwol', name: '영월군청', location: LatLng(37.1837, 128.4618), type: HubType.county, region: '강원'),
+  TacticalHub(id: 'hub-gangwon-pyeongchang', name: '평창군청', location: LatLng(37.3705, 128.3902), type: HubType.county, region: '강원'),
+  TacticalHub(id: 'hub-gangwon-jeongseon', name: '정선군청', location: LatLng(37.3805, 128.6608), type: HubType.county, region: '강원'),
+  TacticalHub(id: 'hub-gangwon-cheorwon', name: '철원군청', location: LatLng(38.1467, 127.3134), type: HubType.county, region: '강원'),
+  TacticalHub(id: 'hub-gangwon-hwacheon', name: '화천군청', location: LatLng(38.1060, 127.7082), type: HubType.county, region: '강원'),
+  TacticalHub(id: 'hub-gangwon-yanggu', name: '양구군청', location: LatLng(38.1098, 127.9902), type: HubType.county, region: '강원'),
+  TacticalHub(id: 'hub-gangwon-inje', name: '인제군청', location: LatLng(38.0694, 128.1703), type: HubType.county, region: '강원'),
+  TacticalHub(id: 'hub-gangwon-goseong', name: '고성군청', location: LatLng(38.3806, 128.4678), type: HubType.county, region: '강원'),
+  TacticalHub(id: 'hub-gangwon-yangyang', name: '양양군청', location: LatLng(38.0754, 128.6189), type: HubType.county, region: '강원'),
+
+  // 충청북도 11개 시·군
   TacticalHub(id: 'hub-cb-cheongju', name: '청주시청', location: LatLng(36.6421, 127.4891), type: HubType.city, region: '충북'),
   TacticalHub(id: 'hub-cb-chungju', name: '충주시청', location: LatLng(36.9881, 127.9281), type: HubType.city, region: '충북'),
-  // 충청남도
+  TacticalHub(id: 'hub-cb-jecheon', name: '제천시청', location: LatLng(37.1326, 128.1956), type: HubType.city, region: '충북'),
+  TacticalHub(id: 'hub-cb-boeun', name: '보은군청', location: LatLng(36.4895, 127.7186), type: HubType.county, region: '충북'),
+  TacticalHub(id: 'hub-cb-okcheon', name: '옥천군청', location: LatLng(36.3064, 127.5714), type: HubType.county, region: '충북'),
+  TacticalHub(id: 'hub-cb-yeongdong', name: '영동군청', location: LatLng(36.1749, 127.7736), type: HubType.county, region: '충북'),
+  TacticalHub(id: 'hub-cb-jeungpyeong', name: '증평군청', location: LatLng(36.7853, 127.5815), type: HubType.county, region: '충북'),
+  TacticalHub(id: 'hub-cb-jincheon', name: '진천군청', location: LatLng(36.8554, 127.4356), type: HubType.county, region: '충북'),
+  TacticalHub(id: 'hub-cb-goesan', name: '괴산군청', location: LatLng(36.8153, 127.7867), type: HubType.county, region: '충북'),
+  TacticalHub(id: 'hub-cb-eumseong', name: '음성군청', location: LatLng(36.9397, 127.6905), type: HubType.county, region: '충북'),
+  TacticalHub(id: 'hub-cb-danyang', name: '단양군청', location: LatLng(36.9846, 128.3655), type: HubType.county, region: '충북'),
+
+  // 충청남도 15개 시·군
   TacticalHub(id: 'hub-cn-cheonan', name: '천안시청', location: LatLng(36.8151, 127.1138), type: HubType.city, region: '충남'),
+  TacticalHub(id: 'hub-cn-gongju', name: '공주시청', location: LatLng(36.4465, 127.1190), type: HubType.city, region: '충남'),
+  TacticalHub(id: 'hub-cn-boryeong', name: '보령시청', location: LatLng(36.3331, 126.6128), type: HubType.city, region: '충남'),
   TacticalHub(id: 'hub-cn-asan', name: '아산시청', location: LatLng(36.7898, 127.0049), type: HubType.city, region: '충남'),
-  // 전라북도
+  TacticalHub(id: 'hub-cn-seosan', name: '서산시청', location: LatLng(36.7844, 126.4503), type: HubType.city, region: '충남'),
+  TacticalHub(id: 'hub-cn-nonsan', name: '논산시청', location: LatLng(36.1871, 127.0986), type: HubType.city, region: '충남'),
+  TacticalHub(id: 'hub-cn-gyeryong', name: '계룡시청', location: LatLng(36.2746, 127.2486), type: HubType.city, region: '충남'),
+  TacticalHub(id: 'hub-cn-dangjin', name: '당진시청', location: LatLng(36.8929, 126.6277), type: HubType.city, region: '충남'),
+  TacticalHub(id: 'hub-cn-geumsan', name: '금산군청', location: LatLng(36.1086, 127.4881), type: HubType.county, region: '충남'),
+  TacticalHub(id: 'hub-cn-buyeo', name: '부여군청', location: LatLng(36.2755, 126.9098), type: HubType.county, region: '충남'),
+  TacticalHub(id: 'hub-cn-seocheon', name: '서천군청', location: LatLng(36.0797, 126.6913), type: HubType.county, region: '충남'),
+  TacticalHub(id: 'hub-cn-cheongyang', name: '청양군청', location: LatLng(36.4593, 126.8021), type: HubType.county, region: '충남'),
+  TacticalHub(id: 'hub-cn-hongseong', name: '홍성군청', location: LatLng(36.6012, 126.6607), type: HubType.county, region: '충남'),
+  TacticalHub(id: 'hub-cn-yesan', name: '예산군청', location: LatLng(36.6800, 126.8438), type: HubType.county, region: '충남'),
+  TacticalHub(id: 'hub-cn-taean', name: '태안군청', location: LatLng(36.7456, 126.2979), type: HubType.county, region: '충남'),
+
+  // 전라북도 14개 시·군
   TacticalHub(id: 'hub-jb-jeonju', name: '전주시청', location: LatLng(35.8242, 127.1479), type: HubType.city, region: '전북'),
   TacticalHub(id: 'hub-jb-gunsan', name: '군산시청', location: LatLng(35.9676, 126.7366), type: HubType.city, region: '전북'),
-  // 전라남도
+  TacticalHub(id: 'hub-jb-iksan', name: '익산시청', location: LatLng(35.9483, 126.9578), type: HubType.city, region: '전북'),
+  TacticalHub(id: 'hub-jb-jeongeup', name: '정읍시청', location: LatLng(35.5699, 126.8560), type: HubType.city, region: '전북'),
+  TacticalHub(id: 'hub-jb-namwon', name: '남원시청', location: LatLng(35.4164, 127.3904), type: HubType.city, region: '전북'),
+  TacticalHub(id: 'hub-jb-gimje', name: '김제시청', location: LatLng(35.8036, 126.8808), type: HubType.city, region: '전북'),
+  TacticalHub(id: 'hub-jb-wanju', name: '완주군청', location: LatLng(35.9046, 127.1622), type: HubType.county, region: '전북'),
+  TacticalHub(id: 'hub-jb-jinan', name: '진안군청', location: LatLng(35.7915, 127.4248), type: HubType.county, region: '전북'),
+  TacticalHub(id: 'hub-jb-muju', name: '무주군청', location: LatLng(36.0068, 127.6608), type: HubType.county, region: '전북'),
+  TacticalHub(id: 'hub-jb-jangsu', name: '장수군청', location: LatLng(35.6474, 127.5213), type: HubType.county, region: '전북'),
+  TacticalHub(id: 'hub-jb-imsil', name: '임실군청', location: LatLng(35.6177, 127.2889), type: HubType.county, region: '전북'),
+  TacticalHub(id: 'hub-jb-sunchang', name: '순창군청', location: LatLng(35.3744, 127.1376), type: HubType.county, region: '전북'),
+  TacticalHub(id: 'hub-jb-gochang', name: '고창군청', location: LatLng(35.4358, 126.7020), type: HubType.county, region: '전북'),
+  TacticalHub(id: 'hub-jb-buan', name: '부안군청', location: LatLng(35.7317, 126.7335), type: HubType.county, region: '전북'),
+
+  // 전라남도 22개 시·군
   TacticalHub(id: 'hub-jn-mokpo', name: '목포시청', location: LatLng(34.8118, 126.3922), type: HubType.city, region: '전남'),
   TacticalHub(id: 'hub-jn-yeosu', name: '여수시청', location: LatLng(34.7604, 127.6622), type: HubType.city, region: '전남'),
   TacticalHub(id: 'hub-jn-suncheon', name: '순천시청', location: LatLng(34.9507, 127.4872), type: HubType.city, region: '전남'),
-  // 경상북도
+  TacticalHub(id: 'hub-jn-naju', name: '나주시청', location: LatLng(35.0158, 126.7108), type: HubType.city, region: '전남'),
+  TacticalHub(id: 'hub-jn-gwangyang', name: '광양시청', location: LatLng(34.9406, 127.6958), type: HubType.city, region: '전남'),
+  TacticalHub(id: 'hub-jn-damyang', name: '담양군청', location: LatLng(35.3188, 126.9845), type: HubType.county, region: '전남'),
+  TacticalHub(id: 'hub-jn-gokseong', name: '곡성군청', location: LatLng(35.2820, 127.2922), type: HubType.county, region: '전남'),
+  TacticalHub(id: 'hub-jn-gurye', name: '구례군청', location: LatLng(35.2024, 127.4627), type: HubType.county, region: '전남'),
+  TacticalHub(id: 'hub-jn-goheung', name: '고흥군청', location: LatLng(34.6111, 127.2849), type: HubType.county, region: '전남'),
+  TacticalHub(id: 'hub-jn-boseong', name: '보성군청', location: LatLng(34.7715, 127.0800), type: HubType.county, region: '전남'),
+  TacticalHub(id: 'hub-jn-hwasun', name: '화순군청', location: LatLng(35.0645, 126.9866), type: HubType.county, region: '전남'),
+  TacticalHub(id: 'hub-jn-jangheung', name: '장흥군청', location: LatLng(34.6816, 126.9070), type: HubType.county, region: '전남'),
+  TacticalHub(id: 'hub-jn-gangjin', name: '강진군청', location: LatLng(34.6420, 126.7673), type: HubType.county, region: '전남'),
+  TacticalHub(id: 'hub-jn-haenam', name: '해남군청', location: LatLng(34.5707, 126.5990), type: HubType.county, region: '전남'),
+  TacticalHub(id: 'hub-jn-yeongam', name: '영암군청', location: LatLng(34.8002, 126.6967), type: HubType.county, region: '전남'),
+  TacticalHub(id: 'hub-jn-muan', name: '무안군청', location: LatLng(34.9904, 126.4789), type: HubType.county, region: '전남'),
+  TacticalHub(id: 'hub-jn-hampyeong', name: '함평군청', location: LatLng(35.0658, 126.5165), type: HubType.county, region: '전남'),
+  TacticalHub(id: 'hub-jn-yeonggwang', name: '영광군청', location: LatLng(35.2772, 126.5120), type: HubType.county, region: '전남'),
+  TacticalHub(id: 'hub-jn-jangseong', name: '장성군청', location: LatLng(35.3019, 126.7848), type: HubType.county, region: '전남'),
+  TacticalHub(id: 'hub-jn-wando', name: '완도군청', location: LatLng(34.3110, 126.7550), type: HubType.county, region: '전남'),
+  TacticalHub(id: 'hub-jn-jindo', name: '진도군청', location: LatLng(34.4868, 126.2635), type: HubType.county, region: '전남'),
+  TacticalHub(id: 'hub-jn-sinan', name: '신안군청', location: LatLng(34.8250, 126.1118), type: HubType.county, region: '전남'),
+
+  // 경상북도 22개 시·군
   TacticalHub(id: 'hub-gb-pohang', name: '포항시청', location: LatLng(36.0190, 129.3434), type: HubType.city, region: '경북'),
   TacticalHub(id: 'hub-gb-gyeongju', name: '경주시청', location: LatLng(35.8562, 129.2247), type: HubType.city, region: '경북'),
-  TacticalHub(id: 'hub-gb-gumi', name: '구미시청', location: LatLng(36.1195, 128.3444), type: HubType.city, region: '경북'),
+  TacticalHub(id: 'hub-gb-gimcheon', name: '김천시청', location: LatLng(36.1398, 128.1136), type: HubType.city, region: '경북'),
   TacticalHub(id: 'hub-gb-andong', name: '안동시청', location: LatLng(36.5684, 128.7295), type: HubType.city, region: '경북'),
-  // 경상남도
+  TacticalHub(id: 'hub-gb-gumi', name: '구미시청', location: LatLng(36.1195, 128.3444), type: HubType.city, region: '경북'),
+  TacticalHub(id: 'hub-gb-yeongju', name: '영주시청', location: LatLng(36.8056, 128.6241), type: HubType.city, region: '경북'),
+  TacticalHub(id: 'hub-gb-yeongcheon', name: '영천시청', location: LatLng(35.9733, 128.9385), type: HubType.city, region: '경북'),
+  TacticalHub(id: 'hub-gb-sangju', name: '상주시청', location: LatLng(36.4109, 128.1591), type: HubType.city, region: '경북'),
+  TacticalHub(id: 'hub-gb-mungyeong', name: '문경시청', location: LatLng(36.5862, 128.1868), type: HubType.city, region: '경북'),
+  TacticalHub(id: 'hub-gb-gyeongsan', name: '경산시청', location: LatLng(35.8251, 128.7323), type: HubType.city, region: '경북'),
+  TacticalHub(id: 'hub-gb-uiseong', name: '의성군청', location: LatLng(36.3526, 128.6970), type: HubType.county, region: '경북'),
+  TacticalHub(id: 'hub-gb-cheongsong', name: '청송군청', location: LatLng(36.4351, 129.0571), type: HubType.county, region: '경북'),
+  TacticalHub(id: 'hub-gb-yeongyang', name: '영양군청', location: LatLng(36.6608, 129.1149), type: HubType.county, region: '경북'),
+  TacticalHub(id: 'hub-gb-yeongdeok', name: '영덕군청', location: LatLng(36.4150, 129.3653), type: HubType.county, region: '경북'),
+  TacticalHub(id: 'hub-gb-cheongdo', name: '청도군청', location: LatLng(35.6473, 128.7340), type: HubType.county, region: '경북'),
+  TacticalHub(id: 'hub-gb-goryeong', name: '고령군청', location: LatLng(35.7277, 128.2623), type: HubType.county, region: '경북'),
+  TacticalHub(id: 'hub-gb-seongju', name: '성주군청', location: LatLng(35.9191, 128.2831), type: HubType.county, region: '경북'),
+  TacticalHub(id: 'hub-gb-chilgok', name: '칠곡군청', location: LatLng(35.9956, 128.4017), type: HubType.county, region: '경북'),
+  TacticalHub(id: 'hub-gb-yecheon', name: '예천군청', location: LatLng(36.6425, 128.4528), type: HubType.county, region: '경북'),
+  TacticalHub(id: 'hub-gb-bonghwa', name: '봉화군청', location: LatLng(36.8931, 128.7328), type: HubType.county, region: '경북'),
+  TacticalHub(id: 'hub-gb-uljin', name: '울진군청', location: LatLng(36.9931, 129.4004), type: HubType.county, region: '경북'),
+  TacticalHub(id: 'hub-gb-ulleung', name: '울릉군청', location: LatLng(37.4849, 130.9056), type: HubType.county, region: '경북'),
+
+  // 경상남도 18개 시·군
   TacticalHub(id: 'hub-gn-changwon', name: '창원시청', location: LatLng(35.2281, 128.6811), type: HubType.city, region: '경남'),
   TacticalHub(id: 'hub-gn-jinju', name: '진주시청', location: LatLng(35.1804, 128.1077), type: HubType.city, region: '경남'),
+  TacticalHub(id: 'hub-gn-tongyeong', name: '통영시청', location: LatLng(34.8544, 128.4332), type: HubType.city, region: '경남'),
+  TacticalHub(id: 'hub-gn-sacheon', name: '사천시청', location: LatLng(35.0034, 128.0645), type: HubType.city, region: '경남'),
   TacticalHub(id: 'hub-gn-gimhae', name: '김해시청', location: LatLng(35.2286, 128.8894), type: HubType.city, region: '경남'),
-  // 제주
+  TacticalHub(id: 'hub-gn-miryang', name: '밀양시청', location: LatLng(35.5038, 128.7466), type: HubType.city, region: '경남'),
+  TacticalHub(id: 'hub-gn-geoje', name: '거제시청', location: LatLng(34.8805, 128.6211), type: HubType.city, region: '경남'),
+  TacticalHub(id: 'hub-gn-yangsan', name: '양산시청', location: LatLng(35.3350, 129.0371), type: HubType.city, region: '경남'),
+  TacticalHub(id: 'hub-gn-uiryeong', name: '의령군청', location: LatLng(35.3221, 128.2616), type: HubType.county, region: '경남'),
+  TacticalHub(id: 'hub-gn-haman', name: '함안군청', location: LatLng(35.2725, 128.4065), type: HubType.county, region: '경남'),
+  TacticalHub(id: 'hub-gn-changnyeong', name: '창녕군청', location: LatLng(35.5446, 128.4921), type: HubType.county, region: '경남'),
+  TacticalHub(id: 'hub-gn-goseong', name: '고성군청', location: LatLng(34.9753, 128.3222), type: HubType.county, region: '경남'),
+  TacticalHub(id: 'hub-gn-namhae', name: '남해군청', location: LatLng(34.8377, 127.8925), type: HubType.county, region: '경남'),
+  TacticalHub(id: 'hub-gn-hadong', name: '하동군청', location: LatLng(35.0673, 127.7513), type: HubType.county, region: '경남'),
+  TacticalHub(id: 'hub-gn-sancheong', name: '산청군청', location: LatLng(35.4156, 127.8735), type: HubType.county, region: '경남'),
+  TacticalHub(id: 'hub-gn-hamyang', name: '함양군청', location: LatLng(35.5205, 127.7252), type: HubType.county, region: '경남'),
+  TacticalHub(id: 'hub-gn-geochang', name: '거창군청', location: LatLng(35.6866, 127.9095), type: HubType.county, region: '경남'),
+  TacticalHub(id: 'hub-gn-hapcheon', name: '합천군청', location: LatLng(35.5667, 128.1658), type: HubType.county, region: '경남'),
+
+  // 제주 2개 시
   TacticalHub(id: 'hub-jeju-jeju', name: '제주시청', location: LatLng(33.4996, 126.5312), type: HubType.city, region: '제주'),
   TacticalHub(id: 'hub-jeju-seogwipo', name: '서귀포시청', location: LatLng(33.2541, 126.5601), type: HubType.city, region: '제주'),
 ];

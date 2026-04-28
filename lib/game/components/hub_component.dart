@@ -120,22 +120,29 @@ class HubComponent extends PositionComponent with HasGameReference<ConquestGame>
       case HubType.metropolitan:
         return 10;
       case HubType.provincial:
-        return 8;
-      default:
-        return 6;
+        return 9;
+      case HubType.city:
+        return 7;
+      case HubType.district:
+      case HubType.county:
+        return 5;
     }
   }
 
   Color _getHubColor() {
     switch (type) {
       case HubType.special:
-        return GameConstants.colorAccent;
+        return GameConstants.colorAccent; // 네온 시안
       case HubType.metropolitan:
         return Colors.amber;
       case HubType.provincial:
-        return Colors.orange;
-      default:
-        return Colors.white.withAlpha(200);
+        return Colors.orangeAccent;
+      case HubType.city:
+        return Colors.lightGreenAccent;
+      case HubType.district:
+        return Colors.cyanAccent.withAlpha(200);
+      case HubType.county:
+        return Colors.tealAccent.withAlpha(200);
     }
   }
 }
