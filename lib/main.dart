@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
 import 'package:wakelock_plus/wakelock_plus.dart';
+import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'core/theme.dart';
 import 'core/constants.dart';
 import 'game/conquest_game.dart';
@@ -13,6 +14,9 @@ import 'views/screens/game_screen.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
+
+  // 환경 변수 로드
+  await dotenv.load(fileName: ".env");
 
   // 화면 자동 꺼짐 방지
   WakelockPlus.enable();

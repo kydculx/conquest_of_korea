@@ -22,6 +22,7 @@ class GameProvider extends ChangeNotifier {
   // --- 상태 ---
   TileOwner? _selectedTeam;
   final Map<String, HexTile> _capturedTiles = {};
+  final Map<String, int> _score = {'blue': 0, 'red': 0};
   final List<GameAlert> _alerts = [];
   bool _isInitialized = false;
   bool _isAutoCapture = false;
@@ -45,15 +46,8 @@ class GameProvider extends ChangeNotifier {
   double get captureProgress => _captureController.captureProgress;
   bool get isCapturing => _captureController.isCapturing;
 
-  /// 실시간 점수 (팀별 점령 타일 수)
-  Map<String, int> get score {
-    int blue = 0, red = 0;
-    for (final tile in _capturedTiles.values) {
-      if (tile.owner == TileOwner.blue) blue++;
-      if (tile.owner == TileOwner.red) red++;
-    }
-    return {'blue': blue, 'red': red};
-  }
+  /// 실시간 점수 (팀별 점령 타일 수 캐싱)
+  Map<String, int> get score => Map.unmodifiable(_score);
 
   /// 현재 위치에서 점령 가능 여부
   bool get canCapture {
@@ -97,6 +91,7 @@ class GameProvider extends ChangeNotifier {
       for (final tile in tiles) {
         _capturedTiles[tile.id] = tile;
       }
+      _recalculateScore();
     } catch (e) {
       debugPrint('초기 데이터 로드 실패: $e');
     } finally {
@@ -123,7 +118,20 @@ class GameProvider extends ChangeNotifier {
       _capturedTiles[tile.id] = tile;
       changed = true;
     }
-    if (changed) notifyListeners();
+    if (changed) {
+      _recalculateScore();
+      notifyListeners();
+    }
+  }
+
+  void _recalculateScore() {
+    int blue = 0, red = 0;
+    for (final tile in _capturedTiles.values) {
+      if (tile.owner == TileOwner.blue) blue++;
+      if (tile.owner == TileOwner.red) red++;
+    }
+    _score['blue'] = blue;
+    _score['red'] = red;
   }
 
   /// 위치 업데이트 시 자동 점령 처리 (GameScreen에서 LocationProvider 변경 시 호출)
@@ -204,6 +212,7 @@ class GameProvider extends ChangeNotifier {
       for (final tile in tiles) {
         _capturedTiles[tile.id] = tile;
       }
+      _recalculateScore();
       notifyListeners();
     } catch (e) {
       debugPrint('데이터 갱신 실패: $e');

@@ -45,6 +45,7 @@ dependencies:
   app_links: ^7.0.0
   wakelock_plus: ^1.5.2
   flutter_compass: ^0.8.1
+  flutter_dotenv: ^6.0.1
 
 dev_dependencies:
   flutter_test:

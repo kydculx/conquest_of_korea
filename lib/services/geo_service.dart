@@ -33,16 +33,6 @@ class GeoService {
   }
 
   Future<void> startTracking() async {
-    // 1. 하드웨어 예열 (Priming): 스트림 시작 전 강제로 최고 정밀도 위치를 요청하여 GPS 칩을 깨움
-    try {
-      await Geolocator.getCurrentPosition(
-        desiredAccuracy: LocationAccuracy.bestForNavigation,
-        timeLimit: const Duration(seconds: 5),
-      );
-    } catch (e) {
-      debugPrint('GPS 예열 실패 (무시하고 스트림 시작): $e');
-    }
-
     LocationSettings locationSettings;
 
     // iOS 하드웨어 GPS 강제 점유를 위한 내비게이션 프로필 적용
@@ -72,6 +62,15 @@ class GeoService {
         accuracy: LocationAccuracy.best,
         distanceFilter: 0,
       );
+    }
+
+    // 1. 하드웨어 예열 (Priming): 스트림 시작 전 강제로 최고 정밀도 위치를 요청하여 GPS 칩을 깨움
+    try {
+      await Geolocator.getCurrentPosition(
+        locationSettings: locationSettings,
+      ).timeout(const Duration(seconds: 5));
+    } catch (e) {
+      debugPrint('GPS 예열 실패 (무시하고 스트림 시작): $e');
     }
 
     _positionStreamSubscription =

@@ -21,6 +21,34 @@ class HubComponent extends PositionComponent with HasGameReference<ConquestGame>
   }
 
   @override
+  Future<void> onLoad() async {
+    final isMajor = type == HubType.special || type == HubType.metropolitan || type == HubType.provincial;
+    final hubSize = _getHubSize();
+    
+    // 텍스트 컴포넌트 추가
+    final textComponent = TextComponent(
+      text: name,
+      textRenderer: TextPaint(
+        style: TextStyle(
+          color: Colors.white,
+          fontSize: isMajor ? 11 : 9,
+          fontWeight: isMajor ? FontWeight.bold : FontWeight.normal,
+          shadows: const [
+            Shadow(blurRadius: 2, color: Colors.black),
+            Shadow(blurRadius: 2, color: Colors.black),
+          ],
+        ),
+      ),
+    );
+    
+    // 위치를 하단으로 잡음
+    textComponent.anchor = Anchor.topCenter;
+    textComponent.position = Vector2(size.x / 2, size.y / 2 + hubSize + 4);
+    
+    add(textComponent);
+  }
+
+  @override
   void render(Canvas canvas) {
     // 0. 프러스텀 컬링: 화면 밖의 거점은 렌더링 생략 (여유 마진 50px)
     final gameSize = game.size;
@@ -69,30 +97,20 @@ class HubComponent extends PositionComponent with HasGameReference<ConquestGame>
       canvas.drawCircle(center, hubSize * 0.8, strokePaint);
     }
 
-    // 4. 이름 라벨
-    final textPainter = TextPainter(
-      text: TextSpan(
-        text: name,
-        style: TextStyle(
-          color: Colors.white,
-          fontSize: isMajor ? 11 : 9,
-          fontWeight: isMajor ? FontWeight.bold : FontWeight.normal,
-          shadows: const [Shadow(blurRadius: 2, color: Colors.black)],
-        ),
-      ),
-      textDirection: TextDirection.ltr,
-    );
-    textPainter.layout();
-    
+    // 4. 이름 라벨 배경 (TextComponent 아래에 배경 그려주기)
+    // 약간의 꼼수로 TextComponent의 너비를 알기 위해선 텍스트 길이에 비례한 고정값 사용 (또는 렌더에서 배경 생략)
+    // 렌더 성능을 위해 배경은 여기서 간단히 그림
+    final textWidth = name.length * (isMajor ? 10.0 : 8.0); 
+    final textHeight = isMajor ? 14.0 : 12.0;
+
     final bgPaint = Paint()..color = Colors.black.withAlpha(160);
     final bgRect = Rect.fromLTWH(
-      -textPainter.width / 2 - 4,
+      -textWidth / 2 - 4,
       hubSize + 4,
-      textPainter.width + 8,
-      textPainter.height + 2,
+      textWidth + 8,
+      textHeight + 2,
     );
     canvas.drawRRect(RRect.fromRectAndRadius(bgRect, const Radius.circular(4)), bgPaint);
-    textPainter.paint(canvas, Offset(-textPainter.width / 2, hubSize + 5));
   }
 
   double _getHubSize() {
