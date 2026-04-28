@@ -4,13 +4,22 @@ import 'package:flutter/material.dart';
 import '../../models/hub_model.dart';
 import '../conquest_game.dart';
 
-class HubComponent extends PositionComponent with HasGameReference<ConquestGame> {
+class HubComponent extends PositionComponent
+    with HasGameReference<ConquestGame> {
   final String name;
   final HubType type;
   final Offset screenPosition;
 
   late TextComponent _textLabel;
   bool _shouldRender = true;
+
+  // 특례시 리스트 (수원, 용인, 고양, 창원)
+  static const Set<String> _specializedCities = {
+    '수원시청',
+    '용인시청',
+    '고양시청',
+    '창원시청',
+  };
 
   HubComponent({
     required this.name,
@@ -25,49 +34,76 @@ class HubComponent extends PositionComponent with HasGameReference<ConquestGame>
 
   @override
   Future<void> onLoad() async {
-    final isMajor = type == HubType.special || type == HubType.metropolitan || type == HubType.provincial;
+    final tier = _getTier();
     final hubSize = _getHubSize();
-    
+
     _textLabel = TextComponent(
       text: name,
       textRenderer: TextPaint(
         style: TextStyle(
           color: Colors.white,
-          fontSize: isMajor ? 11 : 9,
-          fontWeight: isMajor ? FontWeight.bold : FontWeight.normal,
-          shadows: const [
-            Shadow(blurRadius: 2, color: Colors.black),
-          ],
+          fontSize: tier == 1 ? 11 : (tier == 2 ? 10 : 9),
+          fontWeight: tier == 1 ? FontWeight.bold : FontWeight.normal,
+          shadows: const [Shadow(blurRadius: 2, color: Colors.black)],
         ),
       ),
     );
-    
+
     _textLabel.anchor = Anchor.topCenter;
     _textLabel.position = Vector2(size.x / 2, size.y / 2 + hubSize + 2);
     add(_textLabel);
   }
 
+  int _getTier() {
+    // 1단계: 특별시, 광역시, 도청
+    if (type == HubType.special ||
+        type == HubType.metropolitan ||
+        type == HubType.provincial) {
+      return 1;
+    }
+    // 2단계: 특례시, 일반 시청
+    if (_specializedCities.contains(name) || type == HubType.city) {
+      return 2;
+    }
+    // 3단계: 구청, 군청
+    return 3;
+  }
+
   @override
   void update(double dt) {
     super.update(dt);
-    
+
     if (game.mapController == null) return;
-    final zoom = game.mapController!.camera.zoom;
-    final isMajor = type == HubType.special || type == HubType.metropolitan || type == HubType.provincial;
-    
-    // 1. 줌 레벨에 따른 마커 표시 여부 (최적화 핵심)
-    if (zoom < 9) {
-      _shouldRender = isMajor; // 줌 9 미만: 주요 거점만 표시
-    } else if (zoom < 11) {
-      _shouldRender = isMajor || type == HubType.city; // 줌 11 미만: 시청까지 표시
+
+    // 줌 레벨을 퍼센트로 환산 (최소 6 ~ 최대 18 기준)
+    final currentZoom = game.mapController!.camera.zoom;
+    const minZ = 6.0;
+    const maxZ = 18.0;
+    final zoomPercent = ((currentZoom - minZ) / (maxZ - minZ) * 100).clamp(
+      0,
+      100,
+    );
+
+    final tier = _getTier();
+
+    // 사용자 요청 기반 3단계 LOD 로직
+    if (zoomPercent < 30) {
+      // 1단계만 표시
+      _shouldRender = (tier == 1);
+    } else if (zoomPercent < 40) {
+      // 1, 2단계 표시
+      _shouldRender = (tier <= 2);
     } else {
-      _shouldRender = true; // 줌 11 이상: 모두 표시
+      // 모두 표시
+      _shouldRender = true;
     }
 
-    // 2. 텍스트 라벨 가시성 (텍스트 렌더링은 무겁기 때문)
+    // 텍스트 라벨 가시성 (성능을 위해 줌에 따라 제어)
     if (_shouldRender) {
-      if (zoom < 11) {
-        _textLabel.scale = Vector2.all(isMajor ? 1.0 : 0.0);
+      if (zoomPercent < 40) {
+        _textLabel.scale = Vector2.all(tier == 1 ? 1.0 : 0.0);
+      } else if (zoomPercent < 60) {
+        _textLabel.scale = Vector2.all(tier <= 2 ? 1.0 : 0.0);
       } else {
         _textLabel.scale = Vector2.all(1.0);
       }
@@ -78,14 +114,15 @@ class HubComponent extends PositionComponent with HasGameReference<ConquestGame>
   void render(Canvas canvas) {
     if (!_shouldRender) return;
 
-    // 프러스텀 컬링 (화면 밖 렌더링 스킵)
     final gameSize = game.size;
-    if (position.x < -50 || position.x > gameSize.x + 50 || 
-        position.y < -50 || position.y > gameSize.y + 50) {
+    if (position.x < -50 ||
+        position.x > gameSize.x + 50 ||
+        position.y < -50 ||
+        position.y > gameSize.y + 50) {
       return;
     }
 
-    final isMajor = type == HubType.special || type == HubType.metropolitan || type == HubType.provincial;
+    final tier = _getTier();
     final hubColor = _getHubColor();
     final hubSize = _getHubSize();
     final center = Offset(size.x / 2, size.y / 2);
@@ -93,52 +130,59 @@ class HubComponent extends PositionComponent with HasGameReference<ConquestGame>
     final mainPaint = Paint()
       ..color = hubColor
       ..style = PaintingStyle.fill;
-    
-    if (isMajor) {
+
+    if (tier == 1) {
+      // 1단계는 다이아몬드 형태
       canvas.save();
       canvas.translate(center.dx, center.dy);
-      canvas.rotate(0.785398); 
-      canvas.drawRect(Rect.fromCenter(center: Offset.zero, width: hubSize * 1.2, height: hubSize * 1.2), mainPaint);
+      canvas.rotate(0.785398);
+      canvas.drawRect(
+        Rect.fromCenter(
+          center: Offset.zero,
+          width: hubSize * 1.3,
+          height: hubSize * 1.3,
+        ),
+        mainPaint,
+      );
       canvas.restore();
     } else {
-      canvas.drawCircle(center, hubSize * 0.8, mainPaint);
+      canvas.drawCircle(center, hubSize * 0.9, mainPaint);
     }
 
     final strokePaint = Paint()
       ..color = Colors.white.withAlpha(200)
       ..style = PaintingStyle.stroke
-      ..strokeWidth = 1.0;
+      ..strokeWidth = tier == 1 ? 1.5 : 1.0;
 
-    if (isMajor) {
+    if (tier == 1) {
       canvas.save();
       canvas.translate(center.dx, center.dy);
       canvas.rotate(0.785398);
-      canvas.drawRect(Rect.fromCenter(center: Offset.zero, width: hubSize * 1.2, height: hubSize * 1.2), strokePaint);
+      canvas.drawRect(
+        Rect.fromCenter(
+          center: Offset.zero,
+          width: hubSize * 1.3,
+          height: hubSize * 1.3,
+        ),
+        strokePaint,
+      );
       canvas.restore();
     } else {
-      canvas.drawCircle(center, hubSize * 0.8, strokePaint);
+      canvas.drawCircle(center, hubSize * 0.9, strokePaint);
     }
   }
 
   double _getHubSize() {
-    switch (type) {
-      case HubType.special: return 11;
-      case HubType.metropolitan: return 9;
-      case HubType.provincial: return 8;
-      case HubType.city: return 6;
-      case HubType.district:
-      case HubType.county: return 4;
-    }
+    final tier = _getTier();
+    if (tier == 1) return 12;
+    if (tier == 2) return 8;
+    return 5;
   }
 
   Color _getHubColor() {
-    switch (type) {
-      case HubType.special: return GameConstants.colorAccent;
-      case HubType.metropolitan: return Colors.amber;
-      case HubType.provincial: return Colors.orangeAccent;
-      case HubType.city: return Colors.lightGreenAccent;
-      case HubType.district: return Colors.cyanAccent;
-      case HubType.county: return Colors.tealAccent;
-    }
+    final tier = _getTier();
+    if (tier == 1) return GameConstants.colorAccent;
+    if (tier == 2) return Colors.amber;
+    return Colors.cyanAccent;
   }
 }
