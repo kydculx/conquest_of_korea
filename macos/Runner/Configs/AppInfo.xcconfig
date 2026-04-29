@@ -8,7 +8,7 @@
 PRODUCT_NAME = conquest_mobile
 
 // The application's bundle identifier
-PRODUCT_BUNDLE_IDENTIFIER = com.example.conquestMobile
+PRODUCT_BUNDLE_IDENTIFIER = com.watercherry.conquestofkorea
 
 // The copyright displayed in application information
-PRODUCT_COPYRIGHT = Copyright © 2026 com.example. All rights reserved.
+PRODUCT_COPYRIGHT = Copyright © 2026 com.watercherry. All rights reserved.

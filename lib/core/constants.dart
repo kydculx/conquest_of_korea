@@ -9,6 +9,18 @@ class GameConstants {
   static const double defaultZoom = 13.0;
   static const double minZoom = 7.0;
   static const double maxZoom = 14.0;
+  static const double focusZoom = 13.0;
+  static const double municipalBoundaryZoomThreshold = 9.5; // 시/군/구 경계 노출 임계값
+
+  // LOD 설정 (줌 퍼센트 기준)
+  static const double lodThresholdTier1 = 30.0;
+  static const double lodThresholdTier2 = 45.0; // 군청이 더 빨리 보이도록 조정
+  static const double lodMinZoom = 7.0;  // 실제 지도 최소 줌에 맞춤
+  static const double lodMaxZoom = 14.0; // 실제 지도 최대 줌에 맞춤
+
+  // 텍스트 라벨 LOD 설정 (줌 퍼센트 기준)
+  static const double textThresholdTier1 = 40.0;
+  static const double textThresholdTier2 = 60.0;
 
   // 헥사곤 설정
   static const double tileSize = 400.0; // 헥사곤 크기 (미터 단위와 유사하게 사용)
@@ -44,40 +56,17 @@ class GameConstants {
   // 맵 스타일 리스트 (방대한 풀 세트)
   static const List<MapStyle> mapStyles = [
     MapStyle(
-      name: '전술 다크',
+      name: '다크',
       url: 'https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png',
       icon: 'dark_mode',
     ),
     MapStyle(
-      name: '보이저',
-      url:
-          'https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png',
-      icon: 'explore',
-    ),
-    MapStyle(
-      name: '포지트론',
-      url: 'https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png',
-      icon: 'brightness_5',
-    ),
-    MapStyle(
-      name: '에스리 위성',
+      name: '위성',
       url:
           'https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}',
       icon: 'public',
     ),
-    MapStyle(
-      name: '에스리 도로',
-      url:
-          'https://server.arcgisonline.com/ArcGIS/rest/services/World_Street_Map/MapServer/tile/{z}/{y}/{x}',
-      icon: 'straighten',
-    ),
-    MapStyle(
-      name: '에스리 지형',
-      url:
-          'https://server.arcgisonline.com/ArcGIS/rest/services/World_Topo_Map/MapServer/tile/{z}/{y}/{x}',
-      icon: 'filter_hdr',
-    ),
-    MapStyle(name: '지도 숨김', url: '', icon: 'layers_clear'),
+    MapStyle(name: '외각', url: '', icon: 'layers_clear'),
   ];
 }
 

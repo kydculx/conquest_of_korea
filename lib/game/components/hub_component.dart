@@ -75,22 +75,20 @@ class HubComponent extends PositionComponent
 
     if (game.mapController == null) return;
 
-    // 줌 레벨을 퍼센트로 환산 (최소 6 ~ 최대 18 기준)
+    // 줌 레벨을 퍼센트로 환산 (설정된 LOD 줌 범위 기준)
     final currentZoom = game.mapController!.camera.zoom;
-    const minZ = 6.0;
-    const maxZ = 18.0;
-    final zoomPercent = ((currentZoom - minZ) / (maxZ - minZ) * 100).clamp(
-      0,
-      100,
-    );
+    final zoomPercent = ((currentZoom - GameConstants.lodMinZoom) /
+            (GameConstants.lodMaxZoom - GameConstants.lodMinZoom) *
+            100)
+        .clamp(0, 100);
 
     final tier = _getTier();
 
     // 사용자 요청 기반 3단계 LOD 로직
-    if (zoomPercent < 30) {
+    if (zoomPercent < GameConstants.lodThresholdTier1) {
       // 1단계만 표시
       _shouldRender = (tier == 1);
-    } else if (zoomPercent < 40) {
+    } else if (zoomPercent < GameConstants.lodThresholdTier2) {
       // 1, 2단계 표시
       _shouldRender = (tier <= 2);
     } else {
@@ -100,9 +98,9 @@ class HubComponent extends PositionComponent
 
     // 텍스트 라벨 가시성 (성능을 위해 줌에 따라 제어)
     if (_shouldRender) {
-      if (zoomPercent < 40) {
+      if (zoomPercent < GameConstants.textThresholdTier1) {
         _textLabel.scale = Vector2.all(tier == 1 ? 1.0 : 0.0);
-      } else if (zoomPercent < 60) {
+      } else if (zoomPercent < GameConstants.textThresholdTier2) {
         _textLabel.scale = Vector2.all(tier <= 2 ? 1.0 : 0.0);
       } else {
         _textLabel.scale = Vector2.all(1.0);

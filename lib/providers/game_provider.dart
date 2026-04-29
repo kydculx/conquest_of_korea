@@ -36,7 +36,8 @@ class GameProvider extends ChangeNotifier {
   bool get isInitialized => _isInitialized;
   bool get isAutoCapture => _isAutoCapture;
   int get currentMapStyleIndex => _currentMapStyleIndex;
-  MapStyle get currentMapStyle => GameConstants.mapStyles[_currentMapStyleIndex];
+  MapStyle get currentMapStyle =>
+      GameConstants.mapStyles[_currentMapStyleIndex];
   bool get showMap => currentMapStyle.url.isNotEmpty;
 
   String? get capturingTileId => _captureController.capturingTileId;
@@ -46,7 +47,8 @@ class GameProvider extends ChangeNotifier {
 
   bool get canCapture {
     final loc = _locationProvider;
-    if (loc == null || !loc.isGpsActive || loc.currentLocation == null) return false;
+    if (loc == null || !loc.isGpsActive || loc.currentLocation == null)
+      return false;
     if (_selectedTeam == null) return false;
     final hex = HexService.latLngToHex(loc.currentLocation!);
     final tileId = 'hex_${hex['q']}_${hex['r']}';
@@ -150,7 +152,8 @@ class GameProvider extends ChangeNotifier {
   }
 
   void cycleMapStyle() {
-    _currentMapStyleIndex = (_currentMapStyleIndex + 1) % GameConstants.mapStyles.length;
+    _currentMapStyleIndex =
+        (_currentMapStyleIndex + 1) % GameConstants.mapStyles.length;
     notifyListeners();
   }
 

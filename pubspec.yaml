@@ -71,6 +71,7 @@ flutter:
 
   assets:
     - .env
+    - assets/data/
     
   # To add assets to your application, add an assets section, like this:
   #   - images/a_dot_burr.jpeg
