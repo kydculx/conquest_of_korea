@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_map/flutter_map.dart';
@@ -29,7 +30,7 @@ class _GameMapWidgetState extends State<GameMapWidget>
   final MapController _mapController = MapController();
   bool _isFollowing = true;
   double _currentZoom = GameConstants.defaultZoom;
-  
+
   // 2023-07 최신 경계선 데이터
   List<Polyline> _boundaryPolylines = [];
   List<Polyline> _sidoPolylines = [];
@@ -41,86 +42,55 @@ class _GameMapWidgetState extends State<GameMapWidget>
     _loadAllBoundaries();
   }
 
+  @override
+  void didUpdateWidget(GameMapWidget oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    // 위치가 갱신되었고 '내 위치 추적' 모드라면 지도를 이동시킴
+    if (_isFollowing && widget.initialLocation != oldWidget.initialLocation) {
+      _animatedMapMove(widget.initialLocation, _currentZoom);
+    }
+  }
+
   Future<void> _loadAllBoundaries() async {
-    await Future.wait([
-      _loadBoundary('assets/data/korea_outline_2023.json', isOutline: true),
-      _loadBoundary('assets/data/korea_sido_2023.json', isOutline: false),
-    ]);
+    // 부하 분산을 위해 순차적으로 로드
+    await _loadBoundary('assets/data/korea_outline_2023.json', isOutline: true);
+    await _loadBoundary('assets/data/korea_sido_2023.json', isOutline: false);
+
     if (mounted) {
       setState(() => _isLoadingBoundaries = false);
     }
   }
 
   /// 공통 GeoJSON 로드 로직
-  Future<void> _loadBoundary(String assetPath, {required bool isOutline}) async {
+  Future<void> _loadBoundary(
+    String assetPath, {
+    required bool isOutline,
+  }) async {
     try {
       final String jsonString = await rootBundle.loadString(assetPath);
-      final data = json.decode(jsonString);
-      
-      List<Polyline> polylines = [];
-      List<dynamic> geometries = [];
 
-      if (data['type'] == 'FeatureCollection' && data['features'] != null) {
-        for (var feature in data['features']) {
-          if (feature['geometry'] != null) {
-            geometries.add(feature['geometry']);
-          }
-        }
-      } else if (data['type'] == 'GeometryCollection' && data['geometries'] != null) {
-        geometries.addAll(data['geometries']);
-      } else if (data['type'] == 'Polygon' || data['type'] == 'MultiPolygon') {
-        geometries.add(data);
-      }
+      // 무거운 파싱 작업은 Isolate에서 수행
+      final List<List<LatLng>> allPoints = await compute(
+        _parseGeoJson,
+        jsonString,
+      );
 
-      final color = isOutline 
+      final color = isOutline
           ? GameConstants.accentNeon.withValues(alpha: 0.8)
           : Colors.white.withValues(alpha: 0.4);
       final strokeWidth = isOutline ? 1.5 : 0.8;
 
-      for (var geometry in geometries) {
-        String type = geometry['type'];
-        var coordinates = geometry['coordinates'];
-
-        if (type == 'Polygon') {
-          for (var ring in coordinates) {
-            List<LatLng> points = [];
-            for (var coord in ring) {
-              points.add(LatLng(coord[1].toDouble(), coord[0].toDouble()));
-            }
-            if (points.isNotEmpty) {
-              polylines.add(
-                Polyline(
-                  points: points,
-                  color: color,
-                  strokeWidth: strokeWidth,
-                  strokeCap: StrokeCap.round,
-                  strokeJoin: StrokeJoin.round,
-                ),
-              );
-            }
-          }
-        } else if (type == 'MultiPolygon') {
-          for (var polygon in coordinates) {
-            for (var ring in polygon) {
-              List<LatLng> points = [];
-              for (var coord in ring) {
-                points.add(LatLng(coord[1].toDouble(), coord[0].toDouble()));
-              }
-              if (points.isNotEmpty) {
-                polylines.add(
-                  Polyline(
-                    points: points,
-                    color: color,
-                    strokeWidth: strokeWidth,
-                    strokeCap: StrokeCap.round,
-                    strokeJoin: StrokeJoin.round,
-                  ),
-                );
-              }
-            }
-          }
-        }
-      }
+      final polylines = allPoints
+          .map(
+            (points) => Polyline(
+              points: points,
+              color: color,
+              strokeWidth: strokeWidth,
+              strokeCap: StrokeCap.round,
+              strokeJoin: StrokeJoin.round,
+            ),
+          )
+          .toList();
 
       if (mounted) {
         setState(() {
@@ -139,20 +109,30 @@ class _GameMapWidgetState extends State<GameMapWidget>
 
   void _animatedMapMove(LatLng destLocation, double destZoom) {
     final latTween = Tween<double>(
-        begin: _mapController.camera.center.latitude,
-        end: destLocation.latitude);
+      begin: _mapController.camera.center.latitude,
+      end: destLocation.latitude,
+    );
     final lngTween = Tween<double>(
-        begin: _mapController.camera.center.longitude,
-        end: destLocation.longitude);
+      begin: _mapController.camera.center.longitude,
+      end: destLocation.longitude,
+    );
     final zoomTween = Tween<double>(
-        begin: _mapController.camera.zoom, end: destZoom);
-    final rotationTween =
-        Tween<double>(begin: _mapController.camera.rotation, end: 0.0);
+      begin: _mapController.camera.zoom,
+      end: destZoom,
+    );
+    final rotationTween = Tween<double>(
+      begin: _mapController.camera.rotation,
+      end: 0.0,
+    );
 
     final controller = AnimationController(
-        duration: const Duration(milliseconds: 800), vsync: this);
-    final animation =
-        CurvedAnimation(parent: controller, curve: Curves.fastOutSlowIn);
+      duration: const Duration(milliseconds: 800),
+      vsync: this,
+    );
+    final animation = CurvedAnimation(
+      parent: controller,
+      curve: Curves.fastOutSlowIn,
+    );
 
     animation.addListener(() {
       _mapController.move(
@@ -197,19 +177,24 @@ class _GameMapWidgetState extends State<GameMapWidget>
               ),
               children: [
                 // 배경 지도 타일
-                if (gameProvider.showMap && gameProvider.currentMapStyle.url.isNotEmpty)
+                if (gameProvider.showMap &&
+                    gameProvider.currentMapStyle.url.isNotEmpty)
                   TileLayer(
                     urlTemplate: gameProvider.currentMapStyle.url,
                     subdomains: const ['a', 'b', 'c', 'd'],
-                    userAgentPackageName: 'com.conquest.mobile',
+                    userAgentPackageName: 'com.watercherry.conquestofkorea',
                   ),
-                
+
                 // 2023-07 최신 시도 내부 경계선
-                if (!_isLoadingBoundaries && _sidoPolylines.isNotEmpty)
+                if (gameProvider.showBoundaries &&
+                    !_isLoadingBoundaries &&
+                    _sidoPolylines.isNotEmpty)
                   PolylineLayer(polylines: _sidoPolylines),
 
                 // 2023-07 최신 한반도 외곽 경계선
-                if (!_isLoadingBoundaries && _boundaryPolylines.isNotEmpty)
+                if (gameProvider.showBoundaries &&
+                    !_isLoadingBoundaries &&
+                    _boundaryPolylines.isNotEmpty)
                   PolylineLayer(polylines: _boundaryPolylines),
               ],
             ),
@@ -222,7 +207,9 @@ class _GameMapWidgetState extends State<GameMapWidget>
             // 로딩 인디케이터
             if (_isLoadingBoundaries)
               const Center(
-                child: CircularProgressIndicator(color: GameConstants.accentNeon),
+                child: CircularProgressIndicator(
+                  color: GameConstants.accentNeon,
+                ),
               ),
 
             // 지도 컨트롤 UI
@@ -232,12 +219,25 @@ class _GameMapWidgetState extends State<GameMapWidget>
               child: Column(
                 children: [
                   _buildMapAction(
-                    icon: _isFollowing ? Icons.my_location : Icons.location_searching,
+                    icon: _isFollowing
+                        ? Icons.my_location
+                        : Icons.location_searching,
                     onPressed: () {
                       setState(() => _isFollowing = true);
-                      _animatedMapMove(widget.initialLocation, GameConstants.defaultZoom);
+                      _animatedMapMove(
+                        widget.initialLocation,
+                        GameConstants.defaultZoom,
+                      );
                     },
                     isActive: _isFollowing,
+                  ),
+                  const SizedBox(height: 8),
+                  _buildMapAction(
+                    icon: gameProvider.showBoundaries
+                        ? Icons.layers
+                        : Icons.layers_clear,
+                    onPressed: () => gameProvider.toggleBoundaries(),
+                    isActive: gameProvider.showBoundaries,
                   ),
                 ],
               ),
@@ -267,4 +267,48 @@ class _GameMapWidgetState extends State<GameMapWidget>
       child: Icon(icon),
     );
   }
+}
+
+/// Isolate에서 실행될 GeoJSON 파서
+List<List<LatLng>> _parseGeoJson(String jsonString) {
+  final data = json.decode(jsonString);
+  List<dynamic> geometries = [];
+  List<List<LatLng>> result = [];
+
+  if (data['type'] == 'FeatureCollection' && data['features'] != null) {
+    for (var feature in data['features']) {
+      if (feature['geometry'] != null) geometries.add(feature['geometry']);
+    }
+  } else if (data['type'] == 'GeometryCollection' &&
+      data['geometries'] != null) {
+    geometries.addAll(data['geometries']);
+  } else {
+    geometries.add(data);
+  }
+
+  for (var geometry in geometries) {
+    String type = geometry['type'];
+    var coordinates = geometry['coordinates'];
+
+    if (type == 'Polygon') {
+      for (var ring in coordinates) {
+        List<LatLng> points = [];
+        for (var coord in ring) {
+          points.add(LatLng(coord[1].toDouble(), coord[0].toDouble()));
+        }
+        if (points.isNotEmpty) result.add(points);
+      }
+    } else if (type == 'MultiPolygon') {
+      for (var polygon in coordinates) {
+        for (var ring in polygon) {
+          List<LatLng> points = [];
+          for (var coord in ring) {
+            points.add(LatLng(coord[1].toDouble(), coord[0].toDouble()));
+          }
+          if (points.isNotEmpty) result.add(points);
+        }
+      }
+    }
+  }
+  return result;
 }

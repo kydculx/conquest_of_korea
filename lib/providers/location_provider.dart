@@ -29,10 +29,14 @@ class LocationProvider extends ChangeNotifier with WidgetsBindingObserver {
 
   /// GeoService 연결 (ProxyProvider에서 호출)
   void setGeoService(GeoService geo) {
+    if (_geoService == geo) return;
     _geoService = geo;
     _locationSubscription?.cancel();
     _locationSubscription = geo.locationStream.listen(_onPositionUpdate);
   }
+
+  final Completer<void> _firstLocationCompleter = Completer<void>();
+  Future<void> get firstLocationFuture => _firstLocationCompleter.future;
 
   void _onPositionUpdate(Position position) {
     final newLocation = LatLng(position.latitude, position.longitude);
@@ -51,6 +55,11 @@ class LocationProvider extends ChangeNotifier with WidgetsBindingObserver {
     _currentLocation = newLocation;
     _currentAccuracy = position.accuracy;
     _isGpsActive = true;
+
+    // 최초 위치 획득 완료
+    if (!_firstLocationCompleter.isCompleted) {
+      _firstLocationCompleter.complete();
+    }
 
     // 10초간 업데이트 없으면 GPS 신호 유실로 판단
     _gpsSignalTimer?.cancel();

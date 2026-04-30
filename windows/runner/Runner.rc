@@ -95,7 +95,7 @@ BEGIN
             VALUE "InternalName", "conquest_mobile" "\0"
             VALUE "LegalCopyright", "Copyright (C) 2026 com.watercherry. All rights reserved." "\0"
             VALUE "OriginalFilename", "conquest_mobile.exe" "\0"
-            VALUE "ProductName", "conquest_mobile" "\0"
+            VALUE "ProductName", "한국정복" "\0"
             VALUE "ProductVersion", VERSION_AS_STRING "\0"
         END
     END

@@ -46,3 +46,10 @@ app.*.map.json
 
 # Environments
 .env
+
+# Cache
+.npm_cache/
+
+# Firebase (Sensitive config)
+android/app/google-services.json
+ios/Runner/GoogleService-Info.plist

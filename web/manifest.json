@@ -1,6 +1,6 @@
 {
-    "name": "conquest_mobile",
-    "short_name": "conquest_mobile",
+    "name": "한국정복",
+    "short_name": "한국정복",
     "start_url": ".",
     "display": "standalone",
     "background_color": "#0175C2",

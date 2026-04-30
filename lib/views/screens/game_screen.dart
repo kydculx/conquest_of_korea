@@ -9,6 +9,7 @@ import '../screens/team_selection_screen.dart';
 import '../widgets/alert_widget.dart';
 import '../widgets/game_map_widget.dart';
 import '../widgets/hud_overlay.dart';
+import '../widgets/loading_overlay.dart';
 
 /// 메인 게임 화면
 class GameScreen extends StatefulWidget {
@@ -19,6 +20,8 @@ class GameScreen extends StatefulWidget {
 }
 
 class _GameScreenState extends State<GameScreen> {
+  Future<void>? _initFuture;
+
   @override
   void initState() {
     super.initState();
@@ -28,6 +31,24 @@ class _GameScreenState extends State<GameScreen> {
         if (ok) await geo.startTracking();
       });
     });
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    // 한 번만 초기화하여 FutureBuilder가 매번 초기화되지 않도록 함
+    if (_initFuture == null) {
+      final game = context.read<GameProvider>();
+      final loc = context.read<LocationProvider>();
+      
+      _initFuture = Future.wait([
+        game.initializationFuture,
+        loc.firstLocationFuture,
+      ]).timeout(const Duration(seconds: 10), onTimeout: () {
+        debugPrint('⚠️ 전술 데이터 로딩 시간 초과 - 강제 진입 시도');
+        return [];
+      });
+    }
   }
 
   @override
@@ -55,8 +76,6 @@ class _GameScreenState extends State<GameScreen> {
     if (loc.currentLocation != null) {
       flameGame.updatePlayerLocation(loc.currentLocation!);
       flameGame.updatePlayerHeading(loc.heading);
-      // 위치 변경 시 자동 점령 체크
-      game.onLocationUpdated();
     }
 
     final currentLocation =
@@ -121,6 +140,22 @@ class _GameScreenState extends State<GameScreen> {
                     .toList(),
               ),
             ),
+
+          // 로딩 오버레이 (비동기 처리)
+          FutureBuilder(
+            future: _initFuture,
+            builder: (context, snapshot) {
+              return AnimatedSwitcher(
+                duration: const Duration(milliseconds: 800),
+                transitionBuilder: (child, animation) {
+                  return FadeTransition(opacity: animation, child: child);
+                },
+                child: snapshot.connectionState == ConnectionState.done
+                    ? const SizedBox.shrink()
+                    : const LoadingOverlay(message: '전술 위성 동기화 중...'),
+              );
+            },
+          ),
         ],
       ),
     );

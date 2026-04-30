@@ -3,6 +3,9 @@ import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
 import 'package:wakelock_plus/wakelock_plus.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
+import 'package:firebase_core/firebase_core.dart';
+import 'package:firebase_messaging/firebase_messaging.dart';
+import 'services/notification_service.dart';
 import 'core/theme.dart';
 import 'core/constants.dart';
 import 'game/conquest_game.dart';
@@ -24,6 +27,18 @@ void main() async {
   // Supabase 초기화
   await SupabaseService.initialize();
 
+  // Firebase 초기화
+  try {
+    await Firebase.initializeApp();
+    FirebaseMessaging.onBackgroundMessage(firebaseMessagingBackgroundHandler);
+
+    // 알림 서비스 초기화
+    await NotificationService().initialize();
+    debugPrint('✅ Firebase & Notification 초기화 완료');
+  } catch (e) {
+    debugPrint('⚠️ Firebase 초기화 실패 (알림 기능 제한): $e');
+  }
+
   // 세로 모드 고정
   await SystemChrome.setPreferredOrientations([DeviceOrientation.portraitUp]);
 
@@ -35,7 +50,6 @@ void main() async {
         Provider(create: (_) => SupabaseService()),
 
         // Location Provider — GPS + 나침반 상태
-        ChangeNotifierProvider(create: (_) => LocationProvider()),
         ChangeNotifierProxyProvider<GeoService, LocationProvider>(
           create: (_) => LocationProvider(),
           update: (_, geo, loc) => loc!..setGeoService(geo),
@@ -43,9 +57,12 @@ void main() async {
 
         // Game Provider — 게임 핵심 상태
         ChangeNotifierProxyProvider<LocationProvider, GameProvider>(
-          create: (ctx) =>
-              GameProvider(supabase: ctx.read<SupabaseService>()),
-          update: (_, loc, game) => game!..setLocationProvider(loc),
+          create: (ctx) => GameProvider(supabase: ctx.read<SupabaseService>()),
+          update: (_, loc, game) {
+            game!.setLocationProvider(loc);
+            game.onLocationUpdated(); // 위치 변경 시 자동으로 게임 로직 실행
+            return game;
+          },
         ),
 
         // Flame 게임 엔진 인스턴스

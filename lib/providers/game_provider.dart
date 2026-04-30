@@ -7,6 +7,7 @@ import '../models/tile_model.dart';
 import '../providers/location_provider.dart';
 import '../services/hex_service.dart';
 import '../services/supabase_service.dart';
+import '../services/notification_service.dart';
 import '../core/constants.dart';
 
 /// 게임 핵심 상태 관리 Provider
@@ -16,6 +17,7 @@ class GameProvider extends ChangeNotifier {
   final SupabaseService _supabase;
   late final CaptureController _captureController;
   StreamSubscription<List<HexTile>>? _tilesStreamSub;
+  final Completer<void> _initCompleter = Completer<void>();
 
   // --- 상태 ---
   TileOwner? _selectedTeam;
@@ -24,6 +26,7 @@ class GameProvider extends ChangeNotifier {
   final List<GameAlert> _alerts = [];
   bool _isInitialized = false;
   bool _isAutoCapture = false;
+  bool _showBoundaries = true;
   int _currentMapStyleIndex = 0;
 
   // LocationProvider 참조
@@ -35,6 +38,7 @@ class GameProvider extends ChangeNotifier {
   List<GameAlert> get alerts => List.unmodifiable(_alerts);
   bool get isInitialized => _isInitialized;
   bool get isAutoCapture => _isAutoCapture;
+  bool get showBoundaries => _showBoundaries;
   int get currentMapStyleIndex => _currentMapStyleIndex;
   MapStyle get currentMapStyle =>
       GameConstants.mapStyles[_currentMapStyleIndex];
@@ -47,8 +51,9 @@ class GameProvider extends ChangeNotifier {
 
   bool get canCapture {
     final loc = _locationProvider;
-    if (loc == null || !loc.isGpsActive || loc.currentLocation == null)
+    if (loc == null || !loc.isGpsActive || loc.currentLocation == null) {
       return false;
+    }
     if (_selectedTeam == null) return false;
     final hex = HexService.latLngToHex(loc.currentLocation!);
     final tileId = 'hex_${hex['q']}_${hex['r']}';
@@ -61,6 +66,12 @@ class GameProvider extends ChangeNotifier {
       onAlert: addAlert,
       onTileCaptured: (id, tile) {
         _capturedTiles[id] = tile;
+        // [테스트용] 즉각적인 로컬 알림 발송 (서버 없이 테스트)
+        NotificationService().showLocalNotification(
+          id: id.hashCode,
+          title: '🚩 영토 점령 성공!',
+          body: '${tile.id} 지역을 우리 팀의 영토로 만들었습니다!',
+        );
         notifyListeners();
       },
       onStateChanged: notifyListeners,
@@ -71,6 +82,8 @@ class GameProvider extends ChangeNotifier {
   void setLocationProvider(LocationProvider loc) {
     _locationProvider = loc;
   }
+
+  Future<void> get initializationFuture => _initCompleter.future;
 
   Future<void> _init() async {
     try {
@@ -83,6 +96,7 @@ class GameProvider extends ChangeNotifier {
       debugPrint('초기 데이터 로드 실패: $e');
     } finally {
       _isInitialized = true;
+      if (!_initCompleter.isCompleted) _initCompleter.complete();
       notifyListeners();
     }
     _tilesStreamSub = _supabase.capturedTilesStream.listen(_onTilesUpdated);
@@ -157,11 +171,30 @@ class GameProvider extends ChangeNotifier {
     notifyListeners();
   }
 
+  void toggleBoundaries() {
+    _showBoundaries = !_showBoundaries;
+    notifyListeners();
+  }
+
   Future<void> setSelectedTeam(TileOwner team) async {
+    final oldTeam = _selectedTeam;
     _selectedTeam = team;
+
+    // FCM 토픽 구독 관리
+    if (oldTeam != null && oldTeam != TileOwner.none) {
+      await NotificationService().unsubscribeFromTopic('team_${oldTeam.id}');
+    }
+    if (team != TileOwner.none) {
+      await NotificationService().subscribeToTopic('team_${team.id}');
+      await NotificationService().subscribeToTopic('all_players');
+    }
+
     final prefs = await SharedPreferences.getInstance();
     await prefs.setString(_teamKey, team.id);
     notifyListeners();
+    
+    // 팀 선택 직후 즉시 위치 업데이트 로직 트리거
+    onLocationUpdated();
   }
 
   void addAlert(String message, AlertType type) {
