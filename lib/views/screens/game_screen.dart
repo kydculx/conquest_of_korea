@@ -43,8 +43,9 @@ class _GameScreenState extends State<GameScreen> {
       
       _initFuture = Future.wait([
         game.initializationFuture,
-        loc.firstLocationFuture,
-      ]).timeout(const Duration(seconds: 10), onTimeout: () {
+        // GPS 수신을 무작정 기다리면 로딩이 지연되므로 최대 2초만 대기
+        loc.firstLocationFuture.timeout(const Duration(seconds: 2), onTimeout: () {}),
+      ]).timeout(const Duration(seconds: 5), onTimeout: () {
         debugPrint('⚠️ 전술 데이터 로딩 시간 초과 - 강제 진입 시도');
         return [];
       });

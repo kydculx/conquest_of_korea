@@ -12,6 +12,10 @@ class GameConstants {
   static const double focusZoom = 13.0;
   static const double municipalBoundaryZoomThreshold = 9.5; // 시/군/구 경계 노출 임계값
 
+  // 맵 이동 제한 구역 (남한 영토 기준 + Margin)
+  static const LatLng mapBoundSouthWest = LatLng(32.000000, 123.500000);
+  static const LatLng mapBoundNorthEast = LatLng(39.500000, 133.000000);
+
   // LOD 설정 (줌 퍼센트 기준)
   static const double lodThresholdTier1 = 30.0;
   static const double lodThresholdTier2 = 45.0; // 군청이 더 빨리 보이도록 조정

@@ -166,6 +166,18 @@ class _GameMapWidgetState extends State<GameMapWidget>
                 initialZoom: GameConstants.defaultZoom,
                 minZoom: GameConstants.minZoom,
                 maxZoom: GameConstants.maxZoom,
+                // 남한 영토 기준 + 여유 공간(Margin)을 두어 러프하게 바운더리 제한 (GameConstants 외부 변수 참조)
+                // contain 대신 containCenter를 사용하여 줌 아웃 시 화면이 바운더리보다 커져서 크래시나는 현상 방지
+                cameraConstraint: CameraConstraint.containCenter(
+                  bounds: LatLngBounds(
+                    GameConstants.mapBoundSouthWest, // 남서 (마라도/백령도보다 더 넓게)
+                    GameConstants.mapBoundNorthEast, // 북동 (고성/독도보다 더 넓게)
+                  ),
+                ),
+                // 맵 회전(Rotation) 제스처 비활성화
+                interactionOptions: const InteractionOptions(
+                  flags: InteractiveFlag.all & ~InteractiveFlag.rotate,
+                ),
                 backgroundColor: Colors.transparent,
                 onPositionChanged: (position, hasGesture) {
                   if (hasGesture) setState(() => _isFollowing = false);
@@ -238,6 +250,14 @@ class _GameMapWidgetState extends State<GameMapWidget>
                         : Icons.layers_clear,
                     onPressed: () => gameProvider.toggleBoundaries(),
                     isActive: gameProvider.showBoundaries,
+                  ),
+                  const SizedBox(height: 8),
+                  _buildMapAction(
+                    icon: gameProvider.isNotificationEnabled
+                        ? Icons.notifications_active
+                        : Icons.notifications_off,
+                    onPressed: () => gameProvider.toggleNotifications(),
+                    isActive: gameProvider.isNotificationEnabled,
                   ),
                 ],
               ),
