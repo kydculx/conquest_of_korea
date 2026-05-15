@@ -9,7 +9,7 @@ class TacticalTheme {
       primaryColor: GameConstants.accentNeon,
       colorScheme: const ColorScheme.dark(
         primary: GameConstants.accentNeon,
-        secondary: GameConstants.teamBlue,
+        secondary: GameConstants.accentNeon,
         surface: GameConstants.tacticalGray,
       ),
       textTheme: const TextTheme(
@@ -26,5 +26,17 @@ class TacticalTheme {
         centerTitle: true,
       ),
     );
+  }
+
+  /// HEX 문자열을 Color 객체로 변환
+  static Color parseColor(String hex) {
+    try {
+      final buffer = StringBuffer();
+      if (hex.length == 6 || hex.length == 7) buffer.write('ff');
+      buffer.write(hex.replaceFirst('#', ''));
+      return Color(int.parse(buffer.toString(), radix: 16));
+    } catch (e) {
+      return Colors.white;
+    }
   }
 }

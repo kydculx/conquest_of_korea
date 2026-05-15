@@ -1,18 +1,35 @@
 import 'dart:ui' as ui;
+import 'dart:math' as math;
 import 'package:flame/components.dart';
 import 'package:flutter/material.dart';
 import 'package:latlong2/latlong.dart';
 import '../../core/constants.dart';
 
+/// 플레이어의 현재 위치와 방향을 나타내는 전술 커서 컴포넌트
 class PlayerComponent extends PositionComponent {
   LatLng _location = GameConstants.defaultPosition;
   LatLng get location => _location;
   double _heading = 0.0; // 라디안 단위
+  
+  // 가독성 개선을 위한 애니메이션 변수
+  double _pulseTime = 0;
+  double _pulseScale = 1.0;
+
+  PlayerComponent() : super(anchor: Anchor.center);
 
   @override
   Future<void> onLoad() async {
-    size = Vector2(40, 40); // 가시성을 위해 크기 약간 키움
+    // 크기는 기존대로 유지 (40x40)
+    size = Vector2(40, 40);
     anchor = Anchor.center;
+  }
+
+  @override
+  void update(double dt) {
+    super.update(dt);
+    // 펄스 애니메이션: 커서가 미세하게 커졌다 작아지며 시선을 끎
+    _pulseTime += dt * 3;
+    _pulseScale = 1.0 + (math.sin(_pulseTime) * 0.08);
   }
 
   void updateLocation(LatLng newLocation) {
@@ -20,8 +37,8 @@ class PlayerComponent extends PositionComponent {
   }
 
   void updateHeading(double degrees) {
-    // 도(degree)를 라디안(radian)으로 변환 (북쪽이 0도 기준)
-    _heading = degrees * (3.14159 / 180.0);
+    // 도(degree)를 라디안(radian)으로 변환
+    _heading = degrees * (math.pi / 180.0);
   }
 
   void updateScreenPosition(Offset offset) {
@@ -31,58 +48,70 @@ class PlayerComponent extends PositionComponent {
   @override
   void render(Canvas canvas) {
     final center = Offset(size.x / 2, size.y / 2);
-    
-    // 0. 방향지시 부채꼴 (Heading Beam)
-    final beamPaint = Paint()
-      ..shader = RadialGradient(
-        colors: [
-          GameConstants.accentNeon.withAlpha(150),
-          GameConstants.accentNeon.withAlpha(0),
-        ],
-        stops: const [0.2, 1.0],
-      ).createShader(Rect.fromCircle(center: center, radius: size.x * 2))
-      ..style = PaintingStyle.fill;
+    final baseRadius = size.x * 0.35;
+    final radius = baseRadius * _pulseScale;
 
-    // 부채꼴 그리기 (현재 heading 기준 좌우 20도씩 총 40도 범위)
-    // 캔버스 회전 적용
     canvas.save();
     canvas.translate(center.dx, center.dy);
     canvas.rotate(_heading);
     canvas.translate(-center.dx, -center.dy);
-    
-    final ui.Path beamPath = ui.Path()
-      ..moveTo(center.dx, center.dy)
-      ..relativeLineTo(-size.x * 0.8, -size.x * 2.5) // 왼쪽 끝
-      ..relativeLineTo(size.x * 1.6, 0) // 오른쪽 끝
+
+    // 화살표 경로 정의 (날렵한 전술 화살표 모양)
+    final arrowPath = ui.Path()
+      ..moveTo(center.dx, center.dy - radius * 1.1) // 앞쪽 끝
+      ..lineTo(center.dx - radius * 0.8, center.dy + radius * 0.9) // 좌측 하단
+      ..lineTo(center.dx, center.dy + radius * 0.5) // 중앙 홈
+      ..lineTo(center.dx + radius * 0.8, center.dy + radius * 0.9) // 우측 하단
       ..close();
-    
-    canvas.drawPath(beamPath, beamPaint);
+
+    // 1. 강한 바닥 그림자 (지도와 분리감 생성)
+    canvas.drawPath(
+      arrowPath,
+      Paint()
+        ..color = Colors.black.withAlpha(180)
+        ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 8),
+    );
+
+    // 2. 네온 글로우 (가독성 핵심)
+    canvas.drawPath(
+      arrowPath,
+      Paint()
+        ..color = GameConstants.accentNeon.withAlpha(100)
+        ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 12),
+    );
+
+    // 3. 본체 그라데이션 (화이트 -> 네온)
+    canvas.drawPath(
+      arrowPath,
+      Paint()
+        ..shader = ui.Gradient.linear(
+          Offset(center.dx, center.dy - radius),
+          Offset(center.dx, center.dy + radius),
+          [Colors.white, GameConstants.accentNeon],
+        )
+        ..style = PaintingStyle.fill,
+    );
+
+    // 4. 선명한 화이트 외곽선 (가장자리 가독성)
+    canvas.drawPath(
+      arrowPath,
+      Paint()
+        ..color = Colors.white.withAlpha(220)
+        ..style = PaintingStyle.stroke
+        ..strokeWidth = 2.5
+        ..strokeJoin = StrokeJoin.round,
+    );
+
+    // 5. 내부 전술 라인 (디테일)
+    canvas.drawLine(
+      Offset(center.dx, center.dy - radius * 0.6),
+      Offset(center.dx, center.dy + radius * 0.3),
+      Paint()
+        ..color = Colors.black.withAlpha(60)
+        ..style = PaintingStyle.stroke
+        ..strokeWidth = 1.2,
+    );
+
     canvas.restore();
-
-    // 1. 외부 글로우 (바깥쪽으로 퍼지는 효과)
-    final glowPaint = Paint()
-      ..color = GameConstants.accentNeon.withAlpha(60)
-      ..style = PaintingStyle.fill
-      ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 8);
-    canvas.drawCircle(center, size.x * 0.6, glowPaint);
-
-    // 2. 메인 펄스 원
-    final pulsePaint = Paint()
-      ..color = GameConstants.accentNeon.withAlpha(100)
-      ..style = PaintingStyle.fill;
-    canvas.drawCircle(center, size.x * 0.3, pulsePaint);
-
-    // 3. 중심점 (Core)
-    final corePaint = Paint()
-      ..color = Colors.white
-      ..style = PaintingStyle.fill;
-    canvas.drawCircle(center, size.x * 0.1, corePaint);
-    
-    // 4. 전술적 테두리 (Radar Line)
-    final strokePaint = Paint()
-      ..color = Colors.white
-      ..style = PaintingStyle.stroke
-      ..strokeWidth = 1.5;
-    canvas.drawCircle(center, size.x * 0.3, strokePaint);
   }
 }

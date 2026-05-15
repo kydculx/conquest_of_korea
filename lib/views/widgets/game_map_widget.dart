@@ -251,14 +251,6 @@ class _GameMapWidgetState extends State<GameMapWidget>
                     onPressed: () => gameProvider.toggleBoundaries(),
                     isActive: gameProvider.showBoundaries,
                   ),
-                  const SizedBox(height: 8),
-                  _buildMapAction(
-                    icon: gameProvider.isNotificationEnabled
-                        ? Icons.notifications_active
-                        : Icons.notifications_off,
-                    onPressed: () => gameProvider.toggleNotifications(),
-                    isActive: gameProvider.isNotificationEnabled,
-                  ),
                 ],
               ),
             ),

@@ -3,13 +3,15 @@ import 'package:provider/provider.dart';
 import '../../core/constants.dart';
 import '../../game/conquest_game.dart';
 import '../../providers/game_provider.dart';
+import '../../providers/auth_provider.dart';
 import '../../providers/location_provider.dart';
 import '../../services/geo_service.dart';
-import '../screens/team_selection_screen.dart';
+import '../screens/auth/social_profile_setup_screen.dart';
 import '../widgets/alert_widget.dart';
 import '../widgets/game_map_widget.dart';
 import '../widgets/hud_overlay.dart';
 import '../widgets/loading_overlay.dart';
+import '../../models/tile_model.dart';
 
 /// 메인 게임 화면
 class GameScreen extends StatefulWidget {
@@ -39,37 +41,45 @@ class _GameScreenState extends State<GameScreen> {
     // 한 번만 초기화하여 FutureBuilder가 매번 초기화되지 않도록 함
     if (_initFuture == null) {
       final game = context.read<GameProvider>();
-      final loc = context.read<LocationProvider>();
-      
-      _initFuture = Future.wait([
-        game.initializationFuture,
-        // GPS 수신을 무작정 기다리면 로딩이 지연되므로 최대 2초만 대기
-        loc.firstLocationFuture.timeout(const Duration(seconds: 2), onTimeout: () {}),
-      ]).timeout(const Duration(seconds: 5), onTimeout: () {
-        debugPrint('⚠️ 전술 데이터 로딩 시간 초과 - 강제 진입 시도');
-        return [];
-      });
+
+      _initFuture = game.initializationFuture.timeout(
+        const Duration(seconds: 5),
+        onTimeout: () {
+          debugPrint('⚠️ 전술 데이터 로딩 시간 초과 - 강제 진입 시도');
+        },
+      );
     }
   }
 
   @override
   Widget build(BuildContext context) {
     final game = context.watch<GameProvider>();
-
-    // 팀 미선택 시 팀 선택 화면
-    if (game.selectedTeam == null) {
-      return const TeamSelectionScreen();
-    }
-
+    final auth = context.watch<AuthProvider>();
     final flameGame = context.read<ConquestGame>();
     final loc = context.watch<LocationProvider>();
 
+    // 인증은 되었으나 프로필 정보가 없는 경우 (SNS 최초 로그인 등) 설정 화면으로 리다이렉트
+    if (auth.isAuthenticated && auth.profile == null && !auth.isLoading) {
+      return const SocialProfileSetupScreen();
+    }
+
+    // 현재 사용자의 최신 색상을 자신의 타일에 즉시 반영 (데이터베이스 동기화 전에도 즉각 응답)
+    final currentTiles = Map<String, HexTile>.from(game.capturedTiles);
+    if (auth.profile != null) {
+      currentTiles.updateAll((id, tile) {
+        if (tile.userId == auth.user?.id) {
+          return tile.copyWith(colorHex: auth.profile!.colorHex);
+        }
+        return tile;
+      });
+    }
+
     // Flame 엔진에 최신 상태 전달
     flameGame.updateCapturedTiles(
-      capturedTiles: game.capturedTiles,
+      capturedTiles: currentTiles,
       capturingTileId: game.capturingTileId,
       captureProgress: game.captureProgress,
-      capturingTeam: game.selectedTeam,
+      capturingColorHex: auth.profile?.colorHex,
       currentLocation: loc.currentLocation,
     );
 
@@ -87,44 +97,7 @@ class _GameScreenState extends State<GameScreen> {
       body: Stack(
         children: [
           // 지도 + Flame 레이어
-          GameMapWidget(
-            initialLocation: currentLocation,
-            game: flameGame,
-          ),
-
-          // GPS 신호 없음 배너
-          if (!loc.isGpsActive)
-            Positioned(
-              top: 100,
-              left: 0,
-              right: 0,
-              child: Center(
-                child: Container(
-                  padding: const EdgeInsets.symmetric(
-                      horizontal: 16, vertical: 8),
-                  decoration: BoxDecoration(
-                    color: Colors.red.withAlpha(200),
-                    borderRadius: BorderRadius.circular(20),
-                    boxShadow: const [
-                      BoxShadow(color: Colors.black26, blurRadius: 10)
-                    ],
-                  ),
-                  child: const Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Icon(Icons.location_off,
-                          color: Colors.white, size: 16),
-                      SizedBox(width: 8),
-                      Text('GPS 신호 없음 - 점령 불가',
-                          style: TextStyle(
-                              color: Colors.white,
-                              fontSize: 13,
-                              fontWeight: FontWeight.bold)),
-                    ],
-                  ),
-                ),
-              ),
-            ),
+          GameMapWidget(initialLocation: currentLocation, game: flameGame),
 
           // HUD 레이어
           const HudOverlay(),

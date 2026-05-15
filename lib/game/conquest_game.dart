@@ -8,6 +8,8 @@ import 'components/hub_component.dart';
 import '../services/hex_service.dart';
 import '../data/hubs_data.dart';
 import '../models/tile_model.dart';
+import '../core/constants.dart';
+import '../core/theme.dart';
 
 /// Flame 게임 엔진 — 거점 마커 및 점령 타일 렌더링 담당
 class ConquestGame extends FlameGame {
@@ -51,7 +53,7 @@ class ConquestGame extends FlameGame {
     required Map<String, HexTile> capturedTiles,
     String? capturingTileId,
     double captureProgress = 0.0,
-    TileOwner? capturingTeam,
+    String? capturingColorHex,
     LatLng? currentLocation,
   }) {
     _lastCapturedTiles = capturedTiles;
@@ -70,10 +72,13 @@ class ConquestGame extends FlameGame {
     capturedTiles.forEach((id, data) {
       final screenCorners = _calcScreenCorners(data.q, data.r);
       if (_tileMap.containsKey(id)) {
-        _tileMap[id]!.updateData(owner: data.owner, corners: screenCorners);
+        _tileMap[id]!.updateData(
+          colorHex: data.colorHex,
+          corners: screenCorners,
+        );
       } else {
         final tile = HexTileComponent(
-          owner: data.owner,
+          colorHex: data.colorHex,
           corners: screenCorners,
         )..priority = 0;
         _tileMap[id] = tile;
@@ -87,17 +92,17 @@ class ConquestGame extends FlameGame {
         _tileMap[capturingTileId]!.updateData(
           isCapturing: true,
           progress: captureProgress,
-          capturingTeam: capturingTeam,
+          capturingColorHex: capturingColorHex,
         );
       } else if (currentLocation != null) {
         final hex = HexService.latLngToHex(currentLocation);
         final screenCorners = _calcScreenCorners(hex['q']!, hex['r']!);
         final tempTile = HexTileComponent(
-          owner: TileOwner.none,
+          colorHex: null,
           corners: screenCorners,
           isCapturing: true,
           progress: captureProgress,
-          capturingTeam: capturingTeam,
+          capturingColorHex: capturingColorHex,
         )..priority = 0;
         _tileMap[capturingTileId] = tempTile;
         add(tempTile);
@@ -125,8 +130,9 @@ class ConquestGame extends FlameGame {
 
     // 허브 위치 갱신
     for (int i = 0; i < tacticalHubs.length && i < _hubComponents.length; i++) {
-      final offset =
-          _mapController!.camera.latLngToScreenOffset(tacticalHubs[i].location);
+      final offset = _mapController!.camera.latLngToScreenOffset(
+        tacticalHubs[i].location,
+      );
       _hubComponents[i].position = Vector2(offset.dx, offset.dy);
     }
 
@@ -155,8 +161,9 @@ class ConquestGame extends FlameGame {
 
   void _updatePlayerScreenPosition() {
     if (_mapController != null) {
-      final offset =
-          _mapController!.camera.latLngToScreenOffset(player.location);
+      final offset = _mapController!.camera.latLngToScreenOffset(
+        player.location,
+      );
       player.updateScreenPosition(Offset(offset.dx, offset.dy));
     }
   }

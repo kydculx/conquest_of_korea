@@ -5,6 +5,7 @@ import '../controllers/capture_controller.dart';
 import '../models/alert_model.dart';
 import '../models/tile_model.dart';
 import '../providers/location_provider.dart';
+import '../providers/auth_provider.dart';
 import '../services/hex_service.dart';
 import '../services/supabase_service.dart';
 import '../services/notification_service.dart';
@@ -12,7 +13,6 @@ import '../core/constants.dart';
 
 /// 게임 핵심 상태 관리 Provider
 class GameProvider extends ChangeNotifier {
-  static const String _teamKey = 'conquest_selected_team';
   static const String _notifKey = 'conquest_notifications_enabled';
 
   final SupabaseService _supabase;
@@ -21,9 +21,7 @@ class GameProvider extends ChangeNotifier {
   final Completer<void> _initCompleter = Completer<void>();
 
   // --- 상태 ---
-  TileOwner? _selectedTeam;
   final Map<String, HexTile> _capturedTiles = {};
-  final Map<String, int> _score = {'blue': 0, 'red': 0};
   final List<GameAlert> _alerts = [];
   bool _isInitialized = false;
   bool _isAutoCapture = false;
@@ -31,11 +29,11 @@ class GameProvider extends ChangeNotifier {
   int _currentMapStyleIndex = 0;
   bool _isNotificationEnabled = true;
 
-  // LocationProvider 참조
+  // 관련 Provider 참조
   LocationProvider? _locationProvider;
+  AuthProvider? _authProvider;
 
   // --- Getters ---
-  TileOwner? get selectedTeam => _selectedTeam;
   Map<String, HexTile> get capturedTiles => Map.unmodifiable(_capturedTiles);
   List<GameAlert> get alerts => List.unmodifiable(_alerts);
   bool get isInitialized => _isInitialized;
@@ -46,21 +44,49 @@ class GameProvider extends ChangeNotifier {
   MapStyle get currentMapStyle =>
       GameConstants.mapStyles[_currentMapStyleIndex];
   bool get showMap => currentMapStyle.url.isNotEmpty;
+  int get myCapturedCount => _authProvider?.user?.id == null
+      ? 0
+      : _capturedTiles.values
+            .where((t) => t.userId == _authProvider!.user!.id)
+            .length;
 
   String? get capturingTileId => _captureController.capturingTileId;
+  String? get capturingColorHex => _captureController.capturingColorHex;
   double get captureProgress => _captureController.captureProgress;
   bool get isCapturing => _captureController.isCapturing;
-  Map<String, int> get score => Map.unmodifiable(_score);
 
   bool get canCapture {
     final loc = _locationProvider;
+    final auth = _authProvider;
+
     if (loc == null || !loc.isGpsActive || loc.currentLocation == null) {
       return false;
     }
-    if (_selectedTeam == null) return false;
+
+    // GPS 오차가 너무 크면 점령 불가
+    if (loc.currentAccuracy > GameConstants.captureAccuracyThreshold) {
+      return false;
+    }
+
+    if (auth == null || !auth.isAuthenticated) {
+      return false;
+    }
+
     final hex = HexService.latLngToHex(loc.currentLocation!);
     final tileId = 'hex_${hex['q']}_${hex['r']}';
-    return _capturedTiles[tileId]?.owner != _selectedTeam;
+
+    // 이미 본인이 점령한 타일이면 점령 불가
+    return !isAlreadyCapturedByMe;
+  }
+
+  bool get isAlreadyCapturedByMe {
+    final loc = _locationProvider;
+    final auth = _authProvider;
+    if (loc?.currentLocation == null || auth?.user == null) return false;
+
+    final hex = HexService.latLngToHex(loc!.currentLocation!);
+    final tileId = 'hex_${hex['q']}_${hex['r']}';
+    return _capturedTiles[tileId]?.userId == auth!.user!.id;
   }
 
   GameProvider({required SupabaseService supabase}) : _supabase = supabase {
@@ -69,12 +95,11 @@ class GameProvider extends ChangeNotifier {
       onAlert: addAlert,
       onTileCaptured: (id, tile) {
         _capturedTiles[id] = tile;
-        // [테스트용] 알림 설정이 켜져 있을 때만 로컬 알림 발송
         if (_isNotificationEnabled) {
           NotificationService().showLocalNotification(
             id: id.hashCode,
             title: '🚩 영토 점령 성공!',
-            body: '${tile.id} 지역을 우리 팀의 영토로 만들었습니다!',
+            body: '새로운 지역을 당신의 영토로 만들었습니다!',
           );
         }
         notifyListeners();
@@ -85,7 +110,17 @@ class GameProvider extends ChangeNotifier {
   }
 
   void setLocationProvider(LocationProvider loc) {
-    _locationProvider = loc;
+    if (_locationProvider != loc) {
+      _locationProvider = loc;
+      notifyListeners();
+    }
+  }
+
+  void setAuthProvider(AuthProvider auth) {
+    if (_authProvider != auth) {
+      _authProvider = auth;
+      notifyListeners();
+    }
   }
 
   Future<void> get initializationFuture => _initCompleter.future;
@@ -99,7 +134,6 @@ class GameProvider extends ChangeNotifier {
       for (final tile in tiles) {
         _capturedTiles[tile.id] = tile;
       }
-      _recalculateScore();
     } catch (e) {
       debugPrint('초기 데이터 로드 실패: $e');
     } finally {
@@ -117,30 +151,21 @@ class GameProvider extends ChangeNotifier {
       changed = true;
     }
     if (changed) {
-      _recalculateScore();
       notifyListeners();
     }
   }
 
-  void _recalculateScore() {
-    int blue = 0, red = 0;
-    for (final tile in _capturedTiles.values) {
-      if (tile.owner == TileOwner.blue) blue++;
-      if (tile.owner == TileOwner.red) red++;
-    }
-    _score['blue'] = blue;
-    _score['red'] = red;
-  }
-
   void onLocationUpdated() {
-    if (!_isInitialized || _selectedTeam == null) return;
+    if (!_isInitialized) return;
     final loc = _locationProvider;
+    final auth = _authProvider;
     if (loc == null || !loc.isGpsActive || loc.currentLocation == null) return;
+    if (auth == null || !auth.isAuthenticated || auth.profile == null) return;
 
     final hex = HexService.latLngToHex(loc.currentLocation!);
     final tileId = 'hex_${hex['q']}_${hex['r']}';
 
-    if (_capturedTiles[tileId]?.owner == _selectedTeam) {
+    if (_capturedTiles[tileId]?.userId == auth.user?.id) {
       _captureController.cancelCapture();
       return;
     }
@@ -149,7 +174,8 @@ class GameProvider extends ChangeNotifier {
       _captureController.startCapture(
         tileId: tileId,
         location: loc.currentLocation!,
-        team: _selectedTeam!,
+        userId: auth.user!.id,
+        colorHex: auth.profile!.colorHex,
         isEnemyTile: _capturedTiles.containsKey(tileId),
       );
     }
@@ -157,13 +183,20 @@ class GameProvider extends ChangeNotifier {
 
   void startManualCapture() {
     final loc = _locationProvider;
-    if (!canCapture || loc?.currentLocation == null) return;
+    final auth = _authProvider;
+    if (!canCapture ||
+        loc?.currentLocation == null ||
+        auth?.user == null ||
+        auth?.profile == null)
+      return;
+
     final hex = HexService.latLngToHex(loc!.currentLocation!);
     final tileId = 'hex_${hex['q']}_${hex['r']}';
     _captureController.startCapture(
       tileId: tileId,
       location: loc.currentLocation!,
-      team: _selectedTeam!,
+      userId: auth!.user!.id,
+      colorHex: auth.profile!.colorHex,
       isEnemyTile: _capturedTiles.containsKey(tileId),
     );
   }
@@ -188,39 +221,7 @@ class GameProvider extends ChangeNotifier {
     _isNotificationEnabled = !_isNotificationEnabled;
     final prefs = await SharedPreferences.getInstance();
     await prefs.setBool(_notifKey, _isNotificationEnabled);
-
-    // FCM 토픽 구독 관리 연동
-    if (_selectedTeam != null && _selectedTeam != TileOwner.none) {
-      if (_isNotificationEnabled) {
-        await NotificationService().subscribeToTopic('team_${_selectedTeam!.id}');
-        await NotificationService().subscribeToTopic('all_players');
-      } else {
-        await NotificationService().unsubscribeFromTopic('team_${_selectedTeam!.id}');
-        await NotificationService().unsubscribeFromTopic('all_players');
-      }
-    }
     notifyListeners();
-  }
-
-  Future<void> setSelectedTeam(TileOwner team) async {
-    final oldTeam = _selectedTeam;
-    _selectedTeam = team;
-
-    // FCM 토픽 구독 관리
-    if (oldTeam != null && oldTeam != TileOwner.none) {
-      await NotificationService().unsubscribeFromTopic('team_${oldTeam.id}');
-    }
-    if (team != TileOwner.none && _isNotificationEnabled) {
-      await NotificationService().subscribeToTopic('team_${team.id}');
-      await NotificationService().subscribeToTopic('all_players');
-    }
-
-    final prefs = await SharedPreferences.getInstance();
-    await prefs.setString(_teamKey, team.id);
-    notifyListeners();
-    
-    // 팀 선택 직후 즉시 위치 업데이트 로직 트리거
-    onLocationUpdated();
   }
 
   void addAlert(String message, AlertType type) {

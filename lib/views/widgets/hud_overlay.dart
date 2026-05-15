@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../../core/constants.dart';
+import '../../core/theme.dart';
 import '../../providers/game_provider.dart';
 import '../../providers/location_provider.dart';
+import '../../providers/auth_provider.dart';
 
 /// 인게임 HUD 오버레이 (점수판, 점령 버튼, 유틸리티 버튼)
 class HudOverlay extends StatelessWidget {
@@ -12,19 +14,20 @@ class HudOverlay extends StatelessWidget {
   Widget build(BuildContext context) {
     final game = context.watch<GameProvider>();
     final loc = context.watch<LocationProvider>();
+    final auth = context.watch<AuthProvider>();
 
     return Stack(
       children: [
-        // 상단 점수판
+        // 상단 우측 로그인/프로필 버튼
         Positioned(
-          top: 50,
-          left: 30,
-          right: 30,
-          child: _ScoreBoard(scores: game.score),
+          top: 60,
+          right: 20,
+          child: _AuthProfileButton(auth: auth),
         ),
 
+
         // 점령 중 안내 텍스트
-        if (game.isCapturing)
+        if (auth.isAuthenticated && game.isCapturing)
           Positioned(
             bottom: 160,
             left: 0,
@@ -46,8 +49,8 @@ class HudOverlay extends StatelessWidget {
             ),
           ),
 
-        // 수동 점령 버튼
-        if (!game.isAutoCapture && !game.isCapturing)
+        // 수동 점령 버튼 (로그인 상태에서만)
+        if (auth.isAuthenticated && !game.isAutoCapture && !game.isCapturing)
           Positioned(
             bottom: 40,
             left: 0,
@@ -70,15 +73,17 @@ class HudOverlay extends StatelessWidget {
               ),
               const SizedBox(height: 12),
               _MapStyleButton(game: game),
-              const SizedBox(height: 12),
-              _UtilButton(
-                label: game.isAutoCapture ? '자동' : '수동',
-                icon: game.isAutoCapture ? Icons.sync : Icons.touch_app,
-                color: game.isAutoCapture
-                    ? GameConstants.accentNeon
-                    : Colors.white54,
-                onTap: () => game.toggleAutoCapture(),
-              ),
+              if (auth.isAuthenticated) ...[
+                const SizedBox(height: 12),
+                _UtilButton(
+                  label: game.isAutoCapture ? '자동' : '수동',
+                  icon: game.isAutoCapture ? Icons.sync : Icons.touch_app,
+                  color: game.isAutoCapture
+                      ? GameConstants.accentNeon
+                      : Colors.white54,
+                  onTap: () => game.toggleAutoCapture(),
+                ),
+              ],
             ],
           ),
         ),
@@ -87,74 +92,47 @@ class HudOverlay extends StatelessWidget {
   }
 }
 
-// --- 내부 위젯 ---
-
-class _ScoreBoard extends StatelessWidget {
-  final Map<String, int> scores;
-  const _ScoreBoard({required this.scores});
+class _AuthProfileButton extends StatelessWidget {
+  final AuthProvider auth;
+  const _AuthProfileButton({required this.auth});
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
-      decoration: BoxDecoration(
-        color: Colors.black.withAlpha(200),
-        borderRadius: BorderRadius.circular(30),
-        border: Border.all(color: Colors.white10),
-        boxShadow: [
-          BoxShadow(color: Colors.black.withAlpha(150), blurRadius: 15)
-        ],
-      ),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          _TeamScore('블루', scores['blue'] ?? 0, GameConstants.teamBlue),
-          const Padding(
-            padding: EdgeInsets.symmetric(horizontal: 16),
-            child: Text('VS',
-                style: TextStyle(
-                    color: Colors.white,
-                    fontSize: 12,
-                    fontWeight: FontWeight.w900)),
+    if (auth.isAuthenticated) {
+      final profile = auth.profile;
+      final color = profile != null ? TacticalTheme.parseColor(profile.colorHex) : Colors.white;
+      
+      return GestureDetector(
+        onTap: () => Navigator.pushNamed(context, '/profile'),
+        child: Container(
+          padding: const EdgeInsets.all(8),
+          decoration: BoxDecoration(
+            color: Colors.black.withAlpha(200),
+            borderRadius: BorderRadius.circular(20),
+            border: Border.all(color: color.withAlpha(100), width: 1.5),
+            boxShadow: [
+              BoxShadow(color: color.withAlpha(50), blurRadius: 10)
+            ],
           ),
-          _TeamScore('레드', scores['red'] ?? 0, GameConstants.teamRed),
-        ],
-      ),
+          child: Icon(
+            Icons.person_rounded,
+            color: color,
+            size: 28,
+          ),
+        ),
+      );
+    }
+
+    return _UtilButton(
+      label: '로그인',
+      icon: Icons.login,
+      color: GameConstants.accentNeon,
+      onTap: () => Navigator.pushNamed(context, '/login'),
     );
   }
 }
 
-class _TeamScore extends StatelessWidget {
-  final String label;
-  final int score;
-  final Color color;
-  const _TeamScore(this.label, this.score, this.color);
-
-  @override
-  Widget build(BuildContext context) {
-    final scoreBox = Container(
-      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 2),
-      decoration: BoxDecoration(
-        color: color.withAlpha(30),
-        borderRadius: BorderRadius.circular(6),
-        border: Border.all(color: color.withAlpha(100)),
-      ),
-      child: Text(score.toString(),
-          style: const TextStyle(
-              color: Colors.white,
-              fontSize: 20,
-              fontWeight: FontWeight.bold,
-              fontFamily: 'monospace')),
-    );
-
-    return Row(
-      mainAxisSize: MainAxisSize.min,
-      children: label == '레드'
-          ? [scoreBox, const SizedBox(width: 8), Text(label, style: TextStyle(color: color.withAlpha(200), fontSize: 14, fontWeight: FontWeight.w900))]
-          : [Text(label, style: TextStyle(color: color.withAlpha(200), fontSize: 14, fontWeight: FontWeight.w900)), const SizedBox(width: 8), scoreBox],
-    );
-  }
-}
+// --- 내부 위젯 ---
 
 class _CaptureButton extends StatelessWidget {
   final GameProvider game;
@@ -169,40 +147,31 @@ class _CaptureButton extends StatelessWidget {
     return Column(
       mainAxisSize: MainAxisSize.min,
       children: [
-        if (loc.isGpsActive)
-          Container(
-            margin: const EdgeInsets.only(bottom: 8),
-            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-            decoration: BoxDecoration(
-              color: Colors.black.withAlpha(150),
-              borderRadius: BorderRadius.circular(12),
-              border: Border.all(
-                color: accuracy > GameConstants.captureAccuracyThreshold
-                    ? Colors.red.withAlpha(150)
-                    : Colors.green.withAlpha(150),
-              ),
-            ),
-            child: Row(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Icon(Icons.gps_fixed,
-                    size: 12,
-                    color: accuracy > GameConstants.captureAccuracyThreshold
-                        ? Colors.red
-                        : Colors.green),
-                const SizedBox(width: 6),
-                Text('오차: ${accuracy.toStringAsFixed(1)}m',
-                    style: TextStyle(
-                        color: accuracy > GameConstants.captureAccuracyThreshold
-                            ? Colors.red
-                            : Colors.green,
-                        fontSize: 11,
-                        fontWeight: FontWeight.bold)),
-              ],
-            ),
-          ),
         GestureDetector(
-          onTap: canCapture ? () => game.startManualCapture() : null,
+          onTap: () {
+            if (canCapture) {
+              game.startManualCapture();
+            } else {
+              final auth = context.read<AuthProvider>();
+              String reason = "점령할 수 없는 상태입니다.";
+              if (!loc.isGpsActive || loc.currentAccuracy > GameConstants.captureAccuracyThreshold) {
+                reason = "위치 정보가 부정확하여 점령할 수 없습니다.";
+              } else if (!auth.isAuthenticated) {
+                reason = "로그인이 필요한 작전입니다.";
+              } else if (game.isAlreadyCapturedByMe) {
+                reason = "이미 당신이 점령한 지역입니다.";
+              }
+              
+              ScaffoldMessenger.of(context).showSnackBar(
+                SnackBar(
+                  content: Text(reason),
+                  backgroundColor: Colors.black87,
+                  behavior: SnackBarBehavior.floating,
+                  duration: const Duration(seconds: 2),
+                )
+              );
+            }
+          },
           child: AnimatedContainer(
             duration: const Duration(milliseconds: 200),
             width: 100,

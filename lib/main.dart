@@ -1,5 +1,7 @@
+import 'package:conquest_mobile/views/screens/game_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:kakao_flutter_sdk_user/kakao_flutter_sdk_user.dart';
 import 'package:provider/provider.dart';
 import 'package:wakelock_plus/wakelock_plus.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
@@ -13,13 +15,23 @@ import 'providers/game_provider.dart';
 import 'providers/location_provider.dart';
 import 'services/geo_service.dart';
 import 'services/supabase_service.dart';
-import 'views/screens/game_screen.dart';
+import 'views/screens/auth/login_screen.dart';
+import 'views/screens/auth/social_profile_setup_screen.dart';
+import 'views/screens/profile_screen.dart';
+import 'providers/auth_provider.dart';
+
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
   // 환경 변수 로드
   await dotenv.load(fileName: ".env");
+
+  // Kakao SDK 초기화
+  final kakaoNativeKey = dotenv.env['KAKAO_NATIVE_APP_KEY'];
+  if (kakaoNativeKey != null) {
+    KakaoSdk.init(nativeAppKey: kakaoNativeKey);
+  }
 
   // 화면 자동 꺼짐 방지
   WakelockPlus.enable();
@@ -49,6 +61,9 @@ void main() async {
         Provider(create: (_) => GeoService()),
         Provider(create: (_) => SupabaseService()),
 
+        // Auth Provider
+        ChangeNotifierProvider(create: (_) => AuthProvider()),
+
         // Location Provider — GPS + 나침반 상태
         ChangeNotifierProxyProvider<GeoService, LocationProvider>(
           create: (_) => LocationProvider(),
@@ -56,10 +71,11 @@ void main() async {
         ),
 
         // Game Provider — 게임 핵심 상태
-        ChangeNotifierProxyProvider<LocationProvider, GameProvider>(
+        ChangeNotifierProxyProvider2<LocationProvider, AuthProvider, GameProvider>(
           create: (ctx) => GameProvider(supabase: ctx.read<SupabaseService>()),
-          update: (_, loc, game) {
+          update: (_, loc, auth, game) {
             game!.setLocationProvider(loc);
+            game.setAuthProvider(auth);
             game.onLocationUpdated(); // 위치 변경 시 자동으로 게임 로직 실행
             return game;
           },
@@ -82,7 +98,20 @@ class _ConquestApp extends StatelessWidget {
       title: GameConstants.appName,
       debugShowCheckedModeBanner: false,
       theme: TacticalTheme.darkTheme,
-      home: const GameScreen(),
+      home: const AuthWrapper(),
+      routes: {
+        '/login': (context) => const LoginScreen(),
+        '/profile': (context) => const ProfileScreen(),
+      },
     );
+  }
+}
+
+class AuthWrapper extends StatelessWidget {
+  const AuthWrapper({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    return const GameScreen();
   }
 }

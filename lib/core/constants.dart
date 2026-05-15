@@ -19,7 +19,7 @@ class GameConstants {
   // LOD 설정 (줌 퍼센트 기준)
   static const double lodThresholdTier1 = 30.0;
   static const double lodThresholdTier2 = 45.0; // 군청이 더 빨리 보이도록 조정
-  static const double lodMinZoom = 7.0;  // 실제 지도 최소 줌에 맞춤
+  static const double lodMinZoom = 7.0; // 실제 지도 최소 줌에 맞춤
   static const double lodMaxZoom = 14.0; // 실제 지도 최대 줌에 맞춤
 
   // 텍스트 라벨 LOD 설정 (줌 퍼센트 기준)
@@ -35,25 +35,16 @@ class GameConstants {
 
   // 게임 설정
   static const Duration emptyTileDuration = Duration(seconds: 10);
-  static const Duration enemyTileDuration = Duration(seconds: 60);
+  static const Duration enemyTileDuration = Duration(seconds: 10);
   static const int updateIntervalMs = 100;
   static const double captureRange = 150.0; // 점령 가능 범위 (m)
-
-  // 팀 설정
-  static const String teamBlueId = 'blue';
-  static const String teamRedId = 'red';
-
-  static const Color colorBlue = Color(0xFF3A8DFF);
-  static const Color colorRed = Color(0xFFFF4757);
-  static const Color colorAccent = Color(0xFF00FFD1);
+  static const double tileOpacity = 0.5; // 점령 구역 투명도 (0.0 ~ 1.0)
 
   // UI 스타일
   static const double hudOpacity = 0.8;
   static const Color accentNeon = Color(0xFF00FFD1);
+  static const Color colorAccent = Color(0xFF00FFD1);
 
-  // Legacy constants (retained for compatibility)
-  static const Color teamBlue = Color(0xFF2196F3);
-  static const Color teamRed = Color(0xFFF44336);
   static const Color tacticalGray = Color(0xFF263238);
   static const Color tacticalBlack = Color(0xFF000000); // 완전한 블랙으로 변경
   static const int captureDurationSeconds = 5;

@@ -1,26 +1,10 @@
-/// 헥사곤 타일 소유 팀 열거형
-enum TileOwner {
-  blue('blue'),
-  red('red'),
-  none('none');
-
-  final String id;
-  const TileOwner(this.id);
-
-  static TileOwner fromString(String? value) {
-    return TileOwner.values.firstWhere(
-      (e) => e.id == value,
-      orElse: () => TileOwner.none,
-    );
-  }
-}
-
 /// 점령된 헥사곤 타일 데이터 모델
 class HexTile {
   final String id;
   final int q;
   final int r;
-  final TileOwner owner;
+  final String? userId;
+  final String? colorHex; // 점령 당시의 색상 혹은 실시간 동기화된 색상
   final List<List<double>> bounds;
   final DateTime capturedAt;
 
@@ -28,7 +12,8 @@ class HexTile {
     required this.id,
     required this.q,
     required this.r,
-    required this.owner,
+    this.userId,
+    this.colorHex,
     required this.bounds,
     required this.capturedAt,
   });
@@ -45,7 +30,8 @@ class HexTile {
       id: json['id'] as String,
       q: json['q'] as int,
       r: json['r'] as int,
-      owner: TileOwner.fromString(json['owner'] as String?),
+      userId: json['user_id'] as String?,
+      colorHex: json['color_hex'] as String?,
       bounds: bounds,
       capturedAt: json['captured_at'] != null
           ? DateTime.parse(json['captured_at'] as String)
@@ -57,18 +43,20 @@ class HexTile {
         'id': id,
         'q': q,
         'r': r,
-        'owner': owner.id,
+        'user_id': userId,
+        'color_hex': colorHex,
         'bounds': bounds,
         'captured_at': capturedAt.toIso8601String(),
         'capture_status': 'captured',
       };
 
-  HexTile copyWith({TileOwner? owner, List<List<double>>? bounds}) {
+  HexTile copyWith({String? userId, String? colorHex, List<List<double>>? bounds}) {
     return HexTile(
       id: id,
       q: q,
       r: r,
-      owner: owner ?? this.owner,
+      userId: userId ?? this.userId,
+      colorHex: colorHex ?? this.colorHex,
       bounds: bounds ?? this.bounds,
       capturedAt: capturedAt,
     );

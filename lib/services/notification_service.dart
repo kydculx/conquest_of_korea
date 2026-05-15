@@ -81,6 +81,9 @@ class NotificationService {
         debugPrint('백그라운드 알림 클릭됨: ${message.data}');
       });
 
+      // 6. 앱 실행 시 배지 카운트 초기화
+      await _clearBadge();
+
       _initialized = true;
     } catch (e) {
       debugPrint('NotificationService 초기화 실패: $e');
@@ -157,6 +160,26 @@ class NotificationService {
       debugPrint('✅ 주제 구독 해제 성공: $topic');
     } catch (e) {
       debugPrint('⚠️ 주제 구독 해제 실패($topic): $e');
+    }
+  }
+
+  /// 앱 아이콘의 배지 카운트 초기화 (0으로 설정)
+  Future<void> _clearBadge() async {
+    try {
+      if (kIsWeb) return;
+
+      // iOS: 아이콘 배지 숫자를 0으로 설정
+      await (_localNotifications
+              .resolvePlatformSpecificImplementation<
+                  IOSFlutterLocalNotificationsPlugin>() as dynamic)
+          ?.setApplicationIconBadgeNumber(0);
+
+      // Android: 알림 센터의 모든 알림을 삭제 (런처 배지 함께 제거됨)
+      await _localNotifications.cancelAll();
+
+      debugPrint('✅ 앱 아이콘 배지 초기화 완료');
+    } catch (e) {
+      debugPrint('⚠️ 배지 초기화 실패: $e');
     }
   }
 }
