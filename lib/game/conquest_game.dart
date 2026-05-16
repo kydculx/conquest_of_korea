@@ -8,8 +8,6 @@ import 'components/hub_component.dart';
 import '../services/hex_service.dart';
 import '../data/hubs_data.dart';
 import '../models/tile_model.dart';
-import '../core/constants.dart';
-import '../core/theme.dart';
 
 /// Flame 게임 엔진 — 거점 마커 및 점령 타일 렌더링 담당
 class ConquestGame extends FlameGame {

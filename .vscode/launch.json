@@ -1,0 +1,25 @@
+{
+    "version": "0.2.0",
+    "configurations": [
+        {
+            "name": "Conquest Mobile",
+            "request": "launch",
+            "type": "dart"
+        },
+        {
+            "name": "conquest_mobile (Flutter KYD-iPhone14Plus)",
+            "request": "launch",
+            "type": "dart",
+            "args": [
+                "-d",
+                "KYD-iPhone14Plus"
+            ]
+        },
+        {
+            "name": "Conquest Mobile (Release)",
+            "request": "launch",
+            "type": "dart",
+            "flutterMode": "release"
+        }
+    ]
+}

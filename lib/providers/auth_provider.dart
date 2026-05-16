@@ -52,23 +52,28 @@ class AuthProvider extends ChangeNotifier {
   }
 
   Future<void> _loadProfile(String userId) async {
-    _profile = await _authService.getUserProfile(userId);
-    
-    // 프로필 로드 시 개인 토픽 구독 (중복 구독은 FCM 내부적으로 처리됨)
-    _notificationService.subscribeToTopic('user_$userId');
-    
-    // 만약 프로필이 없다면 (가입 시 권한 문제로 저장이 안 된 경우 등)
-    if (_profile == null && _user != null) {
-      final metadata = _user!.userMetadata;
-      if (metadata != null && metadata.containsKey('nickname')) {
-        debugPrint('ℹ️ 누락된 프로필 자동 생성 중...');
-        await createProfile(
-          nickname: metadata['nickname'] as String,
-          colorHex: (metadata['color_hex'] as String?) ?? '#FFFFFF',
-        );
+    _setLoading(true);
+    try {
+      _profile = await _authService.getUserProfile(userId);
+      
+      // 프로필 로드 시 개인 토픽 구독 (중복 구독은 FCM 내부적으로 처리됨)
+      _notificationService.subscribeToTopic('user_$userId');
+      
+      // 만약 프로필이 없다면 (가입 시 권한 문제로 저장이 안 된 경우 등)
+      if (_profile == null && _user != null) {
+        final metadata = _user!.userMetadata;
+        if (metadata != null && metadata.containsKey('nickname')) {
+          debugPrint('ℹ️ 누락된 프로필 자동 생성 중...');
+          await createProfile(
+            nickname: metadata['nickname'] as String,
+            colorHex: (metadata['color_hex'] as String?) ?? '#FFFFFF',
+          );
+        }
       }
+    } finally {
+      _setLoading(false);
+      notifyListeners();
     }
-    notifyListeners();
   }
 
   /// 회원가입
@@ -118,11 +123,9 @@ class AuthProvider extends ChangeNotifier {
   Future<void> signInWithGoogle() async {
     _setLoading(true);
     try {
-      final response = await _authService.signInWithGoogle();
-      if (response.user != null) {
-        _user = response.user;
-        await _loadProfile(_user!.id);
-      }
+      await _authService.signInWithGoogle();
+      // 브라우저 로그인은 authStateChanges 리스너에서 세션 변화를 감지하여
+      // 자동으로 프로필을 로드하고 UI를 갱신합니다.
     } catch (e) {
       debugPrint('❌ Google Login Error: $e');
       rethrow;
@@ -210,6 +213,11 @@ class AuthProvider extends ChangeNotifier {
   /// 닉네임 중복 체크
   Future<bool> isNicknameAvailable(String nickname) async {
     return await _authService.isNicknameAvailable(nickname);
+  }
+
+  /// 이메일 중복 체크
+  Future<bool> isEmailAvailable(String email) async {
+    return await _authService.isEmailAvailable(email);
   }
 
   void _setLoading(bool value) {

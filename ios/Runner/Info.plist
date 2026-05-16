@@ -81,6 +81,10 @@
 			<array>
 				<!-- 카카오 네이티브 앱 키 -->
 				<string>kakao24f8b2454db1d8c5510a8ac7221d9796</string>
+				<!-- 구글 로그인 REVERSED_CLIENT_ID -->
+				<string>com.googleusercontent.apps.99438286233-62t2u5rmkpvtvhulta47ntk4dnnianqn</string>
+				<!-- 앱 커스텀 스킴 -->
+				<string>com.watercherry.conquestofkorea</string>
 			</array>
 		</dict>
 	</array>
@@ -90,5 +94,7 @@
 		<string>kakaolink</string>
 		<string>kakaoplus</string>
 	</array>
+	<key>GIDClientID</key>
+	<string>99438286233-62t2u5rmkpvtvhulta47ntk4dnnianqn.apps.googleusercontent.com</string>
 </dict>
 </plist>

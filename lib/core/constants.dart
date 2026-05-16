@@ -8,8 +8,8 @@ class GameConstants {
   static const LatLng defaultPosition = LatLng(37.5665, 126.9780); // 서울시청
   static const double defaultZoom = 13.0;
   static const double minZoom = 7.0;
-  static const double maxZoom = 14.0;
-  static const double focusZoom = 13.0;
+  static const double maxZoom = 17.0;
+  static const double focusZoom = 16.0;
   static const double municipalBoundaryZoomThreshold = 9.5; // 시/군/구 경계 노출 임계값
 
   // 맵 이동 제한 구역 (남한 영토 기준 + Margin)
@@ -19,26 +19,30 @@ class GameConstants {
   // LOD 설정 (줌 퍼센트 기준)
   static const double lodThresholdTier1 = 30.0;
   static const double lodThresholdTier2 = 45.0; // 군청이 더 빨리 보이도록 조정
-  static const double lodMinZoom = 7.0; // 실제 지도 최소 줌에 맞춤
-  static const double lodMaxZoom = 14.0; // 실제 지도 최대 줌에 맞춤
 
   // 텍스트 라벨 LOD 설정 (줌 퍼센트 기준)
   static const double textThresholdTier1 = 40.0;
   static const double textThresholdTier2 = 60.0;
 
   // 헥사곤 설정
-  static const double tileSize = 400.0; // 헥사곤 크기 (미터 단위와 유사하게 사용)
+  static const double tileSize = 50.0; // 헥사곤 크기 (미터 단위와 유사하게 사용)
 
   // GPS 설정
   static const double captureAccuracyThreshold = 15.0; // 물리 GPS 수준 (15m 이내만 허용)
   static const double highAccuracyThreshold = 10.0;
 
-  // 게임 설정
-  static const Duration emptyTileDuration = Duration(seconds: 10);
+  // --- 점령 시스템 설정 ---
+  static const Duration emptyTileDuration = Duration(seconds: 5);
   static const Duration enemyTileDuration = Duration(seconds: 10);
   static const int updateIntervalMs = 100;
-  static const double captureRange = 150.0; // 점령 가능 범위 (m)
-  static const double tileOpacity = 0.5; // 점령 구역 투명도 (0.0 ~ 1.0)
+  static const double captureDistanceThreshold = 40.0;
+
+  // --- 백그라운드 감시 설정 ---
+  static Duration backgroundCheckInterval = const Duration(
+    seconds: 10,
+  ); // 언제든 수정 가능
+  // 점령 구역 투명도 (0.0 ~ 1.0)
+  static const double tileOpacity = 0.5;
 
   // UI 스타일
   static const double hudOpacity = 0.8;

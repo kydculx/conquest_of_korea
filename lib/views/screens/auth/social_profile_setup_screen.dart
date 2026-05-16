@@ -232,7 +232,7 @@ class _SocialProfileSetupScreenState extends State<SocialProfileSetupScreen> {
                         borderRadius: BorderRadius.circular(8),
                         boxShadow: [
                           BoxShadow(
-                            color: _selectedColor.withOpacity(0.4),
+                            color: _selectedColor.withValues(alpha: 0.4),
                             blurRadius: 8,
                           ),
                         ],

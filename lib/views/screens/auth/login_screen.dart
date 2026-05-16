@@ -59,7 +59,7 @@ class _LoginScreenState extends State<LoginScreen> {
             begin: Alignment.topCenter,
             end: Alignment.bottomCenter,
             colors: [
-              GameConstants.tacticalGray.withOpacity(0.8),
+              GameConstants.tacticalGray.withValues(alpha: 0.8),
               GameConstants.tacticalBlack,
             ],
           ),
@@ -138,7 +138,7 @@ class _LoginScreenState extends State<LoginScreen> {
                           borderRadius: BorderRadius.circular(5),
                         ),
                         elevation: 5,
-                        shadowColor: GameConstants.accentNeon.withOpacity(0.5),
+                        shadowColor: GameConstants.accentNeon.withValues(alpha: 0.5),
                       ),
                       child: auth.isLoading
                           ? const SizedBox(
@@ -190,8 +190,16 @@ class _LoginScreenState extends State<LoginScreen> {
                           if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(ErrorTranslator.translate(e))));
                         }
                       },
-                      iconUrl: 'https://upload.wikimedia.org/wikipedia/commons/5/53/Google_%22G%22_Logo.svg',
                       color: Colors.white,
+                      child: Image.network(
+                        'https://upload.wikimedia.org/wikipedia/commons/thumb/c/c1/Google_%22G%22_logo.svg/120px-Google_%22G%22_logo.svg.png',
+                        width: 24,
+                        height: 24,
+                        errorBuilder: (_, __, ___) => const Text(
+                          'G',
+                          style: TextStyle(color: Colors.black, fontSize: 24, fontWeight: FontWeight.bold),
+                        ),
+                      ),
                     ),
                     // Apple
                     _buildSocialCircleButton(
@@ -204,8 +212,8 @@ class _LoginScreenState extends State<LoginScreen> {
                           if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(ErrorTranslator.translate(e))));
                         }
                       },
-                      icon: Icons.apple,
                       color: Colors.white,
+                      child: const Icon(Icons.apple, color: Colors.black, size: 30),
                     ),
                     // Kakao
                     _buildSocialCircleButton(
@@ -218,8 +226,8 @@ class _LoginScreenState extends State<LoginScreen> {
                           if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(ErrorTranslator.translate(e))));
                         }
                       },
-                      iconUrl: 'https://developers.kakao.com/assets/img/about/logos/kakaotalksharing/kakaolink_40.png',
                       color: const Color(0xFFFEE500),
+                      child: const Icon(Icons.chat_bubble, color: Colors.black87, size: 22),
                     ),
                   ],
                 ),
@@ -251,9 +259,8 @@ class _LoginScreenState extends State<LoginScreen> {
 
   Widget _buildSocialCircleButton({
     required VoidCallback onPressed,
-    String? iconUrl,
-    IconData? icon,
     required Color color,
+    required Widget child,
   }) {
     return InkWell(
       onTap: onPressed,
@@ -263,18 +270,16 @@ class _LoginScreenState extends State<LoginScreen> {
         decoration: BoxDecoration(
           color: color,
           shape: BoxShape.circle,
-          boxShadow: [
+          boxShadow: const [
             BoxShadow(
               color: Colors.black26,
               blurRadius: 5,
-              offset: const Offset(0, 2),
+              offset: Offset(0, 2),
             ),
           ],
         ),
-        padding: const EdgeInsets.all(12),
-        child: iconUrl != null
-            ? Image.network(iconUrl, errorBuilder: (_, __, ___) => const Icon(Icons.login, size: 20))
-            : Icon(icon, color: Colors.black, size: 26),
+        alignment: Alignment.center,
+        child: child,
       ),
     );
   }

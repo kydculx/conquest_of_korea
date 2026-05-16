@@ -98,36 +98,41 @@ class _AuthProfileButton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    if (auth.isAuthenticated) {
-      final profile = auth.profile;
-      final color = profile != null ? TacticalTheme.parseColor(profile.colorHex) : Colors.white;
-      
-      return GestureDetector(
-        onTap: () => Navigator.pushNamed(context, '/profile'),
-        child: Container(
-          padding: const EdgeInsets.all(8),
-          decoration: BoxDecoration(
-            color: Colors.black.withAlpha(200),
-            borderRadius: BorderRadius.circular(20),
-            border: Border.all(color: color.withAlpha(100), width: 1.5),
-            boxShadow: [
-              BoxShadow(color: color.withAlpha(50), blurRadius: 10)
-            ],
-          ),
-          child: Icon(
-            Icons.person_rounded,
-            color: color,
-            size: 28,
-          ),
-        ),
-      );
-    }
+    final bool isAuth = auth.isAuthenticated;
+    final profile = auth.profile;
+    
+    // 로그인 상태면 유저 고유 색상, 아니면 반투명 흰색
+    final Color color = isAuth && profile != null 
+        ? TacticalTheme.parseColor(profile.colorHex) 
+        : Colors.white54;
 
-    return _UtilButton(
-      label: '로그인',
-      icon: Icons.login,
-      color: GameConstants.accentNeon,
-      onTap: () => Navigator.pushNamed(context, '/login'),
+    return GestureDetector(
+      onTap: () {
+        if (isAuth) {
+          Navigator.pushNamed(context, '/profile');
+        } else {
+          Navigator.pushNamed(context, '/login');
+        }
+      },
+      child: Container(
+        padding: const EdgeInsets.all(8),
+        decoration: BoxDecoration(
+          color: Colors.black.withAlpha(200),
+          borderRadius: BorderRadius.circular(20),
+          border: Border.all(
+            color: color.withAlpha(isAuth ? 100 : 50), 
+            width: 1.5,
+          ),
+          boxShadow: isAuth 
+              ? [BoxShadow(color: color.withAlpha(50), blurRadius: 10)]
+              : [],
+        ),
+        child: Icon(
+          Icons.person_rounded,
+          color: color,
+          size: 28,
+        ),
+      ),
     );
   }
 }

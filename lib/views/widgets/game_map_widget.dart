@@ -29,7 +29,7 @@ class _GameMapWidgetState extends State<GameMapWidget>
     with TickerProviderStateMixin {
   final MapController _mapController = MapController();
   bool _isFollowing = true;
-  double _currentZoom = GameConstants.defaultZoom;
+  double _currentZoom = GameConstants.focusZoom;
 
   // 2023-07 최신 경계선 데이터
   List<Polyline> _boundaryPolylines = [];
@@ -47,7 +47,7 @@ class _GameMapWidgetState extends State<GameMapWidget>
     super.didUpdateWidget(oldWidget);
     // 위치가 갱신되었고 '내 위치 추적' 모드라면 지도를 이동시킴
     if (_isFollowing && widget.initialLocation != oldWidget.initialLocation) {
-      _animatedMapMove(widget.initialLocation, _currentZoom);
+      _animatedMapMove(widget.initialLocation, GameConstants.focusZoom);
     }
   }
 
@@ -163,7 +163,7 @@ class _GameMapWidgetState extends State<GameMapWidget>
               mapController: _mapController,
               options: MapOptions(
                 initialCenter: widget.initialLocation,
-                initialZoom: GameConstants.defaultZoom,
+                initialZoom: GameConstants.focusZoom,
                 minZoom: GameConstants.minZoom,
                 maxZoom: GameConstants.maxZoom,
                 // 남한 영토 기준 + 여유 공간(Margin)을 두어 러프하게 바운더리 제한 (GameConstants 외부 변수 참조)
@@ -238,7 +238,7 @@ class _GameMapWidgetState extends State<GameMapWidget>
                       setState(() => _isFollowing = true);
                       _animatedMapMove(
                         widget.initialLocation,
-                        GameConstants.defaultZoom,
+                        GameConstants.focusZoom,
                       );
                     },
                     isActive: _isFollowing,

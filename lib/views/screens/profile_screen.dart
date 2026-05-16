@@ -176,7 +176,7 @@ class ProfileScreen extends StatelessWidget {
                   trailing: Switch(
                     value: game.isNotificationEnabled,
                     onChanged: (val) => game.toggleNotifications(),
-                    activeColor: GameConstants.accentNeon,
+                    activeThumbColor: GameConstants.accentNeon,
                   ),
                 ),
                 _buildDivider(),
@@ -332,9 +332,9 @@ class ProfileScreen extends StatelessWidget {
     Color currentColor = TacticalTheme.parseColor(
       auth.profile?.colorHex ?? '#FFFFFF',
     );
-    int r = currentColor.red;
-    int g = currentColor.green;
-    int b = currentColor.blue;
+    int r = (currentColor.r * 255.0).round().clamp(0, 255);
+    int g = (currentColor.g * 255.0).round().clamp(0, 255);
+    int b = (currentColor.b * 255.0).round().clamp(0, 255);
 
     showDialog(
       context: context,

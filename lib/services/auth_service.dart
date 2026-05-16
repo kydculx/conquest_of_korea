@@ -1,6 +1,8 @@
+import 'dart:convert';
 import 'dart:io';
+import 'dart:math';
 import 'package:flutter/foundation.dart';
-import 'package:flutter_dotenv/flutter_dotenv.dart';
+import 'package:crypto/crypto.dart';
 import 'package:google_sign_in/google_sign_in.dart';
 import 'package:sign_in_with_apple/sign_in_with_apple.dart';
 import 'package:kakao_flutter_sdk_user/kakao_flutter_sdk_user.dart' as kakao;
@@ -35,6 +37,14 @@ class AuthService {
       },
     );
 
+    // Supabase 이메일 열거 방지(Prevent email enumeration) 정책 대응
+    // 이미 존재하는 이메일로 가입 시도 시 에러 대신 가짜 User 객체를 반환하며 identities가 비어있음
+    if (response.user != null && 
+        response.user!.identities != null && 
+        response.user!.identities!.isEmpty) {
+      throw const AuthException('이미 가입된 이메일입니다. 다른 이메일을 사용하거나 로그인해주세요.', statusCode: '400');
+    }
+
     // 가입 성공 시 profiles 테이블에 추가 데이터 저장
     if (response.user != null) {
       try {
@@ -66,31 +76,48 @@ class AuthService {
     );
   }
 
-  /// 구글 로그인
-  Future<AuthResponse> signInWithGoogle() async {
-    final webClientId = dotenv.env['GOOGLE_WEB_CLIENT_ID']; 
-    final iosClientId = dotenv.env['GOOGLE_IOS_CLIENT_ID']; 
+  /// 구글 로그인 (네이티브)
+  Future<void> signInWithGoogle() async {
+    try {
+      debugPrint('🚀 Native Google Sign In Start...');
+      
+      // GoogleSignIn 설정 (Web Client ID 필수)
+      const webClientId = '99438286233-e5fpvqd6ngo56e7230vej7aj5efhjg31.apps.googleusercontent.com';
+      
+      final GoogleSignIn googleSignIn = GoogleSignIn(
+        clientId: Platform.isIOS ? '99438286233-62t2u5rmkpvtvhulta47ntk4dnnianqn.apps.googleusercontent.com' : null,
+        serverClientId: webClientId,
+      );
+      
+      // 1. 네이티브 로그인 창 표시
+      final googleUser = await googleSignIn.signIn();
+      if (googleUser == null) {
+        debugPrint('⚠️ Google Sign In cancelled by user');
+        return;
+      }
 
-    final GoogleSignIn googleSignIn = GoogleSignIn(
-      clientId: Platform.isIOS ? iosClientId : null,
-      serverClientId: webClientId,
-    );
-    
-    final googleUser = await googleSignIn.signIn();
-    if (googleUser == null) throw 'Google sign in aborted';
+      // 2. 인증 정보 획득
+      final googleAuth = await googleUser.authentication;
+      final idToken = googleAuth.idToken;
+      final accessToken = googleAuth.accessToken;
 
-    final googleAuth = await googleUser.authentication;
-    final accessToken = googleAuth.accessToken;
-    final idToken = googleAuth.idToken;
+      if (idToken == null) throw 'ID 토큰을 가져오지 못했습니다.';
 
-    if (idToken == null) throw 'No ID Token found.';
-    if (accessToken == null) throw 'No Access Token found.';
+      debugPrint('🔑 Native Google Auth Success. ID Token found.');
 
-    return await _client.auth.signInWithIdToken(
-      provider: OAuthProvider.google,
-      idToken: idToken,
-      accessToken: accessToken,
-    );
+      // 3. Supabase에 ID Token으로 로그인 시도
+      // 주의: Nonce mismatch 에러 발생 시 Supabase 대시보드에서 "Skip nonce checks"를 활성화해야 합니다.
+      await _client.auth.signInWithIdToken(
+        provider: OAuthProvider.google,
+        idToken: idToken,
+        accessToken: accessToken,
+      );
+      
+      debugPrint('✅ Supabase Native Google Login Success');
+    } catch (e) {
+      debugPrint('❌ Native Google Auth Error: $e');
+      rethrow;
+    }
   }
 
   /// 애플 로그인
@@ -131,11 +158,28 @@ class AuthService {
       token = await kakao.UserApi.instance.loginWithKakaoAccount();
     }
 
-    return await _client.auth.signInWithIdToken(
-      provider: OAuthProvider.kakao,
-      idToken: token.idToken!, // Supabase Kakao 연동 설정 필요
-      accessToken: token.accessToken,
-    );
+    // 카카오 로그인 시 ID Token이 없는 경우 처리 (OIDC 미설정 시)
+    final idToken = token.idToken;
+    if (idToken == null) {
+      debugPrint('❌ Kakao ID Token is null. Ensure OIDC is enabled in Kakao Console.');
+      throw '카카오 로그인을 위한 ID 토큰이 없습니다. 카카오 내 애플리케이션 설정에서 OpenID Connect를 활성화해주세요.';
+    }
+
+    debugPrint('🔑 Kakao ID Token found. Audience: ${token.scopes?.contains('openid')}');
+    
+    try {
+      return await _client.auth.signInWithIdToken(
+        provider: OAuthProvider.kakao,
+        idToken: idToken,
+        accessToken: token.accessToken,
+      );
+    } catch (e) {
+      debugPrint('❌ Supabase Kakao Sign-In Error: $e');
+      if (e.toString().contains('audience')) {
+        debugPrint('💡 TIP: Check if the Native App Key is registered as Client ID in Supabase Kakao Provider settings.');
+      }
+      rethrow;
+    }
   }
 
   /// 로그아웃
@@ -183,5 +227,21 @@ class AuthService {
         .maybeSingle();
 
     return response == null;
+  }
+
+  /// 이메일 중복 체크 (RPC 호출)
+  Future<bool> isEmailAvailable(String email) async {
+    try {
+      // Supabase RPC 함수 호출
+      final bool exists = await _client.rpc('check_email_exists', params: {
+        'email_to_check': email,
+      });
+      return !exists; // 존재하면(true) 사용 불가능(false) 반환
+    } catch (e) {
+      debugPrint('⚠️ 이메일 중복 체크 중 오류 발생: $e');
+      // RPC가 생성되지 않았을 경우를 대비해 기본적으로 true(사용가능)를 반환하거나 
+      // 사용자에게 설정을 요청하는 에러를 던질 수 있습니다.
+      return true; 
+    }
   }
 }

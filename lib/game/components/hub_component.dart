@@ -75,12 +75,12 @@ class HubComponent extends PositionComponent
 
     if (game.mapController == null) return;
 
-    // 줌 레벨을 퍼센트로 환산 (설정된 LOD 줌 범위 기준)
+    // 줌 레벨을 퍼센트로 환산 (설정된 지도 줌 범위 기준)
     final currentZoom = game.mapController!.camera.zoom;
-    final zoomPercent = ((currentZoom - GameConstants.lodMinZoom) /
-            (GameConstants.lodMaxZoom - GameConstants.lodMinZoom) *
+    final zoomPercent = ((currentZoom - GameConstants.minZoom) /
+            (GameConstants.maxZoom - GameConstants.minZoom) *
             100)
-        .clamp(0, 100);
+        .clamp(0.0, 100.0);
 
     final tier = _getTier();
 

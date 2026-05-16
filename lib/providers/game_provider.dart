@@ -18,6 +18,7 @@ class GameProvider extends ChangeNotifier {
   final SupabaseService _supabase;
   late final CaptureController _captureController;
   StreamSubscription<List<HexTile>>? _tilesStreamSub;
+  Timer? _backgroundPollingTimer; // 추가: 백그라운드 감시 타이머
   final Completer<void> _initCompleter = Completer<void>();
 
   // --- 상태 ---
@@ -72,9 +73,6 @@ class GameProvider extends ChangeNotifier {
       return false;
     }
 
-    final hex = HexService.latLngToHex(loc.currentLocation!);
-    final tileId = 'hex_${hex['q']}_${hex['r']}';
-
     // 이미 본인이 점령한 타일이면 점령 불가
     return !isAlreadyCapturedByMe;
   }
@@ -111,7 +109,14 @@ class GameProvider extends ChangeNotifier {
 
   void setLocationProvider(LocationProvider loc) {
     if (_locationProvider != loc) {
+      // 기존 리스너 제거
+      _locationProvider?.removeListener(onLocationUpdated);
+      
       _locationProvider = loc;
+      
+      // 새 리스너 등록 (UI 리빌드와 상관없이 실행됨)
+      _locationProvider?.addListener(onLocationUpdated);
+      
       notifyListeners();
     }
   }
@@ -142,14 +147,68 @@ class GameProvider extends ChangeNotifier {
       notifyListeners();
     }
     _tilesStreamSub = _supabase.capturedTilesStream.listen(_onTilesUpdated);
+    _startBackgroundPolling(); // 추가: 주기적 감시 시작
+  }
+
+  /// 백그라운드에서도 정해진 주기마다 서버 데이터를 강제로 갱신하는 로직
+  void _startBackgroundPolling() {
+    _backgroundPollingTimer?.cancel();
+    _backgroundPollingTimer = Timer.periodic(
+      GameConstants.backgroundCheckInterval,
+      (_) => _refreshTilesAndCheckInvasion(),
+    );
+  }
+
+  /// 서버에서 최신 타일 정보를 가져와 침공 여부를 강제 체크
+  Future<void> _refreshTilesAndCheckInvasion() async {
+    if (!_isInitialized) return;
+    try {
+      debugPrint('🔍 백그라운드 정기 정밀 점검 중...');
+      
+      // 추가: 가만히 서 있는 상태에서도 점령이 완료되었는지 체크
+      _captureController.checkCaptureStatus();
+
+      final tiles = await _supabase.fetchAllCapturedTiles();
+      _onTilesUpdated(tiles);
+    } catch (e) {
+      debugPrint('❌ 백그라운드 동기화 실패: $e');
+    }
   }
 
   void _onTilesUpdated(List<HexTile> tiles) {
+    final auth = _authProvider;
+    if (auth?.user == null) return;
+
     bool changed = false;
+    bool invasionDetected = false;
+
     for (final tile in tiles) {
+      // 1. 침공 감지: 기존에 내 땅이었는데 주인이 바뀐 경우
+      final oldTile = _capturedTiles[tile.id];
+      if (oldTile != null &&
+          oldTile.userId == auth!.user!.id &&
+          tile.userId != auth.user!.id) {
+        invasionDetected = true;
+      }
+
       _capturedTiles[tile.id] = tile;
       changed = true;
     }
+
+    if (invasionDetected) {
+      // 침공 알림 발송
+      NotificationService().showLocalNotification(
+        id: 999,
+        title: '⚠️ 영토 상실 경보!',
+        body: '다른 유저가 당신의 영토를 빼앗았습니다! 즉시 탈환하세요!',
+      );
+
+      // 만약 내가 그 자리에 있다면 즉시 반격 시작
+      if (_isAutoCapture) {
+        onLocationUpdated();
+      }
+    }
+
     if (changed) {
       notifyListeners();
     }
@@ -165,19 +224,23 @@ class GameProvider extends ChangeNotifier {
     final hex = HexService.latLngToHex(loc.currentLocation!);
     final tileId = 'hex_${hex['q']}_${hex['r']}';
 
-    if (_capturedTiles[tileId]?.userId == auth.user?.id) {
-      _captureController.cancelCapture();
-      return;
-    }
+    // 1. 상태 체크 (백그라운드 타이머 보정)
+    _captureController.checkCaptureStatus();
 
-    if (_isAutoCapture && _captureController.capturingTileId != tileId) {
-      _captureController.startCapture(
-        tileId: tileId,
-        location: loc.currentLocation!,
-        userId: auth.user!.id,
-        colorHex: auth.profile!.colorHex,
-        isEnemyTile: _capturedTiles.containsKey(tileId),
-      );
+    // 내 땅이 아니면 무조건 점령 시도
+    final tile = _capturedTiles[tileId];
+    if (tile?.userId != auth.user?.id) {
+      if (_isAutoCapture) {
+        _captureController.startCapture(
+          tileId: tileId,
+          location: loc.currentLocation!,
+          userId: auth.user!.id,
+          colorHex: auth.profile!.colorHex,
+          duration: tile == null ? GameConstants.emptyTileDuration : GameConstants.enemyTileDuration,
+        );
+      }
+    } else {
+      _captureController.cancelCapture();
     }
   }
 
@@ -187,17 +250,19 @@ class GameProvider extends ChangeNotifier {
     if (!canCapture ||
         loc?.currentLocation == null ||
         auth?.user == null ||
-        auth?.profile == null)
+        auth?.profile == null) {
       return;
+    }
 
     final hex = HexService.latLngToHex(loc!.currentLocation!);
     final tileId = 'hex_${hex['q']}_${hex['r']}';
+    final tile = _capturedTiles[tileId];
     _captureController.startCapture(
       tileId: tileId,
       location: loc.currentLocation!,
       userId: auth!.user!.id,
       colorHex: auth.profile!.colorHex,
-      isEnemyTile: _capturedTiles.containsKey(tileId),
+      duration: tile == null ? GameConstants.emptyTileDuration : GameConstants.enemyTileDuration,
     );
   }
 
@@ -240,6 +305,8 @@ class GameProvider extends ChangeNotifier {
   @override
   void dispose() {
     _tilesStreamSub?.cancel();
+    _backgroundPollingTimer?.cancel(); // 타이머 해제
+    _locationProvider?.removeListener(onLocationUpdated); // 리스너 해제 추가
     _captureController.dispose();
     super.dispose();
   }

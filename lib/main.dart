@@ -16,7 +16,7 @@ import 'providers/location_provider.dart';
 import 'services/geo_service.dart';
 import 'services/supabase_service.dart';
 import 'views/screens/auth/login_screen.dart';
-import 'views/screens/auth/social_profile_setup_screen.dart';
+
 import 'views/screens/profile_screen.dart';
 import 'providers/auth_provider.dart';
 
@@ -76,7 +76,6 @@ void main() async {
           update: (_, loc, auth, game) {
             game!.setLocationProvider(loc);
             game.setAuthProvider(auth);
-            game.onLocationUpdated(); // 위치 변경 시 자동으로 게임 로직 실행
             return game;
           },
         ),
@@ -112,6 +111,8 @@ class AuthWrapper extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    // 로그인 여부와 무관하게 항상 맵 화면 표시
+    // 로그인은 HUD의 버튼을 통해 접근
     return const GameScreen();
   }
 }

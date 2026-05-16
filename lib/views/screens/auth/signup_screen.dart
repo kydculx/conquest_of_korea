@@ -16,12 +16,16 @@ class _SignupScreenState extends State<SignupScreen> {
   final _emailController = TextEditingController();
   final _passwordController = TextEditingController();
   final _nicknameController = TextEditingController();
-  
+
   Color _selectedColor = GameConstants.accentNeon;
   bool _isObscure = true;
   bool _isNicknameChecked = false;
   bool _isNicknameAvailable = false;
   bool _isCheckingNickname = false;
+
+  bool _isEmailChecked = false;
+  bool _isEmailValid = false;
+  bool _isCheckingEmail = false;
 
   @override
   void initState() {
@@ -34,6 +38,13 @@ class _SignupScreenState extends State<SignupScreen> {
         });
       }
     });
+    _emailController.addListener(() {
+      if (_isEmailChecked) {
+        setState(() {
+          _isEmailChecked = false;
+        });
+      }
+    });
   }
 
   void _generateRandomColor() {
@@ -42,7 +53,7 @@ class _SignupScreenState extends State<SignupScreen> {
     final double h = random.nextDouble() * 360;
     final double s = 0.8 + (random.nextDouble() * 0.2); // 80-100% 채도
     final double l = 0.5 + (random.nextDouble() * 0.2); // 50-70% 밝기
-    
+
     setState(() {
       _selectedColor = HSLColor.fromAHSL(1.0, h, s, l).toColor();
     });
@@ -56,30 +67,79 @@ class _SignupScreenState extends State<SignupScreen> {
     super.dispose();
   }
 
+  Future<void> _checkEmail() async {
+    final email = _emailController.text.trim();
+    if (email.isEmpty) {
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text('이메일을 입력해주세요.')));
+      return;
+    }
+
+    setState(() => _isCheckingEmail = true);
+
+    // 1. 이메일 정규식 검사
+    final bool isValidFormat = RegExp(
+      r"^[a-zA-Z0-9.a-zA-Z0-9.!#$%&'*+-/=?^_`{|}~]+@[a-zA-Z0-9]+\.[a-zA-Z]+",
+    ).hasMatch(email);
+
+    if (!isValidFormat) {
+      setState(() {
+        _isEmailValid = false;
+        _isEmailChecked = true;
+        _isCheckingEmail = false;
+      });
+      return;
+    }
+
+    // 2. DB 중복 체크 (RPC 호출)
+    try {
+      final authProvider = context.read<AuthProvider>();
+      final isAvailable = await authProvider.isEmailAvailable(email);
+
+      if (mounted) {
+        setState(() {
+          _isEmailValid = isAvailable;
+          _isEmailChecked = true;
+        });
+      }
+    } catch (e) {
+      // RPC 함수가 없을 경우 형식 검사 결과만 적용
+      if (mounted) {
+        setState(() {
+          _isEmailValid = isValidFormat;
+          _isEmailChecked = true;
+        });
+      }
+    } finally {
+      setState(() => _isCheckingEmail = false);
+    }
+  }
+
   Future<void> _checkNickname() async {
     final nickname = _nicknameController.text.trim();
     if (nickname.isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('닉네임을 입력해주세요.')),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text('닉네임을 입력해주세요.')));
       return;
     }
 
     setState(() => _isCheckingNickname = true);
-    
+
     try {
       final authProvider = context.read<AuthProvider>();
       final available = await authProvider.isNicknameAvailable(nickname);
-      
+
       setState(() {
         _isNicknameAvailable = available;
         _isNicknameChecked = true;
       });
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(ErrorTranslator.translate(e))),
-        );
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text(ErrorTranslator.translate(e))));
       }
     } finally {
       setState(() => _isCheckingNickname = false);
@@ -88,21 +148,29 @@ class _SignupScreenState extends State<SignupScreen> {
 
   Future<void> _handleSignup() async {
     if (_nicknameController.text.isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('닉네임을 입력해주세요.')),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text('닉네임을 입력해주세요.')));
       return;
     }
 
     if (!_isNicknameChecked || !_isNicknameAvailable) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('닉네임 중복 확인을 해주세요.')),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text('닉네임 중복 확인을 해주세요.')));
+      return;
+    }
+
+    if (!_isEmailChecked || !_isEmailValid) {
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text('이메일 확인을 먼저 완료해주세요.')));
       return;
     }
 
     final authProvider = context.read<AuthProvider>();
-    final colorHex = '#${_selectedColor.value.toRadixString(16).padLeft(8, '0').substring(2).toUpperCase()}';
+    final colorHex =
+        '#${_selectedColor.toARGB32().toRadixString(16).padLeft(8, '0').substring(2).toUpperCase()}';
 
     try {
       await authProvider.signUp(
@@ -119,7 +187,10 @@ class _SignupScreenState extends State<SignupScreen> {
           barrierDismissible: false,
           builder: (context) => AlertDialog(
             backgroundColor: GameConstants.tacticalGray,
-            title: const Text('가입 승인 대기', style: TextStyle(color: GameConstants.accentNeon)),
+            title: const Text(
+              '가입 승인 대기',
+              style: TextStyle(color: GameConstants.accentNeon),
+            ),
             content: const Text(
               '회원가입 신청이 완료되었습니다.\n입력하신 이메일함에서 인증 링크를 클릭해야 계정이 활성화됩니다.',
               style: TextStyle(color: Colors.white70),
@@ -130,7 +201,10 @@ class _SignupScreenState extends State<SignupScreen> {
                   Navigator.of(context).pop(); // 팝업 닫기
                   Navigator.of(context).pop(); // 회원가입 화면 닫기
                 },
-                child: const Text('확인', style: TextStyle(color: GameConstants.accentNeon)),
+                child: const Text(
+                  '확인',
+                  style: TextStyle(color: GameConstants.accentNeon),
+                ),
               ),
             ],
           ),
@@ -138,9 +212,9 @@ class _SignupScreenState extends State<SignupScreen> {
       }
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(ErrorTranslator.translate(e))),
-        );
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text(ErrorTranslator.translate(e))));
       }
     }
   }
@@ -149,7 +223,10 @@ class _SignupScreenState extends State<SignupScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('대원 모집', style: TextStyle(letterSpacing: 2, fontSize: 16)),
+        title: const Text(
+          '회원가입',
+          style: TextStyle(letterSpacing: 2, fontSize: 16),
+        ),
         backgroundColor: Colors.transparent,
         elevation: 0,
       ),
@@ -160,7 +237,7 @@ class _SignupScreenState extends State<SignupScreen> {
             begin: Alignment.topCenter,
             end: Alignment.bottomCenter,
             colors: [
-              GameConstants.tacticalGray.withOpacity(0.8),
+              GameConstants.tacticalGray.withValues(alpha: 0.8),
               GameConstants.tacticalBlack,
             ],
           ),
@@ -200,13 +277,28 @@ class _SignupScreenState extends State<SignupScreen> {
                       child: TextButton(
                         onPressed: _isCheckingNickname ? null : _checkNickname,
                         style: TextButton.styleFrom(
-                          backgroundColor: GameConstants.accentNeon.withOpacity(0.1),
+                          backgroundColor: GameConstants.accentNeon.withValues(alpha: 0.1),
                           foregroundColor: GameConstants.accentNeon,
-                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(5)),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(5),
+                          ),
                         ),
                         child: _isCheckingNickname
-                            ? const SizedBox(width: 20, height: 20, child: CircularProgressIndicator(strokeWidth: 2, color: GameConstants.accentNeon))
-                            : const Text('중복 확인', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12)),
+                            ? const SizedBox(
+                                width: 20,
+                                height: 20,
+                                child: CircularProgressIndicator(
+                                  strokeWidth: 2,
+                                  color: GameConstants.accentNeon,
+                                ),
+                              )
+                            : const Text(
+                                '중복 확인',
+                                style: TextStyle(
+                                  fontWeight: FontWeight.bold,
+                                  fontSize: 12,
+                                ),
+                              ),
                       ),
                     ),
                   ],
@@ -215,7 +307,9 @@ class _SignupScreenState extends State<SignupScreen> {
                   Padding(
                     padding: const EdgeInsets.only(top: 8, left: 4),
                     child: Text(
-                      _isNicknameAvailable ? '✓ 사용 가능한 닉네임입니다.' : '✕ 이미 존재하는 닉네임입니다.',
+                      _isNicknameAvailable
+                          ? '✓ 사용 가능한 닉네임입니다.'
+                          : '✕ 이미 존재하는 닉네임입니다.',
                       style: TextStyle(
                         color: _isNicknameAvailable ? Colors.green : Colors.red,
                         fontSize: 10,
@@ -224,12 +318,62 @@ class _SignupScreenState extends State<SignupScreen> {
                   ),
                 const SizedBox(height: 20),
 
-                // Email Field
-                _buildTextField(
-                  controller: _emailController,
-                  label: '이메일 주소',
-                  icon: Icons.email_outlined,
+                // Email Field with Check Button
+                Row(
+                  crossAxisAlignment: CrossAxisAlignment.end,
+                  children: [
+                    Expanded(
+                      child: _buildTextField(
+                        controller: _emailController,
+                        label: '이메일 주소',
+                        icon: Icons.email_outlined,
+                      ),
+                    ),
+                    const SizedBox(width: 10),
+                    SizedBox(
+                      height: 56,
+                      child: TextButton(
+                        onPressed: _isCheckingEmail ? null : _checkEmail,
+                        style: TextButton.styleFrom(
+                          backgroundColor: GameConstants.accentNeon.withValues(alpha: 0.1),
+                          foregroundColor: GameConstants.accentNeon,
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(5),
+                          ),
+                        ),
+                        child: _isCheckingEmail
+                            ? const SizedBox(
+                                width: 20,
+                                height: 20,
+                                child: CircularProgressIndicator(
+                                  strokeWidth: 2,
+                                  color: GameConstants.accentNeon,
+                                ),
+                              )
+                            : const Text(
+                                '중복 확인',
+                                style: TextStyle(
+                                  fontWeight: FontWeight.bold,
+                                  fontSize: 12,
+                                ),
+                              ),
+                      ),
+                    ),
+                  ],
                 ),
+                if (_isEmailChecked)
+                  Padding(
+                    padding: const EdgeInsets.only(top: 8, left: 4),
+                    child: Text(
+                      _isEmailValid
+                          ? '✓ 사용 가능한 이메일입니다.'
+                          : '✕ 이미 사용 중이거나 올바르지 않은 이메일입니다.',
+                      style: TextStyle(
+                        color: _isEmailValid ? Colors.green : Colors.red,
+                        fontSize: 10,
+                      ),
+                    ),
+                  ),
                 const SizedBox(height: 20),
 
                 // Password Field
@@ -276,7 +420,7 @@ class _SignupScreenState extends State<SignupScreen> {
                         borderRadius: BorderRadius.circular(10),
                         boxShadow: [
                           BoxShadow(
-                            color: _selectedColor.withOpacity(0.5),
+                            color: _selectedColor.withValues(alpha: 0.5),
                             blurRadius: 10,
                             spreadRadius: 1,
                           ),
@@ -289,8 +433,11 @@ class _SignupScreenState extends State<SignupScreen> {
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           Text(
-                            '#${_selectedColor.value.toRadixString(16).padLeft(8, '0').substring(2).toUpperCase()}',
-                            style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
+                            '#${_selectedColor.toARGB32().toRadixString(16).padLeft(8, '0').substring(2).toUpperCase()}',
+                            style: const TextStyle(
+                              color: Colors.white,
+                              fontWeight: FontWeight.bold,
+                            ),
                           ),
                           const SizedBox(height: 5),
                           OutlinedButton.icon(
@@ -332,7 +479,7 @@ class _SignupScreenState extends State<SignupScreen> {
                               ),
                             )
                           : const Text(
-                              '대원 등록',
+                              '등록하기',
                               style: TextStyle(
                                 fontWeight: FontWeight.bold,
                                 fontSize: 16,
@@ -364,7 +511,11 @@ class _SignupScreenState extends State<SignupScreen> {
       style: const TextStyle(color: Colors.white),
       decoration: InputDecoration(
         labelText: label,
-        labelStyle: const TextStyle(color: Colors.white54, fontSize: 12, letterSpacing: 1),
+        labelStyle: const TextStyle(
+          color: Colors.white54,
+          fontSize: 12,
+          letterSpacing: 1,
+        ),
         prefixIcon: Icon(icon, color: GameConstants.accentNeon, size: 20),
         suffixIcon: suffixIcon,
         enabledBorder: const UnderlineInputBorder(

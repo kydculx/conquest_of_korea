@@ -3,6 +3,7 @@ import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
+import 'package:app_badge_plus/app_badge_plus.dart';
 
 /// 푸시 알림 관리 서비스
 class NotificationService {
@@ -11,7 +12,8 @@ class NotificationService {
   NotificationService._internal();
 
   FirebaseMessaging? _fcm;
-  final FlutterLocalNotificationsPlugin _localNotifications = FlutterLocalNotificationsPlugin();
+  final FlutterLocalNotificationsPlugin _localNotifications =
+      FlutterLocalNotificationsPlugin();
 
   bool _initialized = false;
   bool get isInitialized => _initialized;
@@ -43,18 +45,32 @@ class NotificationService {
 
       // 2. 로컬 알림 채널 설정 (Android)
       await _localNotifications
-          .resolvePlatformSpecificImplementation<AndroidFlutterLocalNotificationsPlugin>()
+          .resolvePlatformSpecificImplementation<
+            AndroidFlutterLocalNotificationsPlugin
+          >()
           ?.createNotificationChannel(_channel);
 
       // 3. 로컬 알림 초기화
       const AndroidInitializationSettings androidSettings =
-          AndroidInitializationSettings('@mipmap/ic_launcher');
-      const DarwinInitializationSettings iosSettings = DarwinInitializationSettings();
+          AndroidInitializationSettings(
+            '@mipmap/launcher_icon',
+          ); // 수정: 실제 아이콘 이름으로 변경
+      const DarwinInitializationSettings iosSettings =
+          DarwinInitializationSettings();
 
       const InitializationSettings initSettings = InitializationSettings(
         android: androidSettings,
         iOS: iosSettings,
       );
+
+      // 안드로이드 13 이상을 위한 권한 요청 (Local Notifications 전용)
+      if (defaultTargetPlatform == TargetPlatform.android) {
+        await _localNotifications
+            .resolvePlatformSpecificImplementation<
+              AndroidFlutterLocalNotificationsPlugin
+            >()
+            ?.requestNotificationsPermission();
+      }
 
       await _localNotifications.initialize(
         settings: initSettings,
@@ -168,11 +184,8 @@ class NotificationService {
     try {
       if (kIsWeb) return;
 
-      // iOS: 아이콘 배지 숫자를 0으로 설정
-      await (_localNotifications
-              .resolvePlatformSpecificImplementation<
-                  IOSFlutterLocalNotificationsPlugin>() as dynamic)
-          ?.setApplicationIconBadgeNumber(0);
+      // 아이콘 배지 초기화 (app_badge_plus 사용)
+      await AppBadgePlus.updateBadge(0);
 
       // Android: 알림 센터의 모든 알림을 삭제 (런처 배지 함께 제거됨)
       await _localNotifications.cancelAll();

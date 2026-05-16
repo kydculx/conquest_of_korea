@@ -22,7 +22,6 @@ class GameScreen extends StatefulWidget {
 }
 
 class _GameScreenState extends State<GameScreen> {
-  Future<void>? _initFuture;
 
   @override
   void initState() {
@@ -35,21 +34,6 @@ class _GameScreenState extends State<GameScreen> {
     });
   }
 
-  @override
-  void didChangeDependencies() {
-    super.didChangeDependencies();
-    // 한 번만 초기화하여 FutureBuilder가 매번 초기화되지 않도록 함
-    if (_initFuture == null) {
-      final game = context.read<GameProvider>();
-
-      _initFuture = game.initializationFuture.timeout(
-        const Duration(seconds: 5),
-        onTimeout: () {
-          debugPrint('⚠️ 전술 데이터 로딩 시간 초과 - 강제 진입 시도');
-        },
-      );
-    }
-  }
 
   @override
   Widget build(BuildContext context) {
@@ -115,20 +99,15 @@ class _GameScreenState extends State<GameScreen> {
               ),
             ),
 
-          // 로딩 오버레이 (비동기 처리)
-          FutureBuilder(
-            future: _initFuture,
-            builder: (context, snapshot) {
-              return AnimatedSwitcher(
-                duration: const Duration(milliseconds: 800),
-                transitionBuilder: (child, animation) {
-                  return FadeTransition(opacity: animation, child: child);
-                },
-                child: snapshot.connectionState == ConnectionState.done
-                    ? const SizedBox.shrink()
-                    : const LoadingOverlay(message: '전술 위성 동기화 중...'),
-              );
+          // 로딩 오버레이 (상태 플래그 기반)
+          AnimatedSwitcher(
+            duration: const Duration(milliseconds: 800),
+            transitionBuilder: (child, animation) {
+              return FadeTransition(opacity: animation, child: child);
             },
+            child: game.isInitialized
+                ? const SizedBox.shrink()
+                : const LoadingOverlay(message: '전술 위성 동기화 중...'),
           ),
         ],
       ),

@@ -10,6 +10,7 @@ class SupabaseService {
       await Supabase.initialize(
         url: AppConfig.supabaseUrl,
         anonKey: AppConfig.supabaseAnonKey,
+        debug: kDebugMode,
       );
       debugPrint('✅ Supabase 초기화 성공');
     } catch (e) {
