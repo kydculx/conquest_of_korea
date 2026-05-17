@@ -83,4 +83,21 @@ class SupabaseService {
       return 1; // 오류 시 기본값 1 반환
     }
   }
+
+  /// 특정 타일 ID로 서버의 최신 점령 데이터 전체를 조회하여 반환하는 함수
+  Future<HexTile?> fetchTile(String tileId) async {
+    try {
+      final response = await _client
+          .from('captured_tiles')
+          .select('*')
+          .eq('id', tileId)
+          .maybeSingle();
+
+      if (response == null) return null;
+      return HexTile.fromJson(response as Map<String, dynamic>);
+    } catch (e) {
+      debugPrint('❌ 단일 타일 서버 조회 실패: $e');
+      return null;
+    }
+  }
 }

@@ -331,7 +331,32 @@ class GameProvider extends ChangeNotifier {
     final hex = HexService.latLngToHex(loc!.currentLocation!);
     final tileId = 'hex_${hex['q']}_${hex['r']}';
 
-    return await _supabase.checkTileStatusFromServer(tileId, auth!.user!.id);
+    final status = await _supabase.checkTileStatusFromServer(
+      tileId,
+      auth!.user!.id,
+    );
+
+    // 1. 상대방 점령 지역(status == 2)이면 최신 타일 정보(상대 점령색 포함)로 즉시 갱신
+    if (status == 2) {
+      final serverTile = await _supabase.fetchTile(tileId);
+      if (serverTile != null) {
+        _capturedTiles[tileId] = serverTile;
+        notifyListeners();
+        debugPrint(
+          '🎨 [상대방 영토 갱신] 타일($tileId)을 상대방 점령색(${serverTile.colorHex})으로 실시간 갱신 완료.',
+        );
+      }
+    }
+    // 2. 만약 아무도 점령하지 않은 빈 지역(status == 1)인데 로컬에 잔재가 있으면 제거하여 동기화
+    else if (status == 1) {
+      if (_capturedTiles.containsKey(tileId)) {
+        _capturedTiles.remove(tileId);
+        notifyListeners();
+        debugPrint('🎨 [중립 영토 갱신] 타일($tileId)이 빈 상태이므로 로컬에서 제거 완료.');
+      }
+    }
+
+    return status;
   }
 
   Future<void> toggleNotifications() async {
