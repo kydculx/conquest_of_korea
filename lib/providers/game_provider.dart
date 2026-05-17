@@ -10,6 +10,7 @@ import '../services/hex_service.dart';
 import '../services/supabase_service.dart';
 import '../services/notification_service.dart';
 import '../core/constants.dart';
+import '../core/constants/strings.dart';
 
 /// 게임 핵심 상태 관리 Provider
 class GameProvider extends ChangeNotifier {
@@ -29,6 +30,9 @@ class GameProvider extends ChangeNotifier {
   bool _showBoundaries = true;
   int _currentMapStyleIndex = 0;
   bool _isNotificationEnabled = true;
+
+  // --- 위치 변경 감지 시 서버 부하 방지용 3초 딜레이 타이머 ---
+  DateTime? _lastServerCheckTime;
 
   // 관련 Provider 참조
   LocationProvider? _locationProvider;
@@ -96,8 +100,8 @@ class GameProvider extends ChangeNotifier {
         if (_isNotificationEnabled) {
           NotificationService().showLocalNotification(
             id: id.hashCode,
-            title: '🚩 영토 점령 성공!',
-            body: '새로운 지역을 당신의 영토로 만들었습니다!',
+            title: GameStrings.notificationCaptureSuccessTitle,
+            body: GameStrings.notificationCaptureSuccessBody,
           );
         }
         notifyListeners();
@@ -111,12 +115,12 @@ class GameProvider extends ChangeNotifier {
     if (_locationProvider != loc) {
       // 기존 리스너 제거
       _locationProvider?.removeListener(onLocationUpdated);
-      
+
       _locationProvider = loc;
-      
+
       // 새 리스너 등록 (UI 리빌드와 상관없이 실행됨)
       _locationProvider?.addListener(onLocationUpdated);
-      
+
       notifyListeners();
     }
   }
@@ -164,7 +168,7 @@ class GameProvider extends ChangeNotifier {
     if (!_isInitialized) return;
     try {
       debugPrint('🔍 백그라운드 정기 정밀 점검 중...');
-      
+
       // 추가: 가만히 서 있는 상태에서도 점령이 완료되었는지 체크
       _captureController.checkCaptureStatus();
 
@@ -199,8 +203,8 @@ class GameProvider extends ChangeNotifier {
       // 침공 알림 발송
       NotificationService().showLocalNotification(
         id: 999,
-        title: '⚠️ 영토 상실 경보!',
-        body: '다른 유저가 당신의 영토를 빼앗았습니다! 즉시 탈환하세요!',
+        title: GameStrings.notificationInvasionTitle,
+        body: GameStrings.notificationInvasionBody,
       );
 
       // 만약 내가 그 자리에 있다면 즉시 반격 시작
@@ -227,20 +231,48 @@ class GameProvider extends ChangeNotifier {
     // 1. 상태 체크 (백그라운드 타이머 보정)
     _captureController.checkCaptureStatus();
 
-    // 내 땅이 아니면 무조건 점령 시도
-    final tile = _capturedTiles[tileId];
-    if (tile?.userId != auth.user?.id) {
-      if (_isAutoCapture) {
+    // 2. 오직 순수하게 지정된 간격(딜레이)으로만 현재 위치 타일 상태를 서버에 확인하여 진행
+    final now = DateTime.now();
+    if (_lastServerCheckTime == null ||
+        now.difference(_lastServerCheckTime!) >=
+            GameConstants.serverCheckDelay) {
+      _lastServerCheckTime = now;
+
+      checkCurrentLocationTileStatusFromServer().then((status) {
+        _processCaptureDecision(tileId, status);
+      });
+    }
+  }
+
+  /// 서버의 점령 상태 결과(0: 내타일, 1: 빈타일, 2: 상대방타일)에 따라 점령 진행 여부를 판별하는 내부 로직
+  void _processCaptureDecision(String tileId, int status) {
+    final loc = _locationProvider;
+    final auth = _authProvider;
+    if (loc == null ||
+        auth == null ||
+        auth.user == null ||
+        auth.profile == null)
+      return;
+
+    // status: 0(내 타일) -> 점령 중단
+    // status: 1(빈 타일) 또는 2(상대방 타일) -> 점령 대상이므로 진행!
+    if (status == 1 || status == 2) {
+      if (_isAutoCapture && !_captureController.isCapturing) {
         _captureController.startCapture(
           tileId: tileId,
           location: loc.currentLocation!,
           userId: auth.user!.id,
           colorHex: auth.profile!.colorHex,
-          duration: tile == null ? GameConstants.emptyTileDuration : GameConstants.enemyTileDuration,
+          duration: status == 1
+              ? GameConstants.emptyTileDuration
+              : GameConstants.enemyTileDuration,
         );
       }
     } else {
-      _captureController.cancelCapture();
+      // 내 타일(0)인 경우 기존 진행 중인 점령 취소
+      if (_captureController.capturingTileId == tileId) {
+        _captureController.cancelCapture();
+      }
     }
   }
 
@@ -262,7 +294,9 @@ class GameProvider extends ChangeNotifier {
       location: loc.currentLocation!,
       userId: auth!.user!.id,
       colorHex: auth.profile!.colorHex,
-      duration: tile == null ? GameConstants.emptyTileDuration : GameConstants.enemyTileDuration,
+      duration: tile == null
+          ? GameConstants.emptyTileDuration
+          : GameConstants.enemyTileDuration,
     );
   }
 
@@ -280,6 +314,24 @@ class GameProvider extends ChangeNotifier {
   void toggleBoundaries() {
     _showBoundaries = !_showBoundaries;
     notifyListeners();
+  }
+
+  /// 현재 위치의 헥사곤 타일 점령 상태를 서버 기준으로 실시간 확인하는 함수
+  /// - 1: 아직 아무도 점령하지 않은 빈 타일 (중립)
+  /// - 2: 상대방이 점령한 타일
+  /// - 0: 내가 점령한 타일
+  Future<int> checkCurrentLocationTileStatusFromServer() async {
+    final loc = _locationProvider;
+    final auth = _authProvider;
+
+    if (loc?.currentLocation == null || auth?.user == null) {
+      return 1; // 위치나 로그인 정보 부재 시 기본적으로 1(빈 타일) 반환
+    }
+
+    final hex = HexService.latLngToHex(loc!.currentLocation!);
+    final tileId = 'hex_${hex['q']}_${hex['r']}';
+
+    return await _supabase.checkTileStatusFromServer(tileId, auth!.user!.id);
   }
 
   Future<void> toggleNotifications() async {

@@ -1,7 +1,6 @@
 import 'dart:ui';
 import 'dart:math' as math;
 import 'package:flame/components.dart';
-import 'package:flutter/material.dart' hide Color;
 import '../../core/constants.dart';
 import '../conquest_game.dart';
 

@@ -196,7 +196,7 @@ class _LoginScreenState extends State<LoginScreen> {
                         'https://upload.wikimedia.org/wikipedia/commons/thumb/c/c1/Google_%22G%22_logo.svg/120px-Google_%22G%22_logo.svg.png',
                         width: 24,
                         height: 24,
-                        errorBuilder: (_, __, ___) => Text(
+                        errorBuilder: (_, _, _) => Text(
                           'G',
                           style: TextStyle(color: GameColors.tacticalBlack, fontSize: 24, fontWeight: FontWeight.bold),
                         ),

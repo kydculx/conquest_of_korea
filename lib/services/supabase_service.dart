@@ -52,4 +52,35 @@ class SupabaseService {
       return false;
     }
   }
+
+  /// 특정 타일이 누구에게 점령되어 있는지 상태를 정수로 반환하는 함수
+  /// - 1: 아직 아무도 점령하지 않은 빈 타일 (중립)
+  /// - 2: 상대방이 점령한 타일
+  /// - 0: 내가 점령한 타일
+  Future<int> checkTileStatusFromServer(
+    String tileId,
+    String currentUserId,
+  ) async {
+    try {
+      final response = await _client
+          .from('captured_tiles')
+          .select('user_id')
+          .eq('id', tileId)
+          .maybeSingle();
+
+      if (response == null) {
+        return 1; // 아무도 점령하지 않은 빈 타일
+      }
+
+      final String? ownerId = response['user_id'];
+      if (ownerId == currentUserId) {
+        return 0; // 내 타일
+      }
+
+      return 2; // 상대방이 점령한 타일
+    } catch (e) {
+      debugPrint('❌ 타일 상태 서버 조회 실패: $e');
+      return 1; // 오류 시 기본값 1 반환
+    }
+  }
 }

@@ -126,8 +126,15 @@ class GameStrings {
   static const String notificationChannelName = '한국정복 알림';
   static const String notificationChannelDescription = '점령 및 전투 관련 중요 알림입니다.';
   
+  
   // 인증 에러 메시지
   static const String emailAlreadyInUse = '이미 가입된 이메일입니다. 다른 이메일을 사용하거나 로그인해주세요.';
   static const String idTokenFetchFailed = 'ID 토큰을 가져오지 못했습니다.';
   static const String kakaoOidcRequired = '카카오 로그인을 위한 ID 토큰이 없습니다. 카카오 내 애플리케이션 설정에서 OpenID Connect를 활성화해주세요.';
+
+  // 로컬 알림 관련 메시지
+  static const String notificationCaptureSuccessTitle = '🚩 영토 점령 성공!';
+  static const String notificationCaptureSuccessBody = '새로운 지역을 당신의 영토로 만들었습니다!';
+  static const String notificationInvasionTitle = '⚠️ 영토 상실 경보!';
+  static const String notificationInvasionBody = '다른 유저가 당신의 영토를 빼앗았습니다! 즉시 탈환하세요!';
 }

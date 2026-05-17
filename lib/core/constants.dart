@@ -38,9 +38,10 @@ class GameConstants {
   static const int updateIntervalMs = 100;
   static const double captureDistanceThreshold = 40.0;
 
-  // --- 백그라운드 감시 설정 ---
+  // --- 서버 부하 방지 및 백그라운드 감시 설정 ---
+  static const Duration serverCheckDelay = Duration(seconds: 3);
   static Duration backgroundCheckInterval = const Duration(
-    seconds: 10,
+    seconds: 30,
   ); // 언제든 수정 가능
   // 점령 구역 투명도 (0.0 ~ 1.0)
   static const double tileOpacity = 0.5;
