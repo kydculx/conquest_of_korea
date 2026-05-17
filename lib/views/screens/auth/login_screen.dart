@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../../../core/constants.dart';
+import '../../../core/constants/strings.dart';
 import '../../../core/utils/error_translator.dart';
 import '../../../providers/auth_provider.dart';
 import 'signup_screen.dart';
@@ -46,10 +47,10 @@ class _LoginScreenState extends State<LoginScreen> {
     return Scaffold(
       extendBodyBehindAppBar: true,
       appBar: AppBar(
-        backgroundColor: Colors.transparent,
+        backgroundColor: GameColors.transparent,
         elevation: 0,
         leading: IconButton(
-          icon: const Icon(Icons.close, color: Colors.white),
+          icon: Icon(Icons.close, color: GameColors.textPrimary),
           onPressed: () => Navigator.of(context).pop(),
         ),
       ),
@@ -59,8 +60,8 @@ class _LoginScreenState extends State<LoginScreen> {
             begin: Alignment.topCenter,
             end: Alignment.bottomCenter,
             colors: [
-              GameConstants.tacticalGray.withValues(alpha: 0.8),
-              GameConstants.tacticalBlack,
+              GameColors.tacticalGray.withValues(alpha: 0.8),
+              GameColors.tacticalBlack,
             ],
           ),
         ),
@@ -72,29 +73,29 @@ class _LoginScreenState extends State<LoginScreen> {
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
                 // Logo or Title
-                const Icon(
+                Icon(
                   Icons.security,
                   size: 80,
-                  color: GameConstants.accentNeon,
+                  color: GameColors.accentNeon,
                 ),
                 const SizedBox(height: 20),
                 Text(
                   GameConstants.appName.toUpperCase(),
                   textAlign: TextAlign.center,
-                  style: const TextStyle(
+                  style: TextStyle(
                     fontSize: 28,
                     fontWeight: FontWeight.bold,
                     letterSpacing: 4,
-                    color: Colors.white,
+                    color: GameColors.textPrimary,
                   ),
                 ),
                 const SizedBox(height: 10),
-                const Text(
-                  '전술 미션 시작',
+                Text(
+                  GameStrings.tacticalMissionStart,
                   textAlign: TextAlign.center,
                   style: TextStyle(
                     fontSize: 14,
-                    color: GameConstants.accentNeon,
+                    color: GameColors.accentNeon,
                     letterSpacing: 2,
                     fontWeight: FontWeight.w500,
                   ),
@@ -104,7 +105,7 @@ class _LoginScreenState extends State<LoginScreen> {
                 // Email Field
                 _buildTextField(
                   controller: _emailController,
-                  label: '이메일 주소',
+                  label: GameStrings.emailAddress,
                   icon: Icons.email_outlined,
                 ),
                 const SizedBox(height: 20),
@@ -112,13 +113,13 @@ class _LoginScreenState extends State<LoginScreen> {
                 // Password Field
                 _buildTextField(
                   controller: _passwordController,
-                  label: '비밀번호',
+                  label: GameStrings.password,
                   icon: Icons.lock_outline,
                   isObscure: _isObscure,
                   suffixIcon: IconButton(
                     icon: Icon(
                       _isObscure ? Icons.visibility_off : Icons.visibility,
-                      color: Colors.white54,
+                      color: GameColors.textMuted,
                     ),
                     onPressed: () => setState(() => _isObscure = !_isObscure),
                   ),
@@ -131,26 +132,26 @@ class _LoginScreenState extends State<LoginScreen> {
                     return ElevatedButton(
                       onPressed: auth.isLoading ? null : _handleLogin,
                       style: ElevatedButton.styleFrom(
-                        backgroundColor: GameConstants.accentNeon,
-                        foregroundColor: Colors.black,
+                        backgroundColor: GameColors.accentNeon,
+                        foregroundColor: GameColors.tacticalBlack,
                         padding: const EdgeInsets.symmetric(vertical: 15),
                         shape: RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(5),
                         ),
                         elevation: 5,
-                        shadowColor: GameConstants.accentNeon.withValues(alpha: 0.5),
+                        shadowColor: GameColors.accentNeon.withValues(alpha: 0.5),
                       ),
                       child: auth.isLoading
-                          ? const SizedBox(
+                          ? SizedBox(
                               height: 20,
                               width: 20,
                               child: CircularProgressIndicator(
                                 strokeWidth: 2,
-                                color: Colors.black,
+                                color: GameColors.tacticalBlack,
                               ),
                             )
                           : const Text(
-                              '로그인',
+                              GameStrings.login,
                               style: TextStyle(
                                 fontWeight: FontWeight.bold,
                                 fontSize: 16,
@@ -164,13 +165,13 @@ class _LoginScreenState extends State<LoginScreen> {
 
                 // OR Divider
                 Row(
-                  children: const [
-                    Expanded(child: Divider(color: Colors.white24)),
+                  children: [
+                    Expanded(child: Divider(color: GameColors.dividerColor)),
                     Padding(
-                      padding: EdgeInsets.symmetric(horizontal: 10),
-                      child: Text('또는', style: TextStyle(color: Colors.white24, fontSize: 12)),
+                      padding: const EdgeInsets.symmetric(horizontal: 10),
+                      child: Text(GameStrings.or, style: TextStyle(color: GameColors.dividerColor, fontSize: 12)),
                     ),
-                    Expanded(child: Divider(color: Colors.white24)),
+                    Expanded(child: Divider(color: GameColors.dividerColor)),
                   ],
                 ),
                 const SizedBox(height: 20),
@@ -190,14 +191,14 @@ class _LoginScreenState extends State<LoginScreen> {
                           if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(ErrorTranslator.translate(e))));
                         }
                       },
-                      color: Colors.white,
+                      color: GameColors.tacticalWhite,
                       child: Image.network(
                         'https://upload.wikimedia.org/wikipedia/commons/thumb/c/c1/Google_%22G%22_logo.svg/120px-Google_%22G%22_logo.svg.png',
                         width: 24,
                         height: 24,
-                        errorBuilder: (_, __, ___) => const Text(
+                        errorBuilder: (_, __, ___) => Text(
                           'G',
-                          style: TextStyle(color: Colors.black, fontSize: 24, fontWeight: FontWeight.bold),
+                          style: TextStyle(color: GameColors.tacticalBlack, fontSize: 24, fontWeight: FontWeight.bold),
                         ),
                       ),
                     ),
@@ -212,8 +213,8 @@ class _LoginScreenState extends State<LoginScreen> {
                           if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(ErrorTranslator.translate(e))));
                         }
                       },
-                      color: Colors.white,
-                      child: const Icon(Icons.apple, color: Colors.black, size: 30),
+                      color: GameColors.tacticalWhite,
+                      child: Icon(Icons.apple, color: GameColors.tacticalBlack, size: 30),
                     ),
                     // Kakao
                     _buildSocialCircleButton(
@@ -226,8 +227,8 @@ class _LoginScreenState extends State<LoginScreen> {
                           if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(ErrorTranslator.translate(e))));
                         }
                       },
-                      color: const Color(0xFFFEE500),
-                      child: const Icon(Icons.chat_bubble, color: Colors.black87, size: 22),
+                      color: GameColors.kakaoYellow,
+                      child: Icon(Icons.chat_bubble, color: GameColors.kakaoText, size: 22),
                     ),
                   ],
                 ),
@@ -240,10 +241,10 @@ class _LoginScreenState extends State<LoginScreen> {
                       MaterialPageRoute(builder: (_) => const SignupScreen()),
                     );
                   },
-                  child: const Text(
-                    '새로운 계정 만들기',
+                  child: Text(
+                    GameStrings.createAccount,
                     style: TextStyle(
-                      color: Colors.white54,
+                      color: GameColors.textMuted,
                       letterSpacing: 1,
                       fontSize: 14,
                     ),
@@ -270,11 +271,11 @@ class _LoginScreenState extends State<LoginScreen> {
         decoration: BoxDecoration(
           color: color,
           shape: BoxShape.circle,
-          boxShadow: const [
+          boxShadow: [
             BoxShadow(
-              color: Colors.black26,
+              color: GameColors.tacticalBlack.withValues(alpha: 66 / 255),
               blurRadius: 5,
-              offset: Offset(0, 2),
+              offset: const Offset(0, 2),
             ),
           ],
         ),
@@ -294,20 +295,20 @@ class _LoginScreenState extends State<LoginScreen> {
     return TextField(
       controller: controller,
       obscureText: isObscure,
-      style: const TextStyle(color: Colors.white),
+      style: TextStyle(color: GameColors.textPrimary),
       decoration: InputDecoration(
         labelText: label,
-        labelStyle: const TextStyle(color: Colors.white54, fontSize: 12, letterSpacing: 1),
-        prefixIcon: Icon(icon, color: GameConstants.accentNeon, size: 20),
+        labelStyle: TextStyle(color: GameColors.textMuted, fontSize: 12, letterSpacing: 1),
+        prefixIcon: Icon(icon, color: GameColors.accentNeon, size: 20),
         suffixIcon: suffixIcon,
-        enabledBorder: const UnderlineInputBorder(
-          borderSide: BorderSide(color: Colors.white24),
+        enabledBorder: UnderlineInputBorder(
+          borderSide: BorderSide(color: GameColors.dividerColor),
         ),
-        focusedBorder: const UnderlineInputBorder(
-          borderSide: BorderSide(color: GameConstants.accentNeon),
+        focusedBorder: UnderlineInputBorder(
+          borderSide: BorderSide(color: GameColors.accentNeon),
         ),
         filled: true,
-        fillColor: Colors.white.withOpacity(0.05),
+        fillColor: GameColors.tacticalWhite.withValues(alpha: 0.05),
       ),
     );
   }

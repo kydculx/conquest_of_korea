@@ -5,23 +5,23 @@ class TacticalTheme {
   static ThemeData get darkTheme {
     return ThemeData(
       brightness: Brightness.dark,
-      scaffoldBackgroundColor: GameConstants.tacticalBlack,
-      primaryColor: GameConstants.accentNeon,
-      colorScheme: const ColorScheme.dark(
-        primary: GameConstants.accentNeon,
-        secondary: GameConstants.accentNeon,
-        surface: GameConstants.tacticalGray,
+      scaffoldBackgroundColor: GameColors.tacticalBlack,
+      primaryColor: GameColors.accentNeon,
+      colorScheme: ColorScheme.dark(
+        primary: GameColors.accentNeon,
+        secondary: GameColors.accentNeon,
+        surface: GameColors.tacticalGray,
       ),
-      textTheme: const TextTheme(
+      textTheme: TextTheme(
         headlineMedium: TextStyle(
-          color: Colors.white,
+          color: GameColors.textPrimary,
           fontWeight: FontWeight.bold,
           letterSpacing: 1.2,
         ),
-        bodyLarge: TextStyle(color: Colors.white70),
+        bodyLarge: TextStyle(color: GameColors.textSecondary),
       ),
-      appBarTheme: const AppBarTheme(
-        backgroundColor: GameConstants.tacticalGray,
+      appBarTheme: AppBarTheme(
+        backgroundColor: GameColors.tacticalGray,
         elevation: 0,
         centerTitle: true,
       ),
@@ -36,7 +36,7 @@ class TacticalTheme {
       buffer.write(hex.replaceFirst('#', ''));
       return Color(int.parse(buffer.toString(), radix: 16));
     } catch (e) {
-      return Colors.white;
+      return GameColors.tacticalWhite;
     }
   }
 }

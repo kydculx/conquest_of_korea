@@ -2,6 +2,7 @@ import 'dart:math';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../../../core/constants.dart';
+import '../../../core/constants/strings.dart';
 import '../../../core/utils/error_translator.dart';
 import '../../../providers/auth_provider.dart';
 
@@ -9,12 +10,13 @@ class SocialProfileSetupScreen extends StatefulWidget {
   const SocialProfileSetupScreen({super.key});
 
   @override
-  State<SocialProfileSetupScreen> createState() => _SocialProfileSetupScreenState();
+  State<SocialProfileSetupScreen> createState() =>
+      _SocialProfileSetupScreenState();
 }
 
 class _SocialProfileSetupScreenState extends State<SocialProfileSetupScreen> {
   final _nicknameController = TextEditingController();
-  Color _selectedColor = GameConstants.accentNeon;
+  Color _selectedColor = GameColors.accentNeon;
   bool _isNicknameChecked = false;
   bool _isNicknameAvailable = false;
   bool _isChecking = false;
@@ -37,7 +39,7 @@ class _SocialProfileSetupScreenState extends State<SocialProfileSetupScreen> {
     final double h = random.nextDouble() * 360;
     final double s = 0.8 + (random.nextDouble() * 0.2);
     final double l = 0.5 + (random.nextDouble() * 0.2);
-    
+
     setState(() {
       _selectedColor = HSLColor.fromAHSL(1.0, h, s, l).toColor();
     });
@@ -52,18 +54,18 @@ class _SocialProfileSetupScreenState extends State<SocialProfileSetupScreen> {
   Future<void> _checkNickname() async {
     final nickname = _nicknameController.text.trim();
     if (nickname.isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('닉네임을 입력해주세요.')),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text(GameStrings.enterNickname)));
       return;
     }
 
     setState(() => _isChecking = true);
-    
+
     try {
       final authProvider = context.read<AuthProvider>();
       final available = await authProvider.isNicknameAvailable(nickname);
-      
+
       setState(() {
         _isNicknameAvailable = available;
         _isNicknameChecked = true;
@@ -72,16 +74,20 @@ class _SocialProfileSetupScreenState extends State<SocialProfileSetupScreen> {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text(available ? '사용 가능한 닉네임입니다.' : '이미 사용 중인 닉네임입니다.'),
-            backgroundColor: available ? Colors.green : Colors.red,
+            content: Text(
+              available
+                  ? GameStrings.nicknameAvailable
+                  : GameStrings.errorNicknameExists,
+            ),
+            backgroundColor: available ? GameColors.success : GameColors.error,
           ),
         );
       }
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(ErrorTranslator.translate(e))),
-        );
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text(ErrorTranslator.translate(e))));
       }
     } finally {
       setState(() => _isChecking = false);
@@ -91,32 +97,30 @@ class _SocialProfileSetupScreenState extends State<SocialProfileSetupScreen> {
   Future<void> _handleSave() async {
     final nickname = _nicknameController.text.trim();
     if (nickname.isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('닉네임을 입력해주세요.')),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text(GameStrings.enterNickname)));
       return;
     }
 
     if (!_isNicknameChecked || !_isNicknameAvailable) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('닉네임 중복 확인을 해주세요.')),
+        const SnackBar(content: Text(GameStrings.errorNicknameCheckRequired)),
       );
       return;
     }
 
     final authProvider = context.read<AuthProvider>();
-    final colorHex = '#${_selectedColor.value.toRadixString(16).padLeft(8, '0').substring(2).toUpperCase()}';
+    final colorHex =
+        '#${_selectedColor.toARGB32().toRadixString(16).padLeft(8, '0').substring(2).toUpperCase()}';
 
     try {
-      await authProvider.createProfile(
-        nickname: nickname,
-        colorHex: colorHex,
-      );
+      await authProvider.createProfile(nickname: nickname, colorHex: colorHex);
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(ErrorTranslator.translate(e))),
-        );
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text(ErrorTranslator.translate(e))));
       }
     }
   }
@@ -130,8 +134,8 @@ class _SocialProfileSetupScreenState extends State<SocialProfileSetupScreen> {
             begin: Alignment.topCenter,
             end: Alignment.bottomCenter,
             colors: [
-              GameConstants.tacticalGray.withOpacity(0.8),
-              GameConstants.tacticalBlack,
+              GameColors.tacticalGray.withValues(alpha: 0.8),
+              GameColors.tacticalBlack,
             ],
           ),
         ),
@@ -142,23 +146,23 @@ class _SocialProfileSetupScreenState extends State<SocialProfileSetupScreen> {
               mainAxisAlignment: MainAxisAlignment.center,
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
-                const Text(
-                  '프로필 초기 설정',
+                Text(
+                  GameStrings.setupProfile,
                   textAlign: TextAlign.center,
                   style: TextStyle(
                     fontSize: 24,
                     fontWeight: FontWeight.bold,
-                    color: Colors.white,
+                    color: GameColors.textPrimary,
                     letterSpacing: 2,
                   ),
                 ),
                 const SizedBox(height: 10),
-                const Text(
-                  '당신의 전술 식별 정보를 설정하세요',
+                Text(
+                  GameStrings.setupProfileSub,
                   textAlign: TextAlign.center,
                   style: TextStyle(
                     fontSize: 12,
-                    color: GameConstants.accentNeon,
+                    color: GameColors.accentNeon,
                     letterSpacing: 1,
                   ),
                 ),
@@ -170,20 +174,35 @@ class _SocialProfileSetupScreenState extends State<SocialProfileSetupScreen> {
                     Expanded(
                       child: TextField(
                         controller: _nicknameController,
-                        style: const TextStyle(color: Colors.white),
+                        style: TextStyle(color: GameColors.textPrimary),
                         decoration: InputDecoration(
-                          labelText: '닉네임',
-                          labelStyle: const TextStyle(color: Colors.white54, fontSize: 12),
+                          labelText: GameStrings.nickname,
+                          labelStyle: TextStyle(
+                            color: GameColors.textMuted,
+                            fontSize: 12,
+                          ),
                           prefixIcon: Icon(
                             Icons.person_outline,
-                            color: _isNicknameChecked 
-                                ? (_isNicknameAvailable ? Colors.green : Colors.red) 
-                                : GameConstants.accentNeon,
+                            color: _isNicknameChecked
+                                ? (_isNicknameAvailable
+                                      ? GameColors.success
+                                      : GameColors.error)
+                                : GameColors.accentNeon,
                           ),
                           filled: true,
-                          fillColor: Colors.white.withOpacity(0.05),
-                          enabledBorder: const UnderlineInputBorder(borderSide: BorderSide(color: Colors.white24)),
-                          focusedBorder: const UnderlineInputBorder(borderSide: BorderSide(color: GameConstants.accentNeon)),
+                          fillColor: GameColors.tacticalWhite.withValues(
+                            alpha: 0.05,
+                          ),
+                          enabledBorder: UnderlineInputBorder(
+                            borderSide: BorderSide(
+                              color: GameColors.dividerColor,
+                            ),
+                          ),
+                          focusedBorder: UnderlineInputBorder(
+                            borderSide: BorderSide(
+                              color: GameColors.accentNeon,
+                            ),
+                          ),
                         ),
                       ),
                     ),
@@ -193,13 +212,28 @@ class _SocialProfileSetupScreenState extends State<SocialProfileSetupScreen> {
                       child: TextButton(
                         onPressed: _isChecking ? null : _checkNickname,
                         style: TextButton.styleFrom(
-                          backgroundColor: GameConstants.accentNeon.withOpacity(0.1),
-                          foregroundColor: GameConstants.accentNeon,
+                          backgroundColor: GameColors.accentNeon.withValues(
+                            alpha: 0.1,
+                          ),
+                          foregroundColor: GameColors.accentNeon,
                           padding: const EdgeInsets.symmetric(horizontal: 15),
                         ),
                         child: _isChecking
-                            ? const SizedBox(width: 20, height: 20, child: CircularProgressIndicator(strokeWidth: 2, color: GameConstants.accentNeon))
-                            : const Text('중복 확인', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12)),
+                            ? SizedBox(
+                                width: 20,
+                                height: 20,
+                                child: CircularProgressIndicator(
+                                  strokeWidth: 2,
+                                  color: GameColors.accentNeon,
+                                ),
+                              )
+                            : const Text(
+                                GameStrings.checkDuplicate,
+                                style: TextStyle(
+                                  fontWeight: FontWeight.bold,
+                                  fontSize: 12,
+                                ),
+                              ),
                       ),
                     ),
                   ],
@@ -208,18 +242,22 @@ class _SocialProfileSetupScreenState extends State<SocialProfileSetupScreen> {
                   Padding(
                     padding: const EdgeInsets.only(top: 8, left: 4),
                     child: Text(
-                      _isNicknameAvailable ? '✓ 사용 가능한 닉네임입니다.' : '✕ 이미 존재하는 닉네임입니다.',
+                      _isNicknameAvailable
+                          ? '✓ ${GameStrings.nicknameAvailable}'
+                          : '✕ ${GameStrings.errorNicknameExists}',
                       style: TextStyle(
-                        color: _isNicknameAvailable ? Colors.green : Colors.red,
+                        color: _isNicknameAvailable
+                            ? GameColors.success
+                            : GameColors.error,
                         fontSize: 10,
                       ),
                     ),
                   ),
                 const SizedBox(height: 30),
 
-                const Text(
-                  '나만의 전술 색상',
-                  style: TextStyle(color: Colors.white54, fontSize: 12),
+                Text(
+                  GameStrings.myTacticalColor,
+                  style: TextStyle(color: GameColors.textMuted, fontSize: 12),
                 ),
                 const SizedBox(height: 15),
                 Row(
@@ -243,10 +281,10 @@ class _SocialProfileSetupScreenState extends State<SocialProfileSetupScreen> {
                       child: OutlinedButton.icon(
                         onPressed: _generateRandomColor,
                         icon: const Icon(Icons.refresh, size: 16),
-                        label: const Text('새로운 색상 생성'),
+                        label: const Text(GameStrings.generateNewColor),
                         style: OutlinedButton.styleFrom(
-                          foregroundColor: Colors.white,
-                          side: const BorderSide(color: Colors.white24),
+                          foregroundColor: GameColors.textPrimary,
+                          side: BorderSide(color: GameColors.dividerColor),
                         ),
                       ),
                     ),
@@ -259,13 +297,23 @@ class _SocialProfileSetupScreenState extends State<SocialProfileSetupScreen> {
                     return ElevatedButton(
                       onPressed: auth.isLoading ? null : _handleSave,
                       style: ElevatedButton.styleFrom(
-                        backgroundColor: GameConstants.accentNeon,
-                        foregroundColor: Colors.black,
+                        backgroundColor: GameColors.accentNeon,
+                        foregroundColor: GameColors.tacticalBlack,
                         padding: const EdgeInsets.symmetric(vertical: 15),
                       ),
                       child: auth.isLoading
-                          ? const SizedBox(height: 20, width: 20, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.black))
-                          : const Text('설정 완료', style: TextStyle(fontWeight: FontWeight.bold)),
+                          ? SizedBox(
+                              height: 20,
+                              width: 20,
+                              child: CircularProgressIndicator(
+                                strokeWidth: 2,
+                                color: GameColors.tacticalBlack,
+                              ),
+                            )
+                          : const Text(
+                              GameStrings.setupComplete,
+                              style: TextStyle(fontWeight: FontWeight.bold),
+                            ),
                     );
                   },
                 ),

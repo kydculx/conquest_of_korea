@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../../core/constants.dart';
-import '../../core/theme.dart';
+import '../../core/constants/strings.dart';
 import '../../providers/game_provider.dart';
 import '../../providers/location_provider.dart';
 import '../../providers/auth_provider.dart';
@@ -36,21 +36,21 @@ class HudOverlay extends StatelessWidget {
               child: Container(
                 padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
                 decoration: BoxDecoration(
-                  color: Colors.black.withAlpha(180),
+                  color: GameColors.backgroundTranslucent,
                   borderRadius: BorderRadius.circular(20),
-                  border: Border.all(color: Colors.white24),
+                  border: Border.all(color: GameColors.dividerColor),
                 ),
-                child: const Text('구역 점령 중...',
+                child: Text(GameStrings.capturingZone,
                     style: TextStyle(
-                        color: Colors.white,
+                        color: GameColors.textPrimary,
                         fontSize: 13,
                         fontWeight: FontWeight.bold)),
               ),
             ),
           ),
 
-        // 수동 점령 버튼 (로그인 상태에서만)
-        if (auth.isAuthenticated && !game.isAutoCapture && !game.isCapturing)
+        // 수동 점령 버튼 (로그인 상태 & 수동 모드 & 점령 중이 아님 & 점령 가능할 때만 노출)
+        if (auth.isAuthenticated && !game.isAutoCapture && !game.isCapturing && game.canCapture)
           Positioned(
             bottom: 40,
             left: 0,
@@ -66,9 +66,9 @@ class HudOverlay extends StatelessWidget {
             mainAxisSize: MainAxisSize.min,
             children: [
               _UtilButton(
-                label: 'GPS 리셋',
+                label: GameStrings.gpsReset,
                 icon: Icons.flash_on,
-                color: Colors.orange,
+                color: GameColors.warning,
                 onTap: () => loc.resetGps(),
               ),
               const SizedBox(height: 12),
@@ -76,11 +76,11 @@ class HudOverlay extends StatelessWidget {
               if (auth.isAuthenticated) ...[
                 const SizedBox(height: 12),
                 _UtilButton(
-                  label: game.isAutoCapture ? '자동' : '수동',
+                  label: game.isAutoCapture ? GameStrings.auto : GameStrings.manual,
                   icon: game.isAutoCapture ? Icons.sync : Icons.touch_app,
                   color: game.isAutoCapture
-                      ? GameConstants.accentNeon
-                      : Colors.white54,
+                      ? GameColors.accentNeon
+                      : GameColors.textMuted,
                   onTap: () => game.toggleAutoCapture(),
                 ),
               ],
@@ -99,12 +99,11 @@ class _AuthProfileButton extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final bool isAuth = auth.isAuthenticated;
-    final profile = auth.profile;
     
-    // 로그인 상태면 유저 고유 색상, 아니면 반투명 흰색
-    final Color color = isAuth && profile != null 
-        ? TacticalTheme.parseColor(profile.colorHex) 
-        : Colors.white54;
+    // 프로필 버튼은 공용 네온 그린 전술 컬러로 고정
+    final Color color = isAuth 
+        ? GameColors.accentNeon 
+        : GameColors.textMuted;
 
     return GestureDetector(
       onTap: () {
@@ -117,14 +116,14 @@ class _AuthProfileButton extends StatelessWidget {
       child: Container(
         padding: const EdgeInsets.all(8),
         decoration: BoxDecoration(
-          color: Colors.black.withAlpha(200),
+          color: GameColors.backgroundMedium,
           borderRadius: BorderRadius.circular(20),
           border: Border.all(
-            color: color.withAlpha(isAuth ? 100 : 50), 
+            color: color.withValues(alpha: (isAuth ? 100 : 50) / 255), 
             width: 1.5,
           ),
           boxShadow: isAuth 
-              ? [BoxShadow(color: color.withAlpha(50), blurRadius: 10)]
+              ? [BoxShadow(color: color.withValues(alpha: 50 / 255), blurRadius: 10)]
               : [],
         ),
         child: Icon(
@@ -147,7 +146,6 @@ class _CaptureButton extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final canCapture = game.canCapture;
-    final accuracy = loc.currentAccuracy;
 
     return Column(
       mainAxisSize: MainAxisSize.min,
@@ -158,19 +156,19 @@ class _CaptureButton extends StatelessWidget {
               game.startManualCapture();
             } else {
               final auth = context.read<AuthProvider>();
-              String reason = "점령할 수 없는 상태입니다.";
+              String reason = GameStrings.cannotCapture;
               if (!loc.isGpsActive || loc.currentAccuracy > GameConstants.captureAccuracyThreshold) {
-                reason = "위치 정보가 부정확하여 점령할 수 없습니다.";
+                reason = GameStrings.gpsInaccurateCannotCapture;
               } else if (!auth.isAuthenticated) {
-                reason = "로그인이 필요한 작전입니다.";
+                reason = GameStrings.loginRequiredOperation;
               } else if (game.isAlreadyCapturedByMe) {
-                reason = "이미 당신이 점령한 지역입니다.";
+                reason = GameStrings.alreadyCapturedByMe;
               }
               
               ScaffoldMessenger.of(context).showSnackBar(
                 SnackBar(
                   content: Text(reason),
-                  backgroundColor: Colors.black87,
+                  backgroundColor: GameColors.backgroundMedium,
                   behavior: SnackBarBehavior.floating,
                   duration: const Duration(seconds: 2),
                 )
@@ -183,16 +181,16 @@ class _CaptureButton extends StatelessWidget {
             height: 100,
             decoration: BoxDecoration(
               color: canCapture
-                  ? Colors.red.withAlpha(220)
-                  : Colors.grey.withAlpha(150),
+                  ? GameColors.error.withValues(alpha: 220 / 255)
+                  : GameColors.textMuted.withValues(alpha: 150 / 255),
               shape: BoxShape.circle,
               border: Border.all(
-                  color: Colors.white.withAlpha(canCapture ? 200 : 50),
+                  color: GameColors.tacticalWhite.withValues(alpha: (canCapture ? 200 : 50) / 255),
                   width: 4),
               boxShadow: canCapture
                   ? [
                       BoxShadow(
-                          color: Colors.red.withAlpha(150),
+                          color: GameColors.error.withValues(alpha: 150 / 255),
                           blurRadius: 25,
                           spreadRadius: 5)
                     ]
@@ -202,11 +200,11 @@ class _CaptureButton extends StatelessWidget {
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
                 Icon(canCapture ? Icons.radar : Icons.lock,
-                    color: Colors.white, size: 40),
+                    color: GameColors.tacticalWhite, size: 40),
                 const SizedBox(height: 4),
-                Text(canCapture ? '점령하기' : '점령불가',
-                    style: const TextStyle(
-                        color: Colors.white,
+                Text(canCapture ? GameStrings.captureAction : GameStrings.cannotCaptureLabel,
+                    style: TextStyle(
+                        color: GameColors.tacticalWhite,
                         fontSize: 13,
                         fontWeight: FontWeight.w900)),
               ],
@@ -235,22 +233,22 @@ class _UtilButton extends StatelessWidget {
       mainAxisSize: MainAxisSize.min,
       children: [
         Text(label,
-            style: const TextStyle(
-                color: Colors.white54,
+            style: TextStyle(
+                color: GameColors.textMuted,
                 fontSize: 10,
                 fontWeight: FontWeight.bold)),
         const SizedBox(height: 4),
         Material(
-          color: Colors.transparent,
+          color: GameColors.transparent,
           child: InkWell(
             onTap: onTap,
             borderRadius: BorderRadius.circular(20),
             child: Container(
               padding: const EdgeInsets.all(10),
               decoration: BoxDecoration(
-                color: Colors.black.withAlpha(180),
+                color: GameColors.backgroundTranslucent,
                 shape: BoxShape.circle,
-                border: Border.all(color: color.withAlpha(100)),
+                border: Border.all(color: color.withValues(alpha: 100 / 255)),
               ),
               child: Icon(icon, color: color, size: 24),
             ),
@@ -288,7 +286,7 @@ class _MapStyleButton extends StatelessWidget {
     return _UtilButton(
       label: style.name,
       icon: icon,
-      color: game.showMap ? Colors.white : GameConstants.accentNeon,
+      color: game.showMap ? GameColors.tacticalWhite : GameColors.accentNeon,
       onTap: () => game.cycleMapStyle(),
     );
   }

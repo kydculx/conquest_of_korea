@@ -6,6 +6,7 @@ import '../models/tile_model.dart';
 import '../services/supabase_service.dart';
 import '../services/hex_service.dart';
 import '../core/constants.dart';
+import '../core/constants/strings.dart';
 import '../models/alert_model.dart';
 
 class CaptureController {
@@ -99,9 +100,9 @@ class CaptureController {
     final success = await _supabase.captureTile(tile);
     if (success) {
       onTileCaptured(tile.id, tile);
-      onAlert('구역을 점령했습니다!', AlertType.success);
+      onAlert(GameStrings.captureSuccessAlert, AlertType.success);
     } else {
-      onAlert('점령 실패: 다시 시도해주세요.', AlertType.error);
+      onAlert(GameStrings.captureFailAlert, AlertType.error);
     }
 
     _isSaving = false;

@@ -2,6 +2,7 @@ import 'dart:async';
 import 'dart:io';
 import 'package:flutter/foundation.dart';
 import 'package:geolocator/geolocator.dart';
+import '../core/constants/strings.dart';
 
 class GeoService {
   StreamSubscription<Position>? _positionStreamSubscription;
@@ -52,8 +53,8 @@ class GeoService {
         forceLocationManager: true, // 구글 서비스를 거치지 않고 하드웨어 직접 제어 (핵심)
         intervalDuration: const Duration(seconds: 1),
         foregroundNotificationConfig: const ForegroundNotificationConfig(
-          notificationText: "하드웨어 GPS를 직접 제어 중입니다.",
-          notificationTitle: "한국정복 긴급 작전 모드",
+          notificationText: GameStrings.gpsServiceNotificationText,
+          notificationTitle: GameStrings.gpsServiceNotificationTitle,
           enableWakeLock: true,
         ),
       );

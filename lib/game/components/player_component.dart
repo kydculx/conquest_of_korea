@@ -68,7 +68,7 @@ class PlayerComponent extends PositionComponent {
     canvas.drawPath(
       arrowPath,
       Paint()
-        ..color = Colors.black.withAlpha(180)
+        ..color = GameColors.tacticalBlack.withValues(alpha: 180 / 255)
         ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 8),
     );
 
@@ -76,7 +76,7 @@ class PlayerComponent extends PositionComponent {
     canvas.drawPath(
       arrowPath,
       Paint()
-        ..color = GameConstants.accentNeon.withAlpha(100)
+        ..color = GameColors.accentNeon.withValues(alpha: 100 / 255)
         ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 12),
     );
 
@@ -87,7 +87,7 @@ class PlayerComponent extends PositionComponent {
         ..shader = ui.Gradient.linear(
           Offset(center.dx, center.dy - radius),
           Offset(center.dx, center.dy + radius),
-          [Colors.white, GameConstants.accentNeon],
+          [GameColors.tacticalWhite, GameColors.accentNeon],
         )
         ..style = PaintingStyle.fill,
     );
@@ -96,7 +96,7 @@ class PlayerComponent extends PositionComponent {
     canvas.drawPath(
       arrowPath,
       Paint()
-        ..color = Colors.white.withAlpha(220)
+        ..color = GameColors.tacticalWhite.withValues(alpha: 220 / 255)
         ..style = PaintingStyle.stroke
         ..strokeWidth = 2.5
         ..strokeJoin = StrokeJoin.round,
@@ -107,7 +107,7 @@ class PlayerComponent extends PositionComponent {
       Offset(center.dx, center.dy - radius * 0.6),
       Offset(center.dx, center.dy + radius * 0.3),
       Paint()
-        ..color = Colors.black.withAlpha(60)
+        ..color = GameColors.tacticalBlack.withValues(alpha: 60 / 255)
         ..style = PaintingStyle.stroke
         ..strokeWidth = 1.2,
     );

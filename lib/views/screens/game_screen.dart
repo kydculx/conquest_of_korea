@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../../core/constants.dart';
+import '../../core/constants/strings.dart';
 import '../../game/conquest_game.dart';
 import '../../providers/game_provider.dart';
 import '../../providers/auth_provider.dart';
@@ -77,7 +78,7 @@ class _GameScreenState extends State<GameScreen> {
         loc.currentLocation ?? GameConstants.defaultPosition;
 
     return Scaffold(
-      backgroundColor: GameConstants.tacticalBlack,
+      backgroundColor: GameColors.tacticalBlack,
       body: Stack(
         children: [
           // 지도 + Flame 레이어
@@ -107,7 +108,7 @@ class _GameScreenState extends State<GameScreen> {
             },
             child: game.isInitialized
                 ? const SizedBox.shrink()
-                : const LoadingOverlay(message: '전술 위성 동기화 중...'),
+                : const LoadingOverlay(message: GameStrings.tacticalSatelliteSync),
           ),
         ],
       ),

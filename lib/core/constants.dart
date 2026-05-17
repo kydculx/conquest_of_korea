@@ -1,5 +1,6 @@
-import 'package:flutter/material.dart';
 import 'package:latlong2/latlong.dart';
+
+export 'constants/colors.dart';
 
 class GameConstants {
   static const String appName = '한국정복 (Conquest)';
@@ -32,7 +33,7 @@ class GameConstants {
   static const double highAccuracyThreshold = 10.0;
 
   // --- 점령 시스템 설정 ---
-  static const Duration emptyTileDuration = Duration(seconds: 5);
+  static const Duration emptyTileDuration = Duration(seconds: 3);
   static const Duration enemyTileDuration = Duration(seconds: 10);
   static const int updateIntervalMs = 100;
   static const double captureDistanceThreshold = 40.0;
@@ -44,13 +45,9 @@ class GameConstants {
   // 점령 구역 투명도 (0.0 ~ 1.0)
   static const double tileOpacity = 0.5;
 
-  // UI 스타일
+  // UI 스타일 (세부 색상 정의는 constants/colors.dart 참조)
   static const double hudOpacity = 0.8;
-  static const Color accentNeon = Color(0xFF00FFD1);
-  static const Color colorAccent = Color(0xFF00FFD1);
 
-  static const Color tacticalGray = Color(0xFF263238);
-  static const Color tacticalBlack = Color(0xFF000000); // 완전한 블랙으로 변경
   static const int captureDurationSeconds = 5;
   // 맵 스타일 리스트 (방대한 풀 세트)
   static const List<MapStyle> mapStyles = [

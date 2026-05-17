@@ -1,11 +1,12 @@
 import 'dart:math' as math;
 import 'package:flutter/material.dart';
 import '../../core/constants.dart';
+import '../../core/constants/strings.dart';
 
 /// 게임 데이터 로딩 및 GPS 연결 대기 시 표시하는 전술적 로딩 화면
 class LoadingOverlay extends StatefulWidget {
   final String message;
-  const LoadingOverlay({super.key, this.message = '전술 데이터 분석 중...'});
+  const LoadingOverlay({super.key, this.message = GameStrings.analyzingTacticalData});
 
   @override
   State<LoadingOverlay> createState() => _LoadingOverlayState();
@@ -33,7 +34,7 @@ class _LoadingOverlayState extends State<LoadingOverlay>
   @override
   Widget build(BuildContext context) {
     return Container(
-      color: Colors.black.withAlpha(220),
+      color: GameColors.tacticalBlack.withValues(alpha: 220 / 255),
       child: Center(
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
@@ -63,18 +64,18 @@ class _LoadingOverlayState extends State<LoadingOverlay>
                     children: [
                       Text(
                         widget.message,
-                        style: const TextStyle(
-                          color: GameConstants.accentNeon,
+                        style: TextStyle(
+                          color: GameColors.accentNeon,
                           fontSize: 16,
                           fontWeight: FontWeight.bold,
                           letterSpacing: 2,
                         ),
                       ),
                       const SizedBox(height: 8),
-                      const Text(
+                      Text(
                         'STRATEGIC NETWORK CONNECTING...',
                         style: TextStyle(
-                          color: Colors.white24,
+                          color: GameColors.dividerColor,
                           fontSize: 10,
                           letterSpacing: 1.5,
                         ),
@@ -101,7 +102,7 @@ class _RadarPainter extends CustomPainter {
     final radius = size.width / 2;
 
     final bgPaint = Paint()
-      ..color = GameConstants.accentNeon.withAlpha(30)
+      ..color = GameColors.accentNeon.withValues(alpha: 30 / 255)
       ..style = PaintingStyle.stroke
       ..strokeWidth = 1.0;
 
@@ -122,8 +123,8 @@ class _RadarPainter extends CustomPainter {
       startAngle: 0.0,
       endAngle: math.pi * 2,
       colors: [
-        GameConstants.accentNeon.withAlpha(0),
-        GameConstants.accentNeon.withAlpha(150),
+        GameColors.accentNeon.withValues(alpha: 0.0),
+        GameColors.accentNeon.withValues(alpha: 150 / 255),
       ],
       stops: const [0.8, 1.0],
       transform: GradientRotation(progress * math.pi * 2 - math.pi / 2),
@@ -138,7 +139,7 @@ class _RadarPainter extends CustomPainter {
       center.dy + radius * math.sin(angle),
     );
     canvas.drawCircle(
-        dotOffset, 3, Paint()..color = GameConstants.accentNeon);
+        dotOffset, 3, Paint()..color = GameColors.accentNeon);
   }
 
   @override

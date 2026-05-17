@@ -1,13 +1,11 @@
-import 'dart:convert';
 import 'dart:io';
-import 'dart:math';
 import 'package:flutter/foundation.dart';
-import 'package:crypto/crypto.dart';
 import 'package:google_sign_in/google_sign_in.dart';
 import 'package:sign_in_with_apple/sign_in_with_apple.dart';
 import 'package:kakao_flutter_sdk_user/kakao_flutter_sdk_user.dart' as kakao;
 import 'package:supabase_flutter/supabase_flutter.dart';
 import '../models/user_profile.dart';
+import '../core/constants/strings.dart';
 
 class AuthService {
   final SupabaseClient _client = Supabase.instance.client;
@@ -42,7 +40,7 @@ class AuthService {
     if (response.user != null && 
         response.user!.identities != null && 
         response.user!.identities!.isEmpty) {
-      throw const AuthException('이미 가입된 이메일입니다. 다른 이메일을 사용하거나 로그인해주세요.', statusCode: '400');
+      throw const AuthException(GameStrings.emailAlreadyInUse, statusCode: '400');
     }
 
     // 가입 성공 시 profiles 테이블에 추가 데이터 저장
@@ -101,7 +99,7 @@ class AuthService {
       final idToken = googleAuth.idToken;
       final accessToken = googleAuth.accessToken;
 
-      if (idToken == null) throw 'ID 토큰을 가져오지 못했습니다.';
+      if (idToken == null) throw GameStrings.idTokenFetchFailed;
 
       debugPrint('🔑 Native Google Auth Success. ID Token found.');
 
@@ -162,7 +160,7 @@ class AuthService {
     final idToken = token.idToken;
     if (idToken == null) {
       debugPrint('❌ Kakao ID Token is null. Ensure OIDC is enabled in Kakao Console.');
-      throw '카카오 로그인을 위한 ID 토큰이 없습니다. 카카오 내 애플리케이션 설정에서 OpenID Connect를 활성화해주세요.';
+      throw GameStrings.kakaoOidcRequired;
     }
 
     debugPrint('🔑 Kakao ID Token found. Audience: ${token.scopes?.contains('openid')}');

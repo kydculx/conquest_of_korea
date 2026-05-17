@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../../core/constants.dart';
+import '../../core/constants/strings.dart';
 import '../../core/theme.dart';
 import '../../providers/auth_provider.dart';
 import '../../providers/game_provider.dart';
@@ -17,25 +18,25 @@ class ProfileScreen extends StatelessWidget {
 
     if (!auth.isAuthenticated || profile == null) {
       return Scaffold(
-        backgroundColor: GameConstants.tacticalBlack,
+        backgroundColor: GameColors.tacticalBlack,
         body: Center(
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              const Icon(Icons.lock_person, size: 64, color: Colors.white24),
+              Icon(Icons.lock_person, size: 64, color: GameColors.dividerColor),
               const SizedBox(height: 20),
-              const Text(
-                '로그인이 필요한 페이지입니다.',
-                style: TextStyle(color: Colors.white70, fontSize: 16),
+              Text(
+                GameStrings.loginRequiredPage,
+                style: TextStyle(color: GameColors.textSecondary, fontSize: 16),
               ),
               const SizedBox(height: 30),
               ElevatedButton(
                 onPressed: () => Navigator.pop(context),
                 style: ElevatedButton.styleFrom(
-                  backgroundColor: GameConstants.accentNeon,
-                  foregroundColor: Colors.black,
+                  backgroundColor: GameColors.accentNeon,
+                  foregroundColor: GameColors.tacticalBlack,
                 ),
-                child: const Text('돌아가기'),
+                child: const Text(GameStrings.goBack),
               ),
             ],
           ),
@@ -46,12 +47,12 @@ class ProfileScreen extends StatelessWidget {
     final teamColor = TacticalTheme.parseColor(profile.colorHex);
 
     return Scaffold(
-      backgroundColor: GameConstants.tacticalBlack,
+      backgroundColor: GameColors.tacticalBlack,
       appBar: AppBar(
-        backgroundColor: Colors.transparent,
+        backgroundColor: GameColors.transparent,
         elevation: 0,
         title: const Text(
-          '대원 프로필',
+          GameStrings.agentProfile,
           style: TextStyle(fontWeight: FontWeight.bold, letterSpacing: 1.2),
         ),
         centerTitle: true,
@@ -71,15 +72,15 @@ class ProfileScreen extends StatelessWidget {
                 width: double.infinity,
                 padding: const EdgeInsets.all(24),
                 decoration: BoxDecoration(
-                  color: GameConstants.tacticalGray.withAlpha(150),
+                  color: GameColors.tacticalGray.withValues(alpha: 150 / 255),
                   borderRadius: BorderRadius.circular(24),
                   border: Border.all(
-                    color: teamColor.withAlpha(100),
+                    color: GameColors.tacticalWhite.withValues(alpha: 20 / 255),
                     width: 1.5,
                   ),
                   boxShadow: [
                     BoxShadow(
-                      color: teamColor.withAlpha(30),
+                      color: GameColors.tacticalBlack.withValues(alpha: 50 / 255),
                       blurRadius: 20,
                       spreadRadius: 5,
                     ),
@@ -90,17 +91,17 @@ class ProfileScreen extends StatelessWidget {
                     CircleAvatar(
                       radius: 40,
                       backgroundColor: teamColor,
-                      child: const Icon(
+                      child: Icon(
                         Icons.person,
                         size: 48,
-                        color: Colors.black,
+                        color: GameColors.tacticalBlack,
                       ),
                     ),
                     const SizedBox(height: 16),
                     Text(
                       profile.nickname,
-                      style: const TextStyle(
-                        color: Colors.white,
+                      style: TextStyle(
+                        color: GameColors.textPrimary,
                         fontSize: 24,
                         fontWeight: FontWeight.bold,
                       ),
@@ -109,7 +110,7 @@ class ProfileScreen extends StatelessWidget {
                     Text(
                       user?.email ?? '',
                       style: TextStyle(
-                        color: Colors.white.withAlpha(120),
+                        color: GameColors.textSecondary.withValues(alpha: 120 / 255),
                         fontSize: 14,
                       ),
                     ),
@@ -126,22 +127,22 @@ class ProfileScreen extends StatelessWidget {
                               vertical: 4,
                             ),
                             child: _buildStatItem(
-                              '소속팀',
+                              GameStrings.myTeam,
                               profile.colorHex.toUpperCase(),
-                              teamColor,
+                              GameColors.accentNeon,
                             ),
                           ),
                         ),
                         Container(
                           width: 1,
                           height: 30,
-                          color: Colors.white12,
+                          color: GameColors.dividerColor,
                           margin: const EdgeInsets.symmetric(horizontal: 8),
                         ),
                         _buildStatItem(
-                          '점령 구역',
-                          '${game.myCapturedCount}개',
-                          GameConstants.accentNeon,
+                          GameStrings.capturedTiles,
+                          '${game.myCapturedCount}${GameStrings.countUnit}',
+                          GameColors.accentNeon,
                         ),
                       ],
                     ),
@@ -150,10 +151,10 @@ class ProfileScreen extends StatelessWidget {
               ),
 
               const SizedBox(height: 32),
-              const Text(
-                '작전 설정',
+              Text(
+                GameStrings.operationSettings,
                 style: TextStyle(
-                  color: Colors.white54,
+                  color: GameColors.textMuted,
                   fontWeight: FontWeight.bold,
                   fontSize: 13,
                 ),
@@ -164,35 +165,35 @@ class ProfileScreen extends StatelessWidget {
               _buildMenuCard([
                 _buildMenuItem(
                   icon: Icons.palette,
-                  title: '팀 색상 변경',
-                  subtitle: '작전 구역 표시 색상 변경',
+                  title: GameStrings.changeTeamColor,
+                  subtitle: GameStrings.changeTeamColorSub,
                   onTap: () => _showColorPicker(context, auth),
                 ),
                 _buildDivider(),
                 _buildMenuItem(
                   icon: Icons.notifications_active,
-                  title: '푸시 알림',
-                  subtitle: '점령 및 공습 알림 받기',
+                  title: GameStrings.pushNotifications,
+                  subtitle: GameStrings.pushNotificationsSub,
                   trailing: Switch(
                     value: game.isNotificationEnabled,
                     onChanged: (val) => game.toggleNotifications(),
-                    activeThumbColor: GameConstants.accentNeon,
+                    activeThumbColor: GameColors.accentNeon,
                   ),
                 ),
                 _buildDivider(),
                 _buildMenuItem(
                   icon: Icons.security,
-                  title: '보안 정책',
-                  subtitle: '데이터 보호 및 이용 약관',
+                  title: GameStrings.securityPolicy,
+                  subtitle: GameStrings.securityPolicySub,
                   onTap: () {},
                 ),
               ]),
 
               const SizedBox(height: 24),
-              const Text(
-                '계정 관리',
+              Text(
+                GameStrings.accountManagement,
                 style: TextStyle(
-                  color: Colors.white54,
+                  color: GameColors.textMuted,
                   fontWeight: FontWeight.bold,
                   fontSize: 13,
                 ),
@@ -202,8 +203,8 @@ class ProfileScreen extends StatelessWidget {
               _buildMenuCard([
                 _buildMenuItem(
                   icon: Icons.logout,
-                  title: '로그아웃',
-                  titleColor: Colors.redAccent,
+                  title: GameStrings.logout,
+                  titleColor: GameColors.error,
                   onTap: () async {
                     final confirm = await _showLogoutConfirm(context);
                     if (confirm == true) {
@@ -219,7 +220,7 @@ class ProfileScreen extends StatelessWidget {
                 child: Text(
                   'Conquest of Korea v1.0.0',
                   style: TextStyle(
-                    color: Colors.white.withAlpha(50),
+                    color: GameColors.textMuted.withValues(alpha: 100 / 255),
                     fontSize: 12,
                   ),
                 ),
@@ -236,7 +237,7 @@ class ProfileScreen extends StatelessWidget {
       children: [
         Text(
           label,
-          style: const TextStyle(color: Colors.white54, fontSize: 12),
+          style: TextStyle(color: GameColors.textMuted, fontSize: 12),
         ),
         const SizedBox(height: 4),
         Text(
@@ -254,9 +255,9 @@ class ProfileScreen extends StatelessWidget {
   Widget _buildMenuCard(List<Widget> children) {
     return Container(
       decoration: BoxDecoration(
-        color: GameConstants.tacticalGray.withAlpha(100),
+        color: GameColors.tacticalGray.withValues(alpha: 100 / 255),
         borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: Colors.white.withAlpha(10)),
+        border: Border.all(color: GameColors.dividerColor.withValues(alpha: 50 / 255)),
       ),
       child: Column(children: children),
     );
@@ -267,26 +268,27 @@ class ProfileScreen extends StatelessWidget {
     required String title,
     String? subtitle,
     Widget? trailing,
-    Color titleColor = Colors.white,
+    Color? titleColor,
     VoidCallback? onTap,
   }) {
+    final activeTitleColor = titleColor ?? GameColors.textPrimary;
     return ListTile(
       onTap: onTap,
-      leading: Icon(icon, color: titleColor.withAlpha(180)),
+      leading: Icon(icon, color: activeTitleColor.withValues(alpha: 180 / 255)),
       title: Text(
         title,
-        style: TextStyle(color: titleColor, fontWeight: FontWeight.w600),
+        style: TextStyle(color: activeTitleColor, fontWeight: FontWeight.w600),
       ),
       subtitle: subtitle != null
           ? Text(
               subtitle,
-              style: const TextStyle(color: Colors.white38, fontSize: 12),
+              style: TextStyle(color: GameColors.textMuted, fontSize: 12),
             )
           : null,
       trailing:
           trailing ??
           (onTap != null
-              ? const Icon(Icons.chevron_right, color: Colors.white24)
+              ? Icon(Icons.chevron_right, color: GameColors.dividerColor)
               : null),
     );
   }
@@ -294,7 +296,7 @@ class ProfileScreen extends StatelessWidget {
   Widget _buildDivider() {
     return Divider(
       height: 1,
-      color: Colors.white.withAlpha(10),
+      color: GameColors.dividerColor.withValues(alpha: 50 / 255),
       indent: 16,
       endIndent: 16,
     );
@@ -304,23 +306,26 @@ class ProfileScreen extends StatelessWidget {
     return showDialog<bool>(
       context: context,
       builder: (context) => AlertDialog(
-        backgroundColor: GameConstants.tacticalGray,
+        backgroundColor: GameColors.tacticalGray,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(15)),
-        title: const Text('작전 종료', style: TextStyle(color: Colors.white)),
-        content: const Text(
-          '정말로 로그아웃 하시겠습니까?',
-          style: TextStyle(color: Colors.white70),
+        title: Text(
+          GameStrings.terminateOperation,
+          style: TextStyle(color: GameColors.textPrimary),
+        ),
+        content: Text(
+          GameStrings.logoutConfirmMessage,
+          style: TextStyle(color: GameColors.textSecondary),
         ),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context, false),
-            child: const Text('취소'),
+            child: const Text(GameStrings.cancel),
           ),
           TextButton(
             onPressed: () => Navigator.pop(context, true),
-            child: const Text(
-              '로그아웃',
-              style: TextStyle(color: Colors.redAccent),
+            child: Text(
+              GameStrings.logout,
+              style: TextStyle(color: GameColors.error),
             ),
           ),
         ],
@@ -346,14 +351,14 @@ class ProfileScreen extends StatelessWidget {
                   .toUpperCase();
 
           return AlertDialog(
-            backgroundColor: GameConstants.tacticalGray,
+            backgroundColor: GameColors.tacticalGray,
             shape: RoundedRectangleBorder(
               borderRadius: BorderRadius.circular(24),
             ),
-            title: const Text(
-              '팀 색상 커스텀',
+            title: Text(
+              GameStrings.customTeamColor,
               style: TextStyle(
-                color: Colors.white,
+                color: GameColors.textPrimary,
                 fontWeight: FontWeight.bold,
               ),
             ),
@@ -369,24 +374,27 @@ class ProfileScreen extends StatelessWidget {
                     shape: BoxShape.circle,
                     boxShadow: [
                       BoxShadow(
-                        color: previewColor.withAlpha(100),
+                        color: previewColor.withValues(alpha: 100 / 255),
                         blurRadius: 20,
                         spreadRadius: 2,
                       ),
                     ],
-                    border: Border.all(color: Colors.white24, width: 2),
+                    border: Border.all(
+                      color: GameColors.dividerColor,
+                      width: 2,
+                    ),
                   ),
-                  child: const Icon(
+                  child: Icon(
                     Icons.person,
-                    color: Colors.black,
+                    color: GameColors.tacticalBlack,
                     size: 40,
                   ),
                 ),
                 const SizedBox(height: 12),
                 Text(
                   hexString,
-                  style: const TextStyle(
-                    color: Colors.white70,
+                  style: TextStyle(
+                    color: GameColors.textSecondary,
                     fontFamily: 'monospace',
                     fontWeight: FontWeight.bold,
                   ),
@@ -397,19 +405,19 @@ class ProfileScreen extends StatelessWidget {
                 _buildRGBSlider(
                   'R',
                   r,
-                  Colors.redAccent,
+                  GameColors.error,
                   (val) => setState(() => r = val.toInt()),
                 ),
                 _buildRGBSlider(
                   'G',
                   g,
-                  Colors.greenAccent,
+                  GameColors.success,
                   (val) => setState(() => g = val.toInt()),
                 ),
                 _buildRGBSlider(
                   'B',
                   b,
-                  Colors.blueAccent,
+                  GameColors.info,
                   (val) => setState(() => b = val.toInt()),
                 ),
               ],
@@ -417,9 +425,9 @@ class ProfileScreen extends StatelessWidget {
             actions: [
               TextButton(
                 onPressed: () => Navigator.pop(context),
-                child: const Text(
-                  '취소',
-                  style: TextStyle(color: Colors.white54),
+                child: Text(
+                  GameStrings.cancel,
+                  style: TextStyle(color: GameColors.textMuted),
                 ),
               ),
               ElevatedButton(
@@ -428,21 +436,23 @@ class ProfileScreen extends StatelessWidget {
                   if (context.mounted) Navigator.pop(context);
                   if (context.mounted) {
                     ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(content: Text('팀 색상이 변경되었습니다.')),
+                      const SnackBar(
+                        content: Text(GameStrings.teamColorChanged),
+                      ),
                     );
                   }
                 },
                 style: ElevatedButton.styleFrom(
                   backgroundColor: previewColor,
                   foregroundColor: (r + g + b) > 400
-                      ? Colors.black
-                      : Colors.white,
+                      ? GameColors.tacticalBlack
+                      : GameColors.tacticalWhite,
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(12),
                   ),
                 ),
                 child: const Text(
-                  '적용하기',
+                  GameStrings.apply,
                   style: TextStyle(fontWeight: FontWeight.bold),
                 ),
               ),
@@ -478,12 +488,12 @@ class ProfileScreen extends StatelessWidget {
             child: SliderTheme(
               data: SliderThemeData(
                 activeTrackColor: activeColor,
-                inactiveTrackColor: Colors.white10,
-                thumbColor: Colors.white,
-                overlayColor: activeColor.withAlpha(50),
+                inactiveTrackColor: GameColors.dividerColor.withValues(alpha: 50 / 255),
+                thumbColor: GameColors.tacticalWhite,
+                overlayColor: activeColor.withValues(alpha: 50 / 255),
                 valueIndicatorColor: activeColor,
-                valueIndicatorTextStyle: const TextStyle(
-                  color: Colors.black,
+                valueIndicatorTextStyle: TextStyle(
+                  color: GameColors.tacticalBlack,
                   fontWeight: FontWeight.bold,
                 ),
               ),
@@ -501,8 +511,8 @@ class ProfileScreen extends StatelessWidget {
             width: 35,
             child: Text(
               value.toString().padLeft(3, ' '),
-              style: const TextStyle(
-                color: Colors.white30,
+              style: TextStyle(
+                color: GameColors.textMuted.withValues(alpha: 150 / 255),
                 fontFamily: 'monospace',
                 fontSize: 12,
               ),

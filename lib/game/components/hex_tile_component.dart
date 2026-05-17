@@ -54,14 +54,14 @@ class HexTileComponent extends PositionComponent
   }
 
   void _updateStyles() {
-    final Color baseColor = _parseColor(colorHex) ?? Colors.transparent;
+    final Color baseColor = _parseColor(colorHex) ?? GameColors.transparent;
 
     _fillPaint = Paint()
-      ..color = baseColor.withAlpha((GameConstants.tileOpacity * 255).toInt())
+      ..color = baseColor.withValues(alpha: GameConstants.tileOpacity)
       ..style = PaintingStyle.fill;
 
     _capturePaint = Paint()
-      ..color = GameConstants.accentNeon.withAlpha(150)
+      ..color = GameColors.accentNeon.withValues(alpha: 150 / 255)
       ..style = PaintingStyle.stroke
       ..strokeWidth = 2.0;
   }
@@ -117,10 +117,10 @@ class HexTileComponent extends PositionComponent
     if (isCapturing) {
       final pulse = (0.5 + 0.5 * math.sin(_timer)).clamp(0.0, 1.0);
       final captureColor =
-          _parseColor(capturingColorHex) ?? GameConstants.accentNeon;
+          _parseColor(capturingColorHex) ?? GameColors.accentNeon;
 
       // 외곽선 펄스 효과
-      _capturePaint.color = captureColor.withAlpha((100 + 100 * pulse).toInt());
+      _capturePaint.color = captureColor.withValues(alpha: (100 + 100 * pulse) / 255);
       _capturePaint.strokeWidth = 1.5 + (2.5 * pulse);
       canvas.drawPath(_cachedPath!, _capturePaint);
 
@@ -145,7 +145,7 @@ class HexTileComponent extends PositionComponent
       canvas.drawRect(
         fillRect,
         Paint()
-          ..color = captureColor.withAlpha(130)
+          ..color = captureColor.withValues(alpha: 130 / 255)
           ..style = PaintingStyle.fill,
       );
       canvas.restore();

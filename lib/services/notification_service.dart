@@ -4,6 +4,7 @@ import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:app_badge_plus/app_badge_plus.dart';
+import '../core/constants/strings.dart';
 
 /// 푸시 알림 관리 서비스
 class NotificationService {
@@ -20,8 +21,8 @@ class NotificationService {
 
   static const AndroidNotificationChannel _channel = AndroidNotificationChannel(
     'conquest_notifications',
-    '한국정복 알림',
-    description: '점령 및 전투 관련 중요 알림입니다.',
+    GameStrings.notificationChannelName,
+    description: GameStrings.notificationChannelDescription,
     importance: Importance.max,
   );
 

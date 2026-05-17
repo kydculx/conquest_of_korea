@@ -76,8 +76,8 @@ class _GameMapWidgetState extends State<GameMapWidget>
       );
 
       final color = isOutline
-          ? GameConstants.accentNeon.withValues(alpha: 0.8)
-          : Colors.white.withValues(alpha: 0.4);
+          ? GameColors.accentNeon.withValues(alpha: 0.8)
+          : GameColors.tacticalWhite.withValues(alpha: 0.4);
       final strokeWidth = isOutline ? 1.5 : 0.8;
 
       final polylines = allPoints
@@ -178,7 +178,7 @@ class _GameMapWidgetState extends State<GameMapWidget>
                 interactionOptions: const InteractionOptions(
                   flags: InteractiveFlag.all & ~InteractiveFlag.rotate,
                 ),
-                backgroundColor: Colors.transparent,
+                backgroundColor: GameColors.transparent,
                 onPositionChanged: (position, hasGesture) {
                   if (hasGesture) setState(() => _isFollowing = false);
                   if (position.zoom != _currentZoom) {
@@ -218,9 +218,9 @@ class _GameMapWidgetState extends State<GameMapWidget>
 
             // 로딩 인디케이터
             if (_isLoadingBoundaries)
-              const Center(
+              Center(
                 child: CircularProgressIndicator(
-                  color: GameConstants.accentNeon,
+                  color: GameColors.accentNeon,
                 ),
               ),
 
@@ -268,11 +268,11 @@ class _GameMapWidgetState extends State<GameMapWidget>
     return FloatingActionButton.small(
       heroTag: null,
       onPressed: onPressed,
-      backgroundColor: Colors.black.withValues(alpha: 0.7),
-      foregroundColor: isActive ? GameConstants.accentNeon : Colors.white,
+      backgroundColor: GameColors.backgroundMedium.withValues(alpha: 0.7),
+      foregroundColor: isActive ? GameColors.accentNeon : GameColors.tacticalWhite,
       shape: CircleBorder(
         side: BorderSide(
-          color: isActive ? GameConstants.accentNeon : Colors.white24,
+          color: isActive ? GameColors.accentNeon : GameColors.dividerColor,
           width: 1,
         ),
       ),

@@ -41,10 +41,10 @@ class HubComponent extends PositionComponent
       text: name,
       textRenderer: TextPaint(
         style: TextStyle(
-          color: Colors.white,
+          color: GameColors.textPrimary,
           fontSize: tier == 1 ? 11 : (tier == 2 ? 10 : 9),
           fontWeight: tier == 1 ? FontWeight.bold : FontWeight.normal,
-          shadows: const [Shadow(blurRadius: 2, color: Colors.black)],
+          shadows: [Shadow(blurRadius: 2, color: GameColors.tacticalBlack)],
         ),
       ),
     );
@@ -148,7 +148,7 @@ class HubComponent extends PositionComponent
     }
 
     final strokePaint = Paint()
-      ..color = Colors.white.withAlpha(200)
+      ..color = GameColors.tacticalWhite.withValues(alpha: 200 / 255)
       ..style = PaintingStyle.stroke
       ..strokeWidth = tier == 1 ? 1.5 : 1.0;
 
@@ -179,8 +179,8 @@ class HubComponent extends PositionComponent
 
   Color _getHubColor() {
     final tier = _getTier();
-    if (tier == 1) return GameConstants.colorAccent;
-    if (tier == 2) return Colors.amber;
-    return Colors.cyanAccent;
+    if (tier == 1) return GameColors.colorAccent;
+    if (tier == 2) return GameColors.warning;
+    return GameColors.accentNeon;
   }
 }
