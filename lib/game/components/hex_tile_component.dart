@@ -119,7 +119,9 @@ class HexTileComponent extends PositionComponent
           _parseColor(capturingColorHex) ?? GameColors.accentNeon;
 
       // 외곽선 펄스 효과
-      _capturePaint.color = captureColor.withValues(alpha: (100 + 100 * pulse) / 255);
+      _capturePaint.color = captureColor.withValues(
+        alpha: (100 + 100 * pulse) / 255,
+      );
       _capturePaint.strokeWidth = 1.5 + (2.5 * pulse);
       canvas.drawPath(_cachedPath!, _capturePaint);
 

@@ -191,10 +191,23 @@ class _GameMapWidgetState extends State<GameMapWidget>
                 // 배경 지도 타일
                 if (gameProvider.showMap &&
                     gameProvider.currentMapStyle.url.isNotEmpty)
-                  TileLayer(
-                    urlTemplate: gameProvider.currentMapStyle.url,
-                    subdomains: const ['a', 'b', 'c', 'd'],
-                    userAgentPackageName: 'com.watercherry.conquestofkorea',
+                  Builder(
+                    builder: (context) {
+                      final style = gameProvider.currentMapStyle;
+                      final tileLayer = TileLayer(
+                        urlTemplate: style.url,
+                        subdomains: const ['a', 'b', 'c', 'd'],
+                        userAgentPackageName: 'com.watercherry.conquestofkorea',
+                      );
+
+                      if (style.colorMatrix != null) {
+                        return ColorFiltered(
+                          colorFilter: ColorFilter.matrix(style.colorMatrix!),
+                          child: tileLayer,
+                        );
+                      }
+                      return tileLayer;
+                    },
                   ),
 
                 // 2023-07 최신 시도 내부 경계선
@@ -219,9 +232,7 @@ class _GameMapWidgetState extends State<GameMapWidget>
             // 로딩 인디케이터
             if (_isLoadingBoundaries)
               Center(
-                child: CircularProgressIndicator(
-                  color: GameColors.accentNeon,
-                ),
+                child: CircularProgressIndicator(color: GameColors.accentNeon),
               ),
 
             // 지도 컨트롤 UI
@@ -269,7 +280,9 @@ class _GameMapWidgetState extends State<GameMapWidget>
       heroTag: null,
       onPressed: onPressed,
       backgroundColor: GameColors.backgroundMedium.withValues(alpha: 0.7),
-      foregroundColor: isActive ? GameColors.accentNeon : GameColors.tacticalWhite,
+      foregroundColor: isActive
+          ? GameColors.accentNeon
+          : GameColors.tacticalWhite,
       shape: CircleBorder(
         side: BorderSide(
           color: isActive ? GameColors.accentNeon : GameColors.dividerColor,

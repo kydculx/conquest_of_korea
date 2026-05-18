@@ -26,7 +26,7 @@ class GameConstants {
   static const double textThresholdTier2 = 60.0;
 
   // 헥사곤 설정
-  static const double tileSize = 50.0; // 헥사곤 크기 (미터 단위와 유사하게 사용)
+  static const double tileSize = 100.0; // 헥사곤 크기 (미터 단위와 유사하게 사용)
 
   // GPS 설정
   static const double captureAccuracyThreshold = 15.0; // 물리 GPS 수준 (15m 이내만 허용)
@@ -49,13 +49,32 @@ class GameConstants {
   // UI 스타일 (세부 색상 정의는 constants/colors.dart 참조)
   static const double hudOpacity = 0.8;
 
-  static const int captureDurationSeconds = 5;
+  static const int tileShieldDurationSeconds = 5; // 점령 성공 후 타일이 침공으로부터 보호(쉴드)되는 시간 (초)
+  static const int initialCaptureDurationSeconds = 1; // 최초 점령시간 (수정하기 쉽도록 외부 변수로 분리)
   // 맵 스타일 리스트 (방대한 풀 세트)
   static const List<MapStyle> mapStyles = [
     MapStyle(
+      name: '사이버',
+      url: 'https://{s}.basemaps.cartocdn.com/dark_nolabels/{z}/{x}/{y}{r}.png',
+      icon: 'grid_view',
+      colorMatrix: <double>[
+        0.1, 0.3, 0.1, 0, 0, // Red
+        0.0, 1.6, 0.0, 0, 0, // Green (네온 그린 증폭)
+        0.1, 0.3, 0.5, 0, 0, // Blue
+        0, 0, 0, 1, 0, // Alpha
+      ],
+    ),
+    MapStyle(
       name: '다크',
-      url: 'https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png',
+      url:
+          'https://{s}.basemaps.cartocdn.com/light_nolabels/{z}/{x}/{y}{r}.png',
       icon: 'dark_mode',
+      colorMatrix: <double>[
+        0.45, 0.0, 0.0, 0, 0, // Red (정직한 무채색을 위한 동일 배율)
+        0.0, 0.45, 0.0, 0, 0, // Green (정직한 무채색을 위한 동일 배율)
+        0.0, 0.0, 0.45, 0, 0, // Blue (푸른색 느낌을 완전히 걷어낸 동일 배율)
+        0, 0, 0, 1, 0, // Alpha
+      ],
     ),
     MapStyle(
       name: '위성',
@@ -71,5 +90,12 @@ class MapStyle {
   final String name;
   final String url;
   final String icon;
-  const MapStyle({required this.name, required this.url, required this.icon});
+  final List<double>? colorMatrix;
+
+  const MapStyle({
+    required this.name,
+    required this.url,
+    required this.icon,
+    this.colorMatrix,
+  });
 }

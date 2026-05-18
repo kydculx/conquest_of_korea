@@ -37,7 +37,8 @@ create table public.captured_tiles (
   color_hex text,
   bounds jsonb not null,
   captured_at timestamptz default now(),
-  capture_status text default 'captured'
+  capture_status text default 'captured',
+  capture_count int not null default 1 -- 각 타일마다 점령된 총 횟수 (최초 1, 재점령 시 2, 3...)
 );
 
 -- captured_tiles RLS 설정
@@ -51,6 +52,47 @@ create policy "Authenticated users can capture tiles."
   on captured_tiles for insert
   with check ( auth.role() = 'authenticated' );
 
-create policy "Users can update their own captured tiles."
+create policy "Authenticated users can update captured tiles."
   on captured_tiles for update
-  using ( auth.uid() = user_id );
+  using ( auth.role() = 'authenticated' );
+
+-- [신규] 동시 점령 경합 및 쉴드 선점 제어를 위한 원자적 저장 프로시저(RPC) 정의
+CREATE OR REPLACE FUNCTION safe_capture_tile(
+  p_tile_id text,
+  p_q int,
+  p_r int,
+  p_user_id uuid,
+  p_color_hex text,
+  p_bounds jsonb,
+  p_target_capture_count int,
+  p_shield_duration_seconds int
+) RETURNS boolean AS $$
+DECLARE
+  v_captured_at timestamptz;
+  v_current_owner uuid;
+BEGIN
+  -- 1. 동시성 제어를 위해 행 단위 쓰기 락(Row Lock) 획득 및 최신 데이터 조회
+  SELECT captured_at, user_id INTO v_captured_at, v_current_owner
+  FROM public.captured_tiles
+  WHERE id = p_tile_id
+  FOR UPDATE;
+
+  -- 2. 타인이 점령한 타일인 경우, 아직 보호 쉴드 시간이 유효한지 검증
+  IF FOUND AND v_current_owner <> p_user_id THEN
+    IF v_captured_at + (p_shield_duration_seconds || ' seconds')::interval > now() THEN
+      RETURN false; -- 경합 실패 (쉴드 선점됨)
+    END IF;
+  END IF;
+
+  -- 3. 안전하게 Upsert(점령 저장) 실행
+  INSERT INTO public.captured_tiles (id, q, r, user_id, color_hex, bounds, captured_at, capture_count)
+  VALUES (p_tile_id, p_q, p_r, p_user_id, p_color_hex, p_bounds, now(), p_target_capture_count)
+  ON CONFLICT (id) DO UPDATE
+  SET user_id = EXCLUDED.user_id,
+      color_hex = EXCLUDED.color_hex,
+      captured_at = EXCLUDED.captured_at,
+      capture_count = EXCLUDED.capture_count;
+
+  RETURN true;
+END;
+$$ LANGUAGE plpgsql;

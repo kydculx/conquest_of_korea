@@ -1,6 +1,7 @@
 import 'package:flutter/foundation.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import '../core/app_config.dart';
+import '../core/constants.dart';
 import '../models/tile_model.dart';
 
 /// Supabase 외부 통신 전담 서비스 (순수 I/O 레이어)
@@ -40,24 +41,33 @@ class SupabaseService {
         .map((list) => list.map(HexTile.fromJson).toList());
   }
 
-  /// 타일 점령 정보 저장 (Upsert)
+  /// 타일 점령 정보 저장 (원자적 RPC 트랜잭션 호출)
   Future<bool> captureTile(HexTile tile) async {
     try {
-      debugPrint('🏹 점령 데이터 전송 중: ${tile.id}');
-      await _client.from('captured_tiles').upsert(tile.toJson());
-      debugPrint('🚀 서버 업데이트 완료');
-      return true;
+      debugPrint('🏹 RPC 점령 안전 트랜잭션 전송 중: ${tile.id}');
+      
+      // Supabase RPC 안전 호출 체계 도입
+      final response = await _client.rpc('safe_capture_tile', params: {
+        'p_tile_id': tile.id,
+        'p_q': tile.q,
+        'p_r': tile.r,
+        'p_user_id': tile.userId,
+        'p_color_hex': tile.colorHex,
+        'p_bounds': tile.bounds,
+        'p_target_capture_count': tile.captureCount,
+        'p_shield_duration_seconds': GameConstants.tileShieldDurationSeconds,
+      });
+
+      debugPrint('🚀 RPC 트랜잭션 처리 결과: $response');
+      return response as bool;
     } catch (e) {
-      debugPrint('❌ 점령 전송 실패: $e');
+      debugPrint('❌ RPC 점령 전송 실패: $e');
       return false;
     }
   }
 
-  /// 특정 타일이 누구에게 점령되어 있는지 상태를 정수로 반환하는 함수
-  /// - 1: 아직 아무도 점령하지 않은 빈 타일 (중립)
-  /// - 2: 상대방이 점령한 타일
-  /// - 0: 내가 점령한 타일
-  Future<int> checkTileStatusFromServer(
+  /// 특정 타일의 점령 상태를 서버에서 조회하여 TileStatus로 반환
+  Future<TileStatus> checkTileStatusFromServer(
     String tileId,
     String currentUserId,
   ) async {
@@ -68,19 +78,15 @@ class SupabaseService {
           .eq('id', tileId)
           .maybeSingle();
 
-      if (response == null) {
-        return 1; // 아무도 점령하지 않은 빈 타일
-      }
+      if (response == null) return TileStatus.empty;
 
       final String? ownerId = response['user_id'];
-      if (ownerId == currentUserId) {
-        return 0; // 내 타일
-      }
+      if (ownerId == currentUserId) return TileStatus.mine;
 
-      return 2; // 상대방이 점령한 타일
+      return TileStatus.enemy;
     } catch (e) {
       debugPrint('❌ 타일 상태 서버 조회 실패: $e');
-      return 1; // 오류 시 기본값 1 반환
+      return TileStatus.empty; // 오류 시 기본값
     }
   }
 
