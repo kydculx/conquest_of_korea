@@ -4,16 +4,13 @@ import 'package:latlong2/latlong.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'components/player_component.dart';
 import 'components/hex_tile_component.dart';
-import 'components/hub_component.dart';
 import '../services/hex_service.dart';
-import '../data/hubs_data.dart';
 import '../models/tile_model.dart';
 import '../core/constants.dart';
 
 /// Flame 게임 엔진 — 거점 마커 및 점령 타일 렌더링 담당
 class ConquestGame extends FlameGame {
   late PlayerComponent player;
-  final List<HubComponent> _hubComponents = [];
   MapController? _mapController;
   Map<String, HexTile> _lastCapturedTiles = {};
   final Map<String, HexTileComponent> _tileMap = {};
@@ -27,16 +24,6 @@ class ConquestGame extends FlameGame {
   Future<void> onLoad() async {
     player = PlayerComponent()..priority = 20;
     add(player);
-
-    for (final hub in tacticalHubs) {
-      final component = HubComponent(
-        name: hub.name,
-        type: hub.type,
-        screenPosition: Offset.zero,
-      )..priority = 10;
-      _hubComponents.add(component);
-      add(component);
-    }
 
     if (_mapController != null) _updateAllPositions();
   }
@@ -126,14 +113,6 @@ class ConquestGame extends FlameGame {
 
   void _updateAllPositions() {
     if (_mapController == null) return;
-
-    // 허브 위치 갱신
-    for (int i = 0; i < tacticalHubs.length && i < _hubComponents.length; i++) {
-      final offset = _mapController!.camera.latLngToScreenOffset(
-        tacticalHubs[i].location,
-      );
-      _hubComponents[i].position = Vector2(offset.dx, offset.dy);
-    }
 
     // 타일 위치 갱신
     _tileMap.forEach((id, tile) {

@@ -9,7 +9,7 @@ import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
 import 'services/notification_service.dart';
 import 'core/theme.dart';
-import 'core/constants.dart';
+import 'core/constants/strings.dart';
 import 'game/conquest_game.dart';
 import 'providers/game_provider.dart';
 import 'providers/location_provider.dart';
@@ -20,9 +20,11 @@ import 'views/screens/auth/login_screen.dart';
 import 'views/screens/profile_screen.dart';
 import 'providers/auth_provider.dart';
 
+import 'package:easy_localization/easy_localization.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
+  await EasyLocalization.ensureInitialized();
 
   // 환경 변수 로드
   await dotenv.load(fileName: ".env");
@@ -55,35 +57,44 @@ void main() async {
   await SystemChrome.setPreferredOrientations([DeviceOrientation.portraitUp]);
 
   runApp(
-    MultiProvider(
-      providers: [
-        // 순수 서비스 레이어
-        Provider(create: (_) => GeoService()),
-        Provider(create: (_) => SupabaseService()),
+    EasyLocalization(
+      supportedLocales: const [Locale('ko'), Locale('en')],
+      path: 'assets/translations',
+      fallbackLocale: const Locale('ko'),
+      child: MultiProvider(
+        providers: [
+          // 순수 서비스 레이어
+          Provider(create: (_) => GeoService()),
+          Provider(create: (_) => SupabaseService()),
 
-        // Auth Provider
-        ChangeNotifierProvider(create: (_) => AuthProvider()),
+          // Auth Provider
+          ChangeNotifierProvider(create: (_) => AuthProvider()),
 
-        // Location Provider — GPS + 나침반 상태
-        ChangeNotifierProxyProvider<GeoService, LocationProvider>(
-          create: (_) => LocationProvider(),
-          update: (_, geo, loc) => loc!..setGeoService(geo),
-        ),
+          // Location Provider — GPS + 나침반 상태
+          ChangeNotifierProxyProvider<GeoService, LocationProvider>(
+            create: (_) => LocationProvider(),
+            update: (_, geo, loc) => loc!..setGeoService(geo),
+          ),
 
-        // Game Provider — 게임 핵심 상태
-        ChangeNotifierProxyProvider2<LocationProvider, AuthProvider, GameProvider>(
-          create: (ctx) => GameProvider(supabase: ctx.read<SupabaseService>()),
-          update: (_, loc, auth, game) {
-            game!.setLocationProvider(loc);
-            game.setAuthProvider(auth);
-            return game;
-          },
-        ),
+          // Game Provider — 게임 핵심 상태
+          ChangeNotifierProxyProvider2<
+            LocationProvider,
+            AuthProvider,
+            GameProvider
+          >(
+            create: (ctx) => GameProvider(supabase: ctx.read<SupabaseService>()),
+            update: (_, loc, auth, game) {
+              game!.setLocationProvider(loc);
+              game.setAuthProvider(auth);
+              return game;
+            },
+          ),
 
-        // Flame 게임 엔진 인스턴스
-        Provider(create: (_) => ConquestGame()),
-      ],
-      child: const _ConquestApp(),
+          // Flame 게임 엔진 인스턴스
+          Provider(create: (_) => ConquestGame()),
+        ],
+        child: const _ConquestApp(),
+      ),
     ),
   );
 }
@@ -94,9 +105,12 @@ class _ConquestApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      title: GameConstants.appName,
+      title: GameStrings.appName,
       debugShowCheckedModeBanner: false,
       theme: TacticalTheme.darkTheme,
+      localizationsDelegates: context.localizationDelegates,
+      supportedLocales: context.supportedLocales,
+      locale: context.locale,
       home: const AuthWrapper(),
       routes: {
         '/login': (context) => const LoginScreen(),

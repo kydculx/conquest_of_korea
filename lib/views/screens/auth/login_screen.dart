@@ -35,9 +35,9 @@ class _LoginScreenState extends State<LoginScreen> {
       if (mounted) Navigator.of(context).pop();
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(ErrorTranslator.translate(e))),
-        );
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text(ErrorTranslator.translate(e))));
       }
     }
   }
@@ -73,14 +73,10 @@ class _LoginScreenState extends State<LoginScreen> {
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
                 // Logo or Title
-                Icon(
-                  Icons.security,
-                  size: 80,
-                  color: GameColors.accentNeon,
-                ),
+                Icon(Icons.security, size: 80, color: GameColors.accentNeon),
                 const SizedBox(height: 20),
                 Text(
-                  GameConstants.appName.toUpperCase(),
+                  GameStrings.appName.toUpperCase(),
                   textAlign: TextAlign.center,
                   style: TextStyle(
                     fontSize: 28,
@@ -139,7 +135,9 @@ class _LoginScreenState extends State<LoginScreen> {
                           borderRadius: BorderRadius.circular(5),
                         ),
                         elevation: 5,
-                        shadowColor: GameColors.accentNeon.withValues(alpha: 0.5),
+                        shadowColor: GameColors.accentNeon.withValues(
+                          alpha: 0.5,
+                        ),
                       ),
                       child: auth.isLoading
                           ? SizedBox(
@@ -150,9 +148,9 @@ class _LoginScreenState extends State<LoginScreen> {
                                 color: GameColors.tacticalBlack,
                               ),
                             )
-                          : const Text(
+                          : Text(
                               GameStrings.login,
-                              style: TextStyle(
+                              style: const TextStyle(
                                 fontWeight: FontWeight.bold,
                                 fontSize: 16,
                                 letterSpacing: 2,
@@ -169,7 +167,13 @@ class _LoginScreenState extends State<LoginScreen> {
                     Expanded(child: Divider(color: GameColors.dividerColor)),
                     Padding(
                       padding: const EdgeInsets.symmetric(horizontal: 10),
-                      child: Text(GameStrings.or, style: TextStyle(color: GameColors.dividerColor, fontSize: 12)),
+                      child: Text(
+                        GameStrings.or,
+                        style: TextStyle(
+                          color: GameColors.dividerColor,
+                          fontSize: 12,
+                        ),
+                      ),
                     ),
                     Expanded(child: Divider(color: GameColors.dividerColor)),
                   ],
@@ -184,11 +188,17 @@ class _LoginScreenState extends State<LoginScreen> {
                     _buildSocialCircleButton(
                       onPressed: () async {
                         final authProvider = context.read<AuthProvider>();
+                        final navigator = Navigator.of(context);
+                        final scaffoldMessenger = ScaffoldMessenger.of(context);
                         try {
                           await authProvider.signInWithGoogle();
-                          if (mounted) Navigator.of(context).pop();
+                          navigator.pop();
                         } catch (e) {
-                          if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(ErrorTranslator.translate(e))));
+                          scaffoldMessenger.showSnackBar(
+                            SnackBar(
+                              content: Text(ErrorTranslator.translate(e)),
+                            ),
+                          );
                         }
                       },
                       color: GameColors.tacticalWhite,
@@ -198,7 +208,11 @@ class _LoginScreenState extends State<LoginScreen> {
                         height: 24,
                         errorBuilder: (_, _, _) => Text(
                           'G',
-                          style: TextStyle(color: GameColors.tacticalBlack, fontSize: 24, fontWeight: FontWeight.bold),
+                          style: TextStyle(
+                            color: GameColors.tacticalBlack,
+                            fontSize: 24,
+                            fontWeight: FontWeight.bold,
+                          ),
                         ),
                       ),
                     ),
@@ -206,29 +220,49 @@ class _LoginScreenState extends State<LoginScreen> {
                     _buildSocialCircleButton(
                       onPressed: () async {
                         final authProvider = context.read<AuthProvider>();
+                        final navigator = Navigator.of(context);
+                        final scaffoldMessenger = ScaffoldMessenger.of(context);
                         try {
                           await authProvider.signInWithApple();
-                          if (mounted) Navigator.of(context).pop();
+                          navigator.pop();
                         } catch (e) {
-                          if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(ErrorTranslator.translate(e))));
+                          scaffoldMessenger.showSnackBar(
+                            SnackBar(
+                              content: Text(ErrorTranslator.translate(e)),
+                            ),
+                          );
                         }
                       },
                       color: GameColors.tacticalWhite,
-                      child: Icon(Icons.apple, color: GameColors.tacticalBlack, size: 30),
+                      child: Icon(
+                        Icons.apple,
+                        color: GameColors.tacticalBlack,
+                        size: 30,
+                      ),
                     ),
                     // Kakao
                     _buildSocialCircleButton(
                       onPressed: () async {
                         final authProvider = context.read<AuthProvider>();
+                        final navigator = Navigator.of(context);
+                        final scaffoldMessenger = ScaffoldMessenger.of(context);
                         try {
                           await authProvider.signInWithKakao();
-                          if (mounted) Navigator.of(context).pop();
+                          navigator.pop();
                         } catch (e) {
-                          if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(ErrorTranslator.translate(e))));
+                          scaffoldMessenger.showSnackBar(
+                            SnackBar(
+                              content: Text(ErrorTranslator.translate(e)),
+                            ),
+                          );
                         }
                       },
                       color: GameColors.kakaoYellow,
-                      child: Icon(Icons.chat_bubble, color: GameColors.kakaoText, size: 22),
+                      child: Icon(
+                        Icons.chat_bubble,
+                        color: GameColors.kakaoText,
+                        size: 22,
+                      ),
                     ),
                   ],
                 ),
@@ -298,7 +332,11 @@ class _LoginScreenState extends State<LoginScreen> {
       style: TextStyle(color: GameColors.textPrimary),
       decoration: InputDecoration(
         labelText: label,
-        labelStyle: TextStyle(color: GameColors.textMuted, fontSize: 12, letterSpacing: 1),
+        labelStyle: TextStyle(
+          color: GameColors.textMuted,
+          fontSize: 12,
+          letterSpacing: 1,
+        ),
         prefixIcon: Icon(icon, color: GameColors.accentNeon, size: 20),
         suffixIcon: suffixIcon,
         enabledBorder: UnderlineInputBorder(

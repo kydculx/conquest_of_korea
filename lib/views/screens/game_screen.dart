@@ -23,7 +23,6 @@ class GameScreen extends StatefulWidget {
 }
 
 class _GameScreenState extends State<GameScreen> {
-
   @override
   void initState() {
     super.initState();
@@ -34,7 +33,6 @@ class _GameScreenState extends State<GameScreen> {
       });
     });
   }
-
 
   @override
   Widget build(BuildContext context) {
@@ -108,7 +106,9 @@ class _GameScreenState extends State<GameScreen> {
             },
             child: game.isInitialized
                 ? const SizedBox.shrink()
-                : const LoadingOverlay(message: GameStrings.tacticalSatelliteSync),
+                : LoadingOverlay(
+                    message: GameStrings.tacticalSatelliteSync,
+                  ),
           ),
         ],
       ),

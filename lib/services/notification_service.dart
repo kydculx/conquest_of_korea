@@ -19,7 +19,7 @@ class NotificationService {
   bool _initialized = false;
   bool get isInitialized => _initialized;
 
-  static const AndroidNotificationChannel _channel = AndroidNotificationChannel(
+  static final AndroidNotificationChannel _channel = AndroidNotificationChannel(
     'conquest_notifications',
     GameStrings.notificationChannelName,
     description: GameStrings.notificationChannelDescription,

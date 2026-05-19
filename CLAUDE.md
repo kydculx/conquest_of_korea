@@ -31,7 +31,6 @@ ConquestGame (Flame, standalone)
 - `lib/game/` — Flame engine layer (`ConquestGame`). Runs independently of the Provider tree; used for game rendering components.
 - `lib/views/` — UI only. `GameScreen` is the single screen; `GameMapWidget` renders `flutter_map` with hex overlays; `HudOverlay` shows score/controls.
 - `lib/core/` — `GameConstants` (all tunable values), `AppConfig` (env vars from `.env`), `TacticalTheme`.
-- `lib/data/` — Static hub/landmark data for Korea.
 - `lib/models/` — `HexTile` (tile state + owner), `GameAlert`, `TileOwner` enum.
 
 **Key flows:**

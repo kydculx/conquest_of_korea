@@ -5,6 +5,7 @@ import '../../core/constants.dart';
 import '../../core/constants/strings.dart';
 import '../../providers/game_provider.dart';
 import '../../providers/auth_provider.dart';
+import 'tactical_compass.dart';
 
 /// 인게임 HUD 오버레이 (점수판, 점령 버튼, 유틸리티 버튼)
 class HudOverlay extends StatelessWidget {
@@ -22,6 +23,13 @@ class HudOverlay extends StatelessWidget {
 
     return Stack(
       children: [
+        // 상단 좌측 나침반 버튼
+        const Positioned(
+          top: 60,
+          left: 20,
+          child: TacticalCompass(),
+        ),
+
         // 상단 우측 로그인/프로필 버튼
         Positioned(
           top: 60,

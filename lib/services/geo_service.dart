@@ -52,7 +52,7 @@ class GeoService {
         distanceFilter: 0,
         forceLocationManager: true, // 구글 서비스를 거치지 않고 하드웨어 직접 제어 (핵심)
         intervalDuration: const Duration(seconds: 1),
-        foregroundNotificationConfig: const ForegroundNotificationConfig(
+        foregroundNotificationConfig: ForegroundNotificationConfig(
           notificationText: GameStrings.gpsServiceNotificationText,
           notificationTitle: GameStrings.gpsServiceNotificationTitle,
           enableWakeLock: true,

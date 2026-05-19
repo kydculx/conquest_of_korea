@@ -51,65 +51,138 @@ class PlayerComponent extends PositionComponent {
     final baseRadius = size.x * 0.35;
     final radius = baseRadius * _pulseScale;
 
+    // 회전 및 스케일 변환 적용
     canvas.save();
     canvas.translate(center.dx, center.dy);
     canvas.rotate(_heading);
     canvas.translate(-center.dx, -center.dy);
 
-    // 화살표 경로 정의 (날렵한 전술 화살표 모양)
+    // 1. 하이테크 레이더 스캔 서클 및 펄싱 웨이브 (배경)
+    final radarPaint = Paint()
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = 1.0;
+    
+    // 정적 전술 타겟 원
+    radarPaint.color = GameColors.accentNeon.withValues(alpha: 0.15);
+    canvas.drawCircle(center, baseRadius * 1.4, radarPaint);
+    
+    // 밖으로 퍼져나가는 스캔 웨이브 효과 (두 개의 엇갈리는 주기)
+    final wave1 = (_pulseTime * 0.5) % 1.0;
+    final wave2 = ((_pulseTime * 0.5) + 0.5) % 1.0;
+    
+    radarPaint.color = GameColors.accentNeon.withValues(alpha: (1.0 - wave1) * 0.3);
+    canvas.drawCircle(center, baseRadius * (0.8 + wave1 * 1.0), radarPaint);
+
+    radarPaint.color = GameColors.accentNeon.withValues(alpha: (1.0 - wave2) * 0.3);
+    canvas.drawCircle(center, baseRadius * (0.8 + wave2 * 1.0), radarPaint);
+
+    // 2. 전방 전술 레이저 조준 라인 (Dashed Laser Guide)
+    final laserPaint = Paint()
+      ..shader = ui.Gradient.linear(
+        Offset(center.dx, center.dy - radius * 1.2),
+        Offset(center.dx, center.dy - radius * 4.5),
+        [
+          GameColors.accentNeon.withValues(alpha: 0.95),
+          GameColors.accentNeon.withValues(alpha: 0.0),
+        ],
+      )
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = 1.5;
+    
+    // 전방으로 연장되는 점선 그리기
+    const int dashCount = 6;
+    final double dashStart = -radius * 1.4;
+    final double dashLength = radius * 0.35;
+    final double dashSpace = radius * 0.18;
+    for (int i = 0; i < dashCount; i++) {
+      final double yStart = center.dy + dashStart - (i * (dashLength + dashSpace));
+      final double yEnd = yStart - dashLength;
+      canvas.drawLine(Offset(center.dx, yStart), Offset(center.dx, yEnd), laserPaint);
+    }
+
+    // 3. 프리미엄 스텔스기 스타일의 입체 화살표 패스 정의
     final arrowPath = ui.Path()
-      ..moveTo(center.dx, center.dy - radius * 1.1) // 앞쪽 끝
-      ..lineTo(center.dx - radius * 0.8, center.dy + radius * 0.9) // 좌측 하단
-      ..lineTo(center.dx, center.dy + radius * 0.5) // 중앙 홈
-      ..lineTo(center.dx + radius * 0.8, center.dy + radius * 0.9) // 우측 하단
+      ..moveTo(center.dx, center.dy - radius * 1.25) // 전면 앞코
+      ..lineTo(center.dx - radius * 0.95, center.dy + radius * 0.9) // 좌측 하단 날개끝
+      ..lineTo(center.dx - radius * 0.25, center.dy + radius * 0.35) // 좌측 안쪽 꺾임선
+      ..lineTo(center.dx, center.dy + radius * 0.6) // 중앙 후방 홈
+      ..lineTo(center.dx + radius * 0.25, center.dy + radius * 0.35) // 우측 안쪽 꺾임선
+      ..lineTo(center.dx + radius * 0.95, center.dy + radius * 0.9) // 우측 하단 날개끝
       ..close();
 
-    // 1. 강한 바닥 그림자 (지도와 분리감 생성)
+    // 3-1. 강한 분리감용 그림자 드롭
     canvas.drawPath(
       arrowPath,
       Paint()
-        ..color = GameColors.tacticalBlack.withValues(alpha: 180 / 255)
-        ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 8),
+        ..color = GameColors.tacticalBlack.withValues(alpha: 200 / 255)
+        ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 6),
     );
 
-    // 2. 네온 글로우 (가독성 핵심)
+    // 3-2. 테두리 네온 야간 글로우 효과
     canvas.drawPath(
       arrowPath,
       Paint()
-        ..color = GameColors.accentNeon.withValues(alpha: 100 / 255)
-        ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 12),
+        ..color = GameColors.accentNeon.withValues(alpha: 130 / 255)
+        ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 10),
     );
 
-    // 3. 본체 그라데이션 (화이트 -> 네온)
+    // 3-3. 입체 명암 연출을 위한 좌우 절반 패스 분리
+    final leftHalf = ui.Path()
+      ..moveTo(center.dx, center.dy - radius * 1.25)
+      ..lineTo(center.dx - radius * 0.95, center.dy + radius * 0.9)
+      ..lineTo(center.dx - radius * 0.25, center.dy + radius * 0.35)
+      ..lineTo(center.dx, center.dy + radius * 0.6)
+      ..close();
+
+    final rightHalf = ui.Path()
+      ..moveTo(center.dx, center.dy - radius * 1.25)
+      ..lineTo(center.dx + radius * 0.95, center.dy + radius * 0.9)
+      ..lineTo(center.dx + radius * 0.25, center.dy + radius * 0.35)
+      ..lineTo(center.dx, center.dy + radius * 0.6)
+      ..close();
+
+    // 좌측 날개면: 메탈릭 반사광 그라데이션 (화이트 -> 연청색 네온)
     canvas.drawPath(
-      arrowPath,
+      leftHalf,
       Paint()
         ..shader = ui.Gradient.linear(
-          Offset(center.dx, center.dy - radius),
-          Offset(center.dx, center.dy + radius),
-          [GameColors.tacticalWhite, GameColors.accentNeon],
+          Offset(center.dx - radius, center.dy),
+          Offset(center.dx, center.dy),
+          [GameColors.tacticalWhite, Colors.cyanAccent],
         )
         ..style = PaintingStyle.fill,
     );
 
-    // 4. 선명한 화이트 외곽선 (가장자리 가독성)
+    // 우측 날개면: 어두운 그림자면 (기본 네온그린 -> 어두운 그린 반 그라데이션)
+    canvas.drawPath(
+      rightHalf,
+      Paint()
+        ..shader = ui.Gradient.linear(
+          Offset(center.dx, center.dy),
+          Offset(center.dx + radius, center.dy),
+          [GameColors.accentNeon, GameColors.accentNeon.withValues(alpha: 0.55)],
+        )
+        ..style = PaintingStyle.fill,
+    );
+
+    // 3-4. 하이라이트 외곽 테두리선
     canvas.drawPath(
       arrowPath,
       Paint()
-        ..color = GameColors.tacticalWhite.withValues(alpha: 220 / 255)
+        ..color = GameColors.tacticalWhite.withValues(alpha: 240 / 255)
         ..style = PaintingStyle.stroke
-        ..strokeWidth = 2.5
+        ..strokeWidth = 2.0
         ..strokeJoin = StrokeJoin.round,
     );
 
-    // 5. 내부 전술 라인 (디테일)
+    // 3-5. 중앙 축 척추선 드로잉
     canvas.drawLine(
-      Offset(center.dx, center.dy - radius * 0.6),
-      Offset(center.dx, center.dy + radius * 0.3),
+      Offset(center.dx, center.dy - radius * 0.7),
+      Offset(center.dx, center.dy + radius * 0.5),
       Paint()
-        ..color = GameColors.tacticalBlack.withValues(alpha: 60 / 255)
+        ..color = GameColors.tacticalBlack.withValues(alpha: 130 / 255)
         ..style = PaintingStyle.stroke
-        ..strokeWidth = 1.2,
+        ..strokeWidth = 1.5,
     );
 
     canvas.restore();

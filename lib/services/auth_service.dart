@@ -37,10 +37,13 @@ class AuthService {
 
     // Supabase 이메일 열거 방지(Prevent email enumeration) 정책 대응
     // 이미 존재하는 이메일로 가입 시도 시 에러 대신 가짜 User 객체를 반환하며 identities가 비어있음
-    if (response.user != null && 
-        response.user!.identities != null && 
+    if (response.user != null &&
+        response.user!.identities != null &&
         response.user!.identities!.isEmpty) {
-      throw const AuthException(GameStrings.emailAlreadyInUse, statusCode: '400');
+      throw AuthException(
+        GameStrings.emailAlreadyInUse,
+        statusCode: '400',
+      );
     }
 
     // 가입 성공 시 profiles 테이블에 추가 데이터 저장
@@ -78,15 +81,18 @@ class AuthService {
   Future<void> signInWithGoogle() async {
     try {
       debugPrint('🚀 Native Google Sign In Start...');
-      
+
       // GoogleSignIn 설정 (Web Client ID 필수)
-      const webClientId = '99438286233-e5fpvqd6ngo56e7230vej7aj5efhjg31.apps.googleusercontent.com';
-      
+      const webClientId =
+          '99438286233-e5fpvqd6ngo56e7230vej7aj5efhjg31.apps.googleusercontent.com';
+
       final GoogleSignIn googleSignIn = GoogleSignIn(
-        clientId: Platform.isIOS ? '99438286233-62t2u5rmkpvtvhulta47ntk4dnnianqn.apps.googleusercontent.com' : null,
+        clientId: Platform.isIOS
+            ? '99438286233-62t2u5rmkpvtvhulta47ntk4dnnianqn.apps.googleusercontent.com'
+            : null,
         serverClientId: webClientId,
       );
-      
+
       // 1. 네이티브 로그인 창 표시
       final googleUser = await googleSignIn.signIn();
       if (googleUser == null) {
@@ -110,7 +116,7 @@ class AuthService {
         idToken: idToken,
         accessToken: accessToken,
       );
-      
+
       debugPrint('✅ Supabase Native Google Login Success');
     } catch (e) {
       debugPrint('❌ Native Google Auth Error: $e');
@@ -149,7 +155,7 @@ class AuthService {
   Future<AuthResponse> signInWithKakao() async {
     bool isInstalled = await kakao.isKakaoTalkInstalled();
     kakao.OAuthToken token;
-    
+
     if (isInstalled) {
       token = await kakao.UserApi.instance.loginWithKakaoTalk();
     } else {
@@ -159,12 +165,16 @@ class AuthService {
     // 카카오 로그인 시 ID Token이 없는 경우 처리 (OIDC 미설정 시)
     final idToken = token.idToken;
     if (idToken == null) {
-      debugPrint('❌ Kakao ID Token is null. Ensure OIDC is enabled in Kakao Console.');
+      debugPrint(
+        '❌ Kakao ID Token is null. Ensure OIDC is enabled in Kakao Console.',
+      );
       throw GameStrings.kakaoOidcRequired;
     }
 
-    debugPrint('🔑 Kakao ID Token found. Audience: ${token.scopes?.contains('openid')}');
-    
+    debugPrint(
+      '🔑 Kakao ID Token found. Audience: ${token.scopes?.contains('openid')}',
+    );
+
     try {
       return await _client.auth.signInWithIdToken(
         provider: OAuthProvider.kakao,
@@ -174,7 +184,9 @@ class AuthService {
     } catch (e) {
       debugPrint('❌ Supabase Kakao Sign-In Error: $e');
       if (e.toString().contains('audience')) {
-        debugPrint('💡 TIP: Check if the Native App Key is registered as Client ID in Supabase Kakao Provider settings.');
+        debugPrint(
+          '💡 TIP: Check if the Native App Key is registered as Client ID in Supabase Kakao Provider settings.',
+        );
       }
       rethrow;
     }
@@ -193,7 +205,7 @@ class AuthService {
           .select()
           .eq('id', userId)
           .single();
-      
+
       return UserProfile.fromJson(response);
     } catch (e) {
       return null;
@@ -207,9 +219,10 @@ class AuthService {
 
     // 2. 이미 점령한 타일들의 색상도 사용자가 지정한 새로운 색상으로 동기화
     try {
-      await _client.from('captured_tiles').update({
-        'color_hex': profile.colorHex,
-      }).eq('user_id', profile.id);
+      await _client
+          .from('captured_tiles')
+          .update({'color_hex': profile.colorHex})
+          .eq('user_id', profile.id);
       debugPrint('🎨 사용자의 모든 타일 색상이 ${profile.colorHex}로 동기화되었습니다.');
     } catch (e) {
       debugPrint('⚠️ 타일 색상 동기화 중 오류 발생 (무시 가능): $e');
@@ -231,15 +244,16 @@ class AuthService {
   Future<bool> isEmailAvailable(String email) async {
     try {
       // Supabase RPC 함수 호출
-      final bool exists = await _client.rpc('check_email_exists', params: {
-        'email_to_check': email,
-      });
+      final bool exists = await _client.rpc(
+        'check_email_exists',
+        params: {'email_to_check': email},
+      );
       return !exists; // 존재하면(true) 사용 불가능(false) 반환
     } catch (e) {
       debugPrint('⚠️ 이메일 중복 체크 중 오류 발생: $e');
-      // RPC가 생성되지 않았을 경우를 대비해 기본적으로 true(사용가능)를 반환하거나 
+      // RPC가 생성되지 않았을 경우를 대비해 기본적으로 true(사용가능)를 반환하거나
       // 사용자에게 설정을 요청하는 에러를 던질 수 있습니다.
-      return true; 
+      return true;
     }
   }
 }

@@ -100,7 +100,7 @@ class SupabaseService {
           .maybeSingle();
 
       if (response == null) return null;
-      return HexTile.fromJson(response as Map<String, dynamic>);
+      return HexTile.fromJson(response);
     } catch (e) {
       debugPrint('❌ 단일 타일 서버 조회 실패: $e');
       return null;

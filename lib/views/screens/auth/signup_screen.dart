@@ -73,7 +73,7 @@ class _SignupScreenState extends State<SignupScreen> {
     if (email.isEmpty) {
       ScaffoldMessenger.of(
         context,
-      ).showSnackBar(const SnackBar(content: Text(GameStrings.enterEmail)));
+      ).showSnackBar(SnackBar(content: Text(GameStrings.enterEmail)));
       return;
     }
 
@@ -122,7 +122,7 @@ class _SignupScreenState extends State<SignupScreen> {
     if (nickname.isEmpty) {
       ScaffoldMessenger.of(
         context,
-      ).showSnackBar(const SnackBar(content: Text(GameStrings.enterNickname)));
+      ).showSnackBar(SnackBar(content: Text(GameStrings.enterNickname)));
       return;
     }
 
@@ -151,21 +151,21 @@ class _SignupScreenState extends State<SignupScreen> {
     if (_nicknameController.text.isEmpty) {
       ScaffoldMessenger.of(
         context,
-      ).showSnackBar(const SnackBar(content: Text(GameStrings.enterNickname)));
+      ).showSnackBar(SnackBar(content: Text(GameStrings.enterNickname)));
       return;
     }
 
     if (!_isNicknameChecked || !_isNicknameAvailable) {
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(const SnackBar(content: Text(GameStrings.errorNicknameCheckRequired)));
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(GameStrings.errorNicknameCheckRequired)),
+      );
       return;
     }
 
     if (!_isEmailChecked || !_isEmailValid) {
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(const SnackBar(content: Text(GameStrings.errorEmailCheckRequired)));
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(GameStrings.errorEmailCheckRequired)),
+      );
       return;
     }
 
@@ -224,9 +224,9 @@ class _SignupScreenState extends State<SignupScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text(
+        title: Text(
           GameStrings.signup,
-          style: TextStyle(letterSpacing: 2, fontSize: 16),
+          style: const TextStyle(letterSpacing: 2, fontSize: 16),
         ),
         backgroundColor: GameColors.transparent,
         elevation: 0,
@@ -278,7 +278,9 @@ class _SignupScreenState extends State<SignupScreen> {
                       child: TextButton(
                         onPressed: _isCheckingNickname ? null : _checkNickname,
                         style: TextButton.styleFrom(
-                          backgroundColor: GameColors.accentNeon.withValues(alpha: 0.1),
+                          backgroundColor: GameColors.accentNeon.withValues(
+                            alpha: 0.1,
+                          ),
                           foregroundColor: GameColors.accentNeon,
                           shape: RoundedRectangleBorder(
                             borderRadius: BorderRadius.circular(5),
@@ -293,9 +295,9 @@ class _SignupScreenState extends State<SignupScreen> {
                                   color: GameColors.accentNeon,
                                 ),
                               )
-                            : const Text(
+                            : Text(
                                 GameStrings.checkDuplicate,
-                                style: TextStyle(
+                                style: const TextStyle(
                                   fontWeight: FontWeight.bold,
                                   fontSize: 12,
                                 ),
@@ -312,7 +314,9 @@ class _SignupScreenState extends State<SignupScreen> {
                           ? '✓ ${GameStrings.nicknameAvailable}'
                           : '✕ ${GameStrings.errorNicknameExists}',
                       style: TextStyle(
-                        color: _isNicknameAvailable ? GameColors.success : GameColors.error,
+                        color: _isNicknameAvailable
+                            ? GameColors.success
+                            : GameColors.error,
                         fontSize: 10,
                       ),
                     ),
@@ -336,7 +340,9 @@ class _SignupScreenState extends State<SignupScreen> {
                       child: TextButton(
                         onPressed: _isCheckingEmail ? null : _checkEmail,
                         style: TextButton.styleFrom(
-                          backgroundColor: GameColors.accentNeon.withValues(alpha: 0.1),
+                          backgroundColor: GameColors.accentNeon.withValues(
+                            alpha: 0.1,
+                          ),
                           foregroundColor: GameColors.accentNeon,
                           shape: RoundedRectangleBorder(
                             borderRadius: BorderRadius.circular(5),
@@ -351,9 +357,9 @@ class _SignupScreenState extends State<SignupScreen> {
                                   color: GameColors.accentNeon,
                                 ),
                               )
-                            : const Text(
+                            : Text(
                                 GameStrings.checkDuplicate,
-                                style: TextStyle(
+                                style: const TextStyle(
                                   fontWeight: FontWeight.bold,
                                   fontSize: 12,
                                 ),
@@ -370,7 +376,9 @@ class _SignupScreenState extends State<SignupScreen> {
                           ? '✓ ${GameStrings.emailAvailable}'
                           : '✕ ${GameStrings.emailInvalid}',
                       style: TextStyle(
-                        color: _isEmailValid ? GameColors.success : GameColors.error,
+                        color: _isEmailValid
+                            ? GameColors.success
+                            : GameColors.error,
                         fontSize: 10,
                       ),
                     ),
@@ -444,7 +452,7 @@ class _SignupScreenState extends State<SignupScreen> {
                           OutlinedButton.icon(
                             onPressed: _generateRandomColor,
                             icon: const Icon(Icons.refresh, size: 16),
-                            label: const Text(GameStrings.changeColor),
+                            label: Text(GameStrings.changeColor),
                             style: OutlinedButton.styleFrom(
                               foregroundColor: GameColors.textSecondary,
                               side: BorderSide(color: GameColors.dividerColor),
@@ -479,9 +487,9 @@ class _SignupScreenState extends State<SignupScreen> {
                                 color: GameColors.tacticalBlack,
                               ),
                             )
-                          : const Text(
+                          : Text(
                               GameStrings.signup,
-                              style: TextStyle(
+                              style: const TextStyle(
                                 fontWeight: FontWeight.bold,
                                 fontSize: 16,
                                 letterSpacing: 2,

@@ -28,7 +28,6 @@ class GameProvider extends ChangeNotifier {
   final List<GameAlert> _alerts = [];
   bool _isInitialized = false;
   bool _isAutoCapture = false;
-  bool _showBoundaries = true;
   int _currentMapStyleIndex = 0;
   bool _isNotificationEnabled = true;
   bool _isMapRotationMode = false; // 추가: 맵 회전(북쪽 고정) 여부
@@ -45,7 +44,6 @@ class GameProvider extends ChangeNotifier {
   List<GameAlert> get alerts => List.unmodifiable(_alerts);
   bool get isInitialized => _isInitialized;
   bool get isAutoCapture => _isAutoCapture;
-  bool get showBoundaries => _showBoundaries;
   int get currentMapStyleIndex => _currentMapStyleIndex;
   bool get isNotificationEnabled => _isNotificationEnabled;
   bool get isMapRotationMode => _isMapRotationMode; // 추가: 맵 회전 여부 getter
@@ -270,7 +268,7 @@ class GameProvider extends ChangeNotifier {
     }
   }
 
-    /// 서버의 점령 상태 결과에 따라 점령 진행 여부를 판별하는 내부 로직
+  /// 서버의 점령 상태 결과에 따라 점령 진행 여부를 판별하는 내부 로직
   Future<void> _processCaptureDecision(String tileId, TileStatus status) async {
     final loc = _locationProvider;
     final auth = _authProvider;
@@ -309,9 +307,11 @@ class GameProvider extends ChangeNotifier {
           debugPrint('자동 점령 전 서버 타일 정보 패치 실패: $e');
         }
 
-        final int currentCaptureCount = _capturedTiles[tileId]?.captureCount ?? 0;
+        final int currentCaptureCount =
+            _capturedTiles[tileId]?.captureCount ?? 0;
         final int targetCaptureCount = currentCaptureCount + 1;
-        final int durationSeconds = GameConstants.initialCaptureDurationSeconds * targetCaptureCount;
+        final int durationSeconds =
+            GameConstants.initialCaptureDurationSeconds * targetCaptureCount;
         final Duration captureDuration = Duration(seconds: durationSeconds);
 
         _captureController.startCapture(
@@ -337,7 +337,9 @@ class GameProvider extends ChangeNotifier {
     final tile = _capturedTiles[tileId];
     if (tile == null) return 0;
 
-    final remaining = tile.shieldExpiration.difference(DateTime.now().toUtc()).inSeconds;
+    final remaining = tile.shieldExpiration
+        .difference(DateTime.now().toUtc())
+        .inSeconds;
     return remaining > 0 ? remaining : 0;
   }
 
@@ -353,7 +355,7 @@ class GameProvider extends ChangeNotifier {
 
     final hex = HexService.latLngToHex(loc!.currentLocation!);
     final tileId = 'hex_${hex['q']}_${hex['r']}';
-    
+
     // 점령 시작 직전, DB 서버에서 해당 타일의 실시간 최신 정보 강제 패치
     try {
       final serverTile = await _supabase.fetchTile(tileId);
@@ -369,7 +371,8 @@ class GameProvider extends ChangeNotifier {
 
     final int currentCaptureCount = currentTile?.captureCount ?? 0;
     final int targetCaptureCount = currentCaptureCount + 1;
-    final int durationSeconds = GameConstants.initialCaptureDurationSeconds * targetCaptureCount;
+    final int durationSeconds =
+        GameConstants.initialCaptureDurationSeconds * targetCaptureCount;
     final Duration captureDuration = Duration(seconds: durationSeconds);
 
     _captureController.startCapture(
@@ -391,11 +394,6 @@ class GameProvider extends ChangeNotifier {
   void cycleMapStyle() {
     _currentMapStyleIndex =
         (_currentMapStyleIndex + 1) % GameConstants.mapStyles.length;
-    notifyListeners();
-  }
-
-  void toggleBoundaries() {
-    _showBoundaries = !_showBoundaries;
     notifyListeners();
   }
 
@@ -429,7 +427,9 @@ class GameProvider extends ChangeNotifier {
       if (serverTile != null) {
         _capturedTiles[tileId] = serverTile;
         notifyListeners();
-        debugPrint('🎨 [상대방 구역 갱신] 타일($tileId)을 상대방 점령색(${serverTile.colorHex})으로 실시간 갱신 완료.');
+        debugPrint(
+          '🎨 [상대방 구역 갱신] 타일($tileId)을 상대방 점령색(${serverTile.colorHex})으로 실시간 갱신 완료.',
+        );
       }
     }
     // 빈 구역(empty)인데 로컬에 잔재가 있으면 제거하여 동기화

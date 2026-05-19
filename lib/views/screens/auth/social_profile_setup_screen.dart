@@ -56,7 +56,7 @@ class _SocialProfileSetupScreenState extends State<SocialProfileSetupScreen> {
     if (nickname.isEmpty) {
       ScaffoldMessenger.of(
         context,
-      ).showSnackBar(const SnackBar(content: Text(GameStrings.enterNickname)));
+      ).showSnackBar(SnackBar(content: Text(GameStrings.enterNickname)));
       return;
     }
 
@@ -99,13 +99,13 @@ class _SocialProfileSetupScreenState extends State<SocialProfileSetupScreen> {
     if (nickname.isEmpty) {
       ScaffoldMessenger.of(
         context,
-      ).showSnackBar(const SnackBar(content: Text(GameStrings.enterNickname)));
+      ).showSnackBar(SnackBar(content: Text(GameStrings.enterNickname)));
       return;
     }
 
     if (!_isNicknameChecked || !_isNicknameAvailable) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text(GameStrings.errorNicknameCheckRequired)),
+        SnackBar(content: Text(GameStrings.errorNicknameCheckRequired)),
       );
       return;
     }
@@ -227,7 +227,7 @@ class _SocialProfileSetupScreenState extends State<SocialProfileSetupScreen> {
                                   color: GameColors.accentNeon,
                                 ),
                               )
-                            : const Text(
+                            : Text(
                                 GameStrings.checkDuplicate,
                                 style: TextStyle(
                                   fontWeight: FontWeight.bold,
@@ -281,7 +281,7 @@ class _SocialProfileSetupScreenState extends State<SocialProfileSetupScreen> {
                       child: OutlinedButton.icon(
                         onPressed: _generateRandomColor,
                         icon: const Icon(Icons.refresh, size: 16),
-                        label: const Text(GameStrings.generateNewColor),
+                        label: Text(GameStrings.generateNewColor),
                         style: OutlinedButton.styleFrom(
                           foregroundColor: GameColors.textPrimary,
                           side: BorderSide(color: GameColors.dividerColor),
@@ -310,9 +310,9 @@ class _SocialProfileSetupScreenState extends State<SocialProfileSetupScreen> {
                                 color: GameColors.tacticalBlack,
                               ),
                             )
-                          : const Text(
+                          : Text(
                               GameStrings.setupComplete,
-                              style: TextStyle(fontWeight: FontWeight.bold),
+                              style: const TextStyle(fontWeight: FontWeight.bold),
                             ),
                     );
                   },

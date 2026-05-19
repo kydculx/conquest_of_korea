@@ -6,7 +6,10 @@ import '../../core/constants/strings.dart';
 /// 게임 데이터 로딩 및 GPS 연결 대기 시 표시하는 전술적 로딩 화면
 class LoadingOverlay extends StatefulWidget {
   final String message;
-  const LoadingOverlay({super.key, this.message = GameStrings.analyzingTacticalData});
+  LoadingOverlay({
+    super.key,
+    String? message,
+  }) : message = message ?? GameStrings.analyzingTacticalData;
 
   @override
   State<LoadingOverlay> createState() => _LoadingOverlayState();
@@ -46,9 +49,7 @@ class _LoadingOverlayState extends State<LoadingOverlay>
               child: AnimatedBuilder(
                 animation: _controller,
                 builder: (context, child) {
-                  return CustomPaint(
-                    painter: _RadarPainter(_controller.value),
-                  );
+                  return CustomPaint(painter: _RadarPainter(_controller.value));
                 },
               ),
             ),
@@ -109,12 +110,28 @@ class _RadarPainter extends CustomPainter {
 
     const double gridSpacing = 12.0;
     // 가로 격자선
-    for (double y = center.dy - radius; y <= center.dy + radius; y += gridSpacing) {
-      canvas.drawLine(Offset(center.dx - radius, y), Offset(center.dx + radius, y), gridPaint);
+    for (
+      double y = center.dy - radius;
+      y <= center.dy + radius;
+      y += gridSpacing
+    ) {
+      canvas.drawLine(
+        Offset(center.dx - radius, y),
+        Offset(center.dx + radius, y),
+        gridPaint,
+      );
     }
     // 세로 격자선
-    for (double x = center.dx - radius; x <= center.dx + radius; x += gridSpacing) {
-      canvas.drawLine(Offset(x, center.dy - radius), Offset(x, center.dy + radius), gridPaint);
+    for (
+      double x = center.dx - radius;
+      x <= center.dx + radius;
+      x += gridSpacing
+    ) {
+      canvas.drawLine(
+        Offset(x, center.dy - radius),
+        Offset(x, center.dy + radius),
+        gridPaint,
+      );
     }
 
     // 기본 네온 펜
@@ -129,8 +146,16 @@ class _RadarPainter extends CustomPainter {
     canvas.drawCircle(center, radius * 0.4, bgPaint);
 
     // 3. 십자선 (중앙 눈금 포함)
-    canvas.drawLine(Offset(center.dx - radius, center.dy), Offset(center.dx + radius, center.dy), bgPaint);
-    canvas.drawLine(Offset(center.dx, center.dy - radius), Offset(center.dx, center.dy + radius), bgPaint);
+    canvas.drawLine(
+      Offset(center.dx - radius, center.dy),
+      Offset(center.dx + radius, center.dy),
+      bgPaint,
+    );
+    canvas.drawLine(
+      Offset(center.dx, center.dy - radius),
+      Offset(center.dx, center.dy + radius),
+      bgPaint,
+    );
 
     // 4. 방위각 눈금선 (Degree Ticks)
     final tickPaint = Paint()
@@ -141,7 +166,8 @@ class _RadarPainter extends CustomPainter {
     // 15도마다 외곽선에 미세 눈금 추가
     for (int angleDeg = 0; angleDeg < 360; angleDeg += 15) {
       final double rad = angleDeg * math.pi / 180;
-      final double startDist = radius - (angleDeg % 45 == 0 ? 8.0 : 4.0); // 45도 눈금은 조금 더 길게
+      final double startDist =
+          radius - (angleDeg % 45 == 0 ? 8.0 : 4.0); // 45도 눈금은 조금 더 길게
       final double endDist = radius;
 
       final startOffset = Offset(

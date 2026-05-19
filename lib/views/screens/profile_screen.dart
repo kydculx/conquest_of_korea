@@ -36,7 +36,7 @@ class ProfileScreen extends StatelessWidget {
                   backgroundColor: GameColors.accentNeon,
                   foregroundColor: GameColors.tacticalBlack,
                 ),
-                child: const Text(GameStrings.goBack),
+                child: Text(GameStrings.goBack),
               ),
             ],
           ),
@@ -51,9 +51,9 @@ class ProfileScreen extends StatelessWidget {
       appBar: AppBar(
         backgroundColor: GameColors.transparent,
         elevation: 0,
-        title: const Text(
+        title: Text(
           GameStrings.agentProfile,
-          style: TextStyle(fontWeight: FontWeight.bold, letterSpacing: 1.2),
+          style: const TextStyle(fontWeight: FontWeight.bold, letterSpacing: 1.2),
         ),
         centerTitle: true,
         leading: IconButton(
@@ -101,18 +101,11 @@ class ProfileScreen extends StatelessWidget {
                         color: teamColor.withValues(alpha: 0.15),
                         shape: BeveledRectangleBorder(
                           borderRadius: BorderRadius.circular(16),
-                          side: BorderSide(
-                            color: teamColor,
-                            width: 2.0,
-                          ),
+                          side: BorderSide(color: teamColor, width: 2.0),
                         ),
                       ),
                       child: Center(
-                        child: Icon(
-                          Icons.person,
-                          size: 40,
-                          color: teamColor,
-                        ),
+                        child: Icon(Icons.person, size: 40, color: teamColor),
                       ),
                     ),
                     const SizedBox(height: 16),
@@ -129,7 +122,9 @@ class ProfileScreen extends StatelessWidget {
                     Text(
                       user?.email ?? '',
                       style: TextStyle(
-                        color: GameColors.textSecondary.withValues(alpha: 120 / 255),
+                        color: GameColors.textSecondary.withValues(
+                          alpha: 120 / 255,
+                        ),
                         fontSize: 14,
                         letterSpacing: 0.5,
                       ),
@@ -158,7 +153,9 @@ class ProfileScreen extends StatelessWidget {
                         Container(
                           width: 1,
                           height: 30,
-                          color: GameColors.dividerColor.withValues(alpha: 80 / 255),
+                          color: GameColors.dividerColor.withValues(
+                            alpha: 80 / 255,
+                          ),
                           margin: const EdgeInsets.symmetric(horizontal: 12),
                         ),
                         _buildStatItem(
@@ -352,7 +349,11 @@ class ProfileScreen extends StatelessWidget {
         ),
         title: Row(
           children: [
-            Icon(Icons.warning_amber_rounded, color: GameColors.error, size: 20),
+            Icon(
+              Icons.warning_amber_rounded,
+              color: GameColors.error,
+              size: 20,
+            ),
             const SizedBox(width: 8),
             Text(
               '[ SYSTEM // TERMINATE ]',
@@ -372,10 +373,8 @@ class ProfileScreen extends StatelessWidget {
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context, false),
-            style: TextButton.styleFrom(
-              foregroundColor: GameColors.textMuted,
-            ),
-            child: const Text(GameStrings.cancel),
+            style: TextButton.styleFrom(foregroundColor: GameColors.textMuted),
+            child: Text(GameStrings.cancel),
           ),
           ElevatedButton(
             onPressed: () => Navigator.pop(context, true),
@@ -386,9 +385,9 @@ class ProfileScreen extends StatelessWidget {
                 borderRadius: BorderRadius.circular(4),
               ),
             ),
-            child: const Text(
+            child: Text(
               GameStrings.logout,
-              style: TextStyle(fontWeight: FontWeight.bold),
+              style: const TextStyle(fontWeight: FontWeight.bold),
             ),
           ),
         ],
@@ -442,10 +441,7 @@ class ProfileScreen extends StatelessWidget {
                     color: previewColor.withValues(alpha: 0.15),
                     shape: BeveledRectangleBorder(
                       borderRadius: BorderRadius.circular(16),
-                      side: BorderSide(
-                        color: previewColor,
-                        width: 2.5,
-                      ),
+                      side: BorderSide(color: previewColor, width: 2.5),
                     ),
                     shadows: [
                       BoxShadow(
@@ -455,11 +451,7 @@ class ProfileScreen extends StatelessWidget {
                       ),
                     ],
                   ),
-                  child: Icon(
-                    Icons.person,
-                    color: previewColor,
-                    size: 40,
-                  ),
+                  child: Icon(Icons.person, color: previewColor, size: 40),
                 ),
                 const SizedBox(height: 12),
                 Text(
@@ -548,9 +540,9 @@ class ProfileScreen extends StatelessWidget {
                     borderRadius: BorderRadius.circular(6),
                   ),
                 ),
-                child: const Text(
+                child: Text(
                   GameStrings.apply,
-                  style: TextStyle(fontWeight: FontWeight.bold),
+                  style: const TextStyle(fontWeight: FontWeight.bold),
                 ),
               ),
             ],
