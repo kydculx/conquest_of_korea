@@ -98,11 +98,36 @@ class HexTileComponent extends PositionComponent
     );
     if (!isVisible) return;
 
-    // 2. Path 캐싱 로직
+    // 2. Path 캐싱 로직 (타일 간 간격을 위해 1픽셀 안쪽으로 축소)
     if (_cachedPath == null) {
-      _cachedPath = Path()..moveTo(corners[0].dx, corners[0].dy);
-      for (int i = 1; i < corners.length; i++) {
-        _cachedPath!.lineTo(corners[i].dx, corners[i].dy);
+      // 타일의 중심점 계산
+      double cx = 0, cy = 0;
+      for (final c in corners) {
+        cx += c.dx;
+        cy += c.dy;
+      }
+      cx /= corners.length;
+      cy /= corners.length;
+
+      // 안쪽으로 당길 픽셀 수 (타일 사이의 갭 생성)
+      const double padding = 1.0;
+
+      _cachedPath = Path();
+      for (int i = 0; i < corners.length; i++) {
+        final c = corners[i];
+        final dx = cx - c.dx;
+        final dy = cy - c.dy;
+        final dist = math.sqrt(dx * dx + dy * dy);
+        
+        // 중심 방향으로 padding만큼 이동
+        final double insetX = dist > padding ? c.dx + (dx / dist) * padding : c.dx;
+        final double insetY = dist > padding ? c.dy + (dy / dist) * padding : c.dy;
+
+        if (i == 0) {
+          _cachedPath!.moveTo(insetX, insetY);
+        } else {
+          _cachedPath!.lineTo(insetX, insetY);
+        }
       }
       _cachedPath!.close();
     }
