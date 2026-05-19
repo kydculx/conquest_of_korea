@@ -115,7 +115,8 @@ class _TacticalCompassPainter extends CustomPainter {
 
     // 30도 간격으로 나침반 눈금 및 방위 표시 그리기
     for (int angle = 0; angle < 360; angle += 30) {
-      final double angleRad = angle * (math.pi / 180.0);
+      // 0도(N)가 캔버스 12시 방향을 향하도록 -90도 영점 보정
+      final double angleRad = (angle - 90) * (math.pi / 180.0);
       final double cosVal = math.cos(angleRad);
       final double sinVal = math.sin(angleRad);
 
