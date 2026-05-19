@@ -26,6 +26,8 @@ class GameColors {
   // 보더 및 구분선 계열
   static Color dividerColor = const Color(0x22FFFFFF);   // 연하고 은은한 미세 분리선
   static Color borderLight = const Color(0x11FFFFFF);    // 매우 연한 미세 보더선
+  static Color borderNeon = const Color(0x6600FFD1);     // 전술 네온 테두리선 (추가)
+  static Color techGrid = const Color(0x0CFFFFFF);       // 정밀 미세 격자선 (추가)
 
   // 상태 알림 계열
   static Color success = const Color(0xFF10B981);        // Emerald 500 수준의 생동감 넘치는 형광 네온 그린

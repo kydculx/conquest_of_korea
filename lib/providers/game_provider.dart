@@ -15,6 +15,7 @@ import '../core/constants/strings.dart';
 /// 게임 핵심 상태 관리 Provider
 class GameProvider extends ChangeNotifier {
   static const String _notifKey = 'conquest_notifications_enabled';
+  static const String _rotationModeKey = 'conquest_map_rotation_enabled';
 
   final SupabaseService _supabase;
   late final CaptureController _captureController;
@@ -30,6 +31,7 @@ class GameProvider extends ChangeNotifier {
   bool _showBoundaries = true;
   int _currentMapStyleIndex = 0;
   bool _isNotificationEnabled = true;
+  bool _isMapRotationMode = false; // 추가: 맵 회전(북쪽 고정) 여부
 
   // --- 위치 변경 감지 시 서버 부하 방지용 3초 딜레이 타이머 ---
   DateTime? _lastServerCheckTime;
@@ -46,6 +48,7 @@ class GameProvider extends ChangeNotifier {
   bool get showBoundaries => _showBoundaries;
   int get currentMapStyleIndex => _currentMapStyleIndex;
   bool get isNotificationEnabled => _isNotificationEnabled;
+  bool get isMapRotationMode => _isMapRotationMode; // 추가: 맵 회전 여부 getter
   MapStyle get currentMapStyle =>
       GameConstants.mapStyles[_currentMapStyleIndex];
   bool get showMap => currentMapStyle.url.isNotEmpty;
@@ -159,6 +162,7 @@ class GameProvider extends ChangeNotifier {
     try {
       final prefs = await SharedPreferences.getInstance();
       _isNotificationEnabled = prefs.getBool(_notifKey) ?? true;
+      _isMapRotationMode = prefs.getBool(_rotationModeKey) ?? false;
 
       final tiles = await _supabase.fetchAllCapturedTiles();
       for (final tile in tiles) {
@@ -392,6 +396,13 @@ class GameProvider extends ChangeNotifier {
 
   void toggleBoundaries() {
     _showBoundaries = !_showBoundaries;
+    notifyListeners();
+  }
+
+  Future<void> toggleMapRotationMode() async {
+    _isMapRotationMode = !_isMapRotationMode;
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setBool(_rotationModeKey, _isMapRotationMode);
     notifyListeners();
   }
 

@@ -9,6 +9,7 @@ import 'package:provider/provider.dart';
 import '../../game/conquest_game.dart';
 import '../../core/constants.dart';
 import '../../providers/game_provider.dart';
+import '../../providers/location_provider.dart'; // 추가: LocationProvider 임포트
 
 /// 지도(FlutterMap) + Flame 엔진 레이어를 결합한 위젯
 class GameMapWidget extends StatefulWidget {
@@ -29,7 +30,10 @@ class _GameMapWidgetState extends State<GameMapWidget>
     with TickerProviderStateMixin {
   final MapController _mapController = MapController();
   bool _isFollowing = true;
+  bool _isPinching = false; // 추가: 핀치 줌 진행 중 여부 플래그
+  int _pointerCount = 0; // 추가: 화면에 터치 중인 활성 포인터(손가락) 개수
   double _currentZoom = GameConstants.focusZoom;
+  LocationProvider? _locProvider; // 추가: LocationProvider 참조 보관
 
   // 2023-07 최신 경계선 데이터
   List<Polyline> _boundaryPolylines = [];
@@ -43,18 +47,63 @@ class _GameMapWidgetState extends State<GameMapWidget>
   }
 
   @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    final newLoc = Provider.of<LocationProvider>(context, listen: false);
+    if (_locProvider != newLoc) {
+      _locProvider?.removeListener(_onLocationProviderChanged);
+      _locProvider = newLoc;
+      _locProvider?.addListener(_onLocationProviderChanged);
+    }
+  }
+
+  @override
+  void dispose() {
+    _locProvider?.removeListener(_onLocationProviderChanged);
+    super.dispose();
+  }
+
+  void _onLocationProviderChanged() {
+    if (!mounted || _locProvider == null) return;
+
+    final loc = _locProvider!;
+    final gameProvider = Provider.of<GameProvider>(context, listen: false);
+
+    if (_isFollowing && loc.currentLocation != null) {
+      if (gameProvider.isMapRotationMode) {
+        if (!_isPinching) {
+          _mapController.move(loc.currentLocation!, _currentZoom);
+        }
+        _mapController.rotate(-loc.heading);
+      } else {
+        if (!_isPinching) {
+          _mapController.move(loc.currentLocation!, _currentZoom);
+        }
+        if (_mapController.camera.rotation != 0.0) {
+          _mapController.rotate(0.0);
+        }
+      }
+      // Flame 엔진 프로젝션 업데이트 트리거
+      widget.game.updateProjection(_mapController);
+    }
+  }
+
+  @override
   void didUpdateWidget(GameMapWidget oldWidget) {
     super.didUpdateWidget(oldWidget);
-    // 위치가 갱신되었고 '내 위치 추적' 모드라면 지도를 이동시킴
+    // 위치가 갱신되었고 '내 위치 추적' 모드라면 지도를 이동시킴 (맵 회전 모드가 아닐 때만 딜레이 애니메이션 적용)
     if (_isFollowing && widget.initialLocation != oldWidget.initialLocation) {
-      _animatedMapMove(widget.initialLocation, GameConstants.focusZoom);
+      final gameProvider = Provider.of<GameProvider>(context, listen: false);
+      if (!gameProvider.isMapRotationMode) {
+        _animatedMapMove(widget.initialLocation, GameConstants.focusZoom, 0.0);
+      }
     }
   }
 
   Future<void> _loadAllBoundaries() async {
     // 부하 분산을 위해 순차적으로 로드
-    await _loadBoundary('assets/data/korea_outline_2023.json', isOutline: true);
-    await _loadBoundary('assets/data/korea_sido_2023.json', isOutline: false);
+    await _loadBoundary(GameConstants.boundaryOutlineAsset, isOutline: true);
+    await _loadBoundary(GameConstants.boundarySidoAsset, isOutline: false);
 
     if (mounted) {
       setState(() => _isLoadingBoundaries = false);
@@ -107,7 +156,7 @@ class _GameMapWidgetState extends State<GameMapWidget>
     }
   }
 
-  void _animatedMapMove(LatLng destLocation, double destZoom) {
+  void _animatedMapMove(LatLng destLocation, double destZoom, double destRotation) {
     final latTween = Tween<double>(
       begin: _mapController.camera.center.latitude,
       end: destLocation.latitude,
@@ -122,7 +171,7 @@ class _GameMapWidgetState extends State<GameMapWidget>
     );
     final rotationTween = Tween<double>(
       begin: _mapController.camera.rotation,
-      end: 0.0,
+      end: destRotation,
     );
 
     final controller = AnimationController(
@@ -135,11 +184,14 @@ class _GameMapWidgetState extends State<GameMapWidget>
     );
 
     animation.addListener(() {
+      if (!mounted) return;
       _mapController.move(
         LatLng(latTween.evaluate(animation), lngTween.evaluate(animation)),
         zoomTween.evaluate(animation),
       );
       _mapController.rotate(rotationTween.evaluate(animation));
+      // Flame 엔진 프로젝션 실시간 업데이트
+      widget.game.updateProjection(_mapController);
     });
 
     animation.addStatusListener((status) {
@@ -159,34 +211,60 @@ class _GameMapWidgetState extends State<GameMapWidget>
         return Stack(
           children: [
             // 베이스 맵 레이어
-            FlutterMap(
-              mapController: _mapController,
-              options: MapOptions(
-                initialCenter: widget.initialLocation,
-                initialZoom: GameConstants.focusZoom,
-                minZoom: GameConstants.minZoom,
-                maxZoom: GameConstants.maxZoom,
-                // 남한 영토 기준 + 여유 공간(Margin)을 두어 러프하게 바운더리 제한 (GameConstants 외부 변수 참조)
-                // contain 대신 containCenter를 사용하여 줌 아웃 시 화면이 바운더리보다 커져서 크래시나는 현상 방지
-                cameraConstraint: CameraConstraint.containCenter(
-                  bounds: LatLngBounds(
-                    GameConstants.mapBoundSouthWest, // 남서 (마라도/백령도보다 더 넓게)
-                    GameConstants.mapBoundNorthEast, // 북동 (고성/독도보다 더 넓게)
+            Listener(
+              onPointerDown: (event) {
+                _pointerCount++;
+              },
+              onPointerUp: (event) {
+                _pointerCount = (_pointerCount - 1).clamp(0, 10);
+              },
+              onPointerCancel: (event) {
+                _pointerCount = (_pointerCount - 1).clamp(0, 10);
+              },
+              child: FlutterMap(
+                mapController: _mapController,
+                options: MapOptions(
+                  initialCenter: widget.initialLocation,
+                  initialZoom: GameConstants.focusZoom,
+                  minZoom: GameConstants.minZoom,
+                  maxZoom: GameConstants.maxZoom,
+                  // 남한 영토 기준 + 여유 공간(Margin)을 두어 러프하게 바운더리 제한 (GameConstants 외부 변수 참조)
+                  // contain 대신 containCenter를 사용하여 줌 아웃 시 화면이 바운더리보다 커져서 크래시나는 현상 방지
+                  cameraConstraint: CameraConstraint.containCenter(
+                    bounds: LatLngBounds(
+                      GameConstants.mapBoundSouthWest, // 남서 (마라도/백령도보다 더 넓게)
+                      GameConstants.mapBoundNorthEast, // 북동 (고성/독도보다 더 넓게)
+                    ),
                   ),
+                  // 맵 회전(Rotation) 제스처 비활성화
+                  interactionOptions: const InteractionOptions(
+                    flags: InteractiveFlag.all & ~InteractiveFlag.rotate,
+                  ),
+                  backgroundColor: GameColors.transparent,
+                  onMapEvent: (event) {
+                    if (event.source == MapEventSource.multiFingerGestureStart) {
+                      setState(() => _isPinching = true);
+                    } else if (event.source == MapEventSource.multiFingerEnd) {
+                      setState(() => _isPinching = false);
+                      _onLocationProviderChanged();
+                    }
+
+                    if (event.source == MapEventSource.dragStart ||
+                        event.source == MapEventSource.onDrag ||
+                        event.source == MapEventSource.flingAnimationController) {
+                      // 활성 포인터가 정확히 1개인 경우(순수 드래그)에만 트래킹을 즉시 해제
+                      if (_pointerCount == 1 && _isFollowing) {
+                        setState(() => _isFollowing = false);
+                      }
+                    }
+                  },
+                  onPositionChanged: (position, hasGesture) {
+                    if (position.zoom != _currentZoom) {
+                      setState(() => _currentZoom = position.zoom);
+                    }
+                    widget.game.updateProjection(_mapController);
+                  },
                 ),
-                // 맵 회전(Rotation) 제스처 비활성화
-                interactionOptions: const InteractionOptions(
-                  flags: InteractiveFlag.all & ~InteractiveFlag.rotate,
-                ),
-                backgroundColor: GameColors.transparent,
-                onPositionChanged: (position, hasGesture) {
-                  if (hasGesture) setState(() => _isFollowing = false);
-                  if (position.zoom != _currentZoom) {
-                    setState(() => _currentZoom = position.zoom);
-                  }
-                  widget.game.updateProjection(_mapController);
-                },
-              ),
               children: [
                 // 배경 지도 타일
                 if (gameProvider.showMap &&
@@ -223,6 +301,7 @@ class _GameMapWidgetState extends State<GameMapWidget>
                   PolylineLayer(polylines: _boundaryPolylines),
               ],
             ),
+          ),
 
             // Flame 게임 레이어 (터치 통과)
             Positioned.fill(
@@ -242,15 +321,39 @@ class _GameMapWidgetState extends State<GameMapWidget>
               child: Column(
                 children: [
                   _buildMapAction(
-                    icon: _isFollowing
-                        ? Icons.my_location
-                        : Icons.location_searching,
+                    icon: !_isFollowing
+                        ? Icons.location_searching
+                        : (gameProvider.isMapRotationMode ? Icons.explore : Icons.my_location),
                     onPressed: () {
-                      setState(() => _isFollowing = true);
-                      _animatedMapMove(
-                        widget.initialLocation,
-                        GameConstants.focusZoom,
-                      );
+                      final loc = _locProvider;
+                      if (_isFollowing) {
+                        gameProvider.toggleMapRotationMode();
+                        if (loc != null && loc.currentLocation != null) {
+                          if (gameProvider.isMapRotationMode) {
+                            _mapController.rotate(-loc.heading);
+                          } else {
+                            _mapController.rotate(0.0);
+                          }
+                          widget.game.updateProjection(_mapController);
+                        }
+                      } else {
+                        setState(() => _isFollowing = true);
+                        if (loc != null && loc.currentLocation != null) {
+                          final double targetRotation =
+                              gameProvider.isMapRotationMode ? -loc.heading : 0.0;
+                          _animatedMapMove(
+                            loc.currentLocation!,
+                            GameConstants.focusZoom,
+                            targetRotation,
+                          );
+                        } else {
+                          _animatedMapMove(
+                            widget.initialLocation,
+                            GameConstants.focusZoom,
+                            0.0,
+                          );
+                        }
+                      }
                     },
                     isActive: _isFollowing,
                   ),
@@ -262,6 +365,12 @@ class _GameMapWidgetState extends State<GameMapWidget>
                     onPressed: () => gameProvider.toggleBoundaries(),
                     isActive: gameProvider.showBoundaries,
                   ),
+                  const SizedBox(height: 8),
+                  _buildMapAction(
+                    icon: _getMapStyleIcon(gameProvider.currentMapStyle.icon),
+                    onPressed: () => gameProvider.cycleMapStyle(),
+                    isActive: !gameProvider.showMap,
+                  ),
                 ],
               ),
             ),
@@ -271,25 +380,49 @@ class _GameMapWidgetState extends State<GameMapWidget>
     );
   }
 
+  IconData _getMapStyleIcon(String iconName) {
+    const iconMap = <String, IconData>{
+      'dark_mode': Icons.dark_mode,
+      'satellite_alt': Icons.satellite_alt,
+      'terrain': Icons.terrain,
+      'add_road': Icons.add_road,
+      'explore': Icons.explore,
+      'brightness_5': Icons.brightness_5,
+      'map': Icons.map,
+      'public': Icons.public,
+      'straighten': Icons.straighten,
+      'filter_hdr': Icons.filter_hdr,
+      'landscape': Icons.landscape,
+      'directions_bike': Icons.directions_bike,
+      'layers_clear': Icons.layers_clear,
+    };
+    return iconMap[iconName] ?? Icons.map;
+  }
+
   Widget _buildMapAction({
     required IconData icon,
     required VoidCallback onPressed,
     bool isActive = false,
   }) {
-    return FloatingActionButton.small(
-      heroTag: null,
-      onPressed: onPressed,
-      backgroundColor: GameColors.backgroundMedium.withValues(alpha: 0.7),
-      foregroundColor: isActive
-          ? GameColors.accentNeon
-          : GameColors.tacticalWhite,
-      shape: CircleBorder(
-        side: BorderSide(
-          color: isActive ? GameColors.accentNeon : GameColors.dividerColor,
-          width: 1,
+    return SizedBox(
+      width: 40,
+      height: 40,
+      child: FloatingActionButton.small(
+        heroTag: null,
+        onPressed: onPressed,
+        backgroundColor: GameColors.backgroundMedium.withValues(alpha: 0.85),
+        foregroundColor: isActive
+            ? GameColors.accentNeon
+            : GameColors.tacticalWhite,
+        shape: BeveledRectangleBorder(
+          borderRadius: BorderRadius.circular(6),
+          side: BorderSide(
+            color: isActive ? GameColors.accentNeon : GameColors.dividerColor,
+            width: 1.2,
+          ),
         ),
+        child: Icon(icon, size: 18),
       ),
-      child: Icon(icon),
     );
   }
 }

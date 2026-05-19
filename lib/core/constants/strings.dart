@@ -146,4 +146,10 @@ class GameStrings {
   static const String notificationCaptureEnemyBody = '다른 유저의 구역을 빼앗았습니다!';
   static const String notificationInvasionTitle = '⚠️ 구역 상실 경보!';
   static const String notificationInvasionBody = '다른 유저가 당신의 구역을 빼앗았습니다!';
+
+  // HUD 및 전술 상태 라벨
+  static const String hudSecScan = '구역 스캔';
+  static const String hudOffline = '연결 차단';
+  static const String hudActive = '스캔 중';
+  static const String hudStandby = '대기 상태';
 }

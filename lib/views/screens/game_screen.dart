@@ -71,7 +71,7 @@ class _GameScreenState extends State<GameScreen> {
     // 플레이어 위치/방향 갱신
     if (loc.currentLocation != null) {
       flameGame.updatePlayerLocation(loc.currentLocation!);
-      flameGame.updatePlayerHeading(loc.heading);
+      flameGame.updatePlayerHeading(game.isMapRotationMode ? 0.0 : loc.heading);
     }
 
     final currentLocation =

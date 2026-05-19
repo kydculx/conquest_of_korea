@@ -71,30 +71,48 @@ class ProfileScreen extends StatelessWidget {
               Container(
                 width: double.infinity,
                 padding: const EdgeInsets.all(24),
-                decoration: BoxDecoration(
-                  color: GameColors.tacticalGray.withValues(alpha: 150 / 255),
-                  borderRadius: BorderRadius.circular(24),
-                  border: Border.all(
-                    color: GameColors.tacticalWhite.withValues(alpha: 20 / 255),
-                    width: 1.5,
+                decoration: ShapeDecoration(
+                  color: GameColors.backgroundMedium.withValues(alpha: 0.85),
+                  shape: BeveledRectangleBorder(
+                    borderRadius: const BorderRadius.only(
+                      topLeft: Radius.circular(16),
+                      bottomRight: Radius.circular(16),
+                    ),
+                    side: BorderSide(
+                      color: GameColors.accentNeon.withValues(alpha: 0.4),
+                      width: 1.5,
+                    ),
                   ),
-                  boxShadow: [
+                  shadows: [
                     BoxShadow(
-                      color: GameColors.tacticalBlack.withValues(alpha: 50 / 255),
-                      blurRadius: 20,
-                      spreadRadius: 5,
+                      color: GameColors.accentNeon.withValues(alpha: 0.05),
+                      blurRadius: 15,
+                      spreadRadius: 2,
                     ),
                   ],
                 ),
                 child: Column(
                   children: [
-                    CircleAvatar(
-                      radius: 40,
-                      backgroundColor: teamColor,
-                      child: Icon(
-                        Icons.person,
-                        size: 48,
-                        color: GameColors.tacticalBlack,
+                    // 전술적 팔각 프로필 컨테이너
+                    Container(
+                      width: 80,
+                      height: 80,
+                      decoration: ShapeDecoration(
+                        color: teamColor.withValues(alpha: 0.15),
+                        shape: BeveledRectangleBorder(
+                          borderRadius: BorderRadius.circular(16),
+                          side: BorderSide(
+                            color: teamColor,
+                            width: 2.0,
+                          ),
+                        ),
+                      ),
+                      child: Center(
+                        child: Icon(
+                          Icons.person,
+                          size: 40,
+                          color: teamColor,
+                        ),
                       ),
                     ),
                     const SizedBox(height: 16),
@@ -104,6 +122,7 @@ class ProfileScreen extends StatelessWidget {
                         color: GameColors.textPrimary,
                         fontSize: 24,
                         fontWeight: FontWeight.bold,
+                        letterSpacing: 1.0,
                       ),
                     ),
                     const SizedBox(height: 4),
@@ -112,6 +131,7 @@ class ProfileScreen extends StatelessWidget {
                       style: TextStyle(
                         color: GameColors.textSecondary.withValues(alpha: 120 / 255),
                         fontSize: 14,
+                        letterSpacing: 0.5,
                       ),
                     ),
                     const SizedBox(height: 20),
@@ -120,7 +140,9 @@ class ProfileScreen extends StatelessWidget {
                       children: [
                         InkWell(
                           onTap: () => _showColorPicker(context, auth),
-                          borderRadius: BorderRadius.circular(12),
+                          customBorder: BeveledRectangleBorder(
+                            borderRadius: BorderRadius.circular(4),
+                          ),
                           child: Padding(
                             padding: const EdgeInsets.symmetric(
                               horizontal: 12,
@@ -129,15 +151,15 @@ class ProfileScreen extends StatelessWidget {
                             child: _buildStatItem(
                               GameStrings.myTeam,
                               profile.colorHex.toUpperCase(),
-                              GameColors.accentNeon,
+                              teamColor,
                             ),
                           ),
                         ),
                         Container(
                           width: 1,
                           height: 30,
-                          color: GameColors.dividerColor,
-                          margin: const EdgeInsets.symmetric(horizontal: 8),
+                          color: GameColors.dividerColor.withValues(alpha: 80 / 255),
+                          margin: const EdgeInsets.symmetric(horizontal: 12),
                         ),
                         _buildStatItem(
                           GameStrings.capturedTiles,
@@ -254,10 +276,15 @@ class ProfileScreen extends StatelessWidget {
 
   Widget _buildMenuCard(List<Widget> children) {
     return Container(
-      decoration: BoxDecoration(
-        color: GameColors.tacticalGray.withValues(alpha: 100 / 255),
-        borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: GameColors.dividerColor.withValues(alpha: 50 / 255)),
+      decoration: ShapeDecoration(
+        color: GameColors.backgroundMedium.withValues(alpha: 0.6),
+        shape: BeveledRectangleBorder(
+          borderRadius: BorderRadius.circular(8),
+          side: BorderSide(
+            color: GameColors.dividerColor.withValues(alpha: 0.15),
+            width: 1,
+          ),
+        ),
       ),
       child: Column(children: children),
     );
@@ -277,12 +304,21 @@ class ProfileScreen extends StatelessWidget {
       leading: Icon(icon, color: activeTitleColor.withValues(alpha: 180 / 255)),
       title: Text(
         title,
-        style: TextStyle(color: activeTitleColor, fontWeight: FontWeight.w600),
+        style: TextStyle(
+          color: activeTitleColor,
+          fontWeight: FontWeight.bold,
+          fontSize: 14,
+          letterSpacing: 0.5,
+        ),
       ),
       subtitle: subtitle != null
           ? Text(
               subtitle,
-              style: TextStyle(color: GameColors.textMuted, fontSize: 12),
+              style: TextStyle(
+                color: GameColors.textMuted,
+                fontSize: 11,
+                letterSpacing: 0.3,
+              ),
             )
           : null,
       trailing:
@@ -296,7 +332,7 @@ class ProfileScreen extends StatelessWidget {
   Widget _buildDivider() {
     return Divider(
       height: 1,
-      color: GameColors.dividerColor.withValues(alpha: 50 / 255),
+      color: GameColors.dividerColor.withValues(alpha: 30 / 255),
       indent: 16,
       endIndent: 16,
     );
@@ -306,26 +342,53 @@ class ProfileScreen extends StatelessWidget {
     return showDialog<bool>(
       context: context,
       builder: (context) => AlertDialog(
-        backgroundColor: GameColors.tacticalGray,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(15)),
-        title: Text(
-          GameStrings.terminateOperation,
-          style: TextStyle(color: GameColors.textPrimary),
+        backgroundColor: GameColors.backgroundMedium,
+        shape: BeveledRectangleBorder(
+          borderRadius: BorderRadius.circular(10),
+          side: BorderSide(
+            color: GameColors.error.withValues(alpha: 0.5),
+            width: 1.2,
+          ),
+        ),
+        title: Row(
+          children: [
+            Icon(Icons.warning_amber_rounded, color: GameColors.error, size: 20),
+            const SizedBox(width: 8),
+            Text(
+              '[ SYSTEM // TERMINATE ]',
+              style: TextStyle(
+                color: GameColors.textPrimary,
+                fontSize: 14,
+                fontWeight: FontWeight.bold,
+                letterSpacing: 1.2,
+              ),
+            ),
+          ],
         ),
         content: Text(
           GameStrings.logoutConfirmMessage,
-          style: TextStyle(color: GameColors.textSecondary),
+          style: TextStyle(color: GameColors.textSecondary, fontSize: 13),
         ),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context, false),
+            style: TextButton.styleFrom(
+              foregroundColor: GameColors.textMuted,
+            ),
             child: const Text(GameStrings.cancel),
           ),
-          TextButton(
+          ElevatedButton(
             onPressed: () => Navigator.pop(context, true),
-            child: Text(
+            style: ElevatedButton.styleFrom(
+              backgroundColor: GameColors.error,
+              foregroundColor: GameColors.tacticalWhite,
+              shape: BeveledRectangleBorder(
+                borderRadius: BorderRadius.circular(4),
+              ),
+            ),
+            child: const Text(
               GameStrings.logout,
-              style: TextStyle(color: GameColors.error),
+              style: TextStyle(fontWeight: FontWeight.bold),
             ),
           ),
         ],
@@ -351,42 +414,50 @@ class ProfileScreen extends StatelessWidget {
                   .toUpperCase();
 
           return AlertDialog(
-            backgroundColor: GameColors.tacticalGray,
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(24),
+            backgroundColor: GameColors.backgroundMedium,
+            shape: BeveledRectangleBorder(
+              borderRadius: BorderRadius.circular(12),
+              side: BorderSide(
+                color: GameColors.accentNeon.withValues(alpha: 0.3),
+                width: 1.2,
+              ),
             ),
             title: Text(
-              GameStrings.customTeamColor,
+              '[ SYSTEM // TEAM COLOR ]',
               style: TextStyle(
                 color: GameColors.textPrimary,
+                fontSize: 14,
                 fontWeight: FontWeight.bold,
+                letterSpacing: 1.2,
               ),
             ),
             content: Column(
               mainAxisSize: MainAxisSize.min,
               children: [
-                // 색상 미리보기
+                // 색상 미리보기 (팔각 텍티컬 프레임)
                 Container(
                   width: 80,
                   height: 80,
-                  decoration: BoxDecoration(
-                    color: previewColor,
-                    shape: BoxShape.circle,
-                    boxShadow: [
+                  decoration: ShapeDecoration(
+                    color: previewColor.withValues(alpha: 0.15),
+                    shape: BeveledRectangleBorder(
+                      borderRadius: BorderRadius.circular(16),
+                      side: BorderSide(
+                        color: previewColor,
+                        width: 2.5,
+                      ),
+                    ),
+                    shadows: [
                       BoxShadow(
-                        color: previewColor.withValues(alpha: 100 / 255),
-                        blurRadius: 20,
+                        color: previewColor.withValues(alpha: 0.2),
+                        blurRadius: 15,
                         spreadRadius: 2,
                       ),
                     ],
-                    border: Border.all(
-                      color: GameColors.dividerColor,
-                      width: 2,
-                    ),
                   ),
                   child: Icon(
                     Icons.person,
-                    color: GameColors.tacticalBlack,
+                    color: previewColor,
                     size: 40,
                   ),
                 ),
@@ -394,9 +465,11 @@ class ProfileScreen extends StatelessWidget {
                 Text(
                   hexString,
                   style: TextStyle(
-                    color: GameColors.textSecondary,
+                    color: previewColor,
                     fontFamily: 'monospace',
                     fontWeight: FontWeight.bold,
+                    fontSize: 16,
+                    letterSpacing: 1.0,
                   ),
                 ),
                 const SizedBox(height: 24),
@@ -436,8 +509,32 @@ class ProfileScreen extends StatelessWidget {
                   if (context.mounted) Navigator.pop(context);
                   if (context.mounted) {
                     ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(
-                        content: Text(GameStrings.teamColorChanged),
+                      SnackBar(
+                        backgroundColor: GameColors.backgroundMedium,
+                        content: Row(
+                          children: [
+                            Icon(
+                              Icons.check_circle_outline_rounded,
+                              color: GameColors.success,
+                              size: 18,
+                            ),
+                            const SizedBox(width: 8),
+                            Text(
+                              GameStrings.teamColorChanged,
+                              style: TextStyle(
+                                color: GameColors.textPrimary,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                          ],
+                        ),
+                        behavior: SnackBarBehavior.floating,
+                        shape: BeveledRectangleBorder(
+                          borderRadius: BorderRadius.circular(4),
+                          side: BorderSide(
+                            color: GameColors.success.withValues(alpha: 0.4),
+                          ),
+                        ),
                       ),
                     );
                   }
@@ -447,8 +544,8 @@ class ProfileScreen extends StatelessWidget {
                   foregroundColor: (r + g + b) > 400
                       ? GameColors.tacticalBlack
                       : GameColors.tacticalWhite,
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(12),
+                  shape: BeveledRectangleBorder(
+                    borderRadius: BorderRadius.circular(6),
                   ),
                 ),
                 child: const Text(
@@ -488,7 +585,9 @@ class ProfileScreen extends StatelessWidget {
             child: SliderTheme(
               data: SliderThemeData(
                 activeTrackColor: activeColor,
-                inactiveTrackColor: GameColors.dividerColor.withValues(alpha: 50 / 255),
+                inactiveTrackColor: GameColors.dividerColor.withValues(
+                  alpha: 50 / 255,
+                ),
                 thumbColor: GameColors.tacticalWhite,
                 overlayColor: activeColor.withValues(alpha: 50 / 255),
                 valueIndicatorColor: activeColor,

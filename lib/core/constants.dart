@@ -84,6 +84,10 @@ class GameConstants {
     ),
     MapStyle(name: '외각', url: '', icon: 'layers_clear'),
   ];
+
+  // GeoJSON 에셋 경로
+  static const String boundaryOutlineAsset = 'assets/data/korea_outline_2023.json';
+  static const String boundarySidoAsset = 'assets/data/korea_sido_2023.json';
 }
 
 class MapStyle {

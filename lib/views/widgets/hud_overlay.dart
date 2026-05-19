@@ -1,3 +1,4 @@
+import 'dart:math' as math;
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../../core/constants.dart';
@@ -28,26 +29,48 @@ class HudOverlay extends StatelessWidget {
           child: _AuthProfileButton(auth: auth),
         ),
 
-
-        // 점령 중 안내 텍스트
+        // 점령 중 안내 텍스트 (택티컬 터미널 메시지 스타일)
         if (auth.isAuthenticated && game.isCapturing)
           Positioned(
-            bottom: 140 + baseBottomMargin + bottomPadding,
+            bottom: 150 + baseBottomMargin + bottomPadding,
             left: 0,
             right: 0,
             child: Center(
               child: Container(
-                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
-                decoration: BoxDecoration(
+                padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
+                decoration: ShapeDecoration(
                   color: GameColors.backgroundTranslucent,
-                  borderRadius: BorderRadius.circular(20),
-                  border: Border.all(color: GameColors.dividerColor),
+                  shape: BeveledRectangleBorder(
+                    borderRadius: BorderRadius.circular(4),
+                    side: BorderSide(
+                      color: GameColors.accentNeon,
+                      width: 1.0,
+                    ),
+                  ),
                 ),
-                child: Text(GameStrings.capturingZone,
-                    style: TextStyle(
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Container(
+                      width: 6,
+                      height: 6,
+                      margin: const EdgeInsets.only(right: 8),
+                      decoration: BoxDecoration(
+                        color: GameColors.accentNeon,
+                        shape: BoxShape.circle,
+                      ),
+                    ),
+                    Text(
+                      '[ SYSTEM: ${GameStrings.capturingZone.toUpperCase()} ]',
+                      style: TextStyle(
                         color: GameColors.textPrimary,
-                        fontSize: 13,
-                        fontWeight: FontWeight.bold)),
+                        fontSize: 12,
+                        fontWeight: FontWeight.bold,
+                        letterSpacing: 1.5,
+                      ),
+                    ),
+                  ],
+                ),
               ),
             ),
           ),
@@ -55,203 +78,308 @@ class HudOverlay extends StatelessWidget {
         // 자동 점령(점령시작/정지) 버튼 (로그인 상태일 때 노출)
         if (auth.isAuthenticated)
           Positioned(
-            bottom: baseBottomMargin + bottomPadding,
+            bottom: baseBottomMargin + bottomPadding - 10,
             left: 0,
             right: 0,
             child: Center(child: _StartStopCaptureButton(game: game)),
           ),
 
-        // 우측 하단 유틸리티 버튼
-        Positioned(
-          right: 20,
-          bottom: baseBottomMargin + bottomPadding,
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              _MapStyleButton(game: game),
-            ],
-          ),
-        ),
       ],
     );
   }
 }
 
-class _AuthProfileButton extends StatelessWidget {
+class _AuthProfileButton extends StatefulWidget {
   final AuthProvider auth;
   const _AuthProfileButton({required this.auth});
 
   @override
-  Widget build(BuildContext context) {
-    final bool isAuth = auth.isAuthenticated;
-    
-    // 프로필 버튼은 공용 네온 그린 전술 컬러로 고정
-    final Color color = isAuth 
-        ? GameColors.accentNeon 
-        : GameColors.textMuted;
+  State<_AuthProfileButton> createState() => _AuthProfileButtonState();
+}
 
-    return GestureDetector(
-      onTap: () {
-        if (isAuth) {
-          Navigator.pushNamed(context, '/profile');
-        } else {
-          Navigator.pushNamed(context, '/login');
-        }
-      },
-      child: Container(
-        padding: const EdgeInsets.all(8),
-        decoration: BoxDecoration(
-          color: GameColors.backgroundMedium,
-          borderRadius: BorderRadius.circular(20),
-          border: Border.all(
-            color: color.withValues(alpha: (isAuth ? 100 : 50) / 255), 
-            width: 1.5,
+class _AuthProfileButtonState extends State<_AuthProfileButton>
+    with SingleTickerProviderStateMixin {
+  late AnimationController _pulseController;
+
+  @override
+  void initState() {
+    super.initState();
+    _pulseController = AnimationController(
+      vsync: this,
+      duration: const Duration(seconds: 2),
+    )..repeat(reverse: true);
+  }
+
+  @override
+  void dispose() {
+    _pulseController.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final bool isAuth = widget.auth.isAuthenticated;
+    final Color color = isAuth ? GameColors.accentNeon : GameColors.textMuted;
+
+    return AnimatedBuilder(
+      animation: _pulseController,
+      builder: (context, child) {
+        final glowAlpha = isAuth ? (40 + (_pulseController.value * 50)) / 255 : 30 / 255;
+        return GestureDetector(
+          onTap: () {
+            if (isAuth) {
+              Navigator.pushNamed(context, '/profile');
+            } else {
+              Navigator.pushNamed(context, '/login');
+            }
+          },
+          child: Container(
+            padding: const EdgeInsets.all(8),
+            decoration: ShapeDecoration(
+              color: GameColors.backgroundMedium,
+              shape: BeveledRectangleBorder(
+                borderRadius: BorderRadius.circular(10),
+                side: BorderSide(
+                  color: color.withValues(alpha: isAuth ? 0.8 : 0.3),
+                  width: 1.5,
+                ),
+              ),
+              shadows: [
+                BoxShadow(
+                  color: color.withValues(alpha: glowAlpha),
+                  blurRadius: isAuth ? 12.0 * _pulseController.value + 4.0 : 4.0,
+                  spreadRadius: isAuth ? 2.0 * _pulseController.value : 0.0,
+                )
+              ],
+            ),
+            child: Icon(
+              Icons.person_rounded,
+              color: color,
+              size: 28,
+            ),
           ),
-          boxShadow: isAuth 
-              ? [BoxShadow(color: color.withValues(alpha: 50 / 255), blurRadius: 10)]
-              : [],
-        ),
-        child: Icon(
-          Icons.person_rounded,
-          color: color,
-          size: 28,
-        ),
-      ),
+        );
+      },
     );
   }
 }
 
-// --- 내부 위젯 ---
+// --- 전술 타겟 형태의 점령 버튼 ---
 
-class _StartStopCaptureButton extends StatelessWidget {
+class _StartStopCaptureButton extends StatefulWidget {
   final GameProvider game;
   const _StartStopCaptureButton({required this.game});
 
   @override
+  State<_StartStopCaptureButton> createState() => _StartStopCaptureButtonState();
+}
+
+class _StartStopCaptureButtonState extends State<_StartStopCaptureButton>
+    with TickerProviderStateMixin {
+  late AnimationController _rotationController;
+  late AnimationController _pulseController;
+
+  @override
+  void initState() {
+    super.initState();
+    _rotationController = AnimationController(
+      vsync: this,
+      duration: const Duration(seconds: 10),
+    )..repeat();
+
+    _pulseController = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 1200),
+    )..repeat(reverse: true);
+  }
+
+  @override
+  void dispose() {
+    _rotationController.dispose();
+    _pulseController.dispose();
+    super.dispose();
+  }
+
+  @override
   Widget build(BuildContext context) {
-    final isRunning = game.isAutoCapture;
-    final Color activeColor = GameColors.accentNeon;
-    final Color inactiveColor = GameColors.error;
+    final isRunning = widget.game.isAutoCapture;
+    final Color mainColor = isRunning ? GameColors.accentNeon : GameColors.error;
 
     return GestureDetector(
       onTap: () {
-        game.toggleAutoCapture();
+        widget.game.toggleAutoCapture();
       },
-      child: AnimatedContainer(
-        duration: const Duration(milliseconds: 300),
-        width: 105,
-        height: 105,
-        decoration: BoxDecoration(
-          color: isRunning
-              ? activeColor.withValues(alpha: 210 / 255)
-              : GameColors.backgroundMedium.withValues(alpha: 230 / 255),
-          shape: BoxShape.circle,
-          border: Border.all(
-            color: isRunning
-                ? GameColors.tacticalWhite
-                : inactiveColor.withValues(alpha: 200 / 255),
-            width: 3.5,
+      child: Stack(
+        alignment: Alignment.center,
+        children: [
+          // 회전 및 펄싱 타겟 조준경 CustomPaint
+          AnimatedBuilder(
+            animation: Listenable.merge([_rotationController, _pulseController]),
+            builder: (context, child) {
+              return SizedBox(
+                width: 110,
+                height: 110,
+                child: CustomPaint(
+                  painter: _TacticalTargetPainter(
+                    rotation: _rotationController.value * 2 * math.pi,
+                    isRunning: isRunning,
+                    pulseValue: _pulseController.value,
+                  ),
+                ),
+              );
+            },
           ),
-          boxShadow: [
-            BoxShadow(
-              color: (isRunning ? activeColor : inactiveColor).withValues(alpha: 120 / 255),
-              blurRadius: isRunning ? 25 : 12,
-              spreadRadius: isRunning ? 4 : 1,
-            )
-          ],
-        ),
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Icon(
-              isRunning ? Icons.pause_circle_filled_rounded : Icons.play_circle_filled_rounded,
-              color: isRunning ? GameColors.tacticalBlack : inactiveColor,
-              size: 38,
-            ),
-            const SizedBox(height: 4),
-            Text(
-              isRunning ? GameStrings.stopCaptureMode : GameStrings.startCaptureMode,
-              style: TextStyle(
-                color: isRunning ? GameColors.tacticalBlack : GameColors.textPrimary,
-                fontSize: 12,
-                fontWeight: FontWeight.w900,
-                letterSpacing: -0.5,
+          // 중앙 전술 기호 및 텍스트
+          Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Icon(
+                isRunning ? Icons.gps_fixed : Icons.gps_off_rounded,
+                color: mainColor,
+                size: 28,
               ),
-            ),
-          ],
-        ),
+              const SizedBox(height: 2),
+              Text(
+                isRunning ? GameStrings.hudSecScan : GameStrings.hudOffline,
+                style: TextStyle(
+                  color: GameColors.textPrimary,
+                  fontSize: 10,
+                  fontWeight: FontWeight.w900,
+                  letterSpacing: 0.5,
+                ),
+              ),
+              Text(
+                isRunning ? GameStrings.hudActive : GameStrings.hudStandby,
+                style: TextStyle(
+                  color: mainColor,
+                  fontSize: 8,
+                  fontWeight: FontWeight.bold,
+                  letterSpacing: 1.0,
+                ),
+              ),
+            ],
+          ),
+        ],
       ),
     );
   }
 }
 
-class _UtilButton extends StatelessWidget {
-  final String label;
-  final IconData icon;
-  final Color color;
-  final VoidCallback onTap;
-  const _UtilButton(
-      {required this.label,
-      required this.icon,
-      required this.color,
-      required this.onTap});
+/// 전술 레이더 조준선(Crosshair Painter)
+class _TacticalTargetPainter extends CustomPainter {
+  final double rotation;
+  final bool isRunning;
+  final double pulseValue;
+
+  _TacticalTargetPainter({
+    required this.rotation,
+    required this.isRunning,
+    required this.pulseValue,
+  });
 
   @override
-  Widget build(BuildContext context) {
-    return Material(
-      color: GameColors.transparent,
-      child: InkWell(
-        onTap: onTap,
-        borderRadius: BorderRadius.circular(20),
-        child: Container(
-          width: 40,
-          height: 40,
-          decoration: BoxDecoration(
-            color: GameColors.backgroundMedium,
-            shape: BoxShape.circle,
-            border: Border.all(
-              color: color.withValues(alpha: 100 / 255),
-              width: 1,
-            ),
-          ),
-          child: Center(
-            child: Icon(icon, color: color, size: 20),
-          ),
-        ),
-      ),
-    );
+  void paint(Canvas canvas, Size size) {
+    final center = Offset(size.width / 2, size.height / 2);
+    final radius = size.width / 2;
+    final activeColor = GameColors.accentNeon;
+    final inactiveColor = GameColors.error;
+    final mainColor = isRunning ? activeColor : inactiveColor;
+
+    // 1. 딥 블랙 하이테크 배경원
+    final bgPaint = Paint()
+      ..color = GameColors.backgroundMedium.withValues(alpha: 0.9)
+      ..style = PaintingStyle.fill;
+    canvas.drawCircle(center, radius - 4, bgPaint);
+
+    // 2. 바깥쪽 타겟 브래킷 (각진 테두리 4개)
+    final bracketPaint = Paint()
+      ..color = mainColor.withValues(alpha: 0.8)
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = 2.0;
+
+    final double bracketLength = 10.0;
+    final double dist = radius - 2;
+
+    // 좌상단
+    canvas.drawPath(
+        Path()
+          ..moveTo(center.dx - dist + bracketLength, center.dy - dist)
+          ..lineTo(center.dx - dist, center.dy - dist)
+          ..lineTo(center.dx - dist, center.dy - dist + bracketLength),
+        bracketPaint);
+    // 우상단
+    canvas.drawPath(
+        Path()
+          ..moveTo(center.dx + dist - bracketLength, center.dy - dist)
+          ..lineTo(center.dx + dist, center.dy - dist)
+          ..lineTo(center.dx + dist, center.dy - dist + bracketLength),
+        bracketPaint);
+    // 좌하단
+    canvas.drawPath(
+        Path()
+          ..moveTo(center.dx - dist + bracketLength, center.dy + dist)
+          ..lineTo(center.dx - dist, center.dy + dist)
+          ..lineTo(center.dx - dist, center.dy + dist - bracketLength),
+        bracketPaint);
+    // 우하단
+    canvas.drawPath(
+        Path()
+          ..moveTo(center.dx + dist - bracketLength, center.dy + dist)
+          ..lineTo(center.dx + dist, center.dy + dist)
+          ..lineTo(center.dx + dist, center.dy + dist - bracketLength),
+        bracketPaint);
+
+    // 3. 회전하는 전술 점선 링 (방위 지시선)
+    canvas.save();
+    canvas.translate(center.dx, center.dy);
+    canvas.rotate(rotation);
+    
+    final ringPaint = Paint()
+      ..color = mainColor.withValues(alpha: (0.3 + (pulseValue * 0.3)))
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = 1.2;
+
+    const int segments = 8;
+    const double sweepAngle = (2 * math.pi) / (segments * 2);
+    for (int i = 0; i < segments; i++) {
+      final double startAngle = i * (sweepAngle * 2);
+      canvas.drawArc(
+        Rect.fromCircle(center: Offset.zero, radius: radius - 8),
+        startAngle,
+        sweepAngle,
+        false,
+        ringPaint,
+      );
+    }
+    canvas.restore();
+
+    // 4. 중앙 십자 조준선 (Crosshair HUD Ticks)
+    final crossPaint = Paint()
+      ..color = mainColor.withValues(alpha: 0.6)
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = 1.5;
+
+    const double crossSize = 8.0;
+    const double gap = 5.0;
+    // 상/하/좌/우 십자선 그리기
+    canvas.drawLine(Offset(center.dx, center.dy - crossSize - gap), Offset(center.dx, center.dy - gap), crossPaint);
+    canvas.drawLine(Offset(center.dx, center.dy + gap), Offset(center.dx, center.dy + crossSize + gap), crossPaint);
+    canvas.drawLine(Offset(center.dx - crossSize - gap, center.dy), Offset(center.dx - gap, center.dy), crossPaint);
+    canvas.drawLine(Offset(center.dx + gap, center.dy), Offset(center.dx + crossSize + gap, center.dy), crossPaint);
+
+    // 5. 미세 도트 오버레이
+    final dotPaint = Paint()
+      ..color = mainColor.withValues(alpha: 0.7)
+      ..style = PaintingStyle.fill;
+    canvas.drawCircle(center, 2.5, dotPaint);
+  }
+
+  @override
+  bool shouldRepaint(covariant _TacticalTargetPainter oldDelegate) {
+    return oldDelegate.rotation != rotation ||
+        oldDelegate.isRunning != isRunning ||
+        oldDelegate.pulseValue != pulseValue;
   }
 }
 
-class _MapStyleButton extends StatelessWidget {
-  final GameProvider game;
-  const _MapStyleButton({required this.game});
 
-  static const _iconMap = <String, IconData>{
-    'dark_mode': Icons.dark_mode,
-    'satellite_alt': Icons.satellite_alt,
-    'terrain': Icons.terrain,
-    'add_road': Icons.add_road,
-    'explore': Icons.explore,
-    'brightness_5': Icons.brightness_5,
-    'map': Icons.map,
-    'public': Icons.public,
-    'straighten': Icons.straighten,
-    'filter_hdr': Icons.filter_hdr,
-    'landscape': Icons.landscape,
-    'directions_bike': Icons.directions_bike,
-    'layers_clear': Icons.layers_clear,
-  };
-
-  @override
-  Widget build(BuildContext context) {
-    final style = game.currentMapStyle;
-    final icon = _iconMap[style.icon] ?? Icons.map;
-    return _UtilButton(
-      label: style.name,
-      icon: icon,
-      color: game.showMap ? GameColors.tacticalWhite : GameColors.accentNeon,
-      onTap: () => game.cycleMapStyle(),
-    );
-  }
-}
