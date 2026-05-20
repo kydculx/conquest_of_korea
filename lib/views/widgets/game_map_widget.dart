@@ -62,30 +62,22 @@ class _GameMapWidgetState extends State<GameMapWidget>
 
     final gameProvider = Provider.of<GameProvider>(context, listen: false);
 
-    // 내 위치 추적 상태일 때만 지도의 위치 및 회전을 동기화
-    if (_isFollowing) {
-      // 1. 위치 이동은 핀치 줌 중이 아닐 때만 수행
-      if (!_isPinching) {
-        _mapController.move(loc.currentLocation!, _currentZoom);
-      }
-
-      // 2. 회전은 회전 모드 여부에 따라 항상 내 위치를 기준으로 동기화
-      try {
-        if (gameProvider.isMapRotationMode) {
-          final offset = _mapController.camera.latLngToScreenOffset(loc.currentLocation!);
-          _mapController.rotateAroundPoint(-loc.heading, offset: offset);
-        } else {
-          if (_mapController.camera.rotation != 0.0) {
-            _mapController.rotate(0.0);
-          }
-        }
-      } catch (_) {
-        // MapController가 아직 바인딩되지 않은 경우 등의 방어 코드
-      }
-
-      // Flame 엔진 프로젝션 업데이트 트리거
-      widget.game.updateProjection(_mapController);
+    // 1. 위치 이동은 내 위치 추적 활성화 상태일 때만 수행
+    if (_isFollowing && !_isPinching) {
+      _mapController.move(loc.currentLocation!, _currentZoom);
     }
+
+    // 2. 회전은 위치 추적 여부와 관계없이 회전 모드 여부에 따라 항상 화면 중앙을 기준으로 동기화
+    if (gameProvider.isMapRotationMode) {
+      _mapController.rotate(-loc.heading);
+    } else {
+      if (_mapController.camera.rotation != 0.0) {
+        _mapController.rotate(0.0);
+      }
+    }
+
+    // Flame 엔진 프로젝션 업데이트 트리거
+    widget.game.updateProjection(_mapController);
   }
 
   @override
@@ -196,10 +188,7 @@ class _GameMapWidgetState extends State<GameMapWidget>
                       // 활성 포인터가 정확히 1개이고 핀치 줌 중이 아닐 때만 트래킹을 해제
                       if (_pointerCount == 1 && !_isPinching && _isFollowing) {
                         setState(() => _isFollowing = false);
-                        // 수동 조작으로 이동 시 지도를 정북 방향(0.0)으로 정렬
-                        if (_mapController.camera.rotation != 0.0) {
-                          _mapController.rotate(0.0);
-                        }
+                        // 네이버 지도 방식: 드래그 시 회전을 강제로 0.0으로 리셋하지 않고 회전 상태를 계속 유지함
                       }
                     }
                   },
