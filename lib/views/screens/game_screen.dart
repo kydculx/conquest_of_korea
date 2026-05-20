@@ -174,7 +174,7 @@ class _GameScreenState extends State<GameScreen> {
     final game = context.watch<GameProvider>();
     final auth = context.watch<AuthProvider>();
     final flameGame = context.read<ConquestGame>();
-    final loc = context.watch<LocationProvider>();
+    final loc = context.read<LocationProvider>();
 
     // 인증은 되었으나 프로필 정보가 없는 경우 (SNS 최초 로그인 등) 설정 화면으로 리다이렉트
     if (auth.isAuthenticated && auth.profile == null && !auth.isLoading) {
@@ -200,12 +200,6 @@ class _GameScreenState extends State<GameScreen> {
       capturingColorHex: auth.profile?.colorHex,
       currentLocation: loc.currentLocation,
     );
-
-    // 플레이어 위치/방향 갱신
-    if (loc.currentLocation != null) {
-      flameGame.updatePlayerLocation(loc.currentLocation!);
-      flameGame.updatePlayerHeading(game.isMapRotationMode ? 0.0 : loc.heading);
-    }
 
     final currentLocation =
         loc.currentLocation ?? GameConstants.defaultPosition;

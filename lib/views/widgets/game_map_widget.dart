@@ -78,6 +78,12 @@ class _GameMapWidgetState extends State<GameMapWidget>
 
     // Flame 엔진 프로젝션 업데이트 트리거
     widget.game.updateProjection(_mapController);
+
+    // 3. Flame 엔진에 실시간 플레이어 위치 및 헤딩 동기화
+    widget.game.updatePlayerLocation(loc.currentLocation!);
+    widget.game.updatePlayerHeading(
+      gameProvider.isMapRotationMode ? 0.0 : loc.heading,
+    );
   }
 
   @override

@@ -16,6 +16,7 @@ class ConquestGame extends FlameGame {
   MapController? _mapController;
   Map<String, HexTile> _lastCapturedTiles = {};
   final Map<String, HexTileComponent> _tileMap = {};
+  FpsTextComponent? _fpsComponent;
 
   MapController? get mapController => _mapController;
 
@@ -27,9 +28,10 @@ class ConquestGame extends FlameGame {
     player = PlayerComponent()..priority = 20;
     add(player);
 
-    // FPS 실시간 카운터 추가
-    final fps = FpsTextComponent(
-      position: Vector2(16, 60),
+    // FPS 실시간 카운터 추가 (상단 중앙 배치)
+    _fpsComponent = FpsTextComponent(
+      anchor: Anchor.topCenter,
+      position: Vector2(size.x / 2, 60),
       priority: 100,
       textRenderer: TextPaint(
         style: const TextStyle(
@@ -40,9 +42,17 @@ class ConquestGame extends FlameGame {
         ),
       ),
     );
-    add(fps);
+    add(_fpsComponent!);
 
     if (_mapController != null) _updateAllPositions();
+  }
+
+  @override
+  void onGameResize(Vector2 size) {
+    super.onGameResize(size);
+    if (_fpsComponent != null && isLoaded) {
+      _fpsComponent!.position = Vector2(size.x / 2, 60);
+    }
   }
 
   /// 지도 투영 업데이트 → 컴포넌트 위치 재계산
