@@ -62,8 +62,8 @@ class _GameMapWidgetState extends State<GameMapWidget>
 
     final gameProvider = Provider.of<GameProvider>(context, listen: false);
 
-    // 1. 위치 이동은 내 위치 추적 활성화 상태일 때만 수행
-    if (_isFollowing && !_isPinching) {
+    // 1. 위치 이동은 내 위치 추적 활성화 상태이고 사용자가 지도를 조작 중(터치/핀치)이 아닐 때만 수행
+    if (_isFollowing && !_isPinching && _pointerCount == 0) {
       _mapController.move(loc.currentLocation!, _currentZoom);
     }
 
