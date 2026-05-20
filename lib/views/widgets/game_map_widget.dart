@@ -92,9 +92,11 @@ class _GameMapWidgetState extends State<GameMapWidget>
     }
   }
 
-
-
-  void _animatedMapMove(LatLng destLocation, double destZoom, double destRotation) {
+  void _animatedMapMove(
+    LatLng destLocation,
+    double destZoom,
+    double destRotation,
+  ) {
     final latTween = Tween<double>(
       begin: _mapController.camera.center.latitude,
       end: destLocation.latitude,
@@ -175,7 +177,8 @@ class _GameMapWidgetState extends State<GameMapWidget>
                   ),
                   backgroundColor: GameColors.transparent,
                   onMapEvent: (event) {
-                    if (event.source == MapEventSource.multiFingerGestureStart) {
+                    if (event.source ==
+                        MapEventSource.multiFingerGestureStart) {
                       setState(() => _isPinching = true);
                     } else if (event.source == MapEventSource.multiFingerEnd) {
                       setState(() => _isPinching = false);
@@ -184,7 +187,8 @@ class _GameMapWidgetState extends State<GameMapWidget>
 
                     if (event.source == MapEventSource.dragStart ||
                         event.source == MapEventSource.onDrag ||
-                        event.source == MapEventSource.flingAnimationController) {
+                        event.source ==
+                            MapEventSource.flingAnimationController) {
                       // 활성 포인터가 정확히 1개이고 핀치 줌 중이 아닐 때만 트래킹을 해제
                       if (_pointerCount == 1 && !_isPinching && _isFollowing) {
                         setState(() => _isFollowing = false);
@@ -199,40 +203,37 @@ class _GameMapWidgetState extends State<GameMapWidget>
                     widget.game.updateProjection(_mapController);
                   },
                 ),
-              children: [
-                // 배경 지도 타일
-                if (gameProvider.showMap &&
-                    gameProvider.currentMapStyle.url.isNotEmpty)
-                  Builder(
-                    builder: (context) {
-                      final style = gameProvider.currentMapStyle;
-                      final tileLayer = TileLayer(
-                        urlTemplate: style.url,
-                        subdomains: const ['a', 'b', 'c', 'd'],
-                        userAgentPackageName: 'com.watercherry.conquestofkorea',
-                      );
-
-                      if (style.colorMatrix != null) {
-                        return ColorFiltered(
-                          colorFilter: ColorFilter.matrix(style.colorMatrix!),
-                          child: tileLayer,
+                children: [
+                  // 배경 지도 타일
+                  if (gameProvider.showMap &&
+                      gameProvider.currentMapStyle.url.isNotEmpty)
+                    Builder(
+                      builder: (context) {
+                        final style = gameProvider.currentMapStyle;
+                        final tileLayer = TileLayer(
+                          urlTemplate: style.url,
+                          subdomains: const ['a', 'b', 'c', 'd'],
+                          userAgentPackageName:
+                              'com.watercherry.conquestofkorea',
                         );
-                      }
-                      return tileLayer;
-                    },
-                  ),
 
-
-              ],
+                        if (style.colorMatrix != null) {
+                          return ColorFiltered(
+                            colorFilter: ColorFilter.matrix(style.colorMatrix!),
+                            child: tileLayer,
+                          );
+                        }
+                        return tileLayer;
+                      },
+                    ),
+                ],
+              ),
             ),
-          ),
 
             // Flame 게임 레이어 (터치 통과)
             Positioned.fill(
               child: IgnorePointer(child: GameWidget(game: widget.game)),
             ),
-
-
 
             // 지도 컨트롤 UI
             Positioned(
@@ -243,7 +244,9 @@ class _GameMapWidgetState extends State<GameMapWidget>
                   _buildMapAction(
                     icon: !_isFollowing
                         ? Icons.location_searching
-                        : (gameProvider.isMapRotationMode ? Icons.explore : Icons.my_location),
+                        : (gameProvider.isMapRotationMode
+                              ? Icons.explore
+                              : Icons.my_location),
                     onPressed: () {
                       final loc = _locProvider;
                       if (_isFollowing) {
@@ -260,7 +263,9 @@ class _GameMapWidgetState extends State<GameMapWidget>
                         setState(() => _isFollowing = true);
                         if (loc != null && loc.currentLocation != null) {
                           final double targetRotation =
-                              gameProvider.isMapRotationMode ? -loc.heading : 0.0;
+                              gameProvider.isMapRotationMode
+                              ? -loc.heading
+                              : 0.0;
                           _animatedMapMove(
                             loc.currentLocation!,
                             GameConstants.focusZoom,
@@ -339,5 +344,3 @@ class _GameMapWidgetState extends State<GameMapWidget>
     );
   }
 }
-
-
