@@ -1,4 +1,4 @@
-import 'package:conquest_mobile/views/screens/game_screen.dart';
+import 'package:conquest_mobile/views/screens/splash_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:kakao_flutter_sdk_user/kakao_flutter_sdk_user.dart';
@@ -125,8 +125,7 @@ class AuthWrapper extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    // 로그인 여부와 무관하게 항상 맵 화면 표시
-    // 로그인은 HUD의 버튼을 통해 접근
-    return const GameScreen();
+    // 앱 기동 시 스플래시 화면을 먼저 노출하고, 위성 동기화 완료 후 GameScreen으로 이행
+    return const SplashScreen();
   }
 }
