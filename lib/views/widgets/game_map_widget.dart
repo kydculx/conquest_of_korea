@@ -179,10 +179,16 @@ class _GameMapWidgetState extends State<GameMapWidget>
                   onMapEvent: (event) {
                     if (event.source ==
                         MapEventSource.multiFingerGestureStart) {
-                      setState(() => _isPinching = true);
+                      WidgetsBinding.instance.addPostFrameCallback((_) {
+                        if (mounted) setState(() => _isPinching = true);
+                      });
                     } else if (event.source == MapEventSource.multiFingerEnd) {
-                      setState(() => _isPinching = false);
-                      _onLocationProviderChanged();
+                      WidgetsBinding.instance.addPostFrameCallback((_) {
+                        if (mounted) {
+                          setState(() => _isPinching = false);
+                          _onLocationProviderChanged();
+                        }
+                      });
                     }
 
                     if (event.source == MapEventSource.dragStart ||
@@ -191,14 +197,19 @@ class _GameMapWidgetState extends State<GameMapWidget>
                             MapEventSource.flingAnimationController) {
                       // 활성 포인터가 정확히 1개이고 핀치 줌 중이 아닐 때만 트래킹을 해제
                       if (_pointerCount == 1 && !_isPinching && _isFollowing) {
-                        setState(() => _isFollowing = false);
-                        // 네이버 지도 방식: 드래그 시 회전을 강제로 0.0으로 리셋하지 않고 회전 상태를 계속 유지함
+                        WidgetsBinding.instance.addPostFrameCallback((_) {
+                          if (mounted) setState(() => _isFollowing = false);
+                        });
                       }
                     }
                   },
                   onPositionChanged: (position, hasGesture) {
                     if (position.zoom != _currentZoom) {
-                      setState(() => _currentZoom = position.zoom);
+                      WidgetsBinding.instance.addPostFrameCallback((_) {
+                        if (mounted) {
+                          setState(() => _currentZoom = position.zoom);
+                        }
+                      });
                     }
                     widget.game.updateProjection(_mapController);
                   },
