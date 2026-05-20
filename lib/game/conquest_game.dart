@@ -1,5 +1,7 @@
 import 'dart:ui';
 import 'package:flame/game.dart';
+import 'package:flame/components.dart';
+import 'package:flame/text.dart';
 import 'package:latlong2/latlong.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'components/player_component.dart';
@@ -24,6 +26,21 @@ class ConquestGame extends FlameGame {
   Future<void> onLoad() async {
     player = PlayerComponent()..priority = 20;
     add(player);
+
+    // FPS 실시간 카운터 추가
+    final fps = FpsTextComponent(
+      position: Vector2(16, 60),
+      priority: 100,
+      textRenderer: TextPaint(
+        style: const TextStyle(
+          color: Color(0xFF00FF00), // 네온 그린 (디버깅용)
+          fontSize: 14,
+          fontWeight: FontWeight.bold,
+          backgroundColor: Color(0x60000000), // 가독성을 위한 불투명 백그라운드
+        ),
+      ),
+    );
+    add(fps);
 
     if (_mapController != null) _updateAllPositions();
   }
