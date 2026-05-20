@@ -55,6 +55,18 @@ class ConquestGame extends FlameGame {
     }
   }
 
+  double _dtSum = 0.0;
+  static const double _fixedDeltaTime = 1 / 60; // 60 FPS 강제 제한
+
+  @override
+  void updateTree(double dt) {
+    _dtSum += dt;
+    if (_dtSum >= _fixedDeltaTime) {
+      super.updateTree(_fixedDeltaTime);
+      _dtSum -= _fixedDeltaTime;
+    }
+  }
+
   /// 지도 투영 업데이트 → 컴포넌트 위치 재계산
   void updateProjection(MapController controller) {
     _mapController = controller;
