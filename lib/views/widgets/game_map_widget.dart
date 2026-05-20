@@ -58,20 +58,27 @@ class _GameMapWidgetState extends State<GameMapWidget>
     if (!mounted || _locProvider == null) return;
 
     final loc = _locProvider!;
+    if (loc.currentLocation == null) return;
+
     final gameProvider = Provider.of<GameProvider>(context, listen: false);
 
     // 1. 위치 이동은 내 위치 추적 활성화 상태일 때만 수행
-    if (_isFollowing && loc.currentLocation != null && !_isPinching) {
+    if (_isFollowing && !_isPinching) {
       _mapController.move(loc.currentLocation!, _currentZoom);
     }
 
-    // 2. 회전은 위치 추적 여부와 관계없이 회전 모드 여부에 따라 항상 동기화
-    if (gameProvider.isMapRotationMode) {
-      _mapController.rotate(-loc.heading);
-    } else {
-      if (_mapController.camera.rotation != 0.0) {
-        _mapController.rotate(0.0);
+    // 2. 회전은 위치 추적 여부와 관계없이 회전 모드 여부에 따라 항상 내 위치를 기준으로 동기화
+    try {
+      if (gameProvider.isMapRotationMode) {
+        final offset = _mapController.camera.latLngToScreenOffset(loc.currentLocation!);
+        _mapController.rotateAroundPoint(-loc.heading, offset: offset);
+      } else {
+        if (_mapController.camera.rotation != 0.0) {
+          _mapController.rotate(0.0);
+        }
       }
+    } catch (_) {
+      // MapController가 아직 바인딩되지 않은 경우 등의 방어 코드
     }
 
     // Flame 엔진 프로젝션 업데이트 트리거
