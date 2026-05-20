@@ -1,13 +1,40 @@
 import 'dart:async';
 import 'dart:io';
 import 'package:flutter/foundation.dart';
+import 'package:flutter/services.dart';
 import 'package:geolocator/geolocator.dart';
 import '../core/constants/strings.dart';
 
 class GeoService {
+  static const MethodChannel _batteryChannel =
+      MethodChannel('com.watercherry.conquest_mobile/battery');
+
   StreamSubscription<Position>? _positionStreamSubscription;
   final StreamController<Position> _locationController =
       StreamController<Position>.broadcast();
+
+  /// 안드로이드 배터리 최적화 대상 제외 여부 확인
+  Future<bool> isIgnoringBatteryOptimizations() async {
+    if (kIsWeb || !Platform.isAndroid) return true;
+    try {
+      final bool isIgnoring =
+          await _batteryChannel.invokeMethod('isIgnoringBatteryOptimizations');
+      return isIgnoring;
+    } on PlatformException catch (e) {
+      debugPrint('배터리 최적화 여부 확인 실패: $e');
+      return true;
+    }
+  }
+
+  /// 안드로이드 배터리 최적화 대상 제외 설정 창 요청
+  Future<void> requestIgnoreBatteryOptimizations() async {
+    if (kIsWeb || !Platform.isAndroid) return;
+    try {
+      await _batteryChannel.invokeMethod('requestIgnoreBatteryOptimizations');
+    } on PlatformException catch (e) {
+      debugPrint('배터리 최적화 제외 설정 요청 실패: $e');
+    }
+  }
 
   Stream<Position> get locationStream => _locationController.stream;
 

@@ -29,9 +29,144 @@ class _GameScreenState extends State<GameScreen> {
     WidgetsBinding.instance.addPostFrameCallback((_) {
       final geo = context.read<GeoService>();
       geo.checkPermissions().then((ok) async {
-        if (ok) await geo.startTracking();
+        if (ok) {
+          await geo.startTracking();
+          _checkAndPromptBatteryOptimization(geo);
+        }
       });
     });
+  }
+
+  Future<void> _checkAndPromptBatteryOptimization(GeoService geo) async {
+    final bool isIgnoring = await geo.isIgnoringBatteryOptimizations();
+    if (!isIgnoring && mounted) {
+      _showBatteryOptimizationDialog(geo);
+    }
+  }
+
+  void _showBatteryOptimizationDialog(GeoService geo) {
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (context) {
+        return Dialog(
+          backgroundColor: Colors.transparent,
+          insetPadding: const EdgeInsets.symmetric(horizontal: 24, vertical: 20),
+          child: Container(
+            decoration: ShapeDecoration(
+              color: GameColors.backgroundMedium.withValues(alpha: 0.95),
+              shape: BeveledRectangleBorder(
+                borderRadius: BorderRadius.circular(12),
+                side: BorderSide(
+                  color: GameColors.accentNeon,
+                  width: 1.5,
+                ),
+              ),
+              shadows: [
+                BoxShadow(
+                  color: GameColors.accentNeon.withValues(alpha: 0.35),
+                  blurRadius: 15.0,
+                  spreadRadius: 2.0,
+                )
+              ],
+            ),
+            padding: const EdgeInsets.all(24),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                Row(
+                  children: [
+                    Icon(
+                      Icons.battery_alert_rounded,
+                      color: GameColors.accentNeon,
+                      size: 28,
+                    ),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: Text(
+                        '백그라운드 통신 보장 설정',
+                        style: TextStyle(
+                          color: GameColors.textPrimary,
+                          fontSize: 18,
+                          fontWeight: FontWeight.bold,
+                          letterSpacing: 1.0,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 16),
+                Divider(color: GameColors.dividerColor, height: 1),
+                const SizedBox(height: 20),
+                Text(
+                  '본 앱은 실시간 위치 기반의 행정구역 점령 게임입니다.\n\n안드로이드 시스템 절전 정책에 의해 화면이 꺼지면 영토 점령 및 백그라운드 위성 동기화가 강제 차단될 수 있습니다.\n\n안정적인 점령 작전 수행을 위해 배터리 최적화 대상에서 [제한 없음]으로 제외 설정해 주세요.',
+                  style: TextStyle(
+                    color: GameColors.textPrimary.withValues(alpha: 0.85),
+                    fontSize: 13,
+                    height: 1.6,
+                  ),
+                ),
+                const SizedBox(height: 28),
+                Row(
+                  children: [
+                    Expanded(
+                      child: TextButton(
+                        onPressed: () => Navigator.pop(context),
+                        style: TextButton.styleFrom(
+                          padding: const EdgeInsets.symmetric(vertical: 14),
+                          shape: BeveledRectangleBorder(
+                            borderRadius: BorderRadius.circular(6),
+                            side: BorderSide(
+                              color: GameColors.textMuted,
+                              width: 1.0,
+                            ),
+                          ),
+                        ),
+                        child: Text(
+                          '나중에',
+                          style: TextStyle(
+                            color: GameColors.textMuted,
+                            fontSize: 13,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                      ),
+                    ),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: ElevatedButton(
+                        onPressed: () {
+                          Navigator.pop(context);
+                          geo.requestIgnoreBatteryOptimizations();
+                        },
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: GameColors.accentNeon,
+                          foregroundColor: GameColors.tacticalBlack,
+                          padding: const EdgeInsets.symmetric(vertical: 14),
+                          elevation: 4,
+                          shadowColor: GameColors.accentNeon,
+                          shape: BeveledRectangleBorder(
+                            borderRadius: BorderRadius.circular(6),
+                          ),
+                        ),
+                        child: const Text(
+                          '설정하기',
+                          style: TextStyle(
+                            fontSize: 13,
+                            fontWeight: FontWeight.w900,
+                          ),
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ],
+            ),
+          ),
+        );
+      },
+    );
   }
 
   @override

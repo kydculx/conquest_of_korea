@@ -8,6 +8,7 @@
     <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
     <uses-permission android:name="android.permission.VIBRATE" />
     <uses-permission android:name="android.permission.WAKE_LOCK" />
+    <uses-permission android:name="android.permission.REQUEST_IGNORE_BATTERY_OPTIMIZATIONS" />
 
     <application
         android:label="한국정복"
@@ -60,6 +61,13 @@
                 <data android:scheme="kakao24f8b2454db1d8c5510a8ac7221d9796" android:host="oauth" />
             </intent-filter>
         </activity>
+
+        <!-- Geolocator 포그라운드 위치 서비스 -->
+        <service
+            android:name="com.baseflow.geolocator.GeolocatorKeyService"
+            android:enabled="true"
+            android:exported="false"
+            android:foregroundServiceType="location" />
     </application>
     <!-- Required to query activities that can process text, see:
          https://developer.android.com/training/package-visibility and
