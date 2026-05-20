@@ -1,4 +1,6 @@
+import 'dart:io';
 import 'package:flutter/material.dart';
+import 'package:geolocator/geolocator.dart';
 import 'package:provider/provider.dart';
 import '../../core/constants.dart';
 import '../../core/constants/strings.dart';
@@ -31,10 +33,144 @@ class _GameScreenState extends State<GameScreen> {
       geo.checkPermissions().then((ok) async {
         if (ok) {
           await geo.startTracking();
+
+          // 안드로이드 환경이고 권한이 '앱 사용 중에만 허용(whileInUse)'인 경우 '항상 허용' 유도
+          if (Platform.isAndroid) {
+            final permission = await Geolocator.checkPermission();
+            if (permission == LocationPermission.whileInUse && mounted) {
+              _showBackgroundLocationDialog();
+            }
+          }
+
           _checkAndPromptBatteryOptimization(geo);
         }
       });
     });
+  }
+
+  void _showBackgroundLocationDialog() {
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (context) {
+        return Dialog(
+          backgroundColor: Colors.transparent,
+          insetPadding: const EdgeInsets.symmetric(horizontal: 24, vertical: 20),
+          child: Container(
+            decoration: ShapeDecoration(
+              color: GameColors.backgroundMedium.withValues(alpha: 0.95),
+              shape: BeveledRectangleBorder(
+                borderRadius: BorderRadius.circular(12),
+                side: BorderSide(
+                  color: GameColors.accentNeon,
+                  width: 1.5,
+                ),
+              ),
+              shadows: [
+                BoxShadow(
+                  color: GameColors.accentNeon.withValues(alpha: 0.35),
+                  blurRadius: 15.0,
+                  spreadRadius: 2.0,
+                )
+              ],
+            ),
+            padding: const EdgeInsets.all(24),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                Row(
+                  children: [
+                    Icon(
+                      Icons.location_on_rounded,
+                      color: GameColors.accentNeon,
+                      size: 28,
+                    ),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: Text(
+                        '백그라운드 점령 작전 설정',
+                        style: TextStyle(
+                          color: GameColors.textPrimary,
+                          fontSize: 18,
+                          fontWeight: FontWeight.bold,
+                          letterSpacing: 1.0,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 16),
+                Divider(color: GameColors.dividerColor, height: 1),
+                const SizedBox(height: 20),
+                Text(
+                  '본 앱은 실시간 영토 점령 게임입니다.\n\n화면이 꺼지거나 백그라운드에 진입했을 때도 영토를 계속 획득하고 작전을 성공시키려면 위치 권한이 [항상 허용]으로 설정되어 있어야 합니다.\n\n이동할 권한 설정 화면에서 위치 권한을 [항상 허용]으로 변경해 주세요.',
+                  style: TextStyle(
+                    color: GameColors.textPrimary.withValues(alpha: 0.85),
+                    fontSize: 13,
+                    height: 1.6,
+                  ),
+                ),
+                const SizedBox(height: 28),
+                Row(
+                  children: [
+                    Expanded(
+                      child: TextButton(
+                        onPressed: () => Navigator.pop(context),
+                        style: TextButton.styleFrom(
+                          padding: const EdgeInsets.symmetric(vertical: 14),
+                          shape: BeveledRectangleBorder(
+                            borderRadius: BorderRadius.circular(6),
+                            side: BorderSide(
+                              color: GameColors.textMuted,
+                              width: 1.0,
+                            ),
+                          ),
+                        ),
+                        child: Text(
+                          '나중에',
+                          style: TextStyle(
+                            color: GameColors.textMuted,
+                            fontSize: 13,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                      ),
+                    ),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: ElevatedButton(
+                        onPressed: () {
+                          Navigator.pop(context);
+                          Geolocator.openAppSettings();
+                        },
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: GameColors.accentNeon,
+                          foregroundColor: GameColors.tacticalBlack,
+                          padding: const EdgeInsets.symmetric(vertical: 14),
+                          elevation: 4,
+                          shadowColor: GameColors.accentNeon,
+                          shape: BeveledRectangleBorder(
+                            borderRadius: BorderRadius.circular(6),
+                          ),
+                        ),
+                        child: const Text(
+                          '설정하기',
+                          style: TextStyle(
+                            fontSize: 13,
+                            fontWeight: FontWeight.w900,
+                          ),
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ],
+            ),
+          ),
+        );
+      },
+    );
   }
 
   Future<void> _checkAndPromptBatteryOptimization(GeoService geo) async {
