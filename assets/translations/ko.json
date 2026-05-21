@@ -168,5 +168,9 @@
   "satelliteCaptureStart": "🛰️ 위성 점령 전송을 시작합니다. (소요 시간: {seconds}초)",
   "satelliteUserInvalid": "✕ 사용자 정보가 유효하지 않습니다.",
   "satelliteCaptureSuccess": "✓ 위성 점령 완료! 신규 영토를 확보했습니다.",
-  "satelliteCaptureFail": "✕ 위성 점령 실패: 이미 점령되었거나 통신 오류가 발생했습니다."
+  "satelliteCaptureFail": "✕ 위성 점령 실패: 이미 점령되었거나 통신 오류가 발생했습니다.",
+  "satelliteAbortTitle": "[ SYSTEM // ABORT ]",
+  "satelliteAbortConfirm": "진행 중인 위성 점령 작전을 중단하시겠습니까?\n취소 시 쿨타임은 적용되지 않습니다.",
+  "satelliteKeepOperation": "작전 유지",
+  "satelliteCancelOperation": "작전 취소"
 }

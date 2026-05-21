@@ -212,4 +212,8 @@ class GameStrings {
   static String get satelliteUserInvalid => 'satelliteUserInvalid'.tr();
   static String get satelliteCaptureSuccess => 'satelliteCaptureSuccess'.tr();
   static String get satelliteCaptureFail => 'satelliteCaptureFail'.tr();
+  static String get satelliteAbortTitle => 'satelliteAbortTitle'.tr();
+  static String get satelliteAbortConfirm => 'satelliteAbortConfirm'.tr();
+  static String get satelliteKeepOperation => 'satelliteKeepOperation'.tr();
+  static String get satelliteCancelOperation => 'satelliteCancelOperation'.tr();
 }

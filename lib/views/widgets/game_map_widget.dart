@@ -8,6 +8,7 @@ import '../../core/constants.dart';
 import '../../providers/game_provider.dart';
 import '../../providers/location_provider.dart'; // 추가: LocationProvider 임포트
 import '../../services/hex_service.dart'; // 추가: HexService 임포트
+import '../../core/constants/strings.dart'; // 추가: GameStrings 임포트
 
 /// 지도(FlutterMap) + Flame 엔진 레이어를 결합한 위젯
 class GameMapWidget extends StatefulWidget {
@@ -412,7 +413,7 @@ class _GameMapWidgetState extends State<GameMapWidget>
               Icon(Icons.warning_amber_rounded, color: GameColors.error, size: 24),
               const SizedBox(width: 8),
               Text(
-                '[ SYSTEM // ABORT ]',
+                GameStrings.satelliteAbortTitle,
                 style: TextStyle(
                   color: GameColors.error,
                   fontSize: 16,
@@ -422,9 +423,9 @@ class _GameMapWidgetState extends State<GameMapWidget>
               ),
             ],
           ),
-          content: const Text(
-            '진행 중인 위성 점령 작전을 중단하시겠습니까?\n취소 시 쿨타임은 적용되지 않습니다.',
-            style: TextStyle(
+          content: Text(
+            GameStrings.satelliteAbortConfirm,
+            style: const TextStyle(
               color: Colors.white,
               fontSize: 13,
               height: 1.5,
@@ -440,7 +441,7 @@ class _GameMapWidgetState extends State<GameMapWidget>
                 ),
               ),
               onPressed: () => Navigator.pop(context),
-              child: const Text('작전 유지'),
+              child: Text(GameStrings.satelliteKeepOperation),
             ),
             OutlinedButton(
               style: OutlinedButton.styleFrom(
@@ -454,7 +455,7 @@ class _GameMapWidgetState extends State<GameMapWidget>
                 provider.cancelSatelliteCapture();
                 Navigator.pop(context);
               },
-              child: const Text('작전 취소'),
+              child: Text(GameStrings.satelliteCancelOperation),
             ),
           ],
         );

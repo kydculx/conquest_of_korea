@@ -168,5 +168,9 @@
   "satelliteCaptureStart": "🛰️ Initiating satellite capture. (Duration: {seconds}s)",
   "satelliteUserInvalid": "✕ Invalid user credentials.",
   "satelliteCaptureSuccess": "✓ Satellite capture complete! Secured new territory.",
-  "satelliteCaptureFail": "✕ Satellite capture failed: Already captured or communication error."
+  "satelliteCaptureFail": "✕ Satellite capture failed: Already captured or communication error.",
+  "satelliteAbortTitle": "[ SYSTEM // ABORT ]",
+  "satelliteAbortConfirm": "Do you want to abort the ongoing satellite capture operation?\nCooldown will not be applied upon cancellation.",
+  "satelliteKeepOperation": "Keep Operation",
+  "satelliteCancelOperation": "Abort Operation"
 }
