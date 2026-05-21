@@ -51,14 +51,15 @@ class ScanTargetMarker extends PositionComponent with HasGameReference<ConquestG
     if (_screenCorners.isEmpty) return;
 
     final gameSize = game.size;
-    final isVisible = _screenCorners.any(
+    
+    // [개선] 목적지 타일 자체의 화면 노출 여부를 판단
+    final isTargetVisible = _screenCorners.any(
       (c) =>
           c.dx >= -100 &&
           c.dx <= gameSize.x + 100 &&
           c.dy >= -100 &&
           c.dy <= gameSize.y + 100,
     );
-    if (!isVisible) return;
 
     final themeColor = GameColors.accentNeon;
 
@@ -78,14 +79,16 @@ class ScanTargetMarker extends PositionComponent with HasGameReference<ConquestG
     cx /= _screenCorners.length;
     cy /= _screenCorners.length;
 
-    // 2. 목적지 타일 애니메이션 그리기
-    _drawDestinationBorder(canvas, path, themeColor);
+    // 2. 목적지 타일 애니메이션 그리기 (화면에 보일 때만 드로잉)
+    if (isTargetVisible) {
+      _drawDestinationBorder(canvas, path, themeColor);
+    }
 
-    // 3. 본진에서 타겟 타일까지의 전술 경로(점선/화살표) 그리기
+    // 3. 본진에서 타겟 타일까지의 전술 경로(점선/화살표) 그리기 (자체적인 경로 가시성 판정 적용)
     _drawTacticalPath(canvas, themeColor);
 
-    // 4. 중심 조준 타겟 그리기 (위성 스캔 모드일 때만 노출)
-    if (game.isScanMode) {
+    // 4. 중심 조준 타겟 그리기 (위성 스캔 모드이고, 화면에 보일 때만 노출)
+    if (game.isScanMode && isTargetVisible) {
       _drawCrosshair(canvas, cx, cy, themeColor);
     }
   }
@@ -149,6 +152,17 @@ class ScanTargetMarker extends PositionComponent with HasGameReference<ConquestG
       final offset = game.mapController!.camera.latLngToScreenOffset(latlng);
       points.add(Offset(offset.dx, offset.dy));
     }
+
+    // [개선] 경로 좌표 중 단 하나라도 화면 내에 표시되고 있는지 판정 (Frustum Culling)
+    final gameSize = game.size;
+    final isPathVisible = points.any(
+      (p) =>
+          p.dx >= -100 &&
+          p.dx <= gameSize.x + 100 &&
+          p.dy >= -100 &&
+          p.dy <= gameSize.y + 100,
+    );
+    if (!isPathVisible) return;
 
     final path = Path();
     for (int i = 0; i < points.length; i++) {
