@@ -87,4 +87,46 @@ class HexService {
     }
     return corners;
   }
+
+  /// 두 헥사곤 타일 간의 거리(Ring 수)를 계산
+  static int hexDistance(int q1, int r1, int q2, int r2) {
+    final int x1 = q1;
+    final int z1 = r1;
+    final int y1 = -q1 - r1;
+
+    final int x2 = q2;
+    final int z2 = r2;
+    final int y2 = -q2 - r2;
+
+    return ((x1 - x2).abs() + (y1 - y2).abs() + (z1 - z2).abs()) ~/ 2;
+  }
+
+  /// 두 헥사곤 타일 간의 최단 경로(경유하는 모든 타일 좌표 리스트)를 계산
+  static List<Map<String, int>> hexLine(int q1, int r1, int q2, int r2) {
+    final int dist = hexDistance(q1, r1, q2, r2);
+    if (dist == 0) {
+      return [
+        {'q': q1, 'r': r1}
+      ];
+    }
+
+    final List<Map<String, int>> results = [];
+    final double x1 = q1.toDouble();
+    final double z1 = r1.toDouble();
+    final double y1 = (-q1 - r1).toDouble();
+
+    final double x2 = q2.toDouble();
+    final double z2 = r2.toDouble();
+    final double y2 = (-q2 - r2).toDouble();
+
+    for (int i = 0; i <= dist; i++) {
+      final double t = dist == 0 ? 0.0 : i / dist.toDouble();
+      final double x = x1 + (x2 - x1) * t;
+      final double y = y1 + (y2 - y1) * t;
+      final double z = z1 + (z2 - z1) * t;
+      final rounded = cubeRound(x, y, z);
+      results.add({'q': rounded['x']!, 'r': rounded['z']!});
+    }
+    return results;
+  }
 }

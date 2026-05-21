@@ -111,6 +111,8 @@ class GameStrings {
   static String get gpsReset => 'gpsReset'.tr();
   static String get auto => 'auto'.tr();
   static String get manual => 'manual'.tr();
+  static const String startCaptureModeKo = '점령시작';
+  static const String stopCaptureModeKo = '점령정지';
   static String get startCaptureMode => 'startCaptureMode'.tr();
   static String get stopCaptureMode => 'stopCaptureMode'.tr();
   static String get cannotCapture => 'cannotCapture'.tr();
@@ -156,4 +158,58 @@ class GameStrings {
   static String get mapStyleDark => 'mapStyleDark'.tr();
   static String get mapStyleSatellite => 'mapStyleSatellite'.tr();
   static String get mapStyleOutline => 'mapStyleOutline'.tr();
+
+  // 메인 기지 및 위성 점령 추가 다국어
+  static String get baseSetupCompleteAlert => 'baseSetupCompleteAlert'.tr();
+  static String get baseSetupSearchingSignal => 'baseSetupSearchingSignal'.tr();
+  static String get baseSetupInstruction => 'baseSetupInstruction'.tr();
+  static String get gpsDisabled => 'gpsDisabled'.tr();
+  static String get satellitePositionOk => 'satellitePositionOk'.tr();
+  static String currentLatitudeLongitude(String lat, String lng) =>
+      'currentLatitudeLongitude'.tr(namedArgs: {'lat': lat, 'lng': lng});
+  static String get baseSetupTitle => 'baseSetupTitle'.tr();
+  static String baseSetupDescription(String tileId) =>
+      'baseSetupDescription'.tr(namedArgs: {'tileId': tileId});
+  static String get baseSetupConfirmButton => 'baseSetupConfirmButton'.tr();
+
+  static String get profileRebaseTitle => 'profileRebaseTitle'.tr();
+  static String get profileRebaseSubtitle => 'profileRebaseSubtitle'.tr();
+  static String get gpsSignalError => 'gpsSignalError'.tr();
+  static String get rebaseConfirmTitle => 'rebaseConfirmTitle'.tr();
+  static String rebaseConfirmContent(String tileId) =>
+      'rebaseConfirmContent'.tr(namedArgs: {'tileId': tileId});
+  static String get rebaseButton => 'rebaseButton'.tr();
+  static String rebaseSuccessAlert(String tileId) =>
+      'rebaseSuccessAlert'.tr(namedArgs: {'tileId': tileId});
+
+  static String satelliteCapturingWithTime(String tileId, String seconds) =>
+      'satelliteCapturingWithTime'.tr(namedArgs: {'tileId': tileId, 'seconds': seconds});
+  static String get satelliteSelectTile => 'satelliteSelectTile'.tr();
+  static String get targetLockOn => 'targetLockOn'.tr();
+  static String satCooltimeWaiting(String time) =>
+      'satCooltimeWaiting'.tr(namedArgs: {'time': time});
+  static String get satDisconnected => 'satDisconnected'.tr();
+  static String satDurationTime(String seconds) =>
+      'satDurationTime'.tr(namedArgs: {'seconds': seconds});
+  static String get satAlreadyCaptured => 'satAlreadyCaptured'.tr();
+  static String satLockOnTile(String tileId) =>
+      'satLockOnTile'.tr(namedArgs: {'tileId': tileId});
+  static String get satCaptureTitle => 'satCaptureTitle'.tr();
+  static String get captureUpper => 'captureUpper'.tr();
+  static String get satelliteLinkActive => 'satelliteLinkActive'.tr();
+
+  static String get hqInvasionNotifTitle => 'hqInvasionNotifTitle'.tr();
+  static String get hqInvasionNotifBody => 'hqInvasionNotifBody'.tr();
+  static String get hqInvasionAlert => 'hqInvasionAlert'.tr();
+
+  static String get satelliteCooltimeAlert => 'satelliteCooltimeAlert'.tr();
+  static String get satelliteAlreadyCapturedAlert => 'satelliteAlreadyCapturedAlert'.tr();
+  static String get satelliteDisconnectedAlert => 'satelliteDisconnectedAlert'.tr();
+  static String get satelliteNoHQAlert => 'satelliteNoHQAlert'.tr();
+  static String get satelliteCoordError => 'satelliteCoordError'.tr();
+  static String satelliteCaptureStart(String seconds) =>
+      'satelliteCaptureStart'.tr(namedArgs: {'seconds': seconds});
+  static String get satelliteUserInvalid => 'satelliteUserInvalid'.tr();
+  static String get satelliteCaptureSuccess => 'satelliteCaptureSuccess'.tr();
+  static String get satelliteCaptureFail => 'satelliteCaptureFail'.tr();
 }

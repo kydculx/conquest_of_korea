@@ -3,6 +3,7 @@ create table public.profiles (
   id uuid references auth.users on delete cascade not null primary key,
   nickname text unique,
   color_hex text not null,
+  main_base_tile_id text,
   created_at timestamptz default now()
 );
 

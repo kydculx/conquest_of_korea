@@ -10,6 +10,7 @@ import '../../providers/auth_provider.dart';
 import '../../providers/location_provider.dart';
 import '../../services/geo_service.dart';
 import '../screens/auth/social_profile_setup_screen.dart';
+import '../screens/auth/base_setup_screen.dart';
 import '../widgets/alert_widget.dart';
 import '../widgets/game_map_widget.dart';
 import '../widgets/hud_overlay.dart';
@@ -317,6 +318,15 @@ class _GameScreenState extends State<GameScreen> {
       return const SocialProfileSetupScreen();
     }
 
+    // 프로필은 있으나 메인 기지가 지정되지 않은 경우 기지 설정 화면으로 리다이렉트
+    if (auth.isAuthenticated &&
+        auth.profile != null &&
+        (auth.profile!.mainBaseTileId == null ||
+            auth.profile!.mainBaseTileId!.isEmpty) &&
+        !auth.isLoading) {
+      return const BaseSetupScreen();
+    }
+
     // 현재 사용자의 최신 색상을 자신의 타일에 즉시 반영 (데이터베이스 동기화 전에도 즉각 응답)
     final currentTiles = Map<String, HexTile>.from(game.capturedTiles);
     if (auth.profile != null) {
@@ -335,6 +345,13 @@ class _GameScreenState extends State<GameScreen> {
       captureProgress: game.captureProgress,
       capturingColorHex: auth.profile?.colorHex,
       currentLocation: loc.currentLocation,
+      mainBaseTileId: auth.profile?.mainBaseTileId,
+      selectedScanTileId: game.selectedScanTileId,
+      isScanMode: game.isScanMode,
+      currentUserId: auth.user?.id,
+      isSatelliteCapturing: game.isSatelliteCapturing,
+      satelliteCaptureProgress: game.satelliteCaptureProgress,
+      satelliteCapturingTileId: game.satelliteCapturingTileId,
     );
 
     final currentLocation =

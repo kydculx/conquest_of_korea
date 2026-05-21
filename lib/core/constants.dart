@@ -25,6 +25,12 @@ class GameConstants {
   static const int updateIntervalMs = 100;
   static const double captureDistanceThreshold = 40.0;
 
+  // --- 위성 점령 시스템 설정 ---
+  static const double satelliteCaptureSecondsPerTile = 1.0; // 1타일당 소요 시간 (초)
+  static const Duration satelliteCaptureCooltime = Duration(
+    seconds: 10,
+  ); // 위성 점령 쿨타임
+
   // --- 서버 부하 방지 및 백그라운드 감시 설정 ---
   static const Duration serverCheckDelay = Duration(seconds: 3);
   static Duration backgroundCheckInterval = const Duration(

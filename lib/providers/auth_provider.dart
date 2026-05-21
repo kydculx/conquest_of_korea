@@ -210,6 +210,21 @@ class AuthProvider extends ChangeNotifier {
     }
   }
 
+  /// 메인 기지 설정/재설정
+  Future<void> updateMainBase(String tileId) async {
+    if (_profile == null) return;
+    
+    _setLoading(true);
+    try {
+      final updatedProfile = _profile!.copyWith(mainBaseTileId: tileId);
+      await _authService.updateProfile(updatedProfile);
+      _profile = updatedProfile;
+      notifyListeners();
+    } finally {
+      _setLoading(false);
+    }
+  }
+
   /// 닉네임 중복 체크
   Future<bool> isNicknameAvailable(String nickname) async {
     return await _authService.isNicknameAvailable(nickname);

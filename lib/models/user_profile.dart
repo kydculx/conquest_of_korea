@@ -4,6 +4,7 @@ class UserProfile {
   final String colorHex;
   final String teamId;
   final DateTime createdAt;
+  final String? mainBaseTileId;
 
   UserProfile({
     required this.id,
@@ -11,6 +12,7 @@ class UserProfile {
     required this.colorHex,
     required this.teamId,
     required this.createdAt,
+    this.mainBaseTileId,
   });
 
   factory UserProfile.fromJson(Map<String, dynamic> json) {
@@ -20,6 +22,7 @@ class UserProfile {
       colorHex: json['color_hex'] as String,
       teamId: json['team_id'] as String? ?? 'none',
       createdAt: DateTime.parse(json['created_at'] as String),
+      mainBaseTileId: json['main_base_tile_id'] as String?,
     );
   }
 
@@ -30,6 +33,7 @@ class UserProfile {
       'color_hex': colorHex,
       // 'team_id': teamId, // DB에 컬럼이 추가될 때까지 주석 처리
       'created_at': createdAt.toIso8601String(),
+      'main_base_tile_id': mainBaseTileId,
     };
   }
 
@@ -39,6 +43,7 @@ class UserProfile {
     String? colorHex,
     String? teamId,
     DateTime? createdAt,
+    String? mainBaseTileId,
   }) {
     return UserProfile(
       id: id ?? this.id,
@@ -46,6 +51,7 @@ class UserProfile {
       colorHex: colorHex ?? this.colorHex,
       teamId: teamId ?? this.teamId,
       createdAt: createdAt ?? this.createdAt,
+      mainBaseTileId: mainBaseTileId ?? this.mainBaseTileId,
     );
   }
 }

@@ -10,6 +10,7 @@ class PlayerComponent extends PositionComponent {
   LatLng _location = GameConstants.defaultPosition;
   LatLng get location => _location;
   double _heading = 0.0; // 라디안 단위
+  bool isVisible = true; // 추가: 렌더링 활성화 상태 플래그
   
   // 가독성 개선을 위한 애니메이션 변수
   double _pulseTime = 0;
@@ -47,6 +48,7 @@ class PlayerComponent extends PositionComponent {
 
   @override
   void render(Canvas canvas) {
+    if (!isVisible) return;
     final center = Offset(size.x / 2, size.y / 2);
     final baseRadius = size.x * 0.35;
     final radius = baseRadius * _pulseScale;

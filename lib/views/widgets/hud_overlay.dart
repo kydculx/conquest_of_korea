@@ -1,13 +1,15 @@
-import 'dart:math' as math;
+import 'dart:async';
+import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../../core/constants.dart';
 import '../../core/constants/strings.dart';
 import '../../providers/game_provider.dart';
 import '../../providers/auth_provider.dart';
+import '../../services/hex_service.dart';
 import 'tactical_compass.dart';
 
-/// 인게임 HUD 오버레이 (점수판, 점령 버튼, 유틸리티 버튼)
+/// 인게임 HUD 오버레이 (점수판, 점령 버튼, 유틸리티 버튼, 위성 스캔 연동)
 class HudOverlay extends StatelessWidget {
   const HudOverlay({super.key});
 
@@ -23,6 +25,10 @@ class HudOverlay extends StatelessWidget {
 
     return Stack(
       children: [
+        // 위성 스캔 활성화 시 화면 전술 데코레이션 오버레이 (가장 뒷레이어)
+        if (auth.isAuthenticated && game.isScanMode)
+          const _SatelliteScanFullscreenOverlay(),
+
         // 상단 좌측 나침반 버튼
         const Positioned(
           top: 60,
@@ -30,22 +36,46 @@ class HudOverlay extends StatelessWidget {
           child: TacticalCompass(),
         ),
 
-        // 상단 우측 로그인/프로필 버튼
-        Positioned(
-          top: 60,
-          right: 20,
-          child: _AuthProfileButton(auth: auth),
-        ),
-
-        // 점령 중 안내 텍스트 (택티컬 터미널 메시지 스타일)
-        if (auth.isAuthenticated && game.isCapturing)
+        // 상단 우측 컨트롤 영역 (프로필 & 위성 스캔 모드 토글)
+        if (auth.isAuthenticated)
           Positioned(
-            bottom: 150 + baseBottomMargin + bottomPadding,
+            top: 60,
+            right: 20,
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                _SatelliteCaptureToggleButton(game: game),
+                const SizedBox(width: 10),
+                if (!game.isScanMode) // 스캔 모드일 때는 화면 집중에 방해되므로 프로필은 숨김
+                  _AuthProfileButton(auth: auth),
+              ],
+            ),
+          )
+        else
+          Positioned(
+            top: 60,
+            right: 20,
+            child: _AuthProfileButton(auth: auth),
+          ),
+
+        // [신규] 위성 점령 HUD 패널 (상단 중앙 배치 및 좌우 정렬 일치)
+        if (auth.isAuthenticated && game.isScanMode)
+          Positioned(
+            top: 124,
+            left: 20,
+            right: 20,
+            child: _SatelliteCapturePanel(game: game),
+          ),
+
+        // 점령 중 안내 텍스트 (택티컬 터미널 메시지 스타일 - 위성 스캔 모드가 아닐 때만 노출)
+        if (auth.isAuthenticated && game.isCapturing && !game.isScanMode)
+          Positioned(
+            bottom: 130 + baseBottomMargin + bottomPadding,
             left: 0,
             right: 0,
             child: Center(
               child: Container(
-                padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
+                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
                 decoration: ShapeDecoration(
                   color: GameColors.backgroundTranslucent,
                   shape: BeveledRectangleBorder(
@@ -60,21 +90,21 @@ class HudOverlay extends StatelessWidget {
                   mainAxisSize: MainAxisSize.min,
                   children: [
                     Container(
-                      width: 6,
-                      height: 6,
-                      margin: const EdgeInsets.only(right: 8),
+                      width: 5,
+                      height: 5,
+                      margin: const EdgeInsets.only(right: 6),
                       decoration: BoxDecoration(
                         color: GameColors.accentNeon,
                         shape: BoxShape.circle,
                       ),
                     ),
                     Text(
-                      '[ SYSTEM: ${GameStrings.capturingZone.toUpperCase()} ]',
+                      '[ 시스템: ${GameStrings.capturingZone} ]',
                       style: TextStyle(
                         color: GameColors.textPrimary,
-                        fontSize: 12,
+                        fontSize: 11,
                         fontWeight: FontWeight.bold,
-                        letterSpacing: 1.5,
+                        letterSpacing: 1.0,
                       ),
                     ),
                   ],
@@ -83,13 +113,17 @@ class HudOverlay extends StatelessWidget {
             ),
           ),
 
-        // 자동 점령(점령시작/정지) 버튼 (로그인 상태일 때 노출)
+        // 점령 관련 버튼 하단 배치
         if (auth.isAuthenticated)
           Positioned(
-            bottom: baseBottomMargin + bottomPadding - 10,
+            bottom: baseBottomMargin + bottomPadding - 16,
             left: 0,
             right: 0,
-            child: Center(child: _StartStopCaptureButton(game: game)),
+            child: Center(
+              child: game.isScanMode
+                  ? _SatelliteCaptureActionButton(game: game)
+                  : _StartStopCaptureButton(game: game),
+            ),
           ),
 
       ],
@@ -97,77 +131,48 @@ class HudOverlay extends StatelessWidget {
   }
 }
 
-class _AuthProfileButton extends StatefulWidget {
+class _AuthProfileButton extends StatelessWidget {
   final AuthProvider auth;
   const _AuthProfileButton({required this.auth});
 
   @override
-  State<_AuthProfileButton> createState() => _AuthProfileButtonState();
-}
-
-class _AuthProfileButtonState extends State<_AuthProfileButton>
-    with SingleTickerProviderStateMixin {
-  late AnimationController _pulseController;
-
-  @override
-  void initState() {
-    super.initState();
-    _pulseController = AnimationController(
-      vsync: this,
-      duration: const Duration(seconds: 2),
-    )..repeat(reverse: true);
-  }
-
-  @override
-  void dispose() {
-    _pulseController.dispose();
-    super.dispose();
-  }
-
-  @override
   Widget build(BuildContext context) {
-    final bool isAuth = widget.auth.isAuthenticated;
+    final bool isAuth = auth.isAuthenticated;
     final Color color = isAuth ? GameColors.accentNeon : GameColors.textMuted;
 
-    return AnimatedBuilder(
-      animation: _pulseController,
-      builder: (context, child) {
-        final glowAlpha = isAuth ? (40 + (_pulseController.value * 50)) / 255 : 30 / 255;
-        return GestureDetector(
-          onTap: () {
-            if (isAuth) {
-              Navigator.pushNamed(context, '/profile');
-            } else {
-              Navigator.pushNamed(context, '/login');
-            }
-          },
-          child: Container(
-            padding: const EdgeInsets.all(8),
-            decoration: ShapeDecoration(
-              color: GameColors.backgroundMedium,
-              shape: BeveledRectangleBorder(
-                borderRadius: BorderRadius.circular(10),
-                side: BorderSide(
-                  color: color.withValues(alpha: isAuth ? 0.8 : 0.3),
-                  width: 1.5,
-                ),
-              ),
-              shadows: [
-                BoxShadow(
-                  color: color.withValues(alpha: glowAlpha),
-                  blurRadius: isAuth ? 12.0 * _pulseController.value + 4.0 : 4.0,
-                  spreadRadius: isAuth ? 2.0 * _pulseController.value : 0.0,
-                )
-              ],
-            ),
-            child: Icon(
-              Icons.person_rounded,
-              color: color,
-              size: 28,
+    return GestureDetector(
+      onTap: () {
+        if (isAuth) {
+          Navigator.pushNamed(context, '/profile');
+        } else {
+          Navigator.pushNamed(context, '/login');
+        }
+      },
+      child: Container(
+        padding: const EdgeInsets.all(8),
+        decoration: ShapeDecoration(
+          color: GameColors.backgroundMedium,
+          shape: BeveledRectangleBorder(
+            borderRadius: BorderRadius.circular(10),
+            side: BorderSide(
+              color: color.withValues(alpha: isAuth ? 0.4 : 0.15),
+              width: 1.0,
             ),
           ),
-        );
-      },
+          shadows: [
+            BoxShadow(
+              color: color.withValues(alpha: isAuth ? 0.15 : 0.05),
+              blurRadius: isAuth ? 8.0 : 4.0,
+              spreadRadius: 0.0,
+            )
+          ],
+        ),
+        child: Icon(
+          Icons.person_rounded,
+          color: color,
+          size: 24,
+        ),
+      ),
     );
   }
 }
@@ -182,90 +187,352 @@ class _StartStopCaptureButton extends StatefulWidget {
   State<_StartStopCaptureButton> createState() => _StartStopCaptureButtonState();
 }
 
-class _StartStopCaptureButtonState extends State<_StartStopCaptureButton>
-    with TickerProviderStateMixin {
-  late AnimationController _rotationController;
-  late AnimationController _pulseController;
+class _StartStopCaptureButtonState extends State<_StartStopCaptureButton> {
+  bool _isPressed = false;
+
+  @override
+  Widget build(BuildContext context) {
+    final isRunning = widget.game.isAutoCapture;
+
+    return GestureDetector(
+      onTapDown: (_) {
+        setState(() => _isPressed = true);
+      },
+      onTapUp: (_) {
+        setState(() => _isPressed = false);
+        widget.game.toggleAutoCapture();
+      },
+      onTapCancel: () {
+        setState(() => _isPressed = false);
+      },
+      child: AnimatedScale(
+        scale: _isPressed ? 0.92 : 1.0,
+        duration: const Duration(milliseconds: 100),
+        curve: Curves.easeOut,
+        child: AnimatedContainer(
+          duration: const Duration(milliseconds: 150),
+          width: 96,
+          height: 96,
+          decoration: BoxDecoration(
+            shape: BoxShape.circle,
+            gradient: LinearGradient(
+              begin: Alignment.topCenter,
+              end: Alignment.bottomCenter,
+              colors: isRunning
+                  ? [const Color(0xFFFF5252), const Color(0xFF900000)]
+                  : [const Color(0xFF00FFD1), const Color(0xFF006859)],
+            ),
+            border: Border.all(
+              color: Colors.white.withValues(alpha: 0.25),
+              width: 1.5,
+            ),
+            boxShadow: [
+              // 네온 글로우 효과
+              BoxShadow(
+                color: (isRunning ? GameColors.error : GameColors.accentNeon)
+                    .withValues(alpha: _isPressed ? 0.2 : 0.45),
+                blurRadius: _isPressed ? 8.0 : 16.0,
+                spreadRadius: 1.0,
+              ),
+              // 하단 3D 어둠 그림자
+              BoxShadow(
+                color: Colors.black.withValues(alpha: 0.6),
+                offset: _isPressed ? const Offset(0, 2) : const Offset(0, 6),
+                blurRadius: _isPressed ? 4.0 : 12.0,
+              ),
+            ],
+          ),
+          child: Stack(
+            children: [
+              // 상단 반사광 오버레이 (젤리 느낌 극대화)
+              Positioned(
+                top: 4,
+                left: 10,
+                right: 10,
+                height: 42,
+                child: Container(
+                  decoration: BoxDecoration(
+                    borderRadius: const BorderRadius.vertical(top: Radius.circular(42)),
+                    gradient: LinearGradient(
+                      begin: Alignment.topCenter,
+                      end: Alignment.bottomCenter,
+                      colors: [
+                        Colors.white.withValues(alpha: 0.45),
+                        Colors.white.withValues(alpha: 0.0),
+                      ],
+                    ),
+                  ),
+                ),
+              ),
+              // 중앙 아이콘 및 한글 고정 텍스트 (다크 그레이 대비)
+              Center(
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Icon(
+                      isRunning ? Icons.stop_rounded : Icons.play_arrow_rounded,
+                      color: const Color(0xFF0A1616),
+                      size: 36,
+                    ),
+                    const SizedBox(height: 1),
+                    Text(
+                       isRunning ? GameStrings.stopCaptureModeKo : GameStrings.startCaptureModeKo,
+                      style: const TextStyle(
+                        color: Color(0xFF0A1616),
+                        fontSize: 12.5,
+                        fontWeight: FontWeight.w900,
+                        letterSpacing: 0.2,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+// --- [신규] 위성 스캔 관련 추가 위젯들 ---
+
+class _SatelliteCaptureToggleButton extends StatelessWidget {
+  final GameProvider game;
+  const _SatelliteCaptureToggleButton({required this.game});
+
+  @override
+  Widget build(BuildContext context) {
+    final bool isScanMode = game.isScanMode;
+    // 활성화 시 네온 청록색, 비활성화 시 연한 회색
+    final Color themeColor = isScanMode ? GameColors.accentNeon : GameColors.textMuted;
+
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        GestureDetector(
+          onTap: () {
+            game.toggleScanMode();
+          },
+          child: Container(
+            width: 48,
+            height: 48,
+            decoration: ShapeDecoration(
+              color: GameColors.backgroundMedium,
+              shape: BeveledRectangleBorder(
+                borderRadius: BorderRadius.circular(8),
+                side: BorderSide(
+                  color: themeColor.withValues(alpha: isScanMode ? 0.4 : 0.15),
+                  width: 1.0,
+                ),
+              ),
+              shadows: isScanMode
+                  ? [
+                      BoxShadow(
+                        color: themeColor.withValues(alpha: 0.15),
+                        blurRadius: 6.0,
+                        spreadRadius: 0.0,
+                      )
+                    ]
+                  : null,
+            ),
+            child: Icon(
+              Icons.satellite_alt_rounded,
+              color: themeColor,
+              size: 24,
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+class _SatelliteCapturePanel extends StatefulWidget {
+  final GameProvider game;
+  const _SatelliteCapturePanel({required this.game});
+
+  @override
+  State<_SatelliteCapturePanel> createState() => _SatelliteCapturePanelState();
+}
+
+class _SatelliteCapturePanelState extends State<_SatelliteCapturePanel> {
+  Timer? _timer;
 
   @override
   void initState() {
     super.initState();
-    _rotationController = AnimationController(
-      vsync: this,
-      duration: const Duration(seconds: 10),
-    )..repeat();
-
-    _pulseController = AnimationController(
-      vsync: this,
-      duration: const Duration(milliseconds: 1200),
-    )..repeat(reverse: true);
+    _timer = Timer.periodic(const Duration(seconds: 1), (timer) {
+      if (mounted) {
+        setState(() {});
+      }
+    });
   }
 
   @override
   void dispose() {
-    _rotationController.dispose();
-    _pulseController.dispose();
+    _timer?.cancel();
     super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
-    final isRunning = widget.game.isAutoCapture;
-    final Color mainColor = isRunning ? GameColors.accentNeon : GameColors.error;
+    final game = widget.game;
+    final selectedId = game.selectedScanTileId;
+    final auth = context.read<AuthProvider>();
 
-    return GestureDetector(
-      onTap: () {
-        widget.game.toggleAutoCapture();
-      },
-      child: Stack(
-        alignment: Alignment.center,
-        children: [
-          // 회전 및 펄싱 타겟 조준경 CustomPaint
-          AnimatedBuilder(
-            animation: Listenable.merge([_rotationController, _pulseController]),
-            builder: (context, child) {
-              return SizedBox(
-                width: 110,
-                height: 110,
-                child: CustomPaint(
-                  painter: _TacticalTargetPainter(
-                    rotation: _rotationController.value * 2 * math.pi,
-                    isRunning: isRunning,
-                    pulseValue: _pulseController.value,
-                  ),
-                ),
-              );
-            },
+    final bool isCapturing = game.isSatelliteCapturing;
+
+    Color themeColor = GameColors.accentNeon;
+    bool isError = false;
+    bool isCooltime = false;
+    String detailsText = '위성 스캔 활성화됨. 타일을 조준하십시오.';
+    String? distanceStr;
+    String? timeStr;
+
+    if (isCapturing) {
+      final remainingSec = game.remainingSatelliteCaptureSeconds;
+      themeColor = GameColors.accentNeon;
+      detailsText = '전술 위성 채널 점령 시도 중...';
+      timeStr = '$remainingSec초';
+    } else if (selectedId != null) {
+      final existingTile = game.capturedTiles[selectedId];
+      final isTileEmpty = existingTile == null || existingTile.userId == null || existingTile.userId == 'none';
+
+      if (isTileEmpty) {
+        final satCooltime = game.remainingSatelliteCaptureCoolSeconds;
+        final isConnected = game.checkSatelliteCaptureConnectivity(selectedId);
+
+        if (satCooltime > 0) {
+          final minutes = satCooltime ~/ 60;
+          final seconds = satCooltime % 60;
+          final timeVal = '${minutes.toString().padLeft(2, '0')}:${seconds.toString().padLeft(2, '0')}';
+          themeColor = const Color(0xFFFF9900);
+          isCooltime = true;
+          detailsText = '위성 재충전 대기 중';
+          timeStr = timeVal;
+        } else if (!isConnected) {
+          themeColor = GameColors.error;
+          isError = true;
+          detailsText = '메인 기지 및 점령지 미연결 (점령 불가)';
+        } else {
+          final durationSec = game.getSatelliteCaptureDurationSeconds(selectedId);
+          themeColor = GameColors.accentNeon;
+          detailsText = '위성 락온 완료. 데이터 전송 대기.';
+
+          final mainBaseId = auth.profile?.mainBaseTileId;
+          if (mainBaseId != null && mainBaseId.isNotEmpty) {
+            final partsBase = mainBaseId.split('_');
+            final bq = int.tryParse(partsBase[1]) ?? 0;
+            final br = int.tryParse(partsBase[2]) ?? 0;
+            final partsTarget = selectedId.split('_');
+            final tq = int.tryParse(partsTarget[1]) ?? 0;
+            final tr = int.tryParse(partsTarget[2]) ?? 0;
+            final dist = HexService.hexDistance(bq, br, tq, tr);
+            distanceStr = '$dist타일';
+          }
+          timeStr = '$durationSec초';
+        }
+      } else {
+        themeColor = GameColors.error;
+        isError = true;
+        detailsText = '이미 점령된 구역입니다.';
+      }
+    }
+
+    return ClipPath(
+      clipper: ShapeBorderClipper(
+        shape: BeveledRectangleBorder(
+          borderRadius: BorderRadius.circular(10),
+        ),
+      ),
+      child: BackdropFilter(
+        filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
+        child: Container(
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+          decoration: ShapeDecoration(
+            color: GameColors.backgroundMedium.withValues(alpha: 0.65),
+            shape: BeveledRectangleBorder(
+              borderRadius: BorderRadius.circular(10),
+              side: BorderSide(
+                color: themeColor.withValues(alpha: 0.5),
+                width: 1.5,
+              ),
+            ),
           ),
-          // 중앙 전술 기호 및 텍스트
-          Column(
+          child: Column(
             mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              Icon(
-                isRunning ? Icons.gps_fixed : Icons.gps_off_rounded,
-                color: mainColor,
-                size: 28,
-              ),
-              const SizedBox(height: 2),
-              Text(
-                isRunning ? GameStrings.hudSecScan : GameStrings.hudOffline,
-                style: TextStyle(
-                  color: GameColors.textPrimary,
-                  fontSize: 10,
-                  fontWeight: FontWeight.w900,
-                  letterSpacing: 0.5,
-                ),
-              ),
-              Text(
-                isRunning ? GameStrings.hudActive : GameStrings.hudStandby,
-                style: TextStyle(
-                  color: mainColor,
-                  fontSize: 8,
-                  fontWeight: FontWeight.bold,
-                  letterSpacing: 1.0,
-                ),
+              Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Text(
+                    detailsText,
+                    style: TextStyle(
+                      color: isError ? GameColors.error : GameColors.textPrimary,
+                      fontSize: 12,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                  if (distanceStr != null || timeStr != null) ...[
+                    const SizedBox(height: 8),
+                    Row(
+                      children: [
+                        if (distanceStr != null) ...[
+                          _buildMetricItem('DIST', distanceStr, themeColor),
+                          const SizedBox(width: 12),
+                        ],
+                        if (timeStr != null)
+                          _buildMetricItem(
+                            isCooltime ? 'COOL' : 'TIME',
+                            timeStr,
+                            themeColor,
+                          ),
+                      ],
+                    ),
+                  ],
+                ],
               ),
             ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildMetricItem(String label, String value, Color color) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+      decoration: BoxDecoration(
+        color: color.withValues(alpha: 0.08),
+        borderRadius: BorderRadius.circular(4),
+        border: Border.all(
+          color: color.withValues(alpha: 0.25),
+          width: 0.8,
+        ),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Text(
+            '$label: ',
+            style: TextStyle(
+              color: GameColors.textSecondary,
+              fontSize: 9,
+              fontWeight: FontWeight.w800,
+              fontFamily: 'Courier',
+            ),
+          ),
+          Text(
+            value,
+            style: TextStyle(
+              color: color,
+              fontSize: 9.5,
+              fontWeight: FontWeight.w900,
+              fontFamily: 'Courier',
+            ),
           ),
         ],
       ),
@@ -273,121 +540,135 @@ class _StartStopCaptureButtonState extends State<_StartStopCaptureButton>
   }
 }
 
-/// 전술 레이더 조준선(Crosshair Painter)
-class _TacticalTargetPainter extends CustomPainter {
-  final double rotation;
-  final bool isRunning;
-  final double pulseValue;
-
-  _TacticalTargetPainter({
-    required this.rotation,
-    required this.isRunning,
-    required this.pulseValue,
-  });
+class _SatelliteScanFullscreenOverlay extends StatelessWidget {
+  const _SatelliteScanFullscreenOverlay();
 
   @override
-  void paint(Canvas canvas, Size size) {
-    final center = Offset(size.width / 2, size.height / 2);
-    final radius = size.width / 2;
-    final activeColor = GameColors.accentNeon;
-    final inactiveColor = GameColors.error;
-    final mainColor = isRunning ? activeColor : inactiveColor;
-
-    // 1. 딥 블랙 하이테크 배경원
-    final bgPaint = Paint()
-      ..color = GameColors.backgroundMedium.withValues(alpha: 0.9)
-      ..style = PaintingStyle.fill;
-    canvas.drawCircle(center, radius - 4, bgPaint);
-
-    // 2. 바깥쪽 타겟 브래킷 (각진 테두리 4개)
-    final bracketPaint = Paint()
-      ..color = mainColor.withValues(alpha: 0.8)
-      ..style = PaintingStyle.stroke
-      ..strokeWidth = 2.0;
-
-    final double bracketLength = 10.0;
-    final double dist = radius - 2;
-
-    // 좌상단
-    canvas.drawPath(
-        Path()
-          ..moveTo(center.dx - dist + bracketLength, center.dy - dist)
-          ..lineTo(center.dx - dist, center.dy - dist)
-          ..lineTo(center.dx - dist, center.dy - dist + bracketLength),
-        bracketPaint);
-    // 우상단
-    canvas.drawPath(
-        Path()
-          ..moveTo(center.dx + dist - bracketLength, center.dy - dist)
-          ..lineTo(center.dx + dist, center.dy - dist)
-          ..lineTo(center.dx + dist, center.dy - dist + bracketLength),
-        bracketPaint);
-    // 좌하단
-    canvas.drawPath(
-        Path()
-          ..moveTo(center.dx - dist + bracketLength, center.dy + dist)
-          ..lineTo(center.dx - dist, center.dy + dist)
-          ..lineTo(center.dx - dist, center.dy + dist - bracketLength),
-        bracketPaint);
-    // 우하단
-    canvas.drawPath(
-        Path()
-          ..moveTo(center.dx + dist - bracketLength, center.dy + dist)
-          ..lineTo(center.dx + dist, center.dy + dist)
-          ..lineTo(center.dx + dist, center.dy + dist - bracketLength),
-        bracketPaint);
-
-    // 3. 회전하는 전술 점선 링 (방위 지시선)
-    canvas.save();
-    canvas.translate(center.dx, center.dy);
-    canvas.rotate(rotation);
+  Widget build(BuildContext context) {
+    const double opacity = 0.015;
+    const double borderOpacity = 0.12;
     
-    final ringPaint = Paint()
-      ..color = mainColor.withValues(alpha: (0.3 + (pulseValue * 0.3)))
-      ..style = PaintingStyle.stroke
-      ..strokeWidth = 1.2;
-
-    const int segments = 8;
-    const double sweepAngle = (2 * math.pi) / (segments * 2);
-    for (int i = 0; i < segments; i++) {
-      final double startAngle = i * (sweepAngle * 2);
-      canvas.drawArc(
-        Rect.fromCircle(center: Offset.zero, radius: radius - 8),
-        startAngle,
-        sweepAngle,
-        false,
-        ringPaint,
-      );
-    }
-    canvas.restore();
-
-    // 4. 중앙 십자 조준선 (Crosshair HUD Ticks)
-    final crossPaint = Paint()
-      ..color = mainColor.withValues(alpha: 0.6)
-      ..style = PaintingStyle.stroke
-      ..strokeWidth = 1.5;
-
-    const double crossSize = 8.0;
-    const double gap = 5.0;
-    // 상/하/좌/우 십자선 그리기
-    canvas.drawLine(Offset(center.dx, center.dy - crossSize - gap), Offset(center.dx, center.dy - gap), crossPaint);
-    canvas.drawLine(Offset(center.dx, center.dy + gap), Offset(center.dx, center.dy + crossSize + gap), crossPaint);
-    canvas.drawLine(Offset(center.dx - crossSize - gap, center.dy), Offset(center.dx - gap, center.dy), crossPaint);
-    canvas.drawLine(Offset(center.dx + gap, center.dy), Offset(center.dx + crossSize + gap, center.dy), crossPaint);
-
-    // 5. 미세 도트 오버레이
-    final dotPaint = Paint()
-      ..color = mainColor.withValues(alpha: 0.7)
-      ..style = PaintingStyle.fill;
-    canvas.drawCircle(center, 2.5, dotPaint);
+    return IgnorePointer(
+      child: Container(
+        decoration: BoxDecoration(
+          border: Border.all(
+            color: const Color(0xFFFF9900).withValues(alpha: borderOpacity),
+            width: 1.0,
+          ),
+        ),
+        child: Stack(
+          children: [
+            // 화면 구석 전술 브래킷 표시
+            _buildCornerBracket(Alignment.topLeft),
+            _buildCornerBracket(Alignment.topRight),
+            _buildCornerBracket(Alignment.bottomLeft),
+            _buildCornerBracket(Alignment.bottomRight),
+            
+            // 화면 전체에 은은하게 퍼지는 오렌지색 틴트
+            Container(
+              color: const Color(0xFFFF9900).withValues(alpha: opacity),
+            ),
+          ],
+        ),
+      ),
+    );
   }
 
-  @override
-  bool shouldRepaint(covariant _TacticalTargetPainter oldDelegate) {
-    return oldDelegate.rotation != rotation ||
-        oldDelegate.isRunning != isRunning ||
-        oldDelegate.pulseValue != pulseValue;
+  Widget _buildCornerBracket(Alignment alignment) {
+    return Align(
+      alignment: alignment,
+      child: Container(
+        width: 18,
+        height: 18,
+        margin: const EdgeInsets.all(12),
+        decoration: BoxDecoration(
+          border: _getBorderForAlignment(alignment),
+        ),
+      ),
+    );
+  }
+
+  Border _getBorderForAlignment(Alignment alignment) {
+    const Color orange = Color(0xFFFF9900);
+    const BorderSide side = BorderSide(color: orange, width: 1.0);
+    const BorderSide none = BorderSide.none;
+
+    if (alignment == Alignment.topLeft) {
+      return const Border(top: side, left: side, right: none, bottom: none);
+    } else if (alignment == Alignment.topRight) {
+      return const Border(top: side, right: side, left: none, bottom: none);
+    } else if (alignment == Alignment.bottomLeft) {
+      return const Border(bottom: side, left: side, top: none, right: none);
+    } else {
+      return const Border(bottom: side, right: side, top: none, left: none);
+    }
   }
 }
 
+class _SatelliteCaptureActionButton extends StatelessWidget {
+  final GameProvider game;
+  const _SatelliteCaptureActionButton({required this.game});
 
+  @override
+  Widget build(BuildContext context) {
+    final selectedId = game.selectedScanTileId;
+    final bool isCapturing = game.isSatelliteCapturing;
+
+    bool showButton = false;
+    String buttonText = '';
+    Color buttonColor = GameColors.accentNeon;
+    VoidCallback? onPressed;
+
+    if (isCapturing) {
+      showButton = true;
+      buttonText = '취소';
+      buttonColor = GameColors.error;
+      onPressed = () => game.cancelSatelliteCapture();
+    } else if (selectedId != null) {
+      final existingTile = game.capturedTiles[selectedId];
+      final isTileEmpty = existingTile == null || existingTile.userId == null || existingTile.userId == 'none';
+
+      if (isTileEmpty) {
+        final satCooltime = game.remainingSatelliteCaptureCoolSeconds;
+        final isConnected = game.checkSatelliteCaptureConnectivity(selectedId);
+
+        if (satCooltime <= 0 && isConnected) {
+          showButton = true;
+          buttonText = '점령 실행';
+          buttonColor = GameColors.accentNeon;
+          onPressed = () => game.executeSatelliteCapture(selectedId);
+        }
+      }
+    }
+
+    if (!showButton) {
+      return const SizedBox.shrink();
+    }
+
+    return SizedBox(
+      width: 160,
+      height: 48,
+      child: OutlinedButton(
+        style: OutlinedButton.styleFrom(
+          foregroundColor: buttonColor,
+          side: BorderSide(color: buttonColor, width: 1.5),
+          shape: BeveledRectangleBorder(
+            borderRadius: BorderRadius.circular(8),
+          ),
+          backgroundColor: GameColors.backgroundMedium.withValues(alpha: 0.8),
+          padding: const EdgeInsets.symmetric(vertical: 12),
+        ),
+        onPressed: onPressed,
+        child: Text(
+          buttonText,
+          style: TextStyle(
+            color: buttonColor,
+            fontSize: 14,
+            fontWeight: FontWeight.bold,
+            letterSpacing: 1.0,
+          ),
+        ),
+      ),
+    );
+  }
+}

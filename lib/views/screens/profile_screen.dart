@@ -5,6 +5,9 @@ import '../../core/constants/strings.dart';
 import '../../core/theme.dart';
 import '../../providers/auth_provider.dart';
 import '../../providers/game_provider.dart';
+import '../../providers/location_provider.dart';
+import '../../services/hex_service.dart';
+import '../../core/utils/error_translator.dart';
 
 class ProfileScreen extends StatelessWidget {
   const ProfileScreen({super.key});
@@ -198,6 +201,13 @@ class ProfileScreen extends StatelessWidget {
                     onChanged: (val) => game.toggleNotifications(),
                     activeThumbColor: GameColors.accentNeon,
                   ),
+                ),
+                _buildDivider(),
+                _buildMenuItem(
+                  icon: Icons.my_location_rounded,
+                  title: GameStrings.profileRebaseTitle,
+                  subtitle: GameStrings.profileRebaseSubtitle,
+                  onTap: () => _handleRebase(context, auth),
                 ),
                 _buildDivider(),
                 _buildMenuItem(
@@ -612,5 +622,107 @@ class ProfileScreen extends StatelessWidget {
         ],
       ),
     );
+  }
+
+  Future<void> _handleRebase(BuildContext context, AuthProvider auth) async {
+    final loc = context.read<LocationProvider>();
+    final currentLocation = loc.currentLocation;
+
+    if (currentLocation == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(GameStrings.gpsSignalError),
+          backgroundColor: GameColors.error,
+          behavior: SnackBarBehavior.floating,
+        ),
+      );
+      return;
+    }
+
+    final hex = HexService.latLngToHex(currentLocation);
+    final tileId = 'hex_${hex['q']}_${hex['r']}';
+
+    final confirm = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        backgroundColor: GameColors.backgroundMedium,
+        shape: BeveledRectangleBorder(
+          borderRadius: BorderRadius.circular(10),
+          side: BorderSide(
+            color: GameColors.accentNeon.withValues(alpha: 0.5),
+            width: 1.2,
+          ),
+        ),
+        title: Row(
+          children: [
+            Icon(
+              Icons.my_location_rounded,
+              color: GameColors.accentNeon,
+              size: 20,
+            ),
+            const SizedBox(width: 8),
+            Text(
+              GameStrings.rebaseConfirmTitle,
+              style: TextStyle(
+                color: GameColors.textPrimary,
+                fontSize: 14,
+                fontWeight: FontWeight.bold,
+                letterSpacing: 1.2,
+              ),
+            ),
+          ],
+        ),
+        content: Text(
+          GameStrings.rebaseConfirmContent(tileId),
+          style: TextStyle(color: GameColors.textSecondary, fontSize: 13),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context, false),
+            style: TextButton.styleFrom(foregroundColor: GameColors.textMuted),
+            child: Text(GameStrings.cancel),
+          ),
+          ElevatedButton(
+            onPressed: () => Navigator.pop(context, true),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: GameColors.accentNeon,
+              foregroundColor: GameColors.tacticalBlack,
+              shape: BeveledRectangleBorder(
+                borderRadius: BorderRadius.circular(4),
+              ),
+            ),
+            child: Text(
+              GameStrings.rebaseButton,
+              style: const TextStyle(fontWeight: FontWeight.bold),
+            ),
+          ),
+        ],
+      ),
+    );
+
+    if (confirm == true && context.mounted) {
+      try {
+        await auth.updateMainBase(tileId);
+        if (context.mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text(GameStrings.rebaseSuccessAlert(tileId)),
+              backgroundColor: GameColors.success,
+              behavior: SnackBarBehavior.floating,
+            ),
+          );
+        }
+      } catch (e) {
+        if (context.mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text(ErrorTranslator.translate(e)),
+              backgroundColor: GameColors.error,
+              behavior: SnackBarBehavior.floating,
+            ),
+          );
+        }
+      }
+    }
   }
 }

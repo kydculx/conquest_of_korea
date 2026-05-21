@@ -7,6 +7,7 @@ import '../../game/conquest_game.dart';
 import '../../core/constants.dart';
 import '../../providers/game_provider.dart';
 import '../../providers/location_provider.dart'; // 추가: LocationProvider 임포트
+import '../../services/hex_service.dart'; // 추가: HexService 임포트
 
 /// 지도(FlutterMap) + Flame 엔진 레이어를 결합한 위젯
 class GameMapWidget extends StatefulWidget {
@@ -31,6 +32,7 @@ class _GameMapWidgetState extends State<GameMapWidget>
   int _pointerCount = 0; // 추가: 화면에 터치 중인 활성 포인터(손가락) 개수
   double _currentZoom = GameConstants.focusZoom;
   LocationProvider? _locProvider; // 추가: LocationProvider 참조 보관
+  AnimationController? _animationController; // 추가: 내 위치 애니메이션 컨트롤러
 
   @override
   void initState() {
@@ -51,6 +53,7 @@ class _GameMapWidgetState extends State<GameMapWidget>
   @override
   void dispose() {
     _locProvider?.removeListener(_onLocationProviderChanged);
+    _stopAnimation();
     super.dispose();
   }
 
@@ -62,8 +65,9 @@ class _GameMapWidgetState extends State<GameMapWidget>
 
     final gameProvider = Provider.of<GameProvider>(context, listen: false);
 
-    // 1. 위치 이동은 내 위치 추적 활성화 상태이고 사용자가 지도를 조작 중(터치/핀치)이 아닐 때만 수행
-    if (_isFollowing && !_isPinching && _pointerCount == 0) {
+    // 1. 위치 이동은 내 위치 추적 활성화 상태이고 사용자가 지도를 조작 중(터치/핀치)이 아니며, 이동 애니메이션이 진행 중이지 않을 때만 수행
+    final isAnimating = _animationController != null && _animationController!.isAnimating;
+    if (_isFollowing && !_isPinching && _pointerCount == 0 && !isAnimating) {
       _mapController.move(loc.currentLocation!, _currentZoom);
     }
 
@@ -98,11 +102,21 @@ class _GameMapWidgetState extends State<GameMapWidget>
     }
   }
 
+  void _stopAnimation() {
+    if (_animationController != null) {
+      _animationController!.stop();
+      _animationController!.dispose();
+      _animationController = null;
+    }
+  }
+
   void _animatedMapMove(
     LatLng destLocation,
     double destZoom,
     double destRotation,
   ) {
+    _stopAnimation();
+
     final latTween = Tween<double>(
       begin: _mapController.camera.center.latitude,
       end: destLocation.latitude,
@@ -124,6 +138,8 @@ class _GameMapWidgetState extends State<GameMapWidget>
       duration: const Duration(milliseconds: 800),
       vsync: this,
     );
+    _animationController = controller;
+
     final animation = CurvedAnimation(
       parent: controller,
       curve: Curves.fastOutSlowIn,
@@ -136,13 +152,16 @@ class _GameMapWidgetState extends State<GameMapWidget>
         zoomTween.evaluate(animation),
       );
       _mapController.rotate(rotationTween.evaluate(animation));
-      // Flame 엔진 프로젝션 실시간 업데이트
+      // Flame 엔진 프로젝션 실시간 업데이트 복구
       widget.game.updateProjection(_mapController);
     });
 
     animation.addStatusListener((status) {
       if (status == AnimationStatus.completed ||
           status == AnimationStatus.dismissed) {
+        if (_animationController == controller) {
+          _animationController = null;
+        }
         controller.dispose();
       }
     });
@@ -160,6 +179,7 @@ class _GameMapWidgetState extends State<GameMapWidget>
             Listener(
               onPointerDown: (event) {
                 _pointerCount++;
+                _stopAnimation();
               },
               onPointerUp: (event) {
                 _pointerCount = (_pointerCount - 1).clamp(0, 10);
@@ -182,6 +202,20 @@ class _GameMapWidgetState extends State<GameMapWidget>
                     flags: InteractiveFlag.all & ~InteractiveFlag.rotate,
                   ),
                   backgroundColor: GameColors.transparent,
+                  onMapReady: () {
+                    widget.game.updateProjection(_mapController);
+                  },
+                  onTap: (tapPosition, point) {
+                    final hex = HexService.latLngToHex(point);
+                    final tileId = 'hex_${hex['q']}_${hex['r']}';
+
+                    if (gameProvider.isSatelliteCapturing &&
+                        gameProvider.satelliteCapturingTileId == tileId) {
+                      _showSatelliteCancelDialog(context, gameProvider);
+                    } else if (gameProvider.isScanMode) {
+                      gameProvider.selectScanTile(tileId);
+                    }
+                  },
                   onMapEvent: (event) {
                     if (event.source ==
                         MapEventSource.multiFingerGestureStart) {
@@ -207,7 +241,9 @@ class _GameMapWidgetState extends State<GameMapWidget>
                           if (mounted) setState(() => _isFollowing = false);
                         });
                       }
+                      _stopAnimation();
                     }
+                    widget.game.updateProjection(_mapController);
                   },
                   onPositionChanged: (position, hasGesture) {
                     if (position.zoom != _currentZoom) {
@@ -217,7 +253,6 @@ class _GameMapWidgetState extends State<GameMapWidget>
                         }
                       });
                     }
-                    widget.game.updateProjection(_mapController);
                   },
                 ),
                 children: [
@@ -358,6 +393,72 @@ class _GameMapWidgetState extends State<GameMapWidget>
         ),
         child: Icon(icon, size: 18),
       ),
+    );
+  }
+
+  void _showSatelliteCancelDialog(BuildContext context, GameProvider provider) {
+    showDialog(
+      context: context,
+      barrierDismissible: true,
+      builder: (context) {
+        return AlertDialog(
+          backgroundColor: GameColors.tacticalBlack.withValues(alpha: 0.95),
+          shape: BeveledRectangleBorder(
+            side: BorderSide(color: GameColors.error, width: 1.5),
+            borderRadius: BorderRadius.circular(8),
+          ),
+          title: Row(
+            children: [
+              Icon(Icons.warning_amber_rounded, color: GameColors.error, size: 24),
+              const SizedBox(width: 8),
+              Text(
+                '[ SYSTEM // ABORT ]',
+                style: TextStyle(
+                  color: GameColors.error,
+                  fontSize: 16,
+                  fontWeight: FontWeight.bold,
+                  letterSpacing: 1.0,
+                ),
+              ),
+            ],
+          ),
+          content: const Text(
+            '진행 중인 위성 점령 작전을 중단하시겠습니까?\n취소 시 쿨타임은 적용되지 않습니다.',
+            style: TextStyle(
+              color: Colors.white,
+              fontSize: 13,
+              height: 1.5,
+            ),
+          ),
+          actions: [
+            OutlinedButton(
+              style: OutlinedButton.styleFrom(
+                foregroundColor: Colors.white70,
+                side: const BorderSide(color: Colors.white30, width: 1.0),
+                shape: BeveledRectangleBorder(
+                  borderRadius: BorderRadius.circular(4),
+                ),
+              ),
+              onPressed: () => Navigator.pop(context),
+              child: const Text('작전 유지'),
+            ),
+            OutlinedButton(
+              style: OutlinedButton.styleFrom(
+                foregroundColor: GameColors.error,
+                side: BorderSide(color: GameColors.error, width: 1.0),
+                shape: BeveledRectangleBorder(
+                  borderRadius: BorderRadius.circular(4),
+                ),
+              ),
+              onPressed: () {
+                provider.cancelSatelliteCapture();
+                Navigator.pop(context);
+              },
+              child: const Text('작전 취소'),
+            ),
+          ],
+        );
+      },
     );
   }
 }
