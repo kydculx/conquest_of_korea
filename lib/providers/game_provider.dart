@@ -296,6 +296,14 @@ class GameProvider extends ChangeNotifier {
     }
 
     if (changed) {
+      // 위성 점령 진행 중일 때, 기지 침공이나 영토 분실 등으로 연결성이 끊어졌는지 실시간 체크
+      if (isSatelliteCapturing) {
+        final stillConnected = checkSatelliteCaptureConnectivity(_satelliteCapturingTileId!);
+        if (!stillConnected) {
+          cancelSatelliteCapture();
+          addAlert(GameStrings.satelliteDisconnectedAlert, AlertType.error);
+        }
+      }
       notifyListeners();
     }
   }
@@ -372,6 +380,9 @@ class GameProvider extends ChangeNotifier {
             GameConstants.initialCaptureDurationSeconds * targetCaptureCount;
         final Duration captureDuration = Duration(seconds: durationSeconds);
 
+        // 물리 점령 개시 시점에 진행 중인 위성 점령이 있으면 중단
+        cancelSatelliteCapture();
+
         _captureController.startCapture(
           tileId: tileId,
           location: loc.currentLocation!,
@@ -432,6 +443,9 @@ class GameProvider extends ChangeNotifier {
     final int durationSeconds =
         GameConstants.initialCaptureDurationSeconds * targetCaptureCount;
     final Duration captureDuration = Duration(seconds: durationSeconds);
+
+    // 물리 점령 개시 시점에 진행 중인 위성 점령이 있으면 중단
+    cancelSatelliteCapture();
 
     _captureController.startCapture(
       tileId: tileId,
