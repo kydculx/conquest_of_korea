@@ -1,3 +1,5 @@
+import 'dart:async';
+import 'dart:ui' as ui;
 import 'package:flutter/material.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:flame/game.dart';
@@ -7,9 +9,10 @@ import '../../game/conquest_game.dart';
 import '../../core/constants/colors.dart';
 import '../../core/constants/map_config.dart';
 import '../../providers/game_provider.dart';
-import '../../providers/location_provider.dart'; // 추가: LocationProvider 임포트
-import '../../services/hex_service.dart'; // 추가: HexService 임포트
-import '../../core/constants/strings.dart'; // 추가: GameStrings 임포트
+import '../../providers/auth_provider.dart';
+import '../../providers/location_provider.dart';
+import '../../services/hex_service.dart';
+import '../../core/constants/strings.dart';
 
 /// 지도(FlutterMap) + Flame 엔진 레이어를 결합한 위젯
 class GameMapWidget extends StatefulWidget {
@@ -289,12 +292,31 @@ class _GameMapWidgetState extends State<GameMapWidget>
               child: IgnorePointer(child: GameWidget(game: widget.game)),
             ),
 
+            // 위성 점령 말풍선 (탭한 타일 위에 동적 배치)
+            if (gameProvider.isScanMode)
+              Positioned.fill(
+                child: IgnorePointer(
+                  child: _SatelliteMapBubble(
+                    gameProvider: gameProvider,
+                    mapController: _mapController,
+                  ),
+                ),
+              ),
+
             // 지도 컨트롤 UI
             Positioned(
               right: 16,
               bottom: 120,
               child: Column(
                 children: [
+                  _buildMapAction(
+                    icon: Icons.satellite_alt_rounded,
+                    onPressed: () {
+                      gameProvider.toggleScanMode();
+                    },
+                    isActive: gameProvider.isScanMode,
+                  ),
+                  const SizedBox(height: 8),
                   _buildMapAction(
                     icon: !_isFollowing
                         ? Icons.location_searching
@@ -461,6 +483,365 @@ class _GameMapWidgetState extends State<GameMapWidget>
           ],
         );
       },
+    );
+  }
+}
+
+/// 선택된 위성 조준 타일 위에 실시간으로 위치가 갱신되는 말풍선 위젯.
+/// MapController를 통해 LatLng → 화면 좌표로 변환하므로 맵 스크롤/줌 시에도 타일을 정확히 추적합니다.
+/// 앵커: 말풍선 하단 중앙 = 타일 중심 위치 (타일이 가려지지 않도록 본체는 타일 위에 표시됩니다).
+class _SatelliteMapBubble extends StatefulWidget {
+  final GameProvider gameProvider;
+  final MapController mapController;
+
+  const _SatelliteMapBubble({
+    required this.gameProvider,
+    required this.mapController,
+  });
+
+  @override
+  State<_SatelliteMapBubble> createState() => _SatelliteMapBubbleState();
+}
+
+/// [_SatelliteMapBubble]의 주기적 화면 갱신을 담당하는 상태 클래스
+class _SatelliteMapBubbleState extends State<_SatelliteMapBubble> {
+  /// 1초 단위로 상태 정보(쿨타임/시간)를 동기화 갱신하기 위한 타이머
+  Timer? _timer;
+  /// 지도의 스크롤 및 줌 이벤트를 실시간 감지하여 말풍선 좌표를 즉각 갱신하기 위한 구독 스트림
+  StreamSubscription? _mapEventSubscription;
+
+  @override
+  void initState() {
+    super.initState();
+    _timer = Timer.periodic(const Duration(seconds: 1), (_) {
+      if (mounted) setState(() {});
+    });
+    // 지도 이벤트(드래그, 줌 등) 감지 시 말풍선 좌표 실시간 갱신 트리거
+    _mapEventSubscription = widget.mapController.mapEventStream.listen((event) {
+      if (mounted) {
+        setState(() {});
+      }
+    });
+  }
+
+  @override
+  void dispose() {
+    _timer?.cancel();
+    _mapEventSubscription?.cancel();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final game = widget.gameProvider;
+    final tileLatLng = game.selectedScanTileLatLng;
+    final selectedId = game.selectedScanTileId;
+
+    if (tileLatLng == null || selectedId == null) return const SizedBox.shrink();
+
+    // 1. 선택된 타일 ID에서 q, r 파싱
+    int? q;
+    int? r;
+    final parts = selectedId.split('_');
+    if (parts.length >= 3) {
+      q = int.tryParse(parts[1]);
+      r = int.tryParse(parts[2]);
+    }
+
+    // 2. 헥사곤 최상단(북쪽) 꼭짓점의 LatLng 좌표 계산
+    LatLng? topCornerLatLng;
+    if (q != null && r != null) {
+      final corners = HexService.getHexCorners(q, r);
+      if (corners.isNotEmpty) {
+        // 위도(latitude)가 가장 큰 꼭짓점(가장 북쪽 = 최상단)을 선택
+        topCornerLatLng = corners.reduce(
+          (curr, next) => curr.latitude > next.latitude ? curr : next,
+        );
+      }
+    }
+
+    // LatLng → 현재 카메라 기준 화면 좌표 실시간 변환
+    final Offset arrowTipPos;
+    try {
+      if (topCornerLatLng != null) {
+        arrowTipPos = widget.mapController.camera.latLngToScreenOffset(topCornerLatLng);
+      } else {
+        arrowTipPos = widget.mapController.camera.latLngToScreenOffset(tileLatLng);
+      }
+    } catch (_) {
+      return const SizedBox.shrink();
+    }
+
+    final auth = context.read<AuthProvider>();
+    final bool isCapturing = game.isSatelliteCapturing;
+
+    // --- 상태 계산 ---
+    Color themeColor = GameColors.accentNeon;
+    bool isError = false;
+    bool isCooltime = false;
+    String detailsText = GameStrings.satScanActive;
+    String? distanceStr;
+    String? timeStr;
+
+    if (isCapturing) {
+      final remainingSec = game.remainingSatelliteCaptureSeconds;
+      detailsText = GameStrings.satCapturingAttempt;
+      timeStr = '$remainingSec초';
+    } else {
+      final existingTile = game.capturedTiles[selectedId];
+      final isTileEmpty = existingTile == null ||
+          existingTile.userId == null ||
+          existingTile.userId == 'none';
+
+      if (isTileEmpty) {
+        final satCooltime = game.remainingSatelliteCaptureCoolSeconds;
+        final isConnected = game.checkSatelliteCaptureConnectivity(selectedId);
+
+        if (satCooltime > 0) {
+          final minutes = satCooltime ~/ 60;
+          final seconds = satCooltime % 60;
+          themeColor = const Color(0xFFFF9900);
+          isCooltime = true;
+          detailsText = GameStrings.satCooltimeWaitingLabel;
+          timeStr =
+              '${minutes.toString().padLeft(2, '0')}:${seconds.toString().padLeft(2, '0')}';
+        } else if (!isConnected) {
+          themeColor = GameColors.error;
+          isError = true;
+          detailsText = GameStrings.satDisconnectedLabel;
+        } else {
+          final durationSec = game.getSatelliteCaptureDurationSeconds(selectedId);
+          detailsText = GameStrings.satLockOnReady;
+          final mainBaseId = auth.profile?.mainBaseTileId;
+          int distance = 0;
+          if (mainBaseId != null && mainBaseId.isNotEmpty) {
+            final partsBase = mainBaseId.split('_');
+            final bq = int.tryParse(partsBase[1]) ?? 0;
+            final br = int.tryParse(partsBase[2]) ?? 0;
+            final partsTarget = selectedId.split('_');
+            final tq = int.tryParse(partsTarget[1]) ?? 0;
+            final tr = int.tryParse(partsTarget[2]) ?? 0;
+            distance = HexService.hexDistance(bq, br, tq, tr);
+            distanceStr = '$distance GP';
+          }
+
+          // 위성 점령 소모 재화(골드) 부족 여부 검증
+          final double currentGold = game.currentGold;
+          if (currentGold < distance) {
+            themeColor = GameColors.error;
+            isError = true;
+            detailsText = '재화가 부족합니다';
+          }
+
+          timeStr = '$durationSec초';
+        }
+      } else {
+        themeColor = GameColors.error;
+        isError = true;
+        detailsText = GameStrings.satAlreadyCapturedLabel;
+      }
+    }
+
+    // --- 레이아웃 상수 ---
+    const double bubbleW = 210.0;
+    const double estimatedBodyH = 75.0; // 말풍선 본체 추정 높이 (패딩 포함)
+    const double margin = 12.0;
+    const double gap = 12.0; // 타일 상단 꼭짓점과 정보창 사이의 유격
+
+    // 정보창 하단이 타일의 최상단 꼭짓점보다 gap(12px)만큼 위에 위치하도록:
+    //   정보창 하단 y = arrowTipPos.dy - gap
+    //   본체 상단(top) = 정보창 하단 y - estimatedBodyH
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        double left = arrowTipPos.dx - bubbleW / 2;
+        left = left.clamp(margin, constraints.maxWidth - bubbleW - margin);
+
+        final double arrowTipY = arrowTipPos.dy;
+        double top = arrowTipY - estimatedBodyH - gap;
+
+        // 화면 상단 여백 보장
+        if (top < margin) top = margin;
+
+        return Stack(
+          children: [
+            Positioned(
+              left: left,
+              top: top,
+              width: bubbleW,
+              child: _BubbleColumn(
+                themeColor: themeColor,
+                isError: isError,
+                isCooltime: isCooltime,
+                detailsText: detailsText,
+                distanceStr: distanceStr,
+                timeStr: timeStr,
+              ),
+            ),
+          ],
+        );
+      },
+    );
+  }
+}
+
+/// 정보창 본체 위젯의 래퍼 Column 클래스 (구조 일관성 유지)
+class _BubbleColumn extends StatelessWidget {
+  final Color themeColor;
+  final bool isError;
+  final bool isCooltime;
+  final String detailsText;
+  final String? distanceStr;
+  final String? timeStr;
+
+  const _BubbleColumn({
+    required this.themeColor,
+    required this.isError,
+    required this.isCooltime,
+    required this.detailsText,
+    this.distanceStr,
+    this.timeStr,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    // 하단 삼각형 꼬리를 제거하고 본체만 렌더링합니다.
+    return _BubbleBody(
+      themeColor: themeColor,
+      isError: isError,
+      isCooltime: isCooltime,
+      detailsText: detailsText,
+      distanceStr: distanceStr,
+      timeStr: timeStr,
+    );
+  }
+}
+
+/// 말풍선 본체 위젯 (BeveledRect 테두리 + BackdropBlur 배경)
+class _BubbleBody extends StatelessWidget {
+  final Color themeColor;
+  final bool isError;
+  final bool isCooltime;
+  final String detailsText;
+  final String? distanceStr;
+  final String? timeStr;
+
+  const _BubbleBody({
+    required this.themeColor,
+    required this.isError,
+    required this.isCooltime,
+    required this.detailsText,
+    this.distanceStr,
+    this.timeStr,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return ClipPath(
+      clipper: ShapeBorderClipper(
+        shape: BeveledRectangleBorder(borderRadius: BorderRadius.circular(8)),
+      ),
+      child: BackdropFilter(
+        filter: ui.ImageFilter.blur(sigmaX: 10, sigmaY: 10),
+        child: Container(
+          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+          decoration: ShapeDecoration(
+            color: GameColors.backgroundMedium.withValues(alpha: 0.9),
+            shape: BeveledRectangleBorder(
+              borderRadius: BorderRadius.circular(8),
+              side: BorderSide(
+                color: themeColor.withValues(alpha: 0.6),
+                width: 1.5,
+              ),
+            ),
+          ),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              // 상태 텍스트
+              Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Container(
+                    width: 5,
+                    height: 5,
+                    margin: const EdgeInsets.only(right: 6, top: 1),
+                    decoration: BoxDecoration(
+                      color: themeColor,
+                      shape: BoxShape.circle,
+                    ),
+                  ),
+                  Flexible(
+                    child: Text(
+                      detailsText,
+                      style: TextStyle(
+                        color:
+                            isError ? GameColors.error : GameColors.textPrimary,
+                        fontSize: 11.5,
+                        fontWeight: FontWeight.w700,
+                        letterSpacing: 0.4,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+              // 메트릭 배지 (거리 / 시간)
+              if (distanceStr != null || timeStr != null) ...[
+                const SizedBox(height: 7),
+                Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    if (distanceStr != null) ...[
+                      _buildBadge('재화', distanceStr!, themeColor),
+                      const SizedBox(width: 8),
+                    ],
+                    if (timeStr != null)
+                      _buildBadge(
+                        isCooltime ? '대기' : '시간',
+                        timeStr!,
+                        themeColor,
+                      ),
+                  ],
+                ),
+              ],
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildBadge(String label, String value, Color color) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+      decoration: BoxDecoration(
+        color: color.withValues(alpha: 0.10),
+        borderRadius: BorderRadius.circular(3),
+        border: Border.all(color: color.withValues(alpha: 0.30), width: 0.8),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Text(
+            '$label: ',
+            style: TextStyle(
+              color: GameColors.textSecondary,
+              fontSize: 9,
+              fontWeight: FontWeight.w800,
+              fontFamily: 'Courier',
+            ),
+          ),
+          Text(
+            value,
+            style: TextStyle(
+              color: color,
+              fontSize: 9.5,
+              fontWeight: FontWeight.w900,
+              fontFamily: 'Courier',
+            ),
+          ),
+        ],
+      ),
     );
   }
 }

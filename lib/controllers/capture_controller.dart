@@ -17,6 +17,8 @@ class CaptureController {
   final void Function(String message, AlertType type) onAlert;
   /// 점령 완료 시 영토 데이터 갱신을 전달하는 콜백
   final void Function(String tileId, HexTile tile, {required bool wasEnemyTile}) onTileCaptured;
+  /// 점령 완료 프로세스 직전(DB에 쓰기 전) 골드를 먼저 정산해줄 비동기 콜백
+  final Future<void> Function()? onPreCapture;
   /// 상태 변경 시 화면 갱신을 지시하는 콜백
   final VoidCallback onStateChanged;
 
@@ -58,6 +60,7 @@ class CaptureController {
     required this.onAlert,
     required this.onTileCaptured,
     required this.onStateChanged,
+    this.onPreCapture,
   }) : _supabase = supabase;
 
   /// 요원이 획득하고자 하는 특정 타일에 진입하여 점령 작전을 개시하고 주기 감시 타이머를 시작합니다.
@@ -153,6 +156,15 @@ class CaptureController {
       capturedAt: DateTime.now().toUtc(),
       captureCount: _targetCaptureCount, // 계산된 목표 점령 횟수를 데이터 모델에 주입
     );
+
+    // [신규] DB에 점령 레코드를 쓰기 전에, 실시간 골드를 소수점 정밀도로 선제 정산하여 트리거 리셋 유실 방지
+    if (onPreCapture != null) {
+      try {
+        await onPreCapture!();
+      } catch (e) {
+        debugPrint('⚠️ 점령 전 골드 정산 실패 (계속 진행): $e');
+      }
+    }
 
     final success = await _supabase.captureTile(tile);
     if (success) {

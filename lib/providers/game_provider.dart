@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'package:flutter/widgets.dart';
+import 'package:latlong2/latlong.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../controllers/capture_controller.dart';
 import '../models/alert_model.dart';
@@ -52,6 +53,8 @@ class GameProvider extends ChangeNotifier with WidgetsBindingObserver {
   bool _isScanMode = false;
   /// 위성 스캔 조준 중인 대상 타일 ID
   String? _selectedScanTileId;
+  /// 위성 스캔 조준 타일의 중심 지리 좌표 (맭 스크롤 시 실시간 화면 좌표 변환에 사용)
+  LatLng? _selectedScanTileLatLng;
 
   // --- 위성 점령 상태 변수 ---
   /// 현재 위성 점령을 시도 중인 대상 타일 ID
@@ -80,6 +83,8 @@ class GameProvider extends ChangeNotifier with WidgetsBindingObserver {
   double _goldRate = GameConfig.defaultGoldRate;
   /// 주기적으로 골드 재화를 누적하는 타이머
   Timer? _goldTimer;
+  /// 주기적 서버 동기화를 위한 1초 단위 누적 카운터
+  int _syncCounter = 0;
 
   // 관련 Provider 참조
   /// 사용자 위치 정보를 공유하는 LocationProvider 인스턴스
@@ -104,6 +109,9 @@ class GameProvider extends ChangeNotifier with WidgetsBindingObserver {
 
   /// 위성 조준 스캔 상에서 선택된 타일 ID
   String? get selectedScanTileId => _selectedScanTileId;
+
+  /// 선택된 위성 조준 타일의 중심 지리 좌표 (맵 스크롤 시 실시간 화면 좌표 변환에 사용)
+  LatLng? get selectedScanTileLatLng => _selectedScanTileLatLng;
 
   /// 현재 위성 점령 진행 중인 타일 ID
   String? get satelliteCapturingTileId => _satelliteCapturingTileId;
@@ -240,17 +248,14 @@ class GameProvider extends ChangeNotifier with WidgetsBindingObserver {
           // 점령 유형에 따라 알림 문구 분기
           NotificationService().showLocalNotification(
             id: id.hashCode,
-            title: wasEnemyTile
-                ? GameStrings.notificationCaptureEnemyTitle
-                : GameStrings.notificationCaptureEmptyTitle,
-            body: wasEnemyTile
-                ? GameStrings.notificationCaptureEnemyBody
-                : GameStrings.notificationCaptureEmptyBody,
+            title: GameStrings.notificationCaptureEmptyTitle,
+            body: GameStrings.notificationCaptureEmptyBody,
           );
         }
         syncGoldWithServer();
         notifyListeners();
       },
+      onPreCapture: _persistGoldToServer,
       onStateChanged: notifyListeners,
     );
     _init();
@@ -273,17 +278,21 @@ class GameProvider extends ChangeNotifier with WidgetsBindingObserver {
 
   /// 사용자 인증 관리 프로바이더([AuthProvider])를 설정하고 로그인 세션 여부에 따라 골드 생산 타이머를 가동/종료합니다.
   void setAuthProvider(AuthProvider auth) {
-    if (_authProvider != auth) {
-      _authProvider = auth;
-      if (auth.isAuthenticated) {
+    final oldProfile = _authProvider?.profile;
+    _authProvider = auth;
+    
+    if (auth.isAuthenticated) {
+      // 1. 프로필이 null이었다가 최초 로드(비동기 완료)된 시점
+      // 2. 혹은 골드 타이머가 실행 중이지 않은 상태일 때 동기화 트리거
+      if ((oldProfile == null && auth.profile != null) || (_goldTimer == null || !_goldTimer!.isActive)) {
         syncGoldWithServer();
-      } else {
-        _goldTimer?.cancel();
-        _goldTimer = null;
-        _currentGold = 0.0;
       }
-      notifyListeners();
+    } else {
+      _goldTimer?.cancel();
+      _goldTimer = null;
+      _currentGold = 0.0;
     }
+    notifyListeners();
   }
 
   /// 프로바이더의 비동기 초기 데이터 설정 및 로드가 완전히 완료되었는지 감시할 수 있는 Future 객체
@@ -686,9 +695,24 @@ class GameProvider extends ChangeNotifier with WidgetsBindingObserver {
   }
 
   /// 위성 스캔 화면 상에서 조준점으로 지정할 대상 헥사곤 타일을 선택 조준합니다.
+  /// 이미 선택된 타일을 다시 선택하는 경우 조준을 해제합니다.
   void selectScanTile(String tileId) {
     if (!_isScanMode) return;
-    _selectedScanTileId = tileId;
+    if (_selectedScanTileId == tileId) {
+      _selectedScanTileId = null;
+      _selectedScanTileLatLng = null;
+    } else {
+      _selectedScanTileId = tileId;
+      // tileId 형식: 'hex_q_r'
+      final parts = tileId.split('_');
+      if (parts.length == 3) {
+        final q = int.tryParse(parts[1]);
+        final r = int.tryParse(parts[2]);
+        if (q != null && r != null) {
+          _selectedScanTileLatLng = HexService.hexToLatLng(q, r);
+        }
+      }
+    }
     notifyListeners();
   }
 
@@ -821,6 +845,13 @@ class GameProvider extends ChangeNotifier with WidgetsBindingObserver {
 
     // 거리에 비례하여 점령 소요 시간 계산 (1타일당 1초)
     final dist = HexService.hexDistance(bq, br, tq, tr);
+
+    // 위성 점령 소모 재화 부족 검증 (거리가 D이면 D GP 소모)
+    if (_currentGold < dist) {
+      addAlert('위성 점령 재화가 부족합니다 (필요: $dist GP / 보유: ${_currentGold.toInt()} GP)', AlertType.error);
+      return;
+    }
+
     final seconds = (dist * GameConfig.satelliteCaptureSecondsPerTile).round();
     final duration = Duration(seconds: seconds < 1 ? 1 : seconds);
 
@@ -899,6 +930,9 @@ class GameProvider extends ChangeNotifier with WidgetsBindingObserver {
       captureCount: 1, // 위성 점령은 점령 카운트 1로 초기화 (또는 고정)
     );
 
+    // [신규] DB에 위성 점령 레코드를 쓰기 전에 현재까지 모은 실시간 로컬 골드를 DB에 선제 정산하여 증발 리셋 방지
+    await _persistGoldToServer();
+
     final success = await _supabase.captureTile(tile);
     if (success) {
       _lastSatelliteCaptureTime = DateTime.now();
@@ -910,11 +944,35 @@ class GameProvider extends ChangeNotifier with WidgetsBindingObserver {
         debugPrint('SharedPreferences 쿨타임 저장 실패: $e');
       }
 
+      // 위성 점령에 소모된 거리 비례 골드 차감 및 last_gold_updated_at 동기화
+      try {
+        final profile = _authProvider?.profile;
+        if (profile != null) {
+          final mainBaseId = profile.mainBaseTileId;
+          if (mainBaseId != null && mainBaseId.isNotEmpty) {
+            final partsBase = mainBaseId.split('_');
+            final bq = int.tryParse(partsBase[1]) ?? 0;
+            final br = int.tryParse(partsBase[2]) ?? 0;
+            final dist = HexService.hexDistance(bq, br, q, r);
+            // [중요] 백엔드의 구형 profile.gold가 아닌 온전히 실시간 축적분이 담긴 최신 _currentGold 기준으로 거리 차감 진행
+            final newGold = (_currentGold - dist).clamp(0.0, double.infinity);
+            
+            await _supabase.client.from('profiles').update({
+              'gold': newGold,
+              'last_gold_updated_at': DateTime.now().toUtc().toIso8601String()
+            }).eq('id', myId);
+          }
+        }
+      } catch (e) {
+        debugPrint('⚠️ 위성 점령 재화 차감 중 오류 발생: $e');
+      }
+
       _capturedTiles[tileId] = tile;
       addAlert(GameStrings.satelliteCaptureSuccess, AlertType.success);
       await syncGoldWithServer();
     } else {
-      addAlert(GameStrings.satelliteCaptureFail, AlertType.error);
+      final errMsg = _supabase.lastError != null ? ': ${_supabase.lastError}' : '';
+      addAlert('${GameStrings.satelliteCaptureFail}$errMsg', AlertType.error);
     }
 
     _isSavingSatellite = false;
@@ -931,20 +989,62 @@ class GameProvider extends ChangeNotifier with WidgetsBindingObserver {
       if (_authProvider?.isAuthenticated == true) {
         syncGoldWithServer();
       }
+    } else if (state == AppLifecycleState.paused || state == AppLifecycleState.inactive) {
+      // [신규] 사용자가 홈 화면으로 나가거나 앱을 끌 때 즉시 모인 실시간 재화를 DB에 저장하여 증발 유실 완벽 차단
+      if (_authProvider?.isAuthenticated == true) {
+        _persistGoldToServer();
+      }
+    }
+  }
+
+  /// 현재 실시간으로 연산된 _currentGold 수치와 실시간 타임스탬프를 서버 백엔드 DB에 영속화(Persist)합니다.
+  Future<void> _persistGoldToServer() async {
+    final auth = _authProvider;
+    if (auth == null || !auth.isAuthenticated || auth.profile == null) return;
+
+    try {
+      final profile = auth.profile!;
+      final now = DateTime.now().toUtc();
+      
+      await _supabase.client.from('profiles').update({
+        'gold': _currentGold,
+        'last_gold_updated_at': now.toIso8601String(),
+      }).eq('id', profile.id);
+
+      await auth.refreshProfile();
+    } catch (e) {
+      debugPrint('❌ 골드 정밀 서버 영속화 실패: $e');
     }
   }
 
   /// 1초 주기로 요원의 점령 영토 개수와 골드 획득 배율에 따라 골드를 획득하여 상태를 누적합니다.
+  /// 1시간에 타일당 1 GP가 쌓이도록 3600초 단위로 정밀하게 분할하여 실시간 증가를 유도합니다.
   void _startGoldTimer() {
     _goldTimer?.cancel();
-    _goldTimer = Timer.periodic(const Duration(seconds: 1), (timer) {
+    _syncCounter = 0;
+    _goldTimer = Timer.periodic(const Duration(seconds: 1), (timer) async {
       final auth = _authProvider;
       if (auth == null || !auth.isAuthenticated || auth.profile == null) {
         timer.cancel();
         return;
       }
-      _currentGold += auth.profile!.capturedTilesCount * _goldRate;
+      final profile = auth.profile!;
+      final now = DateTime.now().toUtc();
+      final lastUpdated = profile.lastGoldUpdatedAt ?? now;
+      final diffSeconds = now.difference(lastUpdated).inSeconds;
+      final elapsed = diffSeconds > 0 ? diffSeconds : 0;
+
+      // 시간당 1 GP를 3600초로 나누어 매초 정밀하게 소수점 단위 가산
+      final double earnedGold = elapsed * profile.capturedTilesCount * (_goldRate / 3600.0);
+      _currentGold = profile.gold + earnedGold;
       notifyListeners();
+
+      // 성능 보존을 위해 매 10초마다 자동으로 서버 백엔드에 정밀 영속화 수행
+      _syncCounter++;
+      if (_syncCounter >= 10) {
+        _syncCounter = 0;
+        await _persistGoldToServer();
+      }
     });
   }
 
@@ -964,9 +1064,24 @@ class GameProvider extends ChangeNotifier with WidgetsBindingObserver {
         final lastUpdated = profile.lastGoldUpdatedAt ?? now;
         final diffSeconds = now.difference(lastUpdated).inSeconds;
         final elapsed = diffSeconds > 0 ? diffSeconds : 0;
-        final offlineGold = elapsed * profile.capturedTilesCount * _goldRate;
+        
+        // 오프라인 동안 쌓인 골드를 정밀하게 소수점 단위로 가산
+        final double offlineGold = elapsed * profile.capturedTilesCount * (_goldRate / 3600.0);
 
-        _currentGold = profile.gold + offlineGold;
+        if (offlineGold > 0.0) {
+          final newGold = profile.gold + offlineGold;
+          // 오프라인 획득 골드를 즉시 서버 DB에 정밀 영속화
+          await _supabase.client.from('profiles').update({
+            'gold': newGold,
+            'last_gold_updated_at': now.toIso8601String(),
+          }).eq('id', profile.id);
+          
+          // 로컬 프로필도 다시 갱신하여 정합성 유지
+          await auth.refreshProfile();
+        }
+
+        final updatedProfile = auth.profile ?? profile;
+        _currentGold = updatedProfile.gold.toDouble();
 
         if (_goldTimer == null || !_goldTimer!.isActive) {
           _startGoldTimer();

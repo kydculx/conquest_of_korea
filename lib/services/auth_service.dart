@@ -214,7 +214,7 @@ class AuthService {
 
   /// 사용자 프로필 정보를 업데이트하고 기 점령 영토의 타일 컬러도 동일 색상으로 동기화 갱신합니다.
   Future<void> updateProfile(UserProfile profile) async {
-    await _client.from('profiles').upsert(profile.toJson());
+    await _client.from('profiles').upsert(profile.toUpdateJson());
 
     try {
       await _client

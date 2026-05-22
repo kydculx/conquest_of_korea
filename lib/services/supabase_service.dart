@@ -6,6 +6,9 @@ import '../models/tile_model.dart';
 
 /// Supabase 백엔드 데이터베이스 및 Realtime 데이터 처리를 담당하는 네트워크 통신 서비스 클래스
 class SupabaseService {
+  /// 마지막으로 발생한 RPC 또는 데이터베이스 에러 메시지
+  String? lastError;
+
   /// Supabase SDK 초기화 및 접속 정보 설정을 처리합니다.
   static Future<void> initialize() async {
     try {
@@ -23,6 +26,7 @@ class SupabaseService {
 
   /// Supabase SDK 클라이언트 인스턴스 게터
   SupabaseClient get _client => Supabase.instance.client;
+  SupabaseClient get client => _client;
 
   /// 데이터베이스에 저장된 모든 점령 완료 타일 목록을 비동기 조회하여 반환합니다.
   Future<List<HexTile>> fetchAllCapturedTiles() async {
@@ -43,12 +47,10 @@ class SupabaseService {
         .map((list) => list.map(HexTile.fromJson).toList());
   }
 
-  /// 원자적 안전 RPC 함수 `safe_capture_tile`를 호출하여 서버 측에서 소유권 검증 및 타일 점령 처리를 실행합니다.
   Future<bool> captureTile(HexTile tile) async {
     try {
-      debugPrint('🏹 RPC 점령 안전 트랜잭션 전송 중: ${tile.id}');
-      
-      final response = await _client.rpc('safe_capture_tile', params: {
+      lastError = null;
+      final params = {
         'p_tile_id': tile.id,
         'p_q': tile.q,
         'p_r': tile.r,
@@ -57,12 +59,17 @@ class SupabaseService {
         'p_bounds': tile.bounds,
         'p_target_capture_count': tile.captureCount,
         'p_shield_duration_seconds': GameConfig.tileShieldDurationSeconds,
-      });
+      };
+      debugPrint('🏹 RPC 점령 안전 트랜잭션 전송 중: ${tile.id}, 파라미터: $params');
+      
+      final response = await _client.rpc('safe_capture_tile', params: params);
 
       debugPrint('🚀 RPC 트랜잭션 처리 결과: $response');
       return response as bool;
-    } catch (e) {
+    } catch (e, stack) {
+      lastError = e.toString();
       debugPrint('❌ RPC 점령 전송 실패: $e');
+      debugPrint('❌ 에러 스택트레이스: $stack');
       return false;
     }
   }

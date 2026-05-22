@@ -57,6 +57,12 @@ create policy "Authenticated users can update captured tiles."
   on captured_tiles for update
   using ( auth.role() = 'authenticated' );
 
+-- [신규] 구버전 충돌 방지를 위한 안전한 DROP 구문 선언
+DROP FUNCTION IF EXISTS public.safe_capture_tile(text, int, int, text, text, jsonb, int, int);
+DROP FUNCTION IF EXISTS public.safe_capture_tile(text, int, int, uuid, text, jsonb, int, int);
+DROP FUNCTION IF EXISTS public.sync_user_gold_and_count(uuid, int);
+DROP FUNCTION IF EXISTS public.on_captured_tile_change();
+
 -- [신규] 동시 점령 경합 및 쉴드 선점 제어를 위한 원자적 저장 프로시저(RPC) 정의
 CREATE OR REPLACE FUNCTION safe_capture_tile(
   p_tile_id text,
@@ -67,7 +73,10 @@ CREATE OR REPLACE FUNCTION safe_capture_tile(
   p_bounds jsonb,
   p_target_capture_count int,
   p_shield_duration_seconds int
-) RETURNS boolean AS $$
+) RETURNS boolean
+  SECURITY DEFINER
+  SET search_path = public
+AS $$
 DECLARE
   v_captured_at timestamptz;
   v_current_owner uuid;
@@ -97,3 +106,125 @@ BEGIN
   RETURN true;
 END;
 $$ LANGUAGE plpgsql;
+
+-- [신규] 골드 획득율(gold_rate) 및 점령 타일 수 기준 골드 및 개수 동기화 펑션
+CREATE OR REPLACE FUNCTION public.sync_user_gold_and_count(
+  p_user_id uuid,
+  p_count_delta int
+) RETURNS void
+  SECURITY DEFINER
+  SET search_path = public
+AS $$
+DECLARE
+  v_gold_rate numeric;
+  v_last_updated timestamptz;
+  v_current_count int;
+  v_current_gold numeric;
+  v_seconds_diff double precision;
+  v_earned_gold numeric;
+BEGIN
+  -- 1. 골드 획득 배율 획득 (system_settings 테이블 기준, 없으면 1.0)
+  BEGIN
+    SELECT COALESCE(value::numeric, 1.0) INTO v_gold_rate
+    FROM public.system_settings
+    WHERE key = 'gold_rate';
+  EXCEPTION WHEN OTHERS THEN
+    v_gold_rate := 1.0;
+  END;
+  IF v_gold_rate IS NULL THEN
+    v_gold_rate := 1.0;
+  END IF;
+
+  -- 2. 해당 유저 프로필 조회 및 Row Lock
+  SELECT last_gold_updated_at, captured_tiles_count, gold 
+  INTO v_last_updated, v_current_count, v_current_gold
+  FROM public.profiles
+  WHERE id = p_user_id
+  FOR UPDATE;
+
+  IF FOUND THEN
+    -- 3. 오프라인 골드 적립 계산 (마지막 갱신 시각 기준)
+    IF v_last_updated IS NULL THEN
+      v_last_updated := now();
+    END IF;
+    
+    v_seconds_diff := EXTRACT(EPOCH FROM (now() - v_last_updated));
+    IF v_seconds_diff < 0 THEN
+      v_seconds_diff := 0;
+    END IF;
+
+    v_earned_gold := FLOOR(v_seconds_diff::numeric / 3600.0) * v_current_count * v_gold_rate;
+
+    -- 4. 골드 및 타일 개수 갱신 (개수는 최소 0 보장, 골드는 정수로 가산)
+    UPDATE public.profiles
+    SET gold = FLOOR(gold + v_earned_gold),
+        captured_tiles_count = GREATEST(0, captured_tiles_count + p_count_delta),
+        last_gold_updated_at = now()
+    WHERE id = p_user_id;
+  END IF;
+END;
+$$ LANGUAGE plpgsql;
+
+-- [신규] captured_tiles 테이블 변경 시 호출될 트리거 펑션
+CREATE OR REPLACE FUNCTION public.on_captured_tile_change()
+RETURNS TRIGGER
+  SECURITY DEFINER
+  SET search_path = public
+AS $$
+BEGIN
+  -- INSERT (새 점령)
+  IF (TG_OP = 'INSERT') THEN
+    IF NEW.user_id IS NOT NULL THEN
+      PERFORM public.sync_user_gold_and_count(NEW.user_id, 1);
+    END IF;
+    RETURN NEW;
+
+  -- UPDATE (소유자 변경)
+  ELSIF (TG_OP = 'UPDATE') THEN
+    IF OLD.user_id IS DISTINCT FROM NEW.user_id THEN
+      -- 이전 소유자 타일 수 감소 및 골드 정산
+      IF OLD.user_id IS NOT NULL THEN
+        PERFORM public.sync_user_gold_and_count(OLD.user_id, -1);
+      END IF;
+      -- 새 소유자 타일 수 증가 및 골드 정산
+      IF NEW.user_id IS NOT NULL THEN
+        PERFORM public.sync_user_gold_and_count(NEW.user_id, 1);
+      END IF;
+    END IF;
+    RETURN NEW;
+
+  -- DELETE (점령 취소/삭제)
+  ELSIF (TG_OP = 'DELETE') THEN
+    IF OLD.user_id IS NOT NULL THEN
+      PERFORM public.sync_user_gold_and_count(OLD.user_id, -1);
+    END IF;
+    RETURN OLD;
+  END IF;
+  
+  RETURN NULL;
+END;
+$$ LANGUAGE plpgsql;
+
+-- [신규] 트리거 생성
+DROP TRIGGER IF EXISTS trg_captured_tile_change ON public.captured_tiles;
+DROP TRIGGER IF EXISTS on_captured_tile_change ON public.captured_tiles;
+DROP TRIGGER IF EXISTS captured_tiles_trigger ON public.captured_tiles;
+DROP TRIGGER IF EXISTS sync_gold_trigger ON public.profiles;
+
+CREATE TRIGGER trg_captured_tile_change
+  AFTER INSERT OR UPDATE OR DELETE ON public.captured_tiles
+  FOR EACH ROW
+  EXECUTE FUNCTION public.on_captured_tile_change();
+
+-- [신규] 기존 데이터 정합성을 위한 초기 1회성 마이그레이션 쿼리
+-- 1. 기존의 소수점 골드 데이터를 소수점을 완전히 뗀 정수(FLOOR) 형태로 일괄 보정
+UPDATE public.profiles
+SET gold = FLOOR(gold);
+
+-- 2. 점령한 타일 개수 동기화
+UPDATE public.profiles p
+SET captured_tiles_count = COALESCE((
+  SELECT COUNT(*) 
+  FROM public.captured_tiles c 
+  WHERE c.user_id = p.id
+), 0);
