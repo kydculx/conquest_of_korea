@@ -71,9 +71,11 @@ void main() async {
           ChangeNotifierProvider(create: (_) => AuthProvider()),
 
           // Location Provider — GPS + 나침반 상태
-          ChangeNotifierProxyProvider<GeoService, LocationProvider>(
+          ChangeNotifierProxyProvider2<GeoService, AuthProvider, LocationProvider>(
             create: (_) => LocationProvider(),
-            update: (_, geo, loc) => loc!..setGeoService(geo),
+            update: (_, geo, auth, loc) => loc!
+              ..setGeoService(geo)
+              ..setAuthProvider(auth),
           ),
 
           // Game Provider — 게임 핵심 상태

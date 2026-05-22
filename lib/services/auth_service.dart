@@ -55,6 +55,8 @@ class AuthService {
           'color_hex': colorHex,
           // 'team_id': teamId, // DB 컬럼 부재로 임시 주석 처리
           'created_at': DateTime.now().toIso8601String(),
+          'total_distance': 0.0,
+          'daily_distance': 0.0,
         });
       } catch (e) {
         // 42501(권한 부족) 등의 오류는 이메일 인증 전이라 발생할 수 있음
@@ -255,5 +257,17 @@ class AuthService {
       // 사용자에게 설정을 요청하는 에러를 던질 수 있습니다.
       return true;
     }
+  }
+
+  /// 프로필 거리 정보 업데이트
+  Future<void> updateProfileDistance(
+    String userId,
+    double totalDistance,
+    double dailyDistance,
+  ) async {
+    await _client.from('profiles').update({
+      'total_distance': totalDistance,
+      'daily_distance': dailyDistance,
+    }).eq('id', userId);
   }
 }

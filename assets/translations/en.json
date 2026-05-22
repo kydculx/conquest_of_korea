@@ -172,5 +172,16 @@
   "satelliteAbortTitle": "[ SYSTEM // ABORT ]",
   "satelliteAbortConfirm": "Do you want to abort the ongoing satellite capture operation?\nCooldown will not be applied upon cancellation.",
   "satelliteKeepOperation": "Keep Operation",
-  "satelliteCancelOperation": "Abort Operation"
+  "satelliteCancelOperation": "Abort Operation",
+  "operationMileage": "Operation Mileage",
+  "dailyDistance": "Daily Distance",
+  "totalDistance": "Total Distance",
+  "gpsDistToday": "TODAY DIST",
+  "satScanActive": "Satellite scan active. Aim at a tile.",
+  "satCapturingAttempt": "Attempting to capture tactical satellite channel...",
+  "satCooltimeWaitingLabel": "Waiting for satellite recharge",
+  "satDisconnectedLabel": "No HQ or captured territory connection (Cannot capture)",
+  "satLockOnReady": "Satellite lock-on complete. Waiting for data transfer.",
+  "satAlreadyCapturedLabel": "This area is already captured.",
+  "captureExecute": "EXECUTE CAPTURE"
 }

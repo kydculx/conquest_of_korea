@@ -172,5 +172,16 @@
   "satelliteAbortTitle": "[ SYSTEM // ABORT ]",
   "satelliteAbortConfirm": "진행 중인 위성 점령 작전을 중단하시겠습니까?\n취소 시 쿨타임은 적용되지 않습니다.",
   "satelliteKeepOperation": "작전 유지",
-  "satelliteCancelOperation": "작전 취소"
+  "satelliteCancelOperation": "작전 취소",
+  "operationMileage": "작전 수행 거리",
+  "dailyDistance": "당일 작전 거리",
+  "totalDistance": "누적 작전 거리",
+  "gpsDistToday": "당일 거리",
+  "satScanActive": "위성 스캔 활성화됨. 타일을 조준하십시오.",
+  "satCapturingAttempt": "전술 위성 채널 점령 시도 중...",
+  "satCooltimeWaitingLabel": "위성 재충전 대기 중",
+  "satDisconnectedLabel": "메인 기지 및 점령지 미연결 (점령 불가)",
+  "satLockOnReady": "위성 락온 완료. 데이터 전송 대기.",
+  "satAlreadyCapturedLabel": "이미 점령된 구역입니다.",
+  "captureExecute": "점령 실행"
 }

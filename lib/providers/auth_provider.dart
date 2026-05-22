@@ -225,6 +225,25 @@ class AuthProvider extends ChangeNotifier {
     }
   }
 
+  /// 프로필 거리 정보 업데이트 및 로컬 상태 동기화
+  Future<void> updateProfileDistance(double totalDistance, double dailyDistance) async {
+    if (_profile == null) return;
+    try {
+      await _authService.updateProfileDistance(
+        _profile!.id,
+        totalDistance,
+        dailyDistance,
+      );
+      _profile = _profile!.copyWith(
+        totalDistance: totalDistance,
+        dailyDistance: dailyDistance,
+      );
+      notifyListeners();
+    } catch (e) {
+      debugPrint('❌ 프로필 거리 서버 동기화 실패: $e');
+    }
+  }
+
   /// 닉네임 중복 체크
   Future<bool> isNicknameAvailable(String nickname) async {
     return await _authService.isNicknameAvailable(nickname);

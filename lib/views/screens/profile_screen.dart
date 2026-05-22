@@ -172,7 +172,10 @@ class ProfileScreen extends StatelessWidget {
                 ),
               ),
 
-              const SizedBox(height: 32),
+              const SizedBox(height: 16),
+              _buildMileageCard(context),
+
+              const SizedBox(height: 24),
               Text(
                 GameStrings.operationSettings,
                 style: TextStyle(
@@ -257,6 +260,121 @@ class ProfileScreen extends StatelessWidget {
             ],
           ),
         ),
+      ),
+    );
+  }
+
+  Widget _buildMileageCard(BuildContext context) {
+    final loc = context.watch<LocationProvider>();
+    final daily = loc.dailyDistance;
+    final total = loc.totalDistance;
+
+    final String dailyText = daily < 1000.0
+        ? '${daily.toStringAsFixed(0)} m'
+        : '${(daily / 1000.0).toStringAsFixed(2)} km';
+
+    final String totalText = total < 1000.0
+        ? '${total.toStringAsFixed(0)} m'
+        : '${(total / 1000.0).toStringAsFixed(2)} km';
+
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(20),
+      decoration: ShapeDecoration(
+        color: GameColors.backgroundMedium.withValues(alpha: 0.65),
+        shape: BeveledRectangleBorder(
+          borderRadius: const BorderRadius.only(
+            topLeft: Radius.circular(12),
+            bottomRight: Radius.circular(12),
+          ),
+          side: BorderSide(
+            color: GameColors.dividerColor.withValues(alpha: 0.2),
+            width: 1.0,
+          ),
+        ),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Icon(
+                Icons.directions_run_rounded,
+                size: 16,
+                color: GameColors.accentNeon,
+              ),
+              const SizedBox(width: 6),
+              Text(
+                '[ ${GameStrings.operationMileage.toUpperCase()} ]',
+                style: TextStyle(
+                  color: GameColors.textPrimary,
+                  fontSize: 12,
+                  fontWeight: FontWeight.bold,
+                  letterSpacing: 1.0,
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 16),
+          Row(
+            children: [
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      GameStrings.dailyDistance,
+                      style: TextStyle(
+                        color: GameColors.textMuted,
+                        fontSize: 11,
+                      ),
+                    ),
+                    const SizedBox(height: 4),
+                    Text(
+                      dailyText,
+                      style: TextStyle(
+                        color: GameColors.accentNeon,
+                        fontSize: 18,
+                        fontWeight: FontWeight.bold,
+                        fontFamily: 'monospace',
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              Container(
+                width: 1,
+                height: 35,
+                color: GameColors.dividerColor.withValues(alpha: 0.15),
+              ),
+              const SizedBox(width: 20),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      GameStrings.totalDistance,
+                      style: TextStyle(
+                        color: GameColors.textMuted,
+                        fontSize: 11,
+                      ),
+                    ),
+                    const SizedBox(height: 4),
+                    Text(
+                      totalText,
+                      style: TextStyle(
+                        color: GameColors.textPrimary,
+                        fontSize: 18,
+                        fontWeight: FontWeight.bold,
+                        fontFamily: 'monospace',
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+        ],
       ),
     );
   }

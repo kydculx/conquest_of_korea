@@ -111,8 +111,6 @@ class GameStrings {
   static String get gpsReset => 'gpsReset'.tr();
   static String get auto => 'auto'.tr();
   static String get manual => 'manual'.tr();
-  static const String startCaptureModeKo = '점령시작';
-  static const String stopCaptureModeKo = '점령정지';
   static String get startCaptureMode => 'startCaptureMode'.tr();
   static String get stopCaptureMode => 'stopCaptureMode'.tr();
   static String get cannotCapture => 'cannotCapture'.tr();
@@ -216,4 +214,17 @@ class GameStrings {
   static String get satelliteAbortConfirm => 'satelliteAbortConfirm'.tr();
   static String get satelliteKeepOperation => 'satelliteKeepOperation'.tr();
   static String get satelliteCancelOperation => 'satelliteCancelOperation'.tr();
+
+  static String get operationMileage => 'operationMileage'.tr();
+  static String get dailyDistance => 'dailyDistance'.tr();
+  static String get totalDistance => 'totalDistance'.tr();
+  static String get gpsDistToday => 'gpsDistToday'.tr();
+
+  static String get satScanActive => 'satScanActive'.tr();
+  static String get satCapturingAttempt => 'satCapturingAttempt'.tr();
+  static String get satCooltimeWaitingLabel => 'satCooltimeWaitingLabel'.tr();
+  static String get satDisconnectedLabel => 'satDisconnectedLabel'.tr();
+  static String get satLockOnReady => 'satLockOnReady'.tr();
+  static String get satAlreadyCapturedLabel => 'satAlreadyCapturedLabel'.tr();
+  static String get captureExecute => 'captureExecute'.tr();
 }

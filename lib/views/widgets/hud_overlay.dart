@@ -6,6 +6,7 @@ import '../../core/constants.dart';
 import '../../core/constants/strings.dart';
 import '../../providers/game_provider.dart';
 import '../../providers/auth_provider.dart';
+import '../../providers/location_provider.dart';
 import '../../services/hex_service.dart';
 import 'tactical_compass.dart';
 
@@ -29,11 +30,19 @@ class HudOverlay extends StatelessWidget {
         if (auth.isAuthenticated && game.isScanMode)
           const _SatelliteScanFullscreenOverlay(),
 
-        // 상단 좌측 나침반 버튼
-        const Positioned(
+        // 상단 좌측 컨트롤 (나침반 & 당일 작전 거리 HUD)
+        Positioned(
           top: 60,
           left: 20,
-          child: TacticalCompass(),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              const TacticalCompass(),
+              const SizedBox(height: 10),
+              if (auth.isAuthenticated) const _OperationDistanceHud(),
+            ],
+          ),
         ),
 
         // 상단 우측 컨트롤 영역 (프로필 & 위성 스캔 모드 토글)
@@ -276,7 +285,7 @@ class _StartStopCaptureButtonState extends State<_StartStopCaptureButton> {
                     ),
                     const SizedBox(height: 1),
                     Text(
-                       isRunning ? GameStrings.stopCaptureModeKo : GameStrings.startCaptureModeKo,
+                      isRunning ? GameStrings.stopCaptureMode : GameStrings.startCaptureMode,
                       style: const TextStyle(
                         color: Color(0xFF0A1616),
                         fontSize: 12.5,
@@ -386,14 +395,14 @@ class _SatelliteCapturePanelState extends State<_SatelliteCapturePanel> {
     Color themeColor = GameColors.accentNeon;
     bool isError = false;
     bool isCooltime = false;
-    String detailsText = '위성 스캔 활성화됨. 타일을 조준하십시오.';
+    String detailsText = GameStrings.satScanActive;
     String? distanceStr;
     String? timeStr;
 
     if (isCapturing) {
       final remainingSec = game.remainingSatelliteCaptureSeconds;
       themeColor = GameColors.accentNeon;
-      detailsText = '전술 위성 채널 점령 시도 중...';
+      detailsText = GameStrings.satCapturingAttempt;
       timeStr = '$remainingSec초';
     } else if (selectedId != null) {
       final existingTile = game.capturedTiles[selectedId];
@@ -409,16 +418,16 @@ class _SatelliteCapturePanelState extends State<_SatelliteCapturePanel> {
           final timeVal = '${minutes.toString().padLeft(2, '0')}:${seconds.toString().padLeft(2, '0')}';
           themeColor = const Color(0xFFFF9900);
           isCooltime = true;
-          detailsText = '위성 재충전 대기 중';
+          detailsText = GameStrings.satCooltimeWaitingLabel;
           timeStr = timeVal;
         } else if (!isConnected) {
           themeColor = GameColors.error;
           isError = true;
-          detailsText = '메인 기지 및 점령지 미연결 (점령 불가)';
+          detailsText = GameStrings.satDisconnectedLabel;
         } else {
           final durationSec = game.getSatelliteCaptureDurationSeconds(selectedId);
           themeColor = GameColors.accentNeon;
-          detailsText = '위성 락온 완료. 데이터 전송 대기.';
+          detailsText = GameStrings.satLockOnReady;
 
           final mainBaseId = auth.profile?.mainBaseTileId;
           if (mainBaseId != null && mainBaseId.isNotEmpty) {
@@ -436,7 +445,7 @@ class _SatelliteCapturePanelState extends State<_SatelliteCapturePanel> {
       } else {
         themeColor = GameColors.error;
         isError = true;
-        detailsText = '이미 점령된 구역입니다.';
+        detailsText = GameStrings.satAlreadyCapturedLabel;
       }
     }
 
@@ -621,7 +630,7 @@ class _SatelliteCaptureActionButton extends StatelessWidget {
 
     if (isCapturing) {
       showButton = true;
-      buttonText = '취소';
+      buttonText = GameStrings.cancel;
       buttonColor = GameColors.error;
       onPressed = () => game.cancelSatelliteCapture();
     } else if (selectedId != null) {
@@ -634,7 +643,7 @@ class _SatelliteCaptureActionButton extends StatelessWidget {
 
         if (satCooltime <= 0 && isConnected) {
           showButton = true;
-          buttonText = '점령 실행';
+          buttonText = GameStrings.captureExecute;
           buttonColor = GameColors.accentNeon;
           onPressed = () => game.executeSatelliteCapture(selectedId);
         }
@@ -666,6 +675,71 @@ class _SatelliteCaptureActionButton extends StatelessWidget {
             fontSize: 14,
             fontWeight: FontWeight.bold,
             letterSpacing: 1.0,
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _OperationDistanceHud extends StatelessWidget {
+  const _OperationDistanceHud();
+
+  @override
+  Widget build(BuildContext context) {
+    final loc = context.watch<LocationProvider>();
+    final double dist = loc.dailyDistance;
+
+    // 미터 혹은 킬로미터 포맷팅
+    final String formattedDist = dist < 1000.0
+        ? '${dist.toStringAsFixed(0)} m'
+        : '${(dist / 1000.0).toStringAsFixed(2)} km';
+
+    return ClipPath(
+      clipper: ShapeBorderClipper(
+        shape: BeveledRectangleBorder(
+          borderRadius: BorderRadius.circular(4),
+        ),
+      ),
+      child: BackdropFilter(
+        filter: ImageFilter.blur(sigmaX: 5, sigmaY: 5),
+        child: Container(
+          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+          decoration: ShapeDecoration(
+            color: GameColors.backgroundMedium.withValues(alpha: 0.7),
+            shape: BeveledRectangleBorder(
+              borderRadius: BorderRadius.circular(4),
+              side: BorderSide(
+                color: GameColors.accentNeon.withValues(alpha: 0.35),
+                width: 1.0,
+              ),
+            ),
+          ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Text(
+                '[ ${GameStrings.gpsDistToday} ]',
+                style: TextStyle(
+                  color: GameColors.textSecondary,
+                  fontSize: 9,
+                  fontWeight: FontWeight.w800,
+                  fontFamily: 'monospace',
+                  letterSpacing: 0.5,
+                ),
+              ),
+              const SizedBox(height: 2),
+              Text(
+                formattedDist,
+                style: TextStyle(
+                  color: GameColors.accentNeon,
+                  fontSize: 12,
+                  fontWeight: FontWeight.bold,
+                  fontFamily: 'monospace',
+                ),
+              ),
+            ],
           ),
         ),
       ),
