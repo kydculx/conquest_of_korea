@@ -6,25 +6,39 @@ import '../services/auth_service.dart';
 import '../services/notification_service.dart';
 import '../models/user_profile.dart';
 
+/// 사용자 인증 상태와 프로필 데이터의 수명 주기를 관리하고 UI 레이어에 이벤트를 전파하는 인증 프로바이더 클래스
 class AuthProvider extends ChangeNotifier {
+  /// 인증 업무 처리를 담당하는 내부 인증 서비스
   final AuthService _authService = AuthService();
+  /// 푸시 알림 Topic 구독 관리를 담당하는 내부 알림 서비스
   final NotificationService _notificationService = NotificationService();
   
+  /// Supabase Auth 세션의 현재 사용자 정보
   User? _user;
+  /// 사용자 정보 테이블(user_profiles)의 프로필 상세 모델
   UserProfile? _profile;
+  /// API 통신 및 데이터 처리 중 여부를 나타내는 로딩 상태값
   bool _isLoading = false;
+  /// 최근 발생한 에러 메시지
   String? _error;
 
+  /// 현재 로그인된 Supabase User 객체를 반환합니다.
   User? get user => _user;
+  /// 현재 사용자의 요원 프로필 상세 정보를 반환합니다.
   UserProfile? get profile => _profile;
+  /// 현재 작업이 진행 중(로딩)인지 여부를 반환합니다.
   bool get isLoading => _isLoading;
+  /// 가장 최근에 발생한 인증 관련 에러 메시지를 반환합니다.
   String? get error => _error;
+  /// 사용자가 로그인되어 세션이 활성화된 상태인지 여부를 반환합니다.
   bool get isAuthenticated => _user != null;
 
+  /// AuthProvider 생성자로, 앱 구동 시 내부 초기화 과정을 수행합니다.
   AuthProvider() {
     _init();
   }
 
+  /// 초기 사용자의 인증 정보 및 세션 변경 흐름을 모니터링하기 위한 리스너를 바인딩합니다.
   void _init() {
     _user = _authService.currentUser;
     if (_user != null) {
@@ -51,6 +65,7 @@ class AuthProvider extends ChangeNotifier {
     });
   }
 
+  /// 특정 사용자 ID를 기반으로 DB 프로필 정보를 로드하고 FCM 알림 토픽에 등록합니다.
   Future<void> _loadProfile(String userId) async {
     _setLoading(true);
     try {
@@ -262,6 +277,14 @@ class AuthProvider extends ChangeNotifier {
     return await _authService.isEmailAvailable(email);
   }
 
+  /// 프로필 정보를 서버로부터 강제로 다시 로드하여 동기화합니다.
+  Future<void> refreshProfile() async {
+    if (_user != null) {
+      await _loadProfile(_user!.id);
+    }
+  }
+
+  /// 내부 로딩 상태를 설정하고 리스너들에게 상태 변경을 알립니다.
   void _setLoading(bool value) {
     _isLoading = value;
     notifyListeners();

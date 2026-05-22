@@ -1,6 +1,6 @@
 import 'dart:math' as math;
 import 'package:flutter/material.dart';
-import '../../core/constants.dart';
+import '../../core/constants/colors.dart';
 import '../../core/constants/strings.dart';
 
 /// 게임 데이터 로딩 및 GPS 연결 대기 시 표시하는 전술적 로딩 화면

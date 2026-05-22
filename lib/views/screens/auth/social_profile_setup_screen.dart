@@ -1,12 +1,15 @@
 import 'dart:math';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import '../../../core/constants.dart';
+import '../../../core/constants/colors.dart';
 import '../../../core/constants/strings.dart';
 import '../../../core/utils/error_translator.dart';
 import '../../../providers/auth_provider.dart';
 
+/// 소셜 로그인을 성공적으로 마친 후, 서비스 내부에서 사용할 요원의 고유 닉네임과
+/// 지도에 표시할 전술 컬러를 최초로 구성 및 등록하는 프로필 설정 화면 클래스입니다.
 class SocialProfileSetupScreen extends StatefulWidget {
+  /// 소셜 프로필 설정 화면의 생성자입니다.
   const SocialProfileSetupScreen({super.key});
 
   @override
@@ -14,11 +17,21 @@ class SocialProfileSetupScreen extends StatefulWidget {
       _SocialProfileSetupScreenState();
 }
 
+/// [SocialProfileSetupScreen]의 상태 및 사용자 입력 로직을 관리하는 상태 클래스입니다.
 class _SocialProfileSetupScreenState extends State<SocialProfileSetupScreen> {
+  /// 요원의 고유 닉네임 입력을 처리하는 텍스트 컨트롤러입니다.
   final _nicknameController = TextEditingController();
+
+  /// 요원의 지도 렌더링에 매핑되는 고유 전술 색상입니다.
   Color _selectedColor = GameColors.accentNeon;
+
+  /// 사용자가 닉네임 중복 체크를 완료했는지 여부를 나타내는 플래그입니다.
   bool _isNicknameChecked = false;
+
+  /// 중복 확인 결과, 입력한 닉네임의 사용 가능 여부를 나타내는 플래그입니다.
   bool _isNicknameAvailable = false;
+
+  /// 현재 닉네임 중복 상태 API를 호출 중인지 나타내는 플래그입니다.
   bool _isChecking = false;
 
   @override
@@ -34,6 +47,7 @@ class _SocialProfileSetupScreenState extends State<SocialProfileSetupScreen> {
     });
   }
 
+  /// 요원의 전술 영역 구분을 위한 밝고 채도 높은 무작위 색상을 HSL 좌표계를 활용하여 생성합니다.
   void _generateRandomColor() {
     final random = Random();
     final double h = random.nextDouble() * 360;
@@ -51,6 +65,7 @@ class _SocialProfileSetupScreenState extends State<SocialProfileSetupScreen> {
     super.dispose();
   }
 
+  /// 사용자가 입력한 닉네임의 중복성 검사를 위해 서버 API(Supabase)를 비동기 호출합니다.
   Future<void> _checkNickname() async {
     final nickname = _nicknameController.text.trim();
     if (nickname.isEmpty) {
@@ -94,6 +109,7 @@ class _SocialProfileSetupScreenState extends State<SocialProfileSetupScreen> {
     }
   }
 
+  /// 닉네임 중복 확인 완료 후, 지정한 닉네임과 전술 색상 정보로 최종 프로필을 생성합니다.
   Future<void> _handleSave() async {
     final nickname = _nicknameController.text.trim();
     if (nickname.isEmpty) {

@@ -1,7 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:provider/provider.dart';
-import '../../../core/constants.dart';
+import '../../../core/constants/colors.dart';
+import '../../../core/constants/map_config.dart';
 import '../../../core/constants/strings.dart';
 import '../../../providers/auth_provider.dart';
 import '../../../providers/location_provider.dart';
@@ -10,19 +11,32 @@ import '../../../services/hex_service.dart';
 import '../../../core/utils/error_translator.dart';
 
 /// 메인 기지(HQ) 초기 설정 화면 (GPS 수신 기반)
+/// 요원의 실제 GPS 물리 위치를 식별하여, 게임 플레이의 시작점이 될
+/// 최초 본부 기지(HQ) 헥사곤 구역을 확인하고 설정하는 지도 화면 클래스입니다.
 class BaseSetupScreen extends StatefulWidget {
+  /// 본부 기지 설정 화면의 생성자입니다.
   const BaseSetupScreen({super.key});
 
   @override
   State<BaseSetupScreen> createState() => _BaseSetupScreenState();
 }
 
+/// [BaseSetupScreen]의 레이더 효과 애니메이션 및 서버 통신 처리 상태를 관리하는 상태 클래스입니다.
 class _BaseSetupScreenState extends State<BaseSetupScreen>
     with SingleTickerProviderStateMixin {
+  /// 지도 줌 및 카메라 포커싱을 제어하기 위한 지도 컨트롤러 캐시 객체입니다.
   final MapController _mapController = MapController();
+
+  /// GPS 조준 시각화 링의 펄스 효과를 제어하는 애니메이션 컨트롤러입니다.
   late AnimationController _pulseController;
+
+  /// 펄스 반경 스펙트럼(크기 변화)을 보간하는 애니메이션 객체입니다.
   late Animation<double> _pulseAnimation;
+
+  /// 서버에 본부 기지 설정 처리를 요청 중인 동안 로딩 상태를 보여주는 플래그입니다.
   bool _isSubmitting = false;
+
+  /// 최초 GPS 감지 후 지도의 포커스를 해당 위치로 1회 강제 이동시켰는지에 대한 상태 플래그입니다.
   bool _hasMovedToInitialLocation = false;
 
   @override
@@ -49,6 +63,7 @@ class _BaseSetupScreenState extends State<BaseSetupScreen>
     super.dispose();
   }
 
+  /// 사용자가 확인한 물리 헥사곤 타일 ID([tileId])를 요원의 공식 본부 기지(HQ)로 설정하도록 서버 API를 호출합니다.
   Future<void> _setupMainBase(String tileId) async {
     setState(() => _isSubmitting = true);
     try {
@@ -183,7 +198,7 @@ class _BaseSetupScreenState extends State<BaseSetupScreen>
     if (!_hasMovedToInitialLocation) {
       _hasMovedToInitialLocation = true;
       WidgetsBinding.instance.addPostFrameCallback((_) {
-        _mapController.move(currentLocation, GameConstants.focusZoom);
+        _mapController.move(currentLocation, MapConfig.focusZoom);
       });
     }
 
@@ -196,9 +211,9 @@ class _BaseSetupScreenState extends State<BaseSetupScreen>
             mapController: _mapController,
             options: MapOptions(
               initialCenter: currentLocation,
-              initialZoom: GameConstants.focusZoom,
-              minZoom: GameConstants.minZoom,
-              maxZoom: GameConstants.maxZoom,
+              initialZoom: MapConfig.focusZoom,
+              minZoom: MapConfig.minZoom,
+              maxZoom: MapConfig.maxZoom,
               interactionOptions: const InteractionOptions(
                 flags: InteractiveFlag.all & ~InteractiveFlag.rotate,
               ),

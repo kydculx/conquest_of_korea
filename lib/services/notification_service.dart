@@ -6,10 +6,13 @@ import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:app_badge_plus/app_badge_plus.dart';
 import '../core/constants/strings.dart';
 
-/// 푸시 알림 관리 서비스
+/// Firebase Cloud Messaging(FCM) 및 로컬 푸시 알림(FlutterLocalNotifications)을 총괄하여 처리하는 알림 관리 서비스 클래스
 class NotificationService {
   static final NotificationService _instance = NotificationService._internal();
+
+  /// NotificationService 싱글톤 인스턴스 팩토리 생성자
   factory NotificationService() => _instance;
+
   NotificationService._internal();
 
   FirebaseMessaging? _fcm;
@@ -17,8 +20,11 @@ class NotificationService {
       FlutterLocalNotificationsPlugin();
 
   bool _initialized = false;
+
+  /// 서비스 초기화 완료 여부를 반환합니다.
   bool get isInitialized => _initialized;
 
+  /// 안드로이드 OS 전용 알림 채널 정의 객체
   static final AndroidNotificationChannel _channel = AndroidNotificationChannel(
     'conquest_notifications',
     GameStrings.notificationChannelName,
@@ -26,14 +32,13 @@ class NotificationService {
     importance: Importance.max,
   );
 
-  /// 초기화
+  /// FCM 및 로컬 알림 플러그인을 활성화하고 채널 및 포그라운드 리스너를 초기 등록합니다.
   Future<void> initialize() async {
     if (_initialized) return;
 
     try {
       _fcm = FirebaseMessaging.instance;
 
-      // 1. 알림 권한 요청 (iOS/Android 13+)
       NotificationSettings? settings = await _fcm?.requestPermission(
         alert: true,
         badge: true,
@@ -44,18 +49,16 @@ class NotificationService {
         debugPrint('푸시 알림 권한 승인됨');
       }
 
-      // 2. 로컬 알림 채널 설정 (Android)
       await _localNotifications
           .resolvePlatformSpecificImplementation<
             AndroidFlutterLocalNotificationsPlugin
           >()
           ?.createNotificationChannel(_channel);
 
-      // 3. 로컬 알림 초기화
       const AndroidInitializationSettings androidSettings =
           AndroidInitializationSettings(
             '@mipmap/launcher_icon',
-          ); // 수정: 실제 아이콘 이름으로 변경
+          );
       const DarwinInitializationSettings iosSettings =
           DarwinInitializationSettings();
 
@@ -64,7 +67,6 @@ class NotificationService {
         iOS: iosSettings,
       );
 
-      // 안드로이드 13 이상을 위한 권한 요청 (Local Notifications 전용)
       if (defaultTargetPlatform == TargetPlatform.android) {
         await _localNotifications
             .resolvePlatformSpecificImplementation<
@@ -76,11 +78,10 @@ class NotificationService {
       await _localNotifications.initialize(
         settings: initSettings,
         onDidReceiveNotificationResponse: (details) {
-          // 알림 클릭 시 로직 (필요시 구현)
+          // 알림 클릭 시 로직
         },
       );
 
-      // 4. 포그라운드 메시지 핸들링
       FirebaseMessaging.onMessage.listen((RemoteMessage message) {
         RemoteNotification? notification = message.notification;
 
@@ -93,28 +94,24 @@ class NotificationService {
         }
       });
 
-      // 5. 백그라운드에서 앱 실행 시 메시지 핸들링
       FirebaseMessaging.onMessageOpenedApp.listen((RemoteMessage message) {
         debugPrint('백그라운드 알림 클릭됨: ${message.data}');
       });
 
-      // 6. 앱 실행 시 배지 카운트 초기화
       await _clearBadge();
 
       _initialized = true;
     } catch (e) {
       debugPrint('NotificationService 초기화 실패: $e');
-      // 초기화 실패 시에도 _initialized는 false로 남으므로 안전합니다.
     }
   }
 
-  /// 로컬 알림 직접 발송 (테스트 및 즉각적 피드백용)
+  /// 로컬 푸시 알림을 즉시 화면에 노출시킵니다.
   Future<void> showLocalNotification({
     required int id,
     required String title,
     required String body,
   }) async {
-    // 로컬 알림은 Firebase 없이도 작동 가능
     await _localNotifications.show(
       id: id,
       title: title,
@@ -136,18 +133,17 @@ class NotificationService {
     );
   }
 
-  /// FCM 토큰 가져오기 (서버 저장용)
+  /// 서버에 등록하여 개별 푸시 발송 시 사용할 FCM 토큰값을 반환합니다.
   Future<String?> getToken() async {
     if (!_initialized) return null;
     return await _fcm?.getToken();
   }
 
-  /// 특정 주제 구독 (예: 팀별 알림)
+  /// 특정 팀 채널 또는 관심사 채널을 구독 설정하여 단체 푸시를 수신하도록 합니다.
   Future<void> subscribeToTopic(String topic) async {
     if (!_initialized) return;
 
     try {
-      // iOS에서는 APNS 토큰이 있어야 구독 가능
       if (defaultTargetPlatform == TargetPlatform.iOS) {
         final apnsToken = await _fcm?.getAPNSToken();
         if (apnsToken == null) {
@@ -163,7 +159,7 @@ class NotificationService {
     }
   }
 
-  /// 특정 주제 구독 해제
+  /// 지정한 채널(토픽)의 단체 푸시 수신 구독을 해제합니다.
   Future<void> unsubscribeFromTopic(String topic) async {
     if (!_initialized) return;
 
@@ -180,15 +176,13 @@ class NotificationService {
     }
   }
 
-  /// 앱 아이콘의 배지 카운트 초기화 (0으로 설정)
+  /// 런처 아이콘 상의 미확인 배지 숫자를 0으로 리셋하고 현재 알림 목록을 클리어합니다.
   Future<void> _clearBadge() async {
     try {
       if (kIsWeb) return;
 
-      // 아이콘 배지 초기화 (app_badge_plus 사용)
       await AppBadgePlus.updateBadge(0);
 
-      // Android: 알림 센터의 모든 알림을 삭제 (런처 배지 함께 제거됨)
       await _localNotifications.cancelAll();
 
       debugPrint('✅ 앱 아이콘 배지 초기화 완료');
@@ -198,7 +192,7 @@ class NotificationService {
   }
 }
 
-/// 백그라운드 메시지 핸들러 (최상위 함수여야 함)
+/// 백그라운드 구동 상태에서 FCM 메시지를 수신했을 때 구동되는 최상위 백그라운드 핸들러 함수
 @pragma('vm:entry-point')
 Future<void> firebaseMessagingBackgroundHandler(RemoteMessage message) async {
   await Firebase.initializeApp();

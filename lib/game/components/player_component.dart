@@ -3,19 +3,27 @@ import 'dart:math' as math;
 import 'package:flame/components.dart';
 import 'package:flutter/material.dart';
 import 'package:latlong2/latlong.dart';
-import '../../core/constants.dart';
+import '../../core/constants/colors.dart';
+import '../../core/constants/map_config.dart';
 
-/// 플레이어의 현재 위치와 방향을 나타내는 전술 커서 컴포넌트
+/// 지도 상에서 요원의 물리 위치를 가리키며, 디바이스 나침반 센서 각도에 연동해 정밀 회전하고 펄싱 애니메이션을 연출하는 제트 전투기 스타일의 전술 커서 컴포넌트
 class PlayerComponent extends PositionComponent {
-  LatLng _location = GameConstants.defaultPosition;
+  /// 요원의 현재 실제 GPS 지리적 위치 좌표
+  LatLng _location = MapConfig.defaultPosition;
+  /// 요원의 현재 지리적 위치 좌표 반환
   LatLng get location => _location;
-  double _heading = 0.0; // 라디안 단위
-  bool isVisible = true; // 추가: 렌더링 활성화 상태 플래그
+  /// 나침반 센서로부터 계산된 요원의 주시 방향 각도 (라디안 단위)
+  double _heading = 0.0;
+  /// 플레이어 커서 컴포넌트의 가시성(화면 렌더링) 여부
+  bool isVisible = true;
   
   // 가독성 개선을 위한 애니메이션 변수
+  /// 펄스 애니메이션 계산용 시간 스케일 누적 값
   double _pulseTime = 0;
+  /// 주기적으로 가감되는 크기(Scale) 비율 변수
   double _pulseScale = 1.0;
 
+  /// PlayerComponent 생성자로 앵커를 중앙으로 고정합니다.
   PlayerComponent() : super(anchor: Anchor.center);
 
   @override
@@ -33,15 +41,18 @@ class PlayerComponent extends PositionComponent {
     _pulseScale = 1.0 + (math.sin(_pulseTime) * 0.08);
   }
 
+  /// 요원의 지리적 위치(LatLng)를 동기화합니다.
   void updateLocation(LatLng newLocation) {
     _location = newLocation;
   }
 
+  /// 나침반 각도(Degrees)를 기반으로 변환하여 요원의 방향(Heading)을 라디안 단위로 갱신합니다.
   void updateHeading(double degrees) {
     // 도(degree)를 라디안(radian)으로 변환
     _heading = degrees * (math.pi / 180.0);
   }
 
+  /// 화면 픽셀 좌표(Offset) 정보를 기반으로 컴포넌트의 Vector2 스크린 위치를 보정합니다.
   void updateScreenPosition(Offset offset) {
     position = Vector2(offset.dx, offset.dy);
   }

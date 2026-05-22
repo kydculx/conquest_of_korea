@@ -1,5 +1,5 @@
 import 'dart:async';
-import 'package:flutter/foundation.dart';
+import 'package:flutter/widgets.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../controllers/capture_controller.dart';
 import '../models/alert_model.dart';
@@ -9,62 +9,115 @@ import '../providers/auth_provider.dart';
 import '../services/hex_service.dart';
 import '../services/supabase_service.dart';
 import '../services/notification_service.dart';
-import '../core/constants.dart';
+import '../core/constants/game_config.dart';
+import '../core/constants/map_config.dart';
 import '../core/constants/strings.dart';
 
-/// 게임 핵심 상태 관리 Provider
-class GameProvider extends ChangeNotifier {
+/// 게임의 핵심 인게임 비즈니스 상태 및 점령 로직을 관리하고 UI에 변경을 전파하는 메인 프로바이더 클래스
+class GameProvider extends ChangeNotifier with WidgetsBindingObserver {
+  /// 로컬 저장소에 저장될 알림 설정 키
   static const String _notifKey = 'conquest_notifications_enabled';
+  /// 로컬 저장소에 저장될 지도 회전 설정 키
   static const String _rotationModeKey = 'conquest_map_rotation_enabled';
 
+  /// Supabase 데이터베이스 서비스 인스턴스
   final SupabaseService _supabase;
+  /// 영토 점령 과정을 제어하는 컨트롤러
   late final CaptureController _captureController;
+  /// 실시간 점령 타일 목록 스트림 구독 객체
   StreamSubscription<List<HexTile>>? _tilesStreamSub;
-  Timer? _backgroundPollingTimer; // 추가: 백그라운드 감시 타이머
+  /// 백그라운드 점령 및 침공 상태 정기 검사를 수행하는 타이머
+  Timer? _backgroundPollingTimer;
+  /// 초기화 완료 처리를 조율하는 Completer 객체
   final Completer<void> _initCompleter = Completer<void>();
 
   // --- 상태 ---
+  /// 점령된 타일 목록 (Key: 타일 ID, Value: 타일 상세 모델)
   final Map<String, HexTile> _capturedTiles = {};
+  /// 화면 상단에 표시될 전술 알림/경고 목록
   final List<GameAlert> _alerts = [];
+  /// 프로바이더 내부 데이터 초기화 완료 여부
   bool _isInitialized = false;
+  /// 자동 점령 모드 활성화 여부
   bool _isAutoCapture = false;
+  /// 현재 적용 중인 지도 스타일 인덱스
   int _currentMapStyleIndex = 0;
+  /// 알림 수신 동의 여부
   bool _isNotificationEnabled = true;
-  bool _isMapRotationMode = false; // 추가: 맵 회전(북쪽 고정) 여부
+  /// 지도 회전 모드(나침반 정렬) 사용 여부
+  bool _isMapRotationMode = false;
 
   // --- 위성 스캔 상태 ---
+  /// 위성 궤도 정밀 스캔 모드 활성화 여부
   bool _isScanMode = false;
+  /// 위성 스캔 조준 중인 대상 타일 ID
   String? _selectedScanTileId;
 
   // --- 위성 점령 상태 변수 ---
+  /// 현재 위성 점령을 시도 중인 대상 타일 ID
   String? _satelliteCapturingTileId;
+  /// 위성 점령 진행 진척도 (0.0 ~ 1.0)
   double _satelliteCaptureProgress = 0.0;
+  /// 위성 점령 주기 업데이트 타이머
   Timer? _satelliteCaptureTimer;
+  /// 위성 점령을 개시한 시작 일시
   DateTime? _satelliteCaptureStartTime;
+  /// 위성 점령 완료에 소요되는 총 시간
   Duration? _satelliteCaptureDuration;
+  /// 마지막으로 성공한 위성 점령 일시
   DateTime? _lastSatelliteCaptureTime;
+  /// 위성 점령 정보의 서버 저장 진행 여부
   bool _isSavingSatellite = false;
 
   // --- 위치 변경 감지 시 서버 부하 방지용 3초 딜레이 타이머 ---
+  /// 서버 부하 방지를 위해 마지막으로 위치 상태를 조정한 일시
   DateTime? _lastServerCheckTime;
 
+  // --- 재화(골드) 상태 변수 ---
+  /// 현재 보유 중인 골드 재화 잔액
+  double _currentGold = 0.0;
+  /// 초당 골드 생산율
+  double _goldRate = GameConfig.defaultGoldRate;
+  /// 주기적으로 골드 재화를 누적하는 타이머
+  Timer? _goldTimer;
+
   // 관련 Provider 참조
+  /// 사용자 위치 정보를 공유하는 LocationProvider 인스턴스
   LocationProvider? _locationProvider;
+  /// 사용자 인증 상태 정보를 공유하는 AuthProvider 인스턴스
   AuthProvider? _authProvider;
 
   // --- Getters ---
+  /// 실시간 점령된 타일 정보를 담은 불변 Map을 반환합니다.
   Map<String, HexTile> get capturedTiles {
     return Map.unmodifiable(_capturedTiles);
   }
 
+  /// 현재 보유 중인 골드 재화 수량
+  double get currentGold => _currentGold;
+
+  /// 초당 골드 획득율 배율
+  double get goldRate => _goldRate;
+
+  /// 위성 정밀 조준 스캔 모드 활성화 여부
   bool get isScanMode => _isScanMode;
+
+  /// 위성 조준 스캔 상에서 선택된 타일 ID
   String? get selectedScanTileId => _selectedScanTileId;
 
+  /// 현재 위성 점령 진행 중인 타일 ID
   String? get satelliteCapturingTileId => _satelliteCapturingTileId;
+
+  /// 위성 점령 진행률 (0.0 ~ 1.0)
   double get satelliteCaptureProgress => _satelliteCaptureProgress;
+
+  /// 위성 점령 시도가 활성화 중인지 여부
   bool get isSatelliteCapturing => _satelliteCapturingTileId != null;
+
+  /// 마지막으로 위성 점령에 성공한 일시
   DateTime? get lastSatelliteCaptureTime => _lastSatelliteCaptureTime;
 
+  /// 위성 점령이 완료될 때까지 남은 초 단위 시간
   int get remainingSatelliteCaptureSeconds {
     if (_satelliteCapturingTileId == null || _satelliteCaptureStartTime == null || _satelliteCaptureDuration == null) {
       return 0;
@@ -74,33 +127,59 @@ class GameProvider extends ChangeNotifier {
     return remaining > 0 ? remaining : 0;
   }
 
+  /// 위성 조준 장비의 재충전 쿨타임 남은 시간 (초)
   int get remainingSatelliteCaptureCoolSeconds {
     if (_lastSatelliteCaptureTime == null) return 0;
     final diff = DateTime.now().difference(_lastSatelliteCaptureTime!);
-    final remaining = GameConstants.satelliteCaptureCooltime.inSeconds - diff.inSeconds;
+    final remaining = GameConfig.satelliteCaptureCooltime.inSeconds - diff.inSeconds;
     return remaining > 0 ? remaining : 0;
   }
 
+  /// 인게임 전술 상황판 알림 목록
   List<GameAlert> get alerts => List.unmodifiable(_alerts);
+
+  /// 로컬 및 서버 상태 초기화 완료 여부
   bool get isInitialized => _isInitialized;
+
+  /// 자동 점령 모드 활성화 여부
   bool get isAutoCapture => _isAutoCapture;
+
+  /// 현재 활성화된 타일 지도 스타일의 인덱스
   int get currentMapStyleIndex => _currentMapStyleIndex;
+
+  /// 로컬 푸시 알림 허용 여부
   bool get isNotificationEnabled => _isNotificationEnabled;
+
+  /// 지도 회전 모드(나침반 방향에 연동) 활성화 여부
   bool get isMapRotationMode => _isMapRotationMode; // 추가: 맵 회전 여부 getter
+
+  /// 현재 지정된 지도 스타일 환경 설정
   MapStyle get currentMapStyle =>
-      GameConstants.mapStyles[_currentMapStyleIndex];
+      MapConfig.mapStyles[_currentMapStyleIndex];
+
+  /// 지도를 실제로 렌더링해야 하는지의 여부
   bool get showMap => currentMapStyle.url.isNotEmpty;
+
+  /// 본인 요원(계정)이 획득한 영토(타일)의 총 개수
   int get myCapturedCount => _authProvider?.user?.id == null
       ? 0
       : _capturedTiles.values
             .where((t) => t.userId == _authProvider!.user!.id)
             .length;
 
+  /// 현재 물리 GPS 점령을 시도 중인 타일 ID
   String? get capturingTileId => _captureController.capturingTileId;
+
+  /// 현재 점령 진행 중인 타일 요원의 전술 컬러 코드
   String? get capturingColorHex => _captureController.capturingColorHex;
+
+  /// 물리 GPS 점령의 진행 진척도 (0.0 ~ 1.0)
   double get captureProgress => _captureController.captureProgress;
+
+  /// 물리 GPS 점령 작전이 실행 중인지 여부
   bool get isCapturing => _captureController.isCapturing;
 
+  /// 현재 요원의 상태와 GPS 수신 상태를 기반으로 점령 개시가 가능한 상태인지 판단합니다.
   bool get canCapture {
     final loc = _locationProvider;
     final auth = _authProvider;
@@ -110,7 +189,7 @@ class GameProvider extends ChangeNotifier {
     }
 
     // GPS 오차가 너무 크면 점령 불가
-    if (loc.currentAccuracy > GameConstants.captureAccuracyThreshold) {
+    if (loc.currentAccuracy > GameConfig.captureAccuracyThreshold) {
       return false;
     }
 
@@ -132,7 +211,7 @@ class GameProvider extends ChangeNotifier {
     return true;
   }
 
-  /// 현재 내 GPS 위치에 대응하는 점령 타일 정보(HexTile)를 반환 (아직 점령되지 않았거나 GPS 미수신 상태이면 null 반환)
+  /// 현재 GPS 위치에 대응하는 점령 타일 정보(HexTile)를 반환 (아직 점령되지 않았거나 GPS 미수신 상태이면 null 반환)
   HexTile? get currentTile {
     final loc = _locationProvider;
     if (loc?.currentLocation == null) return null;
@@ -142,13 +221,16 @@ class GameProvider extends ChangeNotifier {
     return _capturedTiles[tileId];
   }
 
+  /// 현재 위치한 타일이 이미 자신이 지배 중인 타일인지 여부
   bool get isAlreadyCapturedByMe {
     final auth = _authProvider;
     if (auth?.user == null) return false;
     return currentTile?.userId == auth!.user!.id;
   }
 
+  /// GameProvider 생성자로 초기 점령 컨트롤러 설정 및 로컬 데이터 동기화를 지시합니다.
   GameProvider({required SupabaseService supabase}) : _supabase = supabase {
+    WidgetsBinding.instance.addObserver(this);
     _captureController = CaptureController(
       supabase: supabase,
       onAlert: addAlert,
@@ -166,6 +248,7 @@ class GameProvider extends ChangeNotifier {
                 : GameStrings.notificationCaptureEmptyBody,
           );
         }
+        syncGoldWithServer();
         notifyListeners();
       },
       onStateChanged: notifyListeners,
@@ -173,6 +256,7 @@ class GameProvider extends ChangeNotifier {
     _init();
   }
 
+  /// 위치 관리 프로바이더([LocationProvider]) 인스턴스를 설정하고 상태 업데이트 리스너를 연동합니다.
   void setLocationProvider(LocationProvider loc) {
     if (_locationProvider != loc) {
       // 기존 리스너 제거
@@ -187,15 +271,25 @@ class GameProvider extends ChangeNotifier {
     }
   }
 
+  /// 사용자 인증 관리 프로바이더([AuthProvider])를 설정하고 로그인 세션 여부에 따라 골드 생산 타이머를 가동/종료합니다.
   void setAuthProvider(AuthProvider auth) {
     if (_authProvider != auth) {
       _authProvider = auth;
+      if (auth.isAuthenticated) {
+        syncGoldWithServer();
+      } else {
+        _goldTimer?.cancel();
+        _goldTimer = null;
+        _currentGold = 0.0;
+      }
       notifyListeners();
     }
   }
 
+  /// 프로바이더의 비동기 초기 데이터 설정 및 로드가 완전히 완료되었는지 감시할 수 있는 Future 객체
   Future<void> get initializationFuture => _initCompleter.future;
 
+  /// 초기 설정을 불러오고, 기점령 타일 정보 획득 및 Supabase 실시간 타일 스트림을 연결합니다.
   Future<void> _init() async {
     try {
       final prefs = await SharedPreferences.getInstance();
@@ -216,22 +310,25 @@ class GameProvider extends ChangeNotifier {
     } finally {
       _isInitialized = true;
       if (!_initCompleter.isCompleted) _initCompleter.complete();
+      if (_authProvider?.isAuthenticated == true) {
+        syncGoldWithServer();
+      }
       notifyListeners();
     }
     _tilesStreamSub = _supabase.capturedTilesStream.listen(_onTilesUpdated);
     _startBackgroundPolling(); // 추가: 주기적 감시 시작
   }
 
-  /// 백그라운드에서도 정해진 주기마다 서버 데이터를 강제로 갱신하는 로직
+  /// 백그라운드에서도 정해진 주기마다 서버 데이터를 강제로 갱신하는 로직을 구동합니다.
   void _startBackgroundPolling() {
     _backgroundPollingTimer?.cancel();
     _backgroundPollingTimer = Timer.periodic(
-      GameConstants.backgroundCheckInterval,
+      GameConfig.backgroundCheckInterval,
       (_) => _refreshTilesAndCheckInvasion(),
     );
   }
 
-  /// 서버에서 최신 타일 정보를 가져와 침공 여부를 강제 체크
+  /// 서버에서 최신 타일 정보를 가져와 침공 여부를 강제로 체크하고 내 위치 타일을 갱신합니다.
   Future<void> _refreshTilesAndCheckInvasion() async {
     if (!_isInitialized) return;
     try {
@@ -248,6 +345,8 @@ class GameProvider extends ChangeNotifier {
     }
   }
 
+  /// 실시간 DB 변경 스트림을 통해 점령 타일 목록이 업데이트되었을 때 침공을 감지하고,
+  /// 잃은 영토로 인해 위성 점령의 연결성(Connectivity)이 상실되었는지 실시간으로 검사합니다.
   void _onTilesUpdated(List<HexTile> tiles) {
     final auth = _authProvider;
     if (auth?.user == null) return;
@@ -325,7 +424,7 @@ class GameProvider extends ChangeNotifier {
     final now = DateTime.now();
     if (_lastServerCheckTime == null ||
         now.difference(_lastServerCheckTime!) >=
-            GameConstants.serverCheckDelay) {
+            GameConfig.serverCheckDelay) {
       _lastServerCheckTime = now;
 
       checkCurrentLocationTileStatusFromServer().then((status) {
@@ -377,7 +476,7 @@ class GameProvider extends ChangeNotifier {
             _capturedTiles[tileId]?.captureCount ?? 0;
         final int targetCaptureCount = currentCaptureCount + 1;
         final int durationSeconds =
-            GameConstants.initialCaptureDurationSeconds * targetCaptureCount;
+            GameConfig.initialCaptureDurationSeconds * targetCaptureCount;
         final Duration captureDuration = Duration(seconds: durationSeconds);
 
         // 물리 점령 개시 시점에 진행 중인 위성 점령이 있으면 중단
@@ -402,6 +501,7 @@ class GameProvider extends ChangeNotifier {
   }
 
   /// 특정 타일의 남은 쉴드 보호 시간(초)을 반환 (0 이하이면 보호 만료)
+  /// 특정 타일의 남은 쉴드 보호 시간(초)을 반환 (0 이하이면 보호 만료)
   int getRemainingShieldSeconds(String tileId) {
     final tile = _capturedTiles[tileId];
     if (tile == null) return 0;
@@ -412,6 +512,7 @@ class GameProvider extends ChangeNotifier {
     return remaining > 0 ? remaining : 0;
   }
 
+  /// 사용자가 수동 모드 상태에서 즉시 수동 점령을 개시합니다.
   Future<void> startManualCapture() async {
     final loc = _locationProvider;
     final auth = _authProvider;
@@ -441,7 +542,7 @@ class GameProvider extends ChangeNotifier {
     final int currentCaptureCount = currentTile?.captureCount ?? 0;
     final int targetCaptureCount = currentCaptureCount + 1;
     final int durationSeconds =
-        GameConstants.initialCaptureDurationSeconds * targetCaptureCount;
+        GameConfig.initialCaptureDurationSeconds * targetCaptureCount;
     final Duration captureDuration = Duration(seconds: durationSeconds);
 
     // 물리 점령 개시 시점에 진행 중인 위성 점령이 있으면 중단
@@ -458,17 +559,20 @@ class GameProvider extends ChangeNotifier {
     );
   }
 
+  /// 자동 점령 작전의 활성/비활성 여부를 토글합니다.
   void toggleAutoCapture() {
     _isAutoCapture = !_isAutoCapture;
     notifyListeners();
   }
 
+  /// 지도 배경 스타일(다크, 사이버펑크, 위성 등)을 순환 변경합니다.
   void cycleMapStyle() {
     _currentMapStyleIndex =
-        (_currentMapStyleIndex + 1) % GameConstants.mapStyles.length;
+        (_currentMapStyleIndex + 1) % MapConfig.mapStyles.length;
     notifyListeners();
   }
 
+  /// 지도 회전 모드(나침반 헤딩 동기화)를 활성화/비활성화하고 내부 설정을 SharedPreferences에 유지합니다.
   Future<void> toggleMapRotationMode() async {
     _isMapRotationMode = !_isMapRotationMode;
     final prefs = await SharedPreferences.getInstance();
@@ -516,6 +620,7 @@ class GameProvider extends ChangeNotifier {
     return status;
   }
 
+  /// 알림 수신 동의 여부를 전환하고 변경 설정을 디바이스 로컬 저장소에 보관합니다.
   Future<void> toggleNotifications() async {
     _isNotificationEnabled = !_isNotificationEnabled;
     final prefs = await SharedPreferences.getInstance();
@@ -523,6 +628,7 @@ class GameProvider extends ChangeNotifier {
     notifyListeners();
   }
 
+  /// 화면 상단에 표시될 새 경고/알림 팝업 메시지를 발행하고 3초 경과 후 자동 페이드아웃 되도록 타이머를 연동합니다.
   void addAlert(String message, AlertType type) {
     final alert = GameAlert.create(message: message, type: type);
     _alerts.insert(0, alert);
@@ -531,6 +637,7 @@ class GameProvider extends ChangeNotifier {
     Timer(const Duration(seconds: 3), () => _removeAlert(alert.id));
   }
 
+  /// 알림 목록에서 특정 ID의 경고 알림을 제거하고 화면을 갱신합니다.
   void _removeAlert(String id) {
     _alerts.removeWhere((a) => a.id == id);
     notifyListeners();
@@ -538,6 +645,8 @@ class GameProvider extends ChangeNotifier {
 
   @override
   void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
+    _goldTimer?.cancel();
     _tilesStreamSub?.cancel();
     _backgroundPollingTimer?.cancel(); // 타이머 해제
     _satelliteCaptureTimer?.cancel();
@@ -548,6 +657,7 @@ class GameProvider extends ChangeNotifier {
 
 
 
+  /// 지정한 타일이 본진 기지이거나 본진을 직간접으로 둘러싼 인접 1링(Ring) 범위에 포함되는지 확인합니다.
   bool isHQOr1Ring(String tileId) {
     final mainBaseId = _authProvider?.profile?.mainBaseTileId;
     if (mainBaseId == null || mainBaseId.isEmpty) return false;
@@ -568,19 +678,21 @@ class GameProvider extends ChangeNotifier {
     return dist <= 1;
   }
 
+  /// 위성 궤도 스캔 모드의 On/Off 여부를 전환합니다.
   void toggleScanMode() {
     _isScanMode = !_isScanMode;
     _selectedScanTileId = null;
     notifyListeners();
   }
 
+  /// 위성 스캔 화면 상에서 조준점으로 지정할 대상 헥사곤 타일을 선택 조준합니다.
   void selectScanTile(String tileId) {
     if (!_isScanMode) return;
     _selectedScanTileId = tileId;
     notifyListeners();
   }
 
-  /// 메인 기지로부터 내 점령지들을 타고 이웃하여 대상 빈 타일에 연결되는지 검사
+  /// 본진 기지를 시발점으로 하여 요원이 지배 중인 타일 그리드를 거쳐 대상 영토까지 끊어짐 없이 헥사 결합되어 연결되는지 BFS(너비 우선 탐색)로 무결성을 검증합니다.
   bool checkSatelliteCaptureConnectivity(String targetTileId) {
     final mainBaseId = _authProvider?.profile?.mainBaseTileId;
     final myId = _authProvider?.user?.id;
@@ -600,10 +712,8 @@ class GameProvider extends ChangeNotifier {
         .map((t) => t.id)
         .toSet();
 
-    // 메인 기지가 내 소유가 아니라면 출발 불가
-    if (!myTiles.contains(mainBaseId)) {
-      return false;
-    }
+    // 본진 타일은 소유 여부와 관계없이 BFS 탐색을 위한 연결 통로로 강제 포함
+    final effectiveMyTiles = {...myTiles, mainBaseId};
 
     // BFS 탐색을 통한 연결성 검증
     final queue = <String>[mainBaseId];
@@ -636,7 +746,7 @@ class GameProvider extends ChangeNotifier {
           return true;
         }
 
-        if (myTiles.contains(neighborId) && !visited.contains(neighborId)) {
+        if (effectiveMyTiles.contains(neighborId) && !visited.contains(neighborId)) {
           visited.add(neighborId);
           queue.add(neighborId);
         }
@@ -646,7 +756,7 @@ class GameProvider extends ChangeNotifier {
     return false;
   }
 
-  /// 메인 기지와 대상 타일 간의 H3 거리에 따른 위성점령 소요 시간(초)을 계산
+  /// 본진(HQ) 타일과 대상 타일 간의 H3 헥사곤 거리를 산출하여 위성 점령 완료에 소요될 지연 시간(초)을 계산합니다.
   int getSatelliteCaptureDurationSeconds(String tileId) {
     final mainBaseId = _authProvider?.profile?.mainBaseTileId;
     if (mainBaseId == null || mainBaseId.isEmpty) return 0;
@@ -662,11 +772,11 @@ class GameProvider extends ChangeNotifier {
     if (bq == null || br == null || tq == null || tr == null) return 0;
 
     final dist = HexService.hexDistance(bq, br, tq, tr);
-    final seconds = (dist * GameConstants.satelliteCaptureSecondsPerTile).round();
+    final seconds = (dist * GameConfig.satelliteCaptureSecondsPerTile).round();
     return seconds < 1 ? 1 : seconds;
   }
 
-  /// 위성 점령 프로세스 개시
+  /// 지정한 대상 헥사곤 타일에 대한 위성 연결 점령(Satellite Capture) 타이머를 구동하여 점령을 실행합니다.
   void executeSatelliteCapture(String tileId) {
     if (tileId.isEmpty || _isSavingSatellite) return;
 
@@ -711,7 +821,7 @@ class GameProvider extends ChangeNotifier {
 
     // 거리에 비례하여 점령 소요 시간 계산 (1타일당 1초)
     final dist = HexService.hexDistance(bq, br, tq, tr);
-    final seconds = (dist * GameConstants.satelliteCaptureSecondsPerTile).round();
+    final seconds = (dist * GameConfig.satelliteCaptureSecondsPerTile).round();
     final duration = Duration(seconds: seconds < 1 ? 1 : seconds);
 
     // 물리 GPS 점령 진행 중인 경우 중단
@@ -727,7 +837,7 @@ class GameProvider extends ChangeNotifier {
     _satelliteCaptureDuration = duration;
 
     _satelliteCaptureTimer = Timer.periodic(
-      const Duration(milliseconds: GameConstants.updateIntervalMs),
+      const Duration(milliseconds: GameConfig.updateIntervalMs),
       (_) {
         if (_satelliteCapturingTileId == null || _isSavingSatellite) return;
 
@@ -746,7 +856,7 @@ class GameProvider extends ChangeNotifier {
     notifyListeners();
   }
 
-  /// 현재 위성 점령 취소
+  /// 현재 시도 중인 위성 원격 점령 지연 프로세스를 중단하고 취소합니다.
   void cancelSatelliteCapture() {
     if (_isSavingSatellite) return;
     _satelliteCaptureTimer?.cancel();
@@ -802,6 +912,7 @@ class GameProvider extends ChangeNotifier {
 
       _capturedTiles[tileId] = tile;
       addAlert(GameStrings.satelliteCaptureSuccess, AlertType.success);
+      await syncGoldWithServer();
     } else {
       addAlert(GameStrings.satelliteCaptureFail, AlertType.error);
     }
@@ -811,6 +922,59 @@ class GameProvider extends ChangeNotifier {
     _satelliteCaptureProgress = 0.0;
     _satelliteCaptureDuration = null;
     _satelliteCaptureStartTime = null;
+    notifyListeners();
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state == AppLifecycleState.resumed) {
+      if (_authProvider?.isAuthenticated == true) {
+        syncGoldWithServer();
+      }
+    }
+  }
+
+  /// 1초 주기로 요원의 점령 영토 개수와 골드 획득 배율에 따라 골드를 획득하여 상태를 누적합니다.
+  void _startGoldTimer() {
+    _goldTimer?.cancel();
+    _goldTimer = Timer.periodic(const Duration(seconds: 1), (timer) {
+      final auth = _authProvider;
+      if (auth == null || !auth.isAuthenticated || auth.profile == null) {
+        timer.cancel();
+        return;
+      }
+      _currentGold += auth.profile!.capturedTilesCount * _goldRate;
+      notifyListeners();
+    });
+  }
+
+  /// 보유한 영토 개수와 최종 갱신 오프라인 경과 시간을 대조 연동하여 서버와 골드 재화 보유 수량을 최종 동기화합니다.
+  Future<void> syncGoldWithServer() async {
+    final auth = _authProvider;
+    if (auth == null || !auth.isAuthenticated || auth.profile == null) return;
+
+    try {
+      final rate = await _supabase.fetchGoldRate();
+      _goldRate = rate ?? GameConfig.defaultGoldRate;
+
+      await auth.refreshProfile();
+      final profile = auth.profile;
+      if (profile != null) {
+        final now = DateTime.now().toUtc();
+        final lastUpdated = profile.lastGoldUpdatedAt ?? now;
+        final diffSeconds = now.difference(lastUpdated).inSeconds;
+        final elapsed = diffSeconds > 0 ? diffSeconds : 0;
+        final offlineGold = elapsed * profile.capturedTilesCount * _goldRate;
+
+        _currentGold = profile.gold + offlineGold;
+
+        if (_goldTimer == null || !_goldTimer!.isActive) {
+          _startGoldTimer();
+        }
+      }
+    } catch (e) {
+      debugPrint('❌ 골드 동기화 실패: $e');
+    }
     notifyListeners();
   }
 }

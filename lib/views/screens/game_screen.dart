@@ -2,7 +2,8 @@ import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:provider/provider.dart';
-import '../../core/constants.dart';
+import '../../core/constants/colors.dart';
+import '../../core/constants/map_config.dart';
 import '../../core/constants/strings.dart';
 import '../../game/conquest_game.dart';
 import '../../providers/game_provider.dart';
@@ -18,13 +19,17 @@ import '../widgets/loading_overlay.dart';
 import '../../models/tile_model.dart';
 
 /// 메인 게임 화면
+/// 실시간 헥사곤 전술 지도와 요원의 실시간 GPS 위치를 화면 상에 시각화하고,
+/// 알림(Alerts) 및 HUD 레이어를 동기화하여 인게임 루프를 조율하는 메인 게임 화면 클래스입니다.
 class GameScreen extends StatefulWidget {
+  /// 게임 화면의 생성자입니다.
   const GameScreen({super.key});
 
   @override
   State<GameScreen> createState() => _GameScreenState();
 }
 
+/// [GameScreen]의 생명주기와 위치 추적 권한 및 배터리 절전 예외 처리를 관장하는 상태 클래스입니다.
 class _GameScreenState extends State<GameScreen> {
   @override
   void initState() {
@@ -49,6 +54,8 @@ class _GameScreenState extends State<GameScreen> {
     });
   }
 
+  /// 안드로이드 OS에서 백그라운드 환경에서도 중단 없는 위치 갱신과 점령 작전을 수행하기 위해
+  /// 사용자에게 위치 권한 설정을 [항상 허용]으로 유도하는 안내 팝업 다이얼로그를 표시합니다.
   void _showBackgroundLocationDialog() {
     showDialog(
       context: context,
@@ -174,6 +181,8 @@ class _GameScreenState extends State<GameScreen> {
     );
   }
 
+  /// OS가 임의로 백그라운드 서비스 동작 및 위치 권한 추적을 정지시키는 것을 방지하기 위해 
+  /// 배터리 최적화 무시 설정 대상인지 점검하고 필요시 가이드 팝업을 연계합니다.
   Future<void> _checkAndPromptBatteryOptimization(GeoService geo) async {
     final bool isIgnoring = await geo.isIgnoringBatteryOptimizations();
     if (!isIgnoring && mounted) {
@@ -181,6 +190,8 @@ class _GameScreenState extends State<GameScreen> {
     }
   }
 
+  /// 안드로이드 OS의 배터리 최적화 예외 등록('제한 없음' 설정)을 통해 백그라운드 영토 탐지 서비스가
+  /// 시스템에 의해 차단되지 않도록 환경설정 등록을 요청하고 유도하는 다이얼로그 팝업을 표시합니다.
   void _showBatteryOptimizationDialog(GeoService geo) {
     showDialog(
       context: context,
@@ -355,7 +366,7 @@ class _GameScreenState extends State<GameScreen> {
     );
 
     final currentLocation =
-        loc.currentLocation ?? GameConstants.defaultPosition;
+        loc.currentLocation ?? MapConfig.defaultPosition;
 
     return Scaffold(
       backgroundColor: GameColors.tacticalBlack,

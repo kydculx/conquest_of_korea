@@ -1,11 +1,12 @@
 import 'package:flutter/foundation.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import '../core/app_config.dart';
-import '../core/constants.dart';
+import '../core/constants/game_config.dart';
 import '../models/tile_model.dart';
 
-/// Supabase 외부 통신 전담 서비스 (순수 I/O 레이어)
+/// Supabase 백엔드 데이터베이스 및 Realtime 데이터 처리를 담당하는 네트워크 통신 서비스 클래스
 class SupabaseService {
+  /// Supabase SDK 초기화 및 접속 정보 설정을 처리합니다.
   static Future<void> initialize() async {
     try {
       await Supabase.initialize(
@@ -20,9 +21,10 @@ class SupabaseService {
     }
   }
 
+  /// Supabase SDK 클라이언트 인스턴스 게터
   SupabaseClient get _client => Supabase.instance.client;
 
-  /// 모든 점령 타일 조회
+  /// 데이터베이스에 저장된 모든 점령 완료 타일 목록을 비동기 조회하여 반환합니다.
   Future<List<HexTile>> fetchAllCapturedTiles() async {
     debugPrint('🛰️ 점령 타일 데이터 요청 중...');
     final response = await _client.from('captured_tiles').select('*');
@@ -33,7 +35,7 @@ class SupabaseService {
     return tiles;
   }
 
-  /// 점령 타일 실시간 스트림
+  /// 실시간 점령 현황 동기화를 위한 Supabase Realtime 스트림을 제공합니다.
   Stream<List<HexTile>> get capturedTilesStream {
     return _client
         .from('captured_tiles')
@@ -41,12 +43,11 @@ class SupabaseService {
         .map((list) => list.map(HexTile.fromJson).toList());
   }
 
-  /// 타일 점령 정보 저장 (원자적 RPC 트랜잭션 호출)
+  /// 원자적 안전 RPC 함수 `safe_capture_tile`를 호출하여 서버 측에서 소유권 검증 및 타일 점령 처리를 실행합니다.
   Future<bool> captureTile(HexTile tile) async {
     try {
       debugPrint('🏹 RPC 점령 안전 트랜잭션 전송 중: ${tile.id}');
       
-      // Supabase RPC 안전 호출 체계 도입
       final response = await _client.rpc('safe_capture_tile', params: {
         'p_tile_id': tile.id,
         'p_q': tile.q,
@@ -55,7 +56,7 @@ class SupabaseService {
         'p_color_hex': tile.colorHex,
         'p_bounds': tile.bounds,
         'p_target_capture_count': tile.captureCount,
-        'p_shield_duration_seconds': GameConstants.tileShieldDurationSeconds,
+        'p_shield_duration_seconds': GameConfig.tileShieldDurationSeconds,
       });
 
       debugPrint('🚀 RPC 트랜잭션 처리 결과: $response');
@@ -66,7 +67,7 @@ class SupabaseService {
     }
   }
 
-  /// 특정 타일의 점령 상태를 서버에서 조회하여 TileStatus로 반환
+  /// 지정한 타일 ID의 최신 소유 상황을 서버 데이터베이스로부터 확인하여 타일 소유 상태 [TileStatus]로 반환합니다.
   Future<TileStatus> checkTileStatusFromServer(
     String tileId,
     String currentUserId,
@@ -90,7 +91,7 @@ class SupabaseService {
     }
   }
 
-  /// 특정 타일 ID로 서버의 최신 점령 데이터 전체를 조회하여 반환하는 함수
+  /// 특정 타일 ID에 대한 상세 점령 정보를 단일 레코드로 조회하여 반환합니다. 점령되지 않은 중립 타일일 시 null을 반환합니다.
   Future<HexTile?> fetchTile(String tileId) async {
     try {
       final response = await _client
@@ -103,6 +104,22 @@ class SupabaseService {
       return HexTile.fromJson(response);
     } catch (e) {
       debugPrint('❌ 단일 타일 서버 조회 실패: $e');
+      return null;
+    }
+  }
+
+  /// 서버의 글로벌 시스템 설정 테이블에서 골드 획득 배율(`gold_rate`) 설정을 가져옵니다.
+  Future<double?> fetchGoldRate() async {
+    try {
+      final response = await _client
+          .from('system_settings')
+          .select('value')
+          .eq('key', 'gold_rate')
+          .maybeSingle();
+      if (response == null) return null;
+      return (response['value'] as num?)?.toDouble();
+    } catch (e) {
+      debugPrint('❌ gold_rate 조회 실패: $e');
       return null;
     }
   }

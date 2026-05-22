@@ -5,33 +5,54 @@ import 'package:vibration/vibration.dart';
 import '../models/tile_model.dart';
 import '../services/supabase_service.dart';
 import '../services/hex_service.dart';
-import '../core/constants.dart';
+import '../core/constants/game_config.dart';
 import '../core/constants/strings.dart';
 import '../models/alert_model.dart';
 
+/// 요원이 특정 헥사곤 타일 영역에 물리적으로 머물며 점령을 시도하는 프로세스를 감시 및 제어하는 컨트롤러 클래스
 class CaptureController {
+  /// DB 처리를 위한 Supabase 서비스 인스턴스
   final SupabaseService _supabase;
+  /// 경고/성공 알림 이벤트를 메인 시스템에 전달하는 콜백
   final void Function(String message, AlertType type) onAlert;
+  /// 점령 완료 시 영토 데이터 갱신을 전달하는 콜백
   final void Function(String tileId, HexTile tile, {required bool wasEnemyTile}) onTileCaptured;
+  /// 상태 변경 시 화면 갱신을 지시하는 콜백
   final VoidCallback onStateChanged;
 
+  /// 현재 점령 작전을 수행 중인 대상 타일 ID
   String? _capturingTileId;
+  /// 점령을 시도하고 있는 요원 ID
   String? _userId;
+  /// 점령 개시 시점의 물리적 GPS 위치
   LatLng? _startLocation;
+  /// 요원의 전술 식별 색상 코드 (Hex)
   String? _colorHex;
+  /// 점령이 시작된 일시
   DateTime? _startTime;
+  /// 점령 완료에 소요되는 총 시간
   Duration? _targetDuration;
-  int _targetCaptureCount = 1; // 점령 성공 시 저장할 목표 점령 횟수
+  /// 점령 성공 시 설정될 타일의 누적 점령 횟수 목표치
+  int _targetCaptureCount = 1;
+  /// 물리적 영토 점령 진행 진척도 (0.0 ~ 1.0)
   double _captureProgress = 0.0;
-  bool _wasEnemyTile = false; // 점령 시작 시 상대방 구역이었는지 여부
+  /// 점령 시작 시점에 해당 타일이 상대방 소유였는지 여부
+  bool _wasEnemyTile = false;
+  /// 점령 상태(진행도 및 경계 이탈)를 주기적으로 갱신하기 위한 타이머
   Timer? _captureTimer;
+  /// 점령 성공 후 서버에 정보 저장 API를 전송 중인지 여부
   bool _isSaving = false;
 
+  /// 현재 물리 점령을 시도 중인 타일 ID를 반환합니다.
   String? get capturingTileId => _capturingTileId;
+  /// 점령 중인 요원의 전술 식별 색상 코드
   String? get capturingColorHex => _colorHex;
+  /// 물리 점령 진척도를 반환합니다. (0.0 ~ 1.0)
   double get captureProgress => _captureProgress;
+  /// 현재 물리 점령 작전이 진행 중인지 여부를 반환합니다.
   bool get isCapturing => _capturingTileId != null;
 
+  /// CaptureController 생성자로 서비스 의존성 및 콜백 리스너들을 주입받습니다.
   CaptureController({
     required SupabaseService supabase,
     required this.onAlert,
@@ -39,6 +60,7 @@ class CaptureController {
     required this.onStateChanged,
   }) : _supabase = supabase;
 
+  /// 요원이 획득하고자 하는 특정 타일에 진입하여 점령 작전을 개시하고 주기 감시 타이머를 시작합니다.
   void startCapture({
     required String tileId,
     required LatLng location,
@@ -61,9 +83,10 @@ class CaptureController {
     _wasEnemyTile = wasEnemyTile;
 
     _vibrate([0, 50, 30, 50]);
-    _captureTimer = Timer.periodic(const Duration(milliseconds: GameConstants.updateIntervalMs), (_) => checkCaptureStatus());
+    _captureTimer = Timer.periodic(const Duration(milliseconds: GameConfig.updateIntervalMs), (_) => checkCaptureStatus());
   }
 
+  /// 지정 주기로 점령 상태를 추적하여 진행률을 연동하고, 위치 이탈 여부 및 점령 완료를 판정합니다.
   void checkCaptureStatus([LatLng? currentLocation]) {
     if (_capturingTileId == null || _isSaving) return;
 
@@ -88,6 +111,7 @@ class CaptureController {
     }
   }
 
+  /// 진행 중인 점령 작업을 파기하고 진행도를 0으로 초기화합니다.
   void cancelCapture() {
     if (_isSaving) return;
     _captureTimer?.cancel();
@@ -97,6 +121,7 @@ class CaptureController {
     onStateChanged();
   }
 
+  /// 점령이 완료된 타일 정보(위치, 경계 좌표, 소유자 색상 등)를 직렬화하여 Supabase DB에 적재합니다.
   Future<void> _saveCapture(LatLng? currentLocation) async {
     if (_isSaving) return;
     _isSaving = true;
@@ -143,6 +168,7 @@ class CaptureController {
     onStateChanged();
   }
 
+  /// 디바이스 진동 모터를 동작시켜 영토 전술 피드백을 전달합니다.
   void _vibrate(dynamic pattern) {
     try {
       Vibration.hasVibrator().then((has) {
@@ -154,5 +180,6 @@ class CaptureController {
     } catch (_) {}
   }
 
+  /// 점령 컨트롤러 리소스 해제 시 점령 상태 모니터링 타이머를 중단합니다.
   void dispose() => _captureTimer?.cancel();
 }

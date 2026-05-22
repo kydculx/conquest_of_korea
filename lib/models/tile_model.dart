@@ -1,23 +1,44 @@
-import '../core/constants.dart';
+import '../core/constants/game_config.dart';
 
-/// 현재 위치 타일의 점령 상태 (서버 기준)
+/// 특정 에이전트 관점에서의 H3 헥사곤 타일 점령 소유 상태를 구분하는 열거형
 enum TileStatus {
-  mine,   // 내가 점령한 타일
-  empty,  // 아무도 점령하지 않은 빈 타일
-  enemy,  // 상대방이 점령한 타일
+  /// 로그인된 본인 에이전트가 점령한 상태
+  mine,
+
+  /// 아무도 점령하지 않아 공백인 상태 (중립 영토)
+  empty,
+
+  /// 타 에이전트(적군)가 점령한 상태
+  enemy,
 }
 
-/// 점령된 헥사곤 타일 데이터 모델
+/// 지도상의 개별 헥사곤 영토 타일의 데이터를 표현하는 모델 클래스
 class HexTile {
+  /// H3 인덱스 기반의 타일 고유 식별자 ID
   final String id;
-  final int q;
-  final int r;
-  final String? userId;
-  final String? colorHex; // 점령 당시의 색상 혹은 실시간 동기화된 색상
-  final List<List<double>> bounds;
-  final DateTime capturedAt;
-  final int captureCount; // 각 타일마다 점령된 총 횟수
 
+  /// 헥사곤 타일 좌표계 축 1 (Q축)
+  final int q;
+
+  /// 헥사곤 타일 좌표계 축 2 (R축)
+  final int r;
+
+  /// 타일을 점령한 요원(사용자)의 UUID 식별자 (중립 시 null)
+  final String? userId;
+
+  /// 타일을 지배하는 요원의 고유 헥사 네온 컬러 코드 (중립 시 null)
+  final String? colorHex;
+
+  /// 헥사곤 타일의 테두리를 그리는 6개의 꼭짓점 위경도 좌표 쌍 목록
+  final List<List<double>> bounds;
+
+  /// 타일이 최종 점령(소유권 이전)된 일시 (UTC 기준)
+  final DateTime capturedAt;
+
+  /// 이 타일이 전체 게임 생애 주기 동안 총 몇 번 점령되었는지의 빈도수
+  final int captureCount;
+
+  /// HexTile 생성자
   const HexTile({
     required this.id,
     required this.q,
@@ -26,9 +47,10 @@ class HexTile {
     this.colorHex,
     required this.bounds,
     required this.capturedAt,
-    this.captureCount = 1, // 최초 점령 시 기본값은 1
+    this.captureCount = 1,
   });
 
+  /// Map 구조의 JSON 데이터로부터 HexTile 인스턴스를 생성하는 팩토리 메서드
   factory HexTile.fromJson(Map<String, dynamic> json) {
     final rawBounds = json['bounds'];
     final bounds = rawBounds is List
@@ -51,6 +73,7 @@ class HexTile {
     );
   }
 
+  /// HexTile 인스턴스를 Map 구조의 JSON 데이터로 변환하여 반환합니다.
   Map<String, dynamic> toJson() => {
         'id': id,
         'q': q,
@@ -63,6 +86,7 @@ class HexTile {
         'capture_count': captureCount,
       };
 
+  /// 특정 필드를 변경하여 새로운 HexTile 객체를 복사 생성합니다.
   HexTile copyWith({
     String? userId,
     String? colorHex,
@@ -81,11 +105,11 @@ class HexTile {
     );
   }
 
-  /// 쉴드 만료 시각 (captured_at + tileShieldDurationSeconds)
+  /// 타일 점령 후 타 침공으로부터 보호(쉴드)를 받는 만료 시각을 게터로 반환합니다.
   DateTime get shieldExpiration => capturedAt.add(
-        const Duration(seconds: GameConstants.tileShieldDurationSeconds),
+        const Duration(seconds: GameConfig.tileShieldDurationSeconds),
       );
 
-  /// 현재 시각 기준 쉴드가 활성 상태인지 여부
+  /// 현재 시간 기준으로 해당 타일의 보호 쉴드 효과가 지속되는지 여부를 판단합니다.
   bool get isShieldActive => DateTime.now().toUtc().isBefore(shieldExpiration);
 }

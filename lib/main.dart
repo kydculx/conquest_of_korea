@@ -23,6 +23,7 @@ import 'providers/auth_provider.dart';
 
 import 'package:easy_localization/easy_localization.dart';
 
+/// Flutter 앱의 메인 진입점 함수로, 각종 타사 서비스(SDK) 초기화와 화면 상태 잠금 및 의존성 주입 구조를 형성합니다.
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await EasyLocalization.ensureInitialized();
@@ -102,7 +103,9 @@ void main() async {
   );
 }
 
+/// 앱의 최상위 UI 레이아웃, 다국어 처리, 테마 정보 및 모바일 화면 라우터 목록을 정의하는 비공개 루트 위젯
 class _ConquestApp extends StatelessWidget {
+  /// _ConquestApp 생성자
   const _ConquestApp();
 
   @override
@@ -125,7 +128,9 @@ class _ConquestApp extends StatelessWidget {
   }
 }
 
+/// 요원의 로그인 세션 여부와 계정 등록 절차를 판정하기 전 최초의 인게임 전술 연출(스플래시 화면)을 실행하기 위한 Wrapper 위젯
 class AuthWrapper extends StatelessWidget {
+  /// AuthWrapper 생성자
   const AuthWrapper({super.key});
 
   @override

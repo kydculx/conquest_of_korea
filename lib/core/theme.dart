@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
-import 'constants.dart';
+import 'constants/colors.dart';
 
+/// 전술 테마 및 공통 UI 스타일 메타데이터를 관리하는 테마 설정 클래스
 class TacticalTheme {
+  /// 다크 테마 설정 정의 데이터를 반환하는 게터 메서드
   static ThemeData get darkTheme {
     return ThemeData(
       brightness: Brightness.dark,
@@ -28,7 +30,7 @@ class TacticalTheme {
     );
   }
 
-  /// HEX 문자열을 Color 객체로 변환
+  /// HEX 코드 문자열을 Color 객체로 안전하게 파싱하여 반환합니다. 실패 시 기본 화이트 색상을 반환합니다.
   static Color parseColor(String hex) {
     try {
       final buffer = StringBuffer();

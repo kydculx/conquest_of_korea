@@ -2,38 +2,68 @@ import 'package:flutter/material.dart';
 
 /// 게임 전반에서 사용되는 공용 전술 컬러 클래스 (외부 제어 및 동적 갱신 가능)
 class GameColors {
-  // 핵심 테마 컬러
+  /// 핵심 네온 액센트 컬러
   static Color accentNeon = const Color(0xFF00FFD1);
+
+  /// 부가 액센트 컬러 (accentNeon과 동일값 유지)
   static Color colorAccent = const Color(0xFF00FFD1);
-  static Color tacticalGray = const Color(0xFF1E293B);  // Slate 800 수준의 세련된 다크 그레이-네이비
-  static Color tacticalBlack = const Color(0xFF0B0F19); // 옵시디언 딥 미드나잇 블랙 (눈 피로 저감 및 입체감 극대화)
 
-  // 투명 및 기본 색상 계열
+  /// 세련된 다크 그레이-네이비 컬러 (Slate 800 수준)
+  static Color tacticalGray = const Color(0xFF1E293B);
+
+  /// 옵시디언 딥 미드나잇 블랙 컬러 (눈 피로 저감 및 입체감 제공)
+  static Color tacticalBlack = const Color(0xFF0B0F19);
+
+  /// 완전 투명 색상
   static Color transparent = const Color(0x00000000);
-  static Color tacticalWhite = const Color(0xFFFFFFFF);
-  static Color backgroundMedium = const Color(0xF20B0F19); // 은은한 불투명 딥 다크 배경
-  static Color backgroundTranslucent = const Color(0xCC0B0F19); // 반투명 전술 오버레이 배경
 
-  // 소셜 로그인 고유 브랜드 컬러
+  /// 전술 화이트 컬러
+  static Color tacticalWhite = const Color(0xFFFFFFFF);
+
+  /// 은은한 불투명 딥 다크 배경 컬러
+  static Color backgroundMedium = const Color(0xF20B0F19);
+
+  /// 반투명 전술 오버레이 배경 컬러
+  static Color backgroundTranslucent = const Color(0xCC0B0F19);
+
+  /// 카카오 브랜드 옐로우 컬러
   static Color kakaoYellow = const Color(0xFFFEE500);
+
+  /// 카카오 브랜드 텍스트 컬러
   static Color kakaoText = const Color(0xFF191919);
 
-  // 텍스트 및 레이블 계열
-  static Color textPrimary = const Color(0xFFF8FAFC);   // Slate 50 수준의 극강의 가독성을 지닌 아이스 화이트
-  static Color textSecondary = const Color(0xFFCBD5E1); // Slate 300 수준의 소프트 아이스 실버
-  static Color textMuted = const Color(0xFF64748B);     // Slate 500 수준의 은은하고 세련된 뮤티드 그레이
+  /// 가독성을 높인 메인 텍스트용 아이스 화이트 컬러 (Slate 50 수준)
+  static Color textPrimary = const Color(0xFFF8FAFC);
 
-  // 보더 및 구분선 계열
-  static Color dividerColor = const Color(0x22FFFFFF);   // 연하고 은은한 미세 분리선
-  static Color borderLight = const Color(0x11FFFFFF);    // 매우 연한 미세 보더선
-  static Color borderNeon = const Color(0x6600FFD1);     // 전술 네온 테두리선 (추가)
-  static Color techGrid = const Color(0x0CFFFFFF);       // 정밀 미세 격자선 (추가)
+  /// 서브 텍스트용 소프트 아이스 실버 컬러 (Slate 300 수준)
+  static Color textSecondary = const Color(0xFFCBD5E1);
 
-  // 상태 알림 계열
-  static Color success = const Color(0xFF10B981);        // Emerald 500 수준의 생동감 넘치는 형광 네온 그린
-  static Color warning = const Color(0xFFF59E0B);        // Amber 500 수준의 하이테크 경고 오렌지 옐로우
-  static Color error = const Color(0xFFEF4444);          // Red 500 수준의 날카롭고 강렬한 크림슨 레이저 레드
-  static Color info = const Color(0xFF3B82F6);           // Blue 500 수준의 일렉트릭 사이언 테크니컬 블루
+  /// 비활성/설명용 은은한 뮤티드 그레이 컬러 (Slate 500 수준)
+  static Color textMuted = const Color(0xFF64748B);
+
+  /// 은은한 미세 분리선 컬러
+  static Color dividerColor = const Color(0x22FFFFFF);
+
+  /// 매우 연한 미세 테두리 컬러
+  static Color borderLight = const Color(0x11FFFFFF);
+
+  /// 전술 네온 테두리 컬러
+  static Color borderNeon = const Color(0x6600FFD1);
+
+  /// 정밀 미세 격자선 컬러
+  static Color techGrid = const Color(0x0CFFFFFF);
+
+  /// 에메랄드 형광 네온 그린 컬러 (성공/안전 상태)
+  static Color success = const Color(0xFF10B981);
+
+  /// 하이테크 경고 오렌지 옐로우 컬러 (주의/경고 상태)
+  static Color warning = const Color(0xFFF59E0B);
+
+  /// 날카로운 크림슨 레이저 레드 컬러 (위험/에러 상태)
+  static Color error = const Color(0xFFEF4444);
+
+  /// 일렉트릭 사이언 테크니컬 블루 컬러 (일반 정보 상태)
+  static Color info = const Color(0xFF3B82F6);
 
   /// 외부(API, DB, 파일 등)에서 넘어온 헥사 코드로 공용 컬러들을 동적 제어하는 메서드
   static void updateCommonColors({
@@ -133,6 +163,7 @@ class GameColors {
     }
   }
 
+  /// 헥사 코드 문자열(#RRGGBB 또는 #AARRGGBB)을 Color 객체로 파싱하는 헬퍼 메서드
   static Color? _parseHexColor(String hex) {
     try {
       final buffer = StringBuffer();

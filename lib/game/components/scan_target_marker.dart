@@ -2,21 +2,29 @@ import 'dart:math' as math;
 import 'package:flutter/material.dart';
 import 'package:flame/components.dart';
 import 'package:latlong2/latlong.dart' hide Path;
-import '../../core/constants.dart';
+import '../../core/constants/colors.dart';
 import '../conquest_game.dart';
 import '../../services/hex_service.dart';
 import '../../models/tile_model.dart';
 
 /// 위성 스캔 모드에서 사용자가 선택한 타일의 조준선 프리뷰를 렌더링하는 컴포넌트
+/// 위성 궤도 정밀 조준 스캔 및 위성 원격 점령 모드에서 조준선, 본부로부터의 전술적 BFS 최단 경로 안내선, 점령 완료 시 보간 화살표 이동 애니메이션을 그리는 Flame 컴포넌트
 class ScanTargetMarker extends PositionComponent with HasGameReference<ConquestGame> {
+  /// 스캔 조준된 대상 타일의 H3 q축 좌표값
   final int q;
+  /// 스캔 조준된 대상 타일의 H3 r축 좌표값
   final int r;
   
+  /// 대상 헥사곤 거점의 지리적 위경도(LatLng) 꼭짓점 좌표 리스트
   final List<LatLng> _latLngCorners;
+  /// 화면 스크린 기준으로 투영 계산된 헥사곤 꼭짓점의 픽셀 좌표 리스트
   List<Offset> _screenCorners = [];
+  /// 펄싱 및 애니메이션 주기를 결정하기 위한 시간 누적 값
   double _timer = 0;
-  double _smoothProgress = 0.0; // 신규: 계단식 수치를 보간하여 60fps로 매끄럽게 만들기 위한 수치
+  /// 계단식 점령 진행률을 매끄러운 60 FPS 흐름으로 표현하기 위해 보간 가미한 진행률 변수
+  double _smoothProgress = 0.0;
   
+  /// ScanTargetMarker 생성자로 조준 대상 좌표를 설정받고 렌더링 우선순위(Priority)를 조율합니다.
   ScanTargetMarker({
     required this.q,
     required this.r,
@@ -184,11 +192,14 @@ class ScanTargetMarker extends PositionComponent with HasGameReference<ConquestG
     }
   }
 
+  /// BFS 경로 산출 연산을 최소화하기 위해 마지막으로 정상 계산된 전술 경로를 보관하는 캐시 리스트
   List<Map<String, int>>? _cachedPath;
+  /// 캐시 경로가 산출된 기준이 되는 본부 기지 타일 ID 캐시
   String? _cachedHQTileId;
+  /// 캐시 경로 산출에 기여한 요원의 점령 영토 목록 맵 캐시
   Map<String, HexTile>? _cachedCapturedTiles;
 
-  /// BFS 알고리즘을 사용한 본진(HQ)에서 현재 타겟 타일까지의 최단 경로 계산
+  /// BFS(너비 우선 탐색) 알고리즘을 수행하여 요원의 본진(HQ) 위치에서 조준 대상 타일까지의 최단 연결 점령 경로를 산출합니다.
   List<Map<String, int>>? _findShortestPathToHQ() {
     final hqId = game.currentHQTileId;
     if (hqId == null) {
@@ -269,7 +280,7 @@ class ScanTargetMarker extends PositionComponent with HasGameReference<ConquestG
     return resultPath;
   }
 
-  /// 경로를 따르는 애니메이션 전술 점선 드로잉
+  /// 본진에서 조준 타겟까지 계산된 최단 궤적을 연결하여 흐르는 형태의 전술 점선으로 드로잉합니다.
   void _drawDashedPath(Canvas canvas, Path path, Color themeColor) {
     final linePaint = Paint()
       ..color = themeColor.withValues(alpha: 0.8)
@@ -306,7 +317,7 @@ class ScanTargetMarker extends PositionComponent with HasGameReference<ConquestG
     }
   }
 
-  /// 경로상 진행률에 따라 회전각을 맞춰 이동하는 삼각형 화살표 드로잉
+  /// 위성 점령이 활성화되어 송신 중일 때, 전술 경로를 따라 이동하며 위치와 진행 각도로 정렬되는 삼각형 레이저 화살표를 드로잉합니다.
   void _drawArrowAlongPath(Canvas canvas, Path path, Color themeColor) {
     final metrics = path.computeMetrics().toList();
     if (metrics.isEmpty) return;
@@ -345,7 +356,7 @@ class ScanTargetMarker extends PositionComponent with HasGameReference<ConquestG
     canvas.restore();
   }
 
-  /// 조준선 십자 타겟 드로잉
+  /// 스캔 모드 상의 선택 타일의 정중앙 좌표에 회전 십자 헤어라인과 펄싱 타겟 락온 도트 이미지를 드로잉합니다.
   void _drawCrosshair(Canvas canvas, double cx, double cy, Color color) {
     final linePaint = Paint()
       ..color = color.withValues(alpha: 0.9)

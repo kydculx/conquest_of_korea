@@ -1,5 +1,5 @@
 {
-  "appName": "한국정복 (Conquest)",
+  "appName": "한국정복",
   "tacticalMissionStart": "전술 미션 시작",
   "confirm": "확인",
   "cancel": "취소",
@@ -146,7 +146,6 @@
   "rebaseButton": "이전",
   "rebaseSuccessAlert": "✓ 메인 기지가 성공적으로 이전되었습니다. ({tileId})",
   "satelliteCapturingWithTime": "위성 점령 중... [{tileId}] ({seconds}초 남음)",
-  "cancel": "CANCEL",
   "satelliteSelectTile": "점령할 타일을 지도에서 탭하세요.",
   "targetLockOn": "타겟 락온 완료",
   "satCooltimeWaiting": "대기 중: {time} (위성 충전)",
@@ -177,6 +176,7 @@
   "dailyDistance": "당일 작전 거리",
   "totalDistance": "누적 작전 거리",
   "gpsDistToday": "당일 거리",
+  "hudGold": "보유 재화",
   "satScanActive": "위성 스캔 활성화됨. 타일을 조준하십시오.",
   "satCapturingAttempt": "전술 위성 채널 점령 시도 중...",
   "satCooltimeWaitingLabel": "위성 재충전 대기 중",

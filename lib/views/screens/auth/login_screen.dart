@@ -1,20 +1,29 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import '../../../core/constants.dart';
+import '../../../core/constants/colors.dart';
 import '../../../core/constants/strings.dart';
 import '../../../core/utils/error_translator.dart';
 import '../../../providers/auth_provider.dart';
 
+/// 이메일/패스워드 기반 로그인 및 다양한 외부 소셜 계정 연동 로그인을 제공하는
+/// 사용자 인증 및 진입 화면 클래스입니다.
 class LoginScreen extends StatefulWidget {
+  /// 로그인 화면의 생성자입니다.
   const LoginScreen({super.key});
 
   @override
   State<LoginScreen> createState() => _LoginScreenState();
 }
 
+/// [LoginScreen]의 로그인 입력 폼 및 소셜 연동 동작을 관리하는 상태 클래스입니다.
 class _LoginScreenState extends State<LoginScreen> {
+  /// 입력된 이메일 계정 텍스트를 처리하는 컨트롤러입니다.
   final _emailController = TextEditingController();
+
+  /// 입력된 비밀번호 텍스트를 처리하는 컨트롤러입니다.
   final _passwordController = TextEditingController();
+
+  /// 비밀번호 입력란의 가시성 상태(마스킹 여부)를 제어하는 플래그입니다.
   bool _isObscure = true;
 
   @override
@@ -24,6 +33,7 @@ class _LoginScreenState extends State<LoginScreen> {
     super.dispose();
   }
 
+  /// 이메일과 비밀번호 정보를 기반으로 Supabase 서버에 사용자 인증 로그인을 요청합니다.
   Future<void> _handleLogin() async {
     final authProvider = context.read<AuthProvider>();
     try {
@@ -289,6 +299,9 @@ class _LoginScreenState extends State<LoginScreen> {
     );
   }
 
+  /// 구글, 애플, 카카오 등의 소셜 로그인 버튼을 공통 원형 디자인으로 구성하는 헬퍼 메서드입니다.
+  /// 
+  /// [onPressed]는 버튼 탭 이벤트이며, [color]는 버튼의 배경 색상, [child]는 내부에 렌더링될 아이콘 위젯입니다.
   Widget _buildSocialCircleButton({
     required VoidCallback onPressed,
     required Color color,
@@ -316,6 +329,10 @@ class _LoginScreenState extends State<LoginScreen> {
     );
   }
 
+  /// 로그인 화면의 입력 필드 디자인을 일관되게 규격화하는 커스텀 텍스트 필드 헬퍼 메서드입니다.
+  /// 
+  /// [controller]는 입력을 수집하며, [label]은 입력 유도 문구이고, [icon]은 접두사 아이콘입니다.
+  /// [isObscure]가 참이면 텍스트를 마스킹하고, [suffixIcon]은 입력란 우측에 덧붙여질 버튼 등입니다.
   Widget _buildTextField({
     required TextEditingController controller,
     required String label,

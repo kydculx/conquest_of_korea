@@ -1,6 +1,8 @@
 import '../constants/strings.dart';
 
+/// 시스템 발생 오류 메시지를 사용자 친화적인 다국어 에러 메시지로 번역하는 유틸리티 클래스
 class ErrorTranslator {
+  /// 외부 Exception 또는 에러 문자열을 분석하여 [GameStrings]에 정의된 한글 번역 메시지로 변환합니다.
   static String translate(dynamic error) {
     String message = error.toString();
     

@@ -3,7 +3,7 @@ import 'dart:math' as math;
 import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import '../../core/constants.dart';
+import '../../core/constants/colors.dart';
 import '../../core/constants/strings.dart';
 import '../../providers/game_provider.dart';
 import '../../providers/auth_provider.dart';
@@ -41,7 +41,11 @@ class HudOverlay extends StatelessWidget {
             children: [
               const TacticalCompass(),
               const SizedBox(height: 10),
-              if (auth.isAuthenticated) const _OperationDistanceHud(),
+              if (auth.isAuthenticated) ...[
+                const _OperationDistanceHud(),
+                const SizedBox(height: 8),
+                const _OperationGoldHud(),
+              ],
             ],
           ),
         ),
@@ -829,6 +833,86 @@ class _OperationDistanceHud extends StatelessWidget {
                   fontWeight: FontWeight.bold,
                   fontFamily: 'monospace',
                 ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _OperationGoldHud extends StatelessWidget {
+  const _OperationGoldHud();
+
+  @override
+  Widget build(BuildContext context) {
+    final game = context.watch<GameProvider>();
+    final double gold = game.currentGold;
+    final int capturedCount = game.myCapturedCount;
+    final double goldRate = game.goldRate;
+    final double ratePerSec = capturedCount * goldRate;
+
+    return ClipPath(
+      clipper: ShapeBorderClipper(
+        shape: BeveledRectangleBorder(
+          borderRadius: BorderRadius.circular(4),
+        ),
+      ),
+      child: BackdropFilter(
+        filter: ImageFilter.blur(sigmaX: 5, sigmaY: 5),
+        child: Container(
+          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+          decoration: ShapeDecoration(
+            color: GameColors.backgroundMedium.withValues(alpha: 0.7),
+            shape: BeveledRectangleBorder(
+              borderRadius: BorderRadius.circular(4),
+              side: BorderSide(
+                color: GameColors.accentNeon.withValues(alpha: 0.35),
+                width: 1.0,
+              ),
+            ),
+          ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Text(
+                '[ ${GameStrings.hudGold} ]',
+                style: TextStyle(
+                  color: GameColors.textSecondary,
+                  fontSize: 9,
+                  fontWeight: FontWeight.w800,
+                  fontFamily: 'monospace',
+                  letterSpacing: 0.5,
+                ),
+              ),
+              const SizedBox(height: 2),
+              Row(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.baseline,
+                textBaseline: TextBaseline.alphabetic,
+                children: [
+                  Text(
+                    '${gold.toStringAsFixed(0)} GP',
+                    style: TextStyle(
+                      color: GameColors.accentNeon,
+                      fontSize: 12,
+                      fontWeight: FontWeight.bold,
+                      fontFamily: 'monospace',
+                    ),
+                  ),
+                  const SizedBox(width: 4),
+                  Text(
+                    '(+${ratePerSec.toStringAsFixed(1)}/s)',
+                    style: TextStyle(
+                      color: GameColors.textPrimary.withValues(alpha: 0.6),
+                      fontSize: 9,
+                      fontWeight: FontWeight.w600,
+                      fontFamily: 'monospace',
+                    ),
+                  ),
+                ],
               ),
             ],
           ),

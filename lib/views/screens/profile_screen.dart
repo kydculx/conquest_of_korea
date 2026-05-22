@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import '../../core/constants.dart';
+import '../../core/constants/colors.dart';
 import '../../core/constants/strings.dart';
 import '../../core/theme.dart';
 import '../../providers/auth_provider.dart';
@@ -9,7 +9,10 @@ import '../../providers/location_provider.dart';
 import '../../services/hex_service.dart';
 import '../../core/utils/error_translator.dart';
 
+/// 로그인한 요원의 상세 프로필 상태(소속 전술 색상, 점령한 총 영토 수, 당일/누적 주행 마일리지)를
+/// 검토하고, 전술 색상 수정 및 본진 이전(Rebase), 로그아웃 등 작전 설정을 관리하는 프로필 화면 클래스입니다.
 class ProfileScreen extends StatelessWidget {
+  /// 프로필 화면의 생성자입니다.
   const ProfileScreen({super.key});
 
   @override
@@ -264,6 +267,8 @@ class ProfileScreen extends StatelessWidget {
     );
   }
 
+  /// 요원의 위치 추적 로그를 기반으로 금일 주행 거리 및 누적 주행 거리를 계측하여
+  /// 가시성 있는 모니터링 레이아웃으로 렌더링하는 전술 주행 기록 카드 위젯입니다.
   Widget _buildMileageCard(BuildContext context) {
     final loc = context.watch<LocationProvider>();
     final daily = loc.dailyDistance;
@@ -379,6 +384,9 @@ class ProfileScreen extends StatelessWidget {
     );
   }
 
+  /// 프로필 상단 카드에 표기될 핵심 통계 수치 항목을 빌드하는 도우미 위젯입니다.
+  /// 
+  /// [label]은 항목명, [value]는 기록값, [color]는 강조 텍스트 색상입니다.
   Widget _buildStatItem(String label, String value, Color color) {
     return Column(
       children: [
@@ -399,6 +407,7 @@ class ProfileScreen extends StatelessWidget {
     );
   }
 
+  /// 세련된 기하학적 형태(Beveled)의 외부 테두리를 적용하여 설정 메뉴 항목들의 컨테이너를 이루는 위젯입니다.
   Widget _buildMenuCard(List<Widget> children) {
     return Container(
       decoration: ShapeDecoration(
@@ -415,6 +424,7 @@ class ProfileScreen extends StatelessWidget {
     );
   }
 
+  /// 개별 설정 속성에 알맞은 타이틀, 부가 설명 및 우측 컨트롤러를 나타내는 메뉴 아이템 타일입니다.
   Widget _buildMenuItem({
     required IconData icon,
     required String title,
@@ -454,6 +464,7 @@ class ProfileScreen extends StatelessWidget {
     );
   }
 
+  /// 카드 내 메뉴 항목들을 선명하게 구분해주는 간결한 구분선 위젯입니다.
   Widget _buildDivider() {
     return Divider(
       height: 1,
@@ -463,6 +474,7 @@ class ProfileScreen extends StatelessWidget {
     );
   }
 
+  /// 로그아웃 처리를 하기 전 사용자에게 확인 의사를 재차 검증하는 경고 팝업 창을 띄웁니다.
   Future<bool?> _showLogoutConfirm(BuildContext context) {
     return showDialog<bool>(
       context: context,
@@ -523,6 +535,8 @@ class ProfileScreen extends StatelessWidget {
     );
   }
 
+  /// 사용자가 원하는 고유 전술 색상을 RGB 슬라이더 조작을 통해 직접 믹싱하고 
+  /// 서버 데이터에 영구 보존할 수 있도록 지원하는 컬러 피커 다이얼로그 팝업입니다.
   void _showColorPicker(BuildContext context, AuthProvider auth) {
     Color currentColor = TacticalTheme.parseColor(
       auth.profile?.colorHex ?? '#FFFFFF',
@@ -530,7 +544,7 @@ class ProfileScreen extends StatelessWidget {
     int r = (currentColor.r * 255.0).round().clamp(0, 255);
     int g = (currentColor.g * 255.0).round().clamp(0, 255);
     int b = (currentColor.b * 255.0).round().clamp(0, 255);
-
+ 
     showDialog(
       context: context,
       builder: (context) => StatefulBuilder(
@@ -539,7 +553,7 @@ class ProfileScreen extends StatelessWidget {
           final hexString =
               '#${r.toRadixString(16).padLeft(2, '0')}${g.toRadixString(16).padLeft(2, '0')}${b.toRadixString(16).padLeft(2, '0')}'
                   .toUpperCase();
-
+ 
           return AlertDialog(
             backgroundColor: GameColors.backgroundMedium,
             shape: BeveledRectangleBorder(
@@ -593,7 +607,7 @@ class ProfileScreen extends StatelessWidget {
                   ),
                 ),
                 const SizedBox(height: 24),
-
+ 
                 // RGB 슬라이더
                 _buildRGBSlider(
                   'R',
@@ -679,7 +693,8 @@ class ProfileScreen extends StatelessWidget {
       ),
     );
   }
-
+ 
+  /// RGB 개별 색상 채널의 가중치를 미세 제어하기 위한 커스텀 슬라이더 위젯입니다.
   Widget _buildRGBSlider(
     String label,
     int value,
@@ -690,6 +705,7 @@ class ProfileScreen extends StatelessWidget {
       padding: const EdgeInsets.only(bottom: 12.0),
       child: Row(
         children: [
+          Spacer(), // 기존 구조 및 간격을 해치지 않는 범위의 내부 정렬용 Spacer
           SizedBox(
             width: 20,
             child: Text(
@@ -741,11 +757,12 @@ class ProfileScreen extends StatelessWidget {
       ),
     );
   }
-
+ 
+  /// 요원의 현 GPS 물리 위치를 기점으로 삼아 메인 본부 기지(HQ) 헥사곤 좌표를 재설정(이전)하도록 통제하는 비동기 메서드입니다.
   Future<void> _handleRebase(BuildContext context, AuthProvider auth) async {
     final loc = context.read<LocationProvider>();
     final currentLocation = loc.currentLocation;
-
+ 
     if (currentLocation == null) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
@@ -756,10 +773,10 @@ class ProfileScreen extends StatelessWidget {
       );
       return;
     }
-
+ 
     final hex = HexService.latLngToHex(currentLocation);
     final tileId = 'hex_${hex['q']}_${hex['r']}';
-
+ 
     final confirm = await showDialog<bool>(
       context: context,
       builder: (context) => AlertDialog(
@@ -817,7 +834,7 @@ class ProfileScreen extends StatelessWidget {
         ],
       ),
     );
-
+ 
     if (confirm == true && context.mounted) {
       try {
         await auth.updateMainBase(tileId);

@@ -11,7 +11,7 @@ import 'package:conquest_mobile/providers/auth_provider.dart';
 import 'package:conquest_mobile/providers/location_provider.dart';
 import 'package:conquest_mobile/models/tile_model.dart';
 import 'package:conquest_mobile/models/user_profile.dart';
-import 'package:conquest_mobile/core/constants.dart';
+import 'package:conquest_mobile/core/constants/game_config.dart';
 
 // Fake Supabase Service 구현
 class FakeSupabaseService implements SupabaseService {
@@ -63,6 +63,9 @@ class FakeSupabaseService implements SupabaseService {
   }
 
   @override
+  Future<double?> fetchGoldRate() async => 1.0;
+
+  @override
   dynamic noSuchMethod(Invocation invocation) => super.noSuchMethod(invocation);
 }
 
@@ -95,6 +98,9 @@ class FakeAuthProvider extends ChangeNotifier implements AuthProvider {
   String? get error => null;
 
   @override
+  Future<void> refreshProfile() async {}
+
+  @override
   dynamic noSuchMethod(Invocation invocation) => super.noSuchMethod(invocation);
 }
 
@@ -114,6 +120,7 @@ class FakeLocationProvider extends ChangeNotifier implements LocationProvider {
 }
 
 void main() {
+  TestWidgetsFlutterBinding.ensureInitialized();
   // SharedPreferences 모킹 설정
   SharedPreferences.setMockInitialValues({});
 
@@ -151,9 +158,15 @@ void main() {
   }
 
   group('위성 점령 연결성 (checkSatelliteCaptureConnectivity) 테스트', () {
-    test('메인 기지가 내 소유 영토가 아닐 때는 연결성 검사에 실패해야 함', () async {
-      // 내 영토가 아무것도 없는 상태
-      fakeSupabase.mockTiles.clear();
+    test('메인 기지가 설정되지 않았을 때는 연결성 검사에 실패해야 함', () async {
+      fakeAuth.profile = UserProfile(
+        id: testUserId,
+        nickname: '테스트유저',
+        colorHex: '#FF0000',
+        teamId: 'none',
+        mainBaseTileId: '',
+        createdAt: DateTime.now(),
+      );
       final gameProvider = await createInitializedGameProvider();
 
       final result = gameProvider.checkSatelliteCaptureConnectivity('hex_1_0');
@@ -324,7 +337,7 @@ void main() {
       fakeSupabase.mockTiles.add(hqTile);
 
       // 2. 강제로 쿨타임의 절반 전에 위성점령을 했다고 주입
-      final cooltimeHalf = GameConstants.satelliteCaptureCooltime ~/ 2;
+      final cooltimeHalf = GameConfig.satelliteCaptureCooltime ~/ 2;
       final lastCaptureTime = DateTime.now().subtract(cooltimeHalf);
       final prefs = await SharedPreferences.getInstance();
       await prefs.setString('hq_last_satellite_capture_time', lastCaptureTime.toIso8601String());
@@ -333,7 +346,7 @@ void main() {
       final newGameProvider = await createInitializedGameProvider();
 
       expect(newGameProvider.remainingSatelliteCaptureCoolSeconds, greaterThan(0));
-      expect(newGameProvider.remainingSatelliteCaptureCoolSeconds, lessThanOrEqualTo(GameConstants.satelliteCaptureCooltime.inSeconds));
+      expect(newGameProvider.remainingSatelliteCaptureCoolSeconds, lessThanOrEqualTo(GameConfig.satelliteCaptureCooltime.inSeconds));
 
       // 3. 쿨타임 대기 상태에서 점령 시도 -> 차단되어야 함
       newGameProvider.executeSatelliteCapture('hex_1_0');

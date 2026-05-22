@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import '../../models/alert_model.dart';
-import '../../core/constants.dart';
+import '../../core/constants/colors.dart';
 
 /// 전술 알림 아이템 위젯
 class AlertWidget extends StatelessWidget {

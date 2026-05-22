@@ -1,21 +1,27 @@
 import 'dart:ui';
 import 'package:flame/components.dart';
-import '../../core/constants.dart';
+import '../../core/constants/colors.dart';
 import '../conquest_game.dart';
 import '../../services/hex_service.dart';
 
-/// 메인 기지(HQ) 타일의 위치에 전술 시각 효과 및 마커를 렌더링하는 컴포넌트
+/// 요원의 본부 기지(HQ) 지리적 좌표 상에 홈(Home) 모양 아이콘 마커를 렌더링하여 전술 본부를 시각화하는 Flame 컴포넌트
 class HQBaseMarker extends PositionComponent with HasGameReference<ConquestGame> {
+  /// 본부 기지 타일의 H3 q축 좌표값
   final int q;
+  /// 본부 기지 타일의 H3 r축 좌표값
   final int r;
+  /// 본부 기지 요원의 식별 색상 코드 (Hex)
   String? colorHex;
   
+  /// 스크린 기준으로 변환 투영된 헥사곤 거점의 꼭짓점 픽셀 좌표 리스트
   List<Offset> _screenCorners = [];
   
+  /// HQBaseMarker 생성자로 H3 좌표 및 진영 색상을 설정받고 렌더링 레이어 우선순위(Priority)를 조율합니다.
   HQBaseMarker({required this.q, required this.r, this.colorHex}) {
     priority = 15; // 플레이어(20)보다는 아래, 일반 타일(0)보다는 위
   }
 
+  /// 본부 기지 요원의 전술 식별 색상 정보를 외부에서 갱신합니다.
   void updateColor(String? newColorHex) {
     if (colorHex != newColorHex) {
       colorHex = newColorHex;
@@ -62,6 +68,7 @@ class HQBaseMarker extends PositionComponent with HasGameReference<ConquestGame>
     _drawHQHome(canvas, cx, cy, GameColors.colorAccent);
   }
 
+  /// 지정된 화면 중앙(cx, cy) 좌표를 기준으로 전술 본부의 집 형태 비트맵 외곽선을 직접 연출하여 드로잉합니다.
   void _drawHQHome(Canvas canvas, double cx, double cy, Color color) {
     final paint = Paint()
       ..color = GameColors.colorAccent

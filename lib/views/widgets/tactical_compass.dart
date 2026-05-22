@@ -1,7 +1,8 @@
 import 'dart:math' as math;
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import '../../core/constants.dart';
+import '../../core/constants/colors.dart';
+import '../../core/constants/game_config.dart';
 import '../../providers/location_provider.dart';
 
 /// 전술 나침반(Tactical Compass) UI 위젯
@@ -41,7 +42,7 @@ class _TacticalCompassState extends State<TacticalCompass>
     final accuracy = loc.currentAccuracy;
 
     // GPS 신호 품질 판별 (15m 이하: 양호, 15m 초과 또는 비활성: 경고)
-    final bool isSignalGood = isGpsActive && accuracy <= GameConstants.captureAccuracyThreshold;
+    final bool isSignalGood = isGpsActive && accuracy <= GameConfig.captureAccuracyThreshold;
 
     return AnimatedBuilder(
       animation: _pulseController,

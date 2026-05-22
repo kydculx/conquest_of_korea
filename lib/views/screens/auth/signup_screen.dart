@@ -1,31 +1,54 @@
 import 'dart:math';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import '../../../core/constants.dart';
+import '../../../core/constants/colors.dart';
 import '../../../core/constants/strings.dart';
 import '../../../core/utils/error_translator.dart';
 import '../../../providers/auth_provider.dart';
 
+/// 이메일과 비밀번호 기반의 자체 회원 계정을 생성하고, 서비스 내 고유 닉네임 및
+/// 전술 색상을 최초로 연동하여 신규 가입을 처리하는 회원가입 화면 클래스입니다.
 class SignupScreen extends StatefulWidget {
+  /// 회원가입 화면의 생성자입니다.
   const SignupScreen({super.key});
 
   @override
   State<SignupScreen> createState() => _SignupScreenState();
 }
 
+/// [SignupScreen]의 상태 및 회원가입에 필요한 유효성 검증 로직을 관리하는 상태 클래스입니다.
 class _SignupScreenState extends State<SignupScreen> {
+  /// 입력받은 이메일 주소를 처리하는 텍스트 컨트롤러입니다.
   final _emailController = TextEditingController();
+
+  /// 입력받은 비밀번호를 처리하는 텍스트 컨트롤러입니다.
   final _passwordController = TextEditingController();
+
+  /// 입력받은 닉네임을 처리하는 텍스트 컨트롤러입니다.
   final _nicknameController = TextEditingController();
 
+  /// 요원의 전술 영역 구분을 위한 고유 매핑 색상입니다.
   Color _selectedColor = GameColors.accentNeon;
+
+  /// 비밀번호 입력란의 마스킹(숨김) 활성화 여부 플래그입니다.
   bool _isObscure = true;
+
+  /// 닉네임 중복 체크 여부를 나타내는 플래그입니다.
   bool _isNicknameChecked = false;
+
+  /// 중복 확인 결과 닉네임의 가용 여부를 나타내는 플래그입니다.
   bool _isNicknameAvailable = false;
+
+  /// 닉네임의 서버 중복 검사가 비동기적으로 호출 중인지 나타내는 플래그입니다.
   bool _isCheckingNickname = false;
 
+  /// 이메일의 중복 및 형식 체크 완료 여부를 나타내는 플래그입니다.
   bool _isEmailChecked = false;
+
+  /// 이메일의 형식이 유효하고 사용 가능한 계정인지 여부를 나타내는 플래그입니다.
   bool _isEmailValid = false;
+
+  /// 이메일 검사를 수행 중인 상태인지 나타내는 플래그입니다.
   bool _isCheckingEmail = false;
 
   @override
@@ -48,6 +71,7 @@ class _SignupScreenState extends State<SignupScreen> {
     });
   }
 
+  /// 요원의 전술 영역 구분을 위한 밝고 채도 높은 무작위 색상을 HSL 좌표계를 활용하여 생성합니다.
   void _generateRandomColor() {
     final random = Random();
     // 세련된 네온 계열 색상 추출을 위해 HSL 사용
@@ -68,6 +92,7 @@ class _SignupScreenState extends State<SignupScreen> {
     super.dispose();
   }
 
+  /// 사용자가 입력한 이메일의 정규식 규격 일치성 및 서버상의 존재 여부를 비동기적으로 검증합니다.
   Future<void> _checkEmail() async {
     final email = _emailController.text.trim();
     if (email.isEmpty) {
@@ -117,6 +142,7 @@ class _SignupScreenState extends State<SignupScreen> {
     }
   }
 
+  /// 사용자가 입력한 닉네임의 서버 중복 여부를 비동기적으로 호출하여 검증합니다.
   Future<void> _checkNickname() async {
     final nickname = _nicknameController.text.trim();
     if (nickname.isEmpty) {
@@ -147,6 +173,7 @@ class _SignupScreenState extends State<SignupScreen> {
     }
   }
 
+  /// 필수 서비스 이용 약관의 동의 정보를 기반으로 회원 가입 및 계정 생성을 요청합니다.
   Future<void> _handleSignup() async {
     final args = ModalRoute.of(context)?.settings.arguments as Map<String, dynamic>?;
     final termsAgreedAt = args?['termsAgreedAt'] as DateTime?;
@@ -525,6 +552,11 @@ class _SignupScreenState extends State<SignupScreen> {
     );
   }
 
+  /// 회원가입 입력 필드 디자인의 통일성을 위한 커스텀 텍스트 폼 필드를 빌드하는 헬퍼 메서드입니다.
+  /// 
+  /// [controller]는 텍스트 입력을 제어하며, [label]은 입력란의 힌트/라벨 텍스트입니다.
+  /// [icon]은 입력란 좌측의 접두사 아이콘이며, [isObscure]가 참이면 텍스트를 마스킹 처리합니다.
+  /// [suffixIcon]은 입력란 우측에 들어갈 부가적인 아이콘 버튼(예: 패스워드 표시 토글)입니다.
   Widget _buildTextField({
     required TextEditingController controller,
     required String label,

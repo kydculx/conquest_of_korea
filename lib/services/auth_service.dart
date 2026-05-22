@@ -7,16 +7,18 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 import '../models/user_profile.dart';
 import '../core/constants/strings.dart';
 
+/// Supabase Auth 서비스와 소셜 로그인(구글, 애플, 카카오) 연동을 총괄하는 인증 관리 서비스 클래스
 class AuthService {
+  /// Supabase SDK 클라이언트 객체
   final SupabaseClient _client = Supabase.instance.client;
 
-  /// 현재 로그인된 사용자 정보 가져오기
+  /// 현재 로그인 완료 상태인 사용자(User) 정보를 반환합니다. 비로그인 시 null을 반환합니다.
   User? get currentUser => _client.auth.currentUser;
 
-  /// 세션 스트림
+  /// 사용자 로그인/로그아웃 등 세션 상태 변화를 실시간으로 수신하는 스트림을 제공합니다.
   Stream<AuthState> get authStateChanges => _client.auth.onAuthStateChange;
 
-  /// 회원가입
+  /// 신규 에이전트 계정 등록(이메일 가입)과 함께 서비스 약관 동의 내역 및 초기 프로필 정보를 등록합니다.
   Future<AuthResponse> signUp({
     required String email,
     required String password,
@@ -40,7 +42,6 @@ class AuthService {
     );
 
     // Supabase 이메일 열거 방지(Prevent email enumeration) 정책 대응
-    // 이미 존재하는 이메일로 가입 시도 시 에러 대신 가짜 User 객체를 반환하며 identities가 비어있음
     if (response.user != null &&
         response.user!.identities != null &&
         response.user!.identities!.isEmpty) {
@@ -50,7 +51,6 @@ class AuthService {
       );
     }
 
-    // 가입 성공 시 profiles 테이블에 추가 데이터 저장
     if (response.user != null) {
       try {
         await _client.from('profiles').upsert({
@@ -67,8 +67,6 @@ class AuthService {
           'marketing_agreed_at': marketingAgreedAt?.toIso8601String(),
         });
       } catch (e) {
-        // 42501(권한 부족) 등의 오류는 이메일 인증 전이라 발생할 수 있음
-        // 데이터는 이미 auth.users의 metadata에 저장되어 있으므로 로그만 남기고 진행
         debugPrint('⚠️ 프로필 테이블 저장 생략 (인증 대기 중일 수 있음): $e');
       }
     }
@@ -76,7 +74,7 @@ class AuthService {
     return response;
   }
 
-  /// 로그인
+  /// 이메일 주소 및 패스워드를 기반으로 로그인을 비동기 시도합니다.
   Future<AuthResponse> signIn({
     required String email,
     required String password,
@@ -87,12 +85,11 @@ class AuthService {
     );
   }
 
-  /// 구글 로그인 (네이티브)
+  /// 구글 IDP 및 GoogleSignIn 네이티브 SDK를 이용해 구글 계정으로 로그인을 시도합니다.
   Future<void> signInWithGoogle() async {
     try {
       debugPrint('🚀 Native Google Sign In Start...');
 
-      // GoogleSignIn 설정 (Web Client ID 필수)
       const webClientId =
           '99438286233-e5fpvqd6ngo56e7230vej7aj5efhjg31.apps.googleusercontent.com';
 
@@ -103,14 +100,12 @@ class AuthService {
         serverClientId: webClientId,
       );
 
-      // 1. 네이티브 로그인 창 표시
       final googleUser = await googleSignIn.signIn();
       if (googleUser == null) {
         debugPrint('⚠️ Google Sign In cancelled by user');
         return;
       }
 
-      // 2. 인증 정보 획득
       final googleAuth = await googleUser.authentication;
       final idToken = googleAuth.idToken;
       final accessToken = googleAuth.accessToken;
@@ -119,8 +114,6 @@ class AuthService {
 
       debugPrint('🔑 Native Google Auth Success. ID Token found.');
 
-      // 3. Supabase에 ID Token으로 로그인 시도
-      // 주의: Nonce mismatch 에러 발생 시 Supabase 대시보드에서 "Skip nonce checks"를 활성화해야 합니다.
       await _client.auth.signInWithIdToken(
         provider: OAuthProvider.google,
         idToken: idToken,
@@ -134,10 +127,9 @@ class AuthService {
     }
   }
 
-  /// 애플 로그인
+  /// 애플 계정을 활용하여 플랫폼 네이티브 크레덴셜 혹은 Supabase OAuth 웹 인증 로그인을 시도합니다.
   Future<void> signInWithApple() async {
     if (!kIsWeb && Platform.isIOS) {
-      // iOS: 네이티브 Apple ID 인증 사용
       final credential = await SignInWithApple.getAppleIDCredential(
         scopes: [
           AppleIDAuthorizationScopes.email,
@@ -153,7 +145,6 @@ class AuthService {
         idToken: idToken,
       );
     } else {
-      // Android 및 기타: Supabase OAuth 브라우저 기반 로그인 사용
       await _client.auth.signInWithOAuth(
         OAuthProvider.apple,
         redirectTo: 'com.watercherry.conquestofkorea://login-callback/',
@@ -161,7 +152,7 @@ class AuthService {
     }
   }
 
-  /// 카카오 로그인
+  /// 카카오 SDK를 사용하여 카카오톡 네이티브 혹은 카카오 계정 인증으로 OIDC ID Token을 발급받아 로그인을 실행합니다.
   Future<AuthResponse> signInWithKakao() async {
     bool isInstalled = await kakao.isKakaoTalkInstalled();
     kakao.OAuthToken token;
@@ -172,7 +163,6 @@ class AuthService {
       token = await kakao.UserApi.instance.loginWithKakaoAccount();
     }
 
-    // 카카오 로그인 시 ID Token이 없는 경우 처리 (OIDC 미설정 시)
     final idToken = token.idToken;
     if (idToken == null) {
       debugPrint(
@@ -202,12 +192,12 @@ class AuthService {
     }
   }
 
-  /// 로그아웃
+  /// 현재 활성화된 세션을 로그아웃 처리하여 종료합니다.
   Future<void> signOut() async {
     await _client.auth.signOut();
   }
 
-  /// 사용자 프로필 조회
+  /// 특정 사용자 ID에 매핑된 상세 [UserProfile] 객체를 조회하여 반환합니다. 없을 시 null을 반환합니다.
   Future<UserProfile?> getUserProfile(String userId) async {
     try {
       final response = await _client
@@ -222,12 +212,10 @@ class AuthService {
     }
   }
 
-  /// 프로필 업데이트
+  /// 사용자 프로필 정보를 업데이트하고 기 점령 영토의 타일 컬러도 동일 색상으로 동기화 갱신합니다.
   Future<void> updateProfile(UserProfile profile) async {
-    // 1. profiles 테이블 업데이트
     await _client.from('profiles').upsert(profile.toJson());
 
-    // 2. 이미 점령한 타일들의 색상도 사용자가 지정한 새로운 색상으로 동기화
     try {
       await _client
           .from('captured_tiles')
@@ -239,7 +227,7 @@ class AuthService {
     }
   }
 
-  /// 닉네임 중복 체크
+  /// 지정한 닉네임이 다른 사용자들에 의해 이미 점유되어 있는지 가용성 여부를 검사합니다.
   Future<bool> isNicknameAvailable(String nickname) async {
     final response = await _client
         .from('profiles')
@@ -250,24 +238,21 @@ class AuthService {
     return response == null;
   }
 
-  /// 이메일 중복 체크 (RPC 호출)
+  /// 지정한 이메일 주소가 다른 계정에 의해 이미 점유되어 있는지 가용성 여부를 검사합니다 (RPC 연동).
   Future<bool> isEmailAvailable(String email) async {
     try {
-      // Supabase RPC 함수 호출
       final bool exists = await _client.rpc(
         'check_email_exists',
         params: {'email_to_check': email},
       );
-      return !exists; // 존재하면(true) 사용 불가능(false) 반환
+      return !exists;
     } catch (e) {
       debugPrint('⚠️ 이메일 중복 체크 중 오류 발생: $e');
-      // RPC가 생성되지 않았을 경우를 대비해 기본적으로 true(사용가능)를 반환하거나
-      // 사용자에게 설정을 요청하는 에러를 던질 수 있습니다.
       return true;
     }
   }
 
-  /// 프로필 거리 정보 업데이트
+  /// 누적 이동 거리 및 당일 이동 거리를 프로필 정보에 비동기 반영합니다.
   Future<void> updateProfileDistance(
     String userId,
     double totalDistance,

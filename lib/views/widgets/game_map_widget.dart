@@ -4,7 +4,8 @@ import 'package:flame/game.dart';
 import 'package:latlong2/latlong.dart';
 import 'package:provider/provider.dart';
 import '../../game/conquest_game.dart';
-import '../../core/constants.dart';
+import '../../core/constants/colors.dart';
+import '../../core/constants/map_config.dart';
 import '../../providers/game_provider.dart';
 import '../../providers/location_provider.dart'; // 추가: LocationProvider 임포트
 import '../../services/hex_service.dart'; // 추가: HexService 임포트
@@ -31,7 +32,7 @@ class _GameMapWidgetState extends State<GameMapWidget>
   bool _isFollowing = true;
   bool _isPinching = false; // 추가: 핀치 줌 진행 중 여부 플래그
   int _pointerCount = 0; // 추가: 화면에 터치 중인 활성 포인터(손가락) 개수
-  double _currentZoom = GameConstants.focusZoom;
+  double _currentZoom = MapConfig.focusZoom;
   LocationProvider? _locProvider; // 추가: LocationProvider 참조 보관
   AnimationController? _animationController; // 추가: 내 위치 애니메이션 컨트롤러
 
@@ -98,7 +99,7 @@ class _GameMapWidgetState extends State<GameMapWidget>
     if (_isFollowing && widget.initialLocation != oldWidget.initialLocation) {
       final gameProvider = Provider.of<GameProvider>(context, listen: false);
       if (!gameProvider.isMapRotationMode) {
-        _animatedMapMove(widget.initialLocation, GameConstants.focusZoom, 0.0);
+        _animatedMapMove(widget.initialLocation, MapConfig.focusZoom, 0.0);
       }
     }
   }
@@ -192,10 +193,10 @@ class _GameMapWidgetState extends State<GameMapWidget>
                 mapController: _mapController,
                 options: MapOptions(
                   initialCenter: widget.initialLocation,
-                  initialZoom: GameConstants.focusZoom,
-                  minZoom: GameConstants.minZoom,
-                  maxZoom: GameConstants.maxZoom,
-                  // 남한 영토 기준 + 여유 공간(Margin)을 두어 러프하게 바운더리 제한 (GameConstants 외부 변수 참조)
+                  initialZoom: MapConfig.focusZoom,
+                  minZoom: MapConfig.minZoom,
+                  maxZoom: MapConfig.maxZoom,
+                  // 남한 영토 기준 + 여유 공간(Margin)을 두어 러프하게 바운더리 제한 (MapConfig 외부 변수 참조)
                   // contain 대신 containCenter를 사용하여 줌 아웃 시 화면이 바운더리보다 커져서 크래시나는 현상 방지
                   cameraConstraint: const CameraConstraint.unconstrained(),
                   // 맵 회전(Rotation) 제스처 비활성화
@@ -321,13 +322,13 @@ class _GameMapWidgetState extends State<GameMapWidget>
                               : 0.0;
                           _animatedMapMove(
                             loc.currentLocation!,
-                            GameConstants.focusZoom,
+                            MapConfig.focusZoom,
                             targetRotation,
                           );
                         } else {
                           _animatedMapMove(
                             widget.initialLocation,
-                            GameConstants.focusZoom,
+                            MapConfig.focusZoom,
                             0.0,
                           );
                         }
