@@ -148,6 +148,20 @@ class _SignupScreenState extends State<SignupScreen> {
   }
 
   Future<void> _handleSignup() async {
+    final args = ModalRoute.of(context)?.settings.arguments as Map<String, dynamic>?;
+    final termsAgreedAt = args?['termsAgreedAt'] as DateTime?;
+    final privacyAgreedAt = args?['privacyAgreedAt'] as DateTime?;
+    final locationAgreedAt = args?['locationAgreedAt'] as DateTime?;
+    final marketingAgreedAt = args?['marketingAgreedAt'] as DateTime?;
+
+    if (termsAgreedAt == null || privacyAgreedAt == null || locationAgreedAt == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('필수 정책 동의 정보가 누락되었습니다. 다시 시도해주세요.')),
+      );
+      Navigator.of(context).pop();
+      return;
+    }
+
     if (_nicknameController.text.isEmpty) {
       ScaffoldMessenger.of(
         context,
@@ -179,6 +193,10 @@ class _SignupScreenState extends State<SignupScreen> {
         password: _passwordController.text.trim(),
         nickname: _nicknameController.text.trim(),
         colorHex: colorHex,
+        termsAgreedAt: termsAgreedAt,
+        privacyAgreedAt: privacyAgreedAt,
+        locationAgreedAt: locationAgreedAt,
+        marketingAgreedAt: marketingAgreedAt,
         teamId: 'none',
       );
       if (mounted) {

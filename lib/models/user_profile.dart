@@ -8,6 +8,12 @@ class UserProfile {
   final double totalDistance;
   final double dailyDistance;
 
+  // 정책 동의 시각 필드 추가
+  final DateTime? termsAgreedAt;
+  final DateTime? privacyAgreedAt;
+  final DateTime? locationAgreedAt;
+  final DateTime? marketingAgreedAt;
+
   UserProfile({
     required this.id,
     required this.nickname,
@@ -17,6 +23,10 @@ class UserProfile {
     this.mainBaseTileId,
     this.totalDistance = 0.0,
     this.dailyDistance = 0.0,
+    this.termsAgreedAt,
+    this.privacyAgreedAt,
+    this.locationAgreedAt,
+    this.marketingAgreedAt,
   });
 
   factory UserProfile.fromJson(Map<String, dynamic> json) {
@@ -29,6 +39,18 @@ class UserProfile {
       mainBaseTileId: json['main_base_tile_id'] as String?,
       totalDistance: (json['total_distance'] as num?)?.toDouble() ?? 0.0,
       dailyDistance: (json['daily_distance'] as num?)?.toDouble() ?? 0.0,
+      termsAgreedAt: json['terms_agreed_at'] != null
+          ? DateTime.parse(json['terms_agreed_at'] as String)
+          : null,
+      privacyAgreedAt: json['privacy_agreed_at'] != null
+          ? DateTime.parse(json['privacy_agreed_at'] as String)
+          : null,
+      locationAgreedAt: json['location_agreed_at'] != null
+          ? DateTime.parse(json['location_agreed_at'] as String)
+          : null,
+      marketingAgreedAt: json['marketing_agreed_at'] != null
+          ? DateTime.parse(json['marketing_agreed_at'] as String)
+          : null,
     );
   }
 
@@ -42,6 +64,10 @@ class UserProfile {
       'main_base_tile_id': mainBaseTileId,
       'total_distance': totalDistance,
       'daily_distance': dailyDistance,
+      'terms_agreed_at': termsAgreedAt?.toIso8601String(),
+      'privacy_agreed_at': privacyAgreedAt?.toIso8601String(),
+      'location_agreed_at': locationAgreedAt?.toIso8601String(),
+      'marketing_agreed_at': marketingAgreedAt?.toIso8601String(),
     };
   }
 
@@ -54,6 +80,10 @@ class UserProfile {
     String? mainBaseTileId,
     double? totalDistance,
     double? dailyDistance,
+    DateTime? termsAgreedAt,
+    DateTime? privacyAgreedAt,
+    DateTime? locationAgreedAt,
+    DateTime? marketingAgreedAt,
   }) {
     return UserProfile(
       id: id ?? this.id,
@@ -64,6 +94,10 @@ class UserProfile {
       mainBaseTileId: mainBaseTileId ?? this.mainBaseTileId,
       totalDistance: totalDistance ?? this.totalDistance,
       dailyDistance: dailyDistance ?? this.dailyDistance,
+      termsAgreedAt: termsAgreedAt ?? this.termsAgreedAt,
+      privacyAgreedAt: privacyAgreedAt ?? this.privacyAgreedAt,
+      locationAgreedAt: locationAgreedAt ?? this.locationAgreedAt,
+      marketingAgreedAt: marketingAgreedAt ?? this.marketingAgreedAt,
     );
   }
 }

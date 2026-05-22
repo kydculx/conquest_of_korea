@@ -22,6 +22,10 @@ class AuthService {
     required String password,
     required String nickname,
     required String colorHex,
+    required DateTime termsAgreedAt,
+    required DateTime privacyAgreedAt,
+    required DateTime locationAgreedAt,
+    DateTime? marketingAgreedAt,
     String teamId = 'none',
   }) async {
     final response = await _client.auth.signUp(
@@ -57,6 +61,10 @@ class AuthService {
           'created_at': DateTime.now().toIso8601String(),
           'total_distance': 0.0,
           'daily_distance': 0.0,
+          'terms_agreed_at': termsAgreedAt.toIso8601String(),
+          'privacy_agreed_at': privacyAgreedAt.toIso8601String(),
+          'location_agreed_at': locationAgreedAt.toIso8601String(),
+          'marketing_agreed_at': marketingAgreedAt?.toIso8601String(),
         });
       } catch (e) {
         // 42501(권한 부족) 등의 오류는 이메일 인증 전이라 발생할 수 있음

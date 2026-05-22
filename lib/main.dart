@@ -16,7 +16,8 @@ import 'providers/location_provider.dart';
 import 'services/geo_service.dart';
 import 'services/supabase_service.dart';
 import 'views/screens/auth/login_screen.dart';
-
+import 'views/screens/auth/terms_agreement_screen.dart';
+import 'views/screens/auth/signup_screen.dart';
 import 'views/screens/profile_screen.dart';
 import 'providers/auth_provider.dart';
 
@@ -117,6 +118,8 @@ class _ConquestApp extends StatelessWidget {
       routes: {
         '/login': (context) => const LoginScreen(),
         '/profile': (context) => const ProfileScreen(),
+        '/terms-agreement': (context) => const TermsAgreementScreen(),
+        '/signup': (context) => const SignupScreen(),
       },
     );
   }

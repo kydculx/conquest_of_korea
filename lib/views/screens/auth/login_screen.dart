@@ -4,7 +4,6 @@ import '../../../core/constants.dart';
 import '../../../core/constants/strings.dart';
 import '../../../core/utils/error_translator.dart';
 import '../../../providers/auth_provider.dart';
-import 'signup_screen.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -271,9 +270,7 @@ class _LoginScreenState extends State<LoginScreen> {
                 // Sign up Link
                 TextButton(
                   onPressed: () {
-                    Navigator.of(context).push(
-                      MaterialPageRoute(builder: (_) => const SignupScreen()),
-                    );
+                    Navigator.of(context).pushNamed('/terms-agreement');
                   },
                   child: Text(
                     GameStrings.createAccount,

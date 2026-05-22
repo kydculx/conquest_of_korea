@@ -183,5 +183,22 @@
   "satDisconnectedLabel": "No HQ or captured territory connection (Cannot capture)",
   "satLockOnReady": "Satellite lock-on complete. Waiting for data transfer.",
   "satAlreadyCapturedLabel": "This area is already captured.",
-  "captureExecute": "EXECUTE CAPTURE"
+  "captureExecute": "EXECUTE CAPTURE",
+  "termsAgreement": "Policy Agreement",
+  "agreeAll": "Agree to All",
+  "agreeAge": "[Required] Agree to age 14 or older",
+  "agreeTerms": "[Required] Agree to Terms of Service",
+  "agreePrivacy": "[Required] Agree to Collection & Use of Personal Info",
+  "agreeLocation": "[Required] Agree to GPS & Background Location Collection",
+  "agreeMarketing": "[Optional] Agree to Receive Push Notifications & Marketing Info",
+  "viewDetail": "View",
+  "agreeAndContinue": "Agree and Continue",
+  "agreeTermsBottomSheetTitle": "Terms of Service Details",
+  "agreePrivacyBottomSheetTitle": "Collection & Use of Personal Info Details",
+  "agreeLocationBottomSheetTitle": "Location & Background Tracking Details",
+  "agreeMarketingBottomSheetTitle": "Marketing Notifications Details",
+  "agreeTermsDetail": "This service is a location-based tactical game that captures territory in Korea based on real-time GPS. Users will interact and share territory in real-time. By checking this, you agree to fulfill the terms of service rules.",
+  "agreePrivacyDetail": "We collect email addresses and nicknames for user identification and account recovery. Collected information is safely stored until you delete your account, and is never provided to third parties.",
+  "agreeLocationDetail": "We collect latitude and longitude coordinates to execute captures, calculate daily distances, and synchronize real-time maps. Location data may be accessed in the background to guarantee smooth operation.",
+  "agreeMarketingDetail": "You agree to receive push notifications via FCM regarding territory invasion alerts, daily base status reports, and promotional events. You can decline this and still play the basic game."
 }

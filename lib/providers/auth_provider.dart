@@ -82,6 +82,10 @@ class AuthProvider extends ChangeNotifier {
     required String password,
     required String nickname,
     required String colorHex,
+    required DateTime termsAgreedAt,
+    required DateTime privacyAgreedAt,
+    required DateTime locationAgreedAt,
+    DateTime? marketingAgreedAt,
     String teamId = 'none',
   }) async {
     _setLoading(true);
@@ -91,6 +95,10 @@ class AuthProvider extends ChangeNotifier {
         password: password,
         nickname: nickname,
         colorHex: colorHex,
+        termsAgreedAt: termsAgreedAt,
+        privacyAgreedAt: privacyAgreedAt,
+        locationAgreedAt: locationAgreedAt,
+        marketingAgreedAt: marketingAgreedAt,
         teamId: teamId,
       );
     } finally {

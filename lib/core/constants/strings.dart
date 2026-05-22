@@ -227,4 +227,23 @@ class GameStrings {
   static String get satLockOnReady => 'satLockOnReady'.tr();
   static String get satAlreadyCapturedLabel => 'satAlreadyCapturedLabel'.tr();
   static String get captureExecute => 'captureExecute'.tr();
+
+  // 정책 동의 관련
+  static String get termsAgreement => 'termsAgreement'.tr();
+  static String get agreeAll => 'agreeAll'.tr();
+  static String get agreeAge => 'agreeAge'.tr();
+  static String get agreeTerms => 'agreeTerms'.tr();
+  static String get agreePrivacy => 'agreePrivacy'.tr();
+  static String get agreeLocation => 'agreeLocation'.tr();
+  static String get agreeMarketing => 'agreeMarketing'.tr();
+  static String get viewDetail => 'viewDetail'.tr();
+  static String get agreeAndContinue => 'agreeAndContinue'.tr();
+  static String get agreeTermsBottomSheetTitle => 'agreeTermsBottomSheetTitle'.tr();
+  static String get agreePrivacyBottomSheetTitle => 'agreePrivacyBottomSheetTitle'.tr();
+  static String get agreeLocationBottomSheetTitle => 'agreeLocationBottomSheetTitle'.tr();
+  static String get agreeMarketingBottomSheetTitle => 'agreeMarketingBottomSheetTitle'.tr();
+  static String get agreeTermsDetail => 'agreeTermsDetail'.tr();
+  static String get agreePrivacyDetail => 'agreePrivacyDetail'.tr();
+  static String get agreeLocationDetail => 'agreeLocationDetail'.tr();
+  static String get agreeMarketingDetail => 'agreeMarketingDetail'.tr();
 }
