@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:math' as math;
 import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
@@ -549,68 +550,158 @@ class _SatelliteCapturePanelState extends State<_SatelliteCapturePanel> {
   }
 }
 
-class _SatelliteScanFullscreenOverlay extends StatelessWidget {
+class _SatelliteScanFullscreenOverlay extends StatefulWidget {
   const _SatelliteScanFullscreenOverlay();
+
+  @override
+  State<_SatelliteScanFullscreenOverlay> createState() => _SatelliteScanFullscreenOverlayState();
+}
+
+class _SatelliteScanFullscreenOverlayState extends State<_SatelliteScanFullscreenOverlay>
+    with SingleTickerProviderStateMixin {
+  late AnimationController _controller;
+
+  @override
+  void initState() {
+    super.initState();
+    _controller = AnimationController(
+      vsync: this,
+      duration: const Duration(seconds: 4),
+    )..repeat();
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
     const double opacity = 0.015;
-    const double borderOpacity = 0.12;
-    
+    const double borderOpacity = 0.15;
+    const Color scanColor = Color(0xFFFF9900);
+
     return IgnorePointer(
-      child: Container(
-        decoration: BoxDecoration(
-          border: Border.all(
-            color: const Color(0xFFFF9900).withValues(alpha: borderOpacity),
-            width: 1.0,
-          ),
-        ),
-        child: Stack(
-          children: [
-            // 화면 구석 전술 브래킷 표시
-            _buildCornerBracket(Alignment.topLeft),
-            _buildCornerBracket(Alignment.topRight),
-            _buildCornerBracket(Alignment.bottomLeft),
-            _buildCornerBracket(Alignment.bottomRight),
-            
-            // 화면 전체에 은은하게 퍼지는 오렌지색 틴트
-            Container(
-              color: const Color(0xFFFF9900).withValues(alpha: opacity),
+      child: Stack(
+        children: [
+          // 전체 은은한 틴트 및 얇은 테두리
+          Container(
+            decoration: BoxDecoration(
+              border: Border.all(
+                color: scanColor.withValues(alpha: borderOpacity),
+                width: 1.5,
+              ),
+              color: scanColor.withValues(alpha: opacity),
             ),
-          ],
-        ),
+          ),
+          // 애니메이션 스캔 효과 (레이더 스윕, 동심원 펄스, 스캔라인 등)
+          Positioned.fill(
+            child: AnimatedBuilder(
+              animation: _controller,
+              builder: (context, child) {
+                return CustomPaint(
+                  painter: _SatelliteScanPainter(
+                    progress: _controller.value,
+                    color: scanColor,
+                  ),
+                );
+              },
+            ),
+          ),
+        ],
       ),
     );
   }
+}
 
-  Widget _buildCornerBracket(Alignment alignment) {
-    return Align(
-      alignment: alignment,
-      child: Container(
-        width: 18,
-        height: 18,
-        margin: const EdgeInsets.all(12),
-        decoration: BoxDecoration(
-          border: _getBorderForAlignment(alignment),
-        ),
-      ),
-    );
-  }
+class _SatelliteScanPainter extends CustomPainter {
+  final double progress;
+  final Color color;
 
-  Border _getBorderForAlignment(Alignment alignment) {
-    const Color orange = Color(0xFFFF9900);
-    const BorderSide side = BorderSide(color: orange, width: 1.0);
-    const BorderSide none = BorderSide.none;
+  _SatelliteScanPainter({required this.progress, required this.color});
 
-    if (alignment == Alignment.topLeft) {
-      return const Border(top: side, left: side, right: none, bottom: none);
-    } else if (alignment == Alignment.topRight) {
-      return const Border(top: side, right: side, left: none, bottom: none);
-    } else if (alignment == Alignment.bottomLeft) {
-      return const Border(bottom: side, left: side, top: none, right: none);
-    } else {
-      return const Border(bottom: side, right: side, top: none, left: none);
+  @override
+  void paint(Canvas canvas, Size size) {
+    final center = Offset(size.width / 2, size.height / 2);
+    final maxRadius = size.shortestSide * 0.45;
+
+    // 1. 스캔라인 (가로선) 그리기
+    final scanlinePaint = Paint()
+      ..color = color.withValues(alpha: 0.03)
+      ..strokeWidth = 0.5;
+    for (double y = 0; y < size.height; y += 4.0) {
+      canvas.drawLine(Offset(0, y), Offset(size.width, y), scanlinePaint);
     }
+
+    // 2. 맥동하는 동심 전술 링 (Pulsing Tactical Rings)
+    final ringPaint = Paint()
+      ..color = color.withValues(alpha: (1.0 - progress) * 0.15)
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = 1.0;
+    canvas.drawCircle(center, maxRadius * progress, ringPaint);
+
+    final staticRingPaint = Paint()
+      ..color = color.withValues(alpha: 0.05)
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = 0.8;
+    canvas.drawCircle(center, maxRadius * 0.5, staticRingPaint);
+    canvas.drawCircle(center, maxRadius, staticRingPaint);
+
+    // 3. 중앙 조준선 (Reticle)
+    final reticlePaint = Paint()
+      ..color = color.withValues(alpha: 0.25)
+      ..strokeWidth = 1.0;
+    
+    // 중앙 십자선 (중심부 살짝 비우기)
+    const double gap = 8.0;
+    const double len = 16.0;
+    // 가로선
+    canvas.drawLine(Offset(center.dx - len, center.dy), Offset(center.dx - gap, center.dy), reticlePaint);
+    canvas.drawLine(Offset(center.dx + gap, center.dy), Offset(center.dx + len, center.dy), reticlePaint);
+    // 세로선
+    canvas.drawLine(Offset(center.dx, center.dy - len), Offset(center.dx, center.dy - gap), reticlePaint);
+    canvas.drawLine(Offset(center.dx, center.dy + gap), Offset(center.dx, center.dy + len), reticlePaint);
+
+    // 4. 레이더 스윕 (Radar Sweep) 회전선
+    final angle = progress * 2 * math.pi;
+    final sweepPaint = Paint()
+      ..color = color.withValues(alpha: 0.18)
+      ..strokeWidth = 1.2;
+    final sweepTarget = Offset(
+      center.dx + maxRadius * math.cos(angle),
+      center.dy + maxRadius * math.sin(angle),
+    );
+    canvas.drawLine(center, sweepTarget, sweepPaint);
+
+    // 스윕선 잔상 그라데이션 그리기
+    final path = Path()
+      ..moveTo(center.dx, center.dy);
+    
+    // 이전 30도 범위의 잔상
+    for (int i = 0; i <= 30; i++) {
+      final a = angle - (i * math.pi / 180.0);
+      path.lineTo(
+        center.dx + maxRadius * math.cos(a),
+        center.dy + maxRadius * math.sin(a),
+      );
+    }
+    path.close();
+
+    final sweepGradientPaint = Paint()
+      ..shader = RadialGradient(
+        colors: [
+          color.withValues(alpha: 0.08),
+          color.withValues(alpha: 0.0),
+        ],
+      ).createShader(Rect.fromCircle(center: center, radius: maxRadius))
+      ..style = PaintingStyle.fill;
+    canvas.drawPath(path, sweepGradientPaint);
+  }
+
+  @override
+  bool shouldRepaint(covariant _SatelliteScanPainter oldDelegate) {
+    return oldDelegate.progress != progress || oldDelegate.color != color;
   }
 }
 
