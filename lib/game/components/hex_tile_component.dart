@@ -163,6 +163,33 @@ class HexTileComponent extends PositionComponent
       );
       _capturePaint.strokeWidth = 1.5 + (2.5 * pulse);
       canvas.drawPath(_cachedPath!, _capturePaint);
+
+      // 내부 채우기 애니메이션 (아래에서 위로 progress만큼 차오름)
+      canvas.save();
+      canvas.clipPath(_cachedPath!);
+      
+      double minY = corners[0].dy;
+      double maxY = corners[0].dy;
+      for (final c in corners) {
+        if (c.dy < minY) minY = c.dy;
+        if (c.dy > maxY) maxY = c.dy;
+      }
+      final height = maxY - minY;
+      final fillY = maxY - (height * progress);
+
+      final fillRect = Rect.fromLTRB(
+        corners.map((e) => e.dx).reduce((a, b) => a < b ? a : b),
+        fillY,
+        corners.map((e) => e.dx).reduce((a, b) => a > b ? a : b),
+        maxY,
+      );
+
+      final fillPaint = Paint()
+        ..color = captureColor.withValues(alpha: 130 / 255)
+        ..style = PaintingStyle.fill;
+      
+      canvas.drawRect(fillRect, fillPaint);
+      canvas.restore();
     }
   }
 }
