@@ -865,6 +865,10 @@ class GameProvider extends ChangeNotifier with WidgetsBindingObserver {
 
     cancelSatelliteCapture();
 
+    // [요구사항] 위성 점령 실행 시 스캔 조준선 커서 상태를 완전히 초기화(Clear)
+    _selectedScanTileId = null;
+    _selectedScanTileLatLng = null;
+
     _satelliteCapturingTileId = tileId;
     _satelliteCaptureProgress = 0.0;
     _satelliteCaptureStartTime = DateTime.now();
