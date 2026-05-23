@@ -211,10 +211,18 @@ class ConquestGame extends FlameGame {
 
     // 점령 중인 타일 특수 상태 처리 (위성 점령)
     if (isSatelliteCapturing && satelliteCapturingTileId != null) {
+      // 화살표가 도달하는 0.2(20%) 시점 이후부터 실제 게이지 점령 애니메이션을 0.0 ~ 1.0으로 표현
+      final double adjustedProgress = satelliteCaptureProgress < 0.2
+          ? 0.0
+          : ((satelliteCaptureProgress - 0.2) / 0.8).clamp(0.0, 1.0);
+
+      // 화살표 도달 이후 시점부터 타일에 점령 애니메이션(펄스/채우기)을 활성화
+      final bool shouldAnimateTile = satelliteCaptureProgress >= 0.2;
+
       if (_tileMap.containsKey(satelliteCapturingTileId)) {
         _tileMap[satelliteCapturingTileId]!.updateData(
-          isCapturing: true,
-          progress: satelliteCaptureProgress,
+          isCapturing: shouldAnimateTile,
+          progress: adjustedProgress,
           capturingColorHex: '#FF9900', // 위성 전용 테마 오렌지 색상
         );
       } else {
@@ -227,8 +235,8 @@ class ConquestGame extends FlameGame {
             final tempTile = HexTileComponent(
               colorHex: null,
               corners: screenCorners,
-              isCapturing: true,
-              progress: satelliteCaptureProgress,
+              isCapturing: shouldAnimateTile,
+              progress: adjustedProgress,
               capturingColorHex: '#FF9900',
             )..priority = 0;
             _tileMap[satelliteCapturingTileId] = tempTile;

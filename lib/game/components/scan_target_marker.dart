@@ -37,9 +37,9 @@ class ScanTargetMarker extends PositionComponent with HasGameReference<ConquestG
     super.update(dt);
     _timer += dt;
     
-    // 위성 점령 중일 때 progress 보간
+    // 위성 점령 중일 때 progress 보간 (전체 점령 진행률의 앞 20%를 화살표 이동 구간으로 배정)
     if (game.isSatelliteCapturing) {
-      final target = game.satelliteCaptureProgress;
+      final target = (game.satelliteCaptureProgress / 0.2).clamp(0.0, 1.0);
       // 매 프레임 dt 비중에 맞춰 목표치로 부드럽게 Lerp
       _smoothProgress += (target - _smoothProgress) * (dt * 10.0).clamp(0.0, 1.0);
     } else {
@@ -331,16 +331,23 @@ class ScanTargetMarker extends PositionComponent with HasGameReference<ConquestG
     final vec = tangent.vector;
     final angle = math.atan2(vec.dy, vec.dx);
 
+    // 화살표가 목적지에 도달할 때 자연스럽게 페이드아웃되도록 투명도 보정
+    double opacity = 1.0;
+    if (_smoothProgress > 0.8) {
+      opacity = ((1.0 - _smoothProgress) / 0.2).clamp(0.0, 1.0);
+    }
+    if (opacity <= 0.0) return;
+
     canvas.save();
     canvas.translate(pos.dx, pos.dy);
     canvas.rotate(angle);
 
     final arrowPaint = Paint()
-      ..color = themeColor
+      ..color = themeColor.withValues(alpha: opacity)
       ..style = PaintingStyle.fill;
 
     final arrowGlow = Paint()
-      ..color = themeColor.withValues(alpha: 0.5)
+      ..color = themeColor.withValues(alpha: 0.5 * opacity)
       ..style = PaintingStyle.fill
       ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 4.0);
 
