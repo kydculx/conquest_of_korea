@@ -173,9 +173,58 @@ class ScanTargetMarker extends PositionComponent with HasGameReference<ConquestG
       canvas.drawPath(path, borderPaint);
     } else {
       // 점령 전(화살표 이동 중이거나 단순 조준 프리뷰 상태인 경우)
-      // 위성 점령 실행 중(이동 중)에는 타겟커서와 가이드 링도 완전히 보이지 않게 감춥니다.
+      // 위성 점령 실행 중(이동 중)에는 목적지 타일에 은은한 점선 테두리와 비콘 수신 펄스 링 신호 효과를 그립니다.
       if (game.isSatelliteCapturing) {
-        return; // 이동 중에는 목적지 타일에 가이드 링도 그리지 않음
+        final Color beaconColor = const Color(0xFFFF9900); // 위성 점마 주황색
+
+        // 1. 은은한 점선 헥사곤 테두리 그리기
+        final borderPaint = Paint()
+          ..color = beaconColor.withValues(alpha: 0.35)
+          ..style = PaintingStyle.stroke
+          ..strokeWidth = 1.0;
+
+        const double dashWidth = 6.0;
+        const double dashSpace = 4.0;
+        const double totalDash = dashWidth + dashSpace;
+
+        for (final pathMetric in path.computeMetrics()) {
+          double distance = 0.0;
+          while (distance < pathMetric.length) {
+            final Path extractPath = pathMetric.extractPath(
+              distance,
+              distance + dashWidth > pathMetric.length ? pathMetric.length : distance + dashWidth,
+            );
+            canvas.drawPath(extractPath, borderPaint);
+            distance += totalDash;
+          }
+        }
+
+        // 2. 중심 비콘 도트 및 맥동하는 레이더 링 시각화
+        final double pulse = 0.5 + 0.5 * math.sin(_timer * 6.0); // 펄스 주기 속도 조정
+
+        // 중심 좌표 계산
+        double cx = 0, cy = 0;
+        for (final c in _screenCorners) {
+          cx += c.dx;
+          cy += c.dy;
+        }
+        cx /= _screenCorners.length;
+        cy /= _screenCorners.length;
+
+        // 중심 고정 비콘 점
+        final dotPaint = Paint()
+          ..color = beaconColor.withValues(alpha: 0.75)
+          ..style = PaintingStyle.fill;
+        canvas.drawCircle(Offset(cx, cy), 2.5, dotPaint);
+
+        // 부드럽게 방출되며 사라지는 레이저 원형 파동 링
+        final ringPaint = Paint()
+          ..color = beaconColor.withValues(alpha: 0.5 * (1.0 - pulse))
+          ..style = PaintingStyle.stroke
+          ..strokeWidth = 1.2;
+        canvas.drawCircle(Offset(cx, cy), 4.0 + (16.0 * pulse), ringPaint);
+
+        return; 
       }
 
       final pulse = 0.6 + 0.4 * math.sin(_timer * 5);
