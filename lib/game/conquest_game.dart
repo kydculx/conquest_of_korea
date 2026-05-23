@@ -186,7 +186,7 @@ class ConquestGame extends FlameGame {
       }
     });
 
-    // 점령 중인 타일 특수 상태 처리
+    // 점령 중인 타일 특수 상태 처리 (일반 점령)
     if (capturingTileId != null) {
       if (_tileMap.containsKey(capturingTileId)) {
         _tileMap[capturingTileId]!.updateData(
@@ -209,9 +209,39 @@ class ConquestGame extends FlameGame {
       }
     }
 
+    // 점령 중인 타일 특수 상태 처리 (위성 점령)
+    if (isSatelliteCapturing && satelliteCapturingTileId != null) {
+      if (_tileMap.containsKey(satelliteCapturingTileId)) {
+        _tileMap[satelliteCapturingTileId]!.updateData(
+          isCapturing: true,
+          progress: satelliteCaptureProgress,
+          capturingColorHex: '#FF9900', // 위성 전용 테마 오렌지 색상
+        );
+      } else {
+        final parts = satelliteCapturingTileId.split('_');
+        if (parts.length == 3 && parts[0] == 'hex') {
+          final q = int.tryParse(parts[1]);
+          final r = int.tryParse(parts[2]);
+          if (q != null && r != null) {
+            final screenCorners = _calcScreenCorners(q, r);
+            final tempTile = HexTileComponent(
+              colorHex: null,
+              corners: screenCorners,
+              isCapturing: true,
+              progress: satelliteCaptureProgress,
+              capturingColorHex: '#FF9900',
+            )..priority = 0;
+            _tileMap[satelliteCapturingTileId] = tempTile;
+            add(tempTile);
+          }
+        }
+      }
+    }
+
     // 점령 중이 아닌 타일 상태 초기화
     _tileMap.forEach((id, tile) {
-      if (id != capturingTileId && tile.isCapturing) {
+      final isStillCapturing = id == capturingTileId || (isSatelliteCapturing && id == satelliteCapturingTileId);
+      if (!isStillCapturing && tile.isCapturing) {
         tile.updateData(isCapturing: false, progress: 0.0);
       }
     });
