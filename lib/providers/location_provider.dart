@@ -5,6 +5,7 @@ import 'package:geolocator/geolocator.dart';
 import 'package:latlong2/latlong.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../services/geo_service.dart';
+import '../services/sensor_service.dart';
 import 'auth_provider.dart';
 
 /// 사용자 GPS 위치 좌표와 디바이스 컴파스 나침반 센서 데이터를 관리하고 이동거리를 계산해주는 프로바이더 클래스
@@ -19,6 +20,11 @@ class LocationProvider extends ChangeNotifier with WidgetsBindingObserver {
   StreamSubscription<CompassEvent>? _compassSubscription;
   /// GPS 신호 끊김을 판단하기 위한 모니터링 타이머
   Timer? _gpsSignalTimer;
+  /// 물리적 디바이스 흔들림을 판별하여 위치 오차를 감쇠하기 위한 센서 서비스
+  final SensorService _sensorService = SensorService();
+
+  @visibleForTesting
+  SensorService get sensorService => _sensorService;
 
   /// 위도, 경도 좌표 정보를 담은 현재 획득 위치
   LatLng? _currentLocation;
@@ -36,6 +42,10 @@ class LocationProvider extends ChangeNotifier with WidgetsBindingObserver {
   double _dailyDistance = 0.0;
   /// 일일 누적 이동거리 초기화(Reset) 시점을 파악하기 위해 보관하는 마지막 갱신 날짜 데이터 (예: 'YYYY-MM-DD')
   String _lastUpdateDate = '';
+
+  // 포그라운드/백그라운드 제어 및 지터 필터링 변수
+  bool _isForeground = true;
+  DateTime? _lastPositionTime;
 
   // 서버 동기화 제어 변수
   /// 가장 최근에 Supabase 서버에 정상 동기화 처리된 누적 이동거리 데이터 (미터)
@@ -61,6 +71,7 @@ class LocationProvider extends ChangeNotifier with WidgetsBindingObserver {
     WidgetsBinding.instance.addObserver(this);
     _startCompass();
     _loadDistanceData();
+    _sensorService.startListening();
   }
 
   /// AuthProvider 주입 (ProxyProvider에서 호출)
@@ -163,7 +174,6 @@ class LocationProvider extends ChangeNotifier with WidgetsBindingObserver {
   void _onPositionUpdate(Position position) {
     final newLocation = LatLng(position.latitude, position.longitude);
 
-    // 1m 미만 이동 및 정확도 동일 시 리빌드 생략 (배터리 절약)
     if (_currentLocation != null) {
       final distance = Geolocator.distanceBetween(
         _currentLocation!.latitude,
@@ -172,13 +182,67 @@ class LocationProvider extends ChangeNotifier with WidgetsBindingObserver {
         newLocation.longitude,
       );
 
-      // 정확도가 15m 이내이고, 2m 이상 유의미하게 이동했을 때만 거리 누적
-      if (position.accuracy <= 15.0 && distance >= 2.0) {
-        _checkDateReset();
-        _totalDistance += distance;
-        _dailyDistance += distance;
-        _saveDistanceData();
-        syncDistanceToServer(); // 주기적 서버 동기화 시도
+      final double timeDiffSec = _lastPositionTime != null
+          ? position.timestamp.difference(_lastPositionTime!).inMilliseconds / 1000.0
+          : 0.0;
+
+      // 1. 공통 정확도 신뢰성 필터링: 반경 20m 이내이며, 최소 8.0m 이상 실제 크게 이동한 데이터만 1차 인정 (기본 흔들림/회전 지터 영역 락)
+      if (position.accuracy <= 20.0 && distance >= 8.0) {
+        bool isMoving = false;
+        
+        // 순간 계산 속도 계산 (GPS 속도가 유실되었거나 부정확할 때 신뢰할 수 있는 백업 수단)
+        final double calculatedSpeed = timeDiffSec > 0.0 ? (distance / timeDiffSec) : position.speed;
+
+        if (_isForeground) {
+          // --- 포그라운드 상태 3중 극강 필터링 ---
+          // 가속도 흔들림 센서가 감지되더라도, 실제 물리적 이동 속도가 현실적인 도보/달리기 속도 윈도우(0.75 m/s ~ 5.0 m/s) 내에 있어야 실제 이동 중으로 판단합니다.
+          // 제자리에서 격렬히 흔들거나 휙 돌려 1초 만에 7~8m 이상 점프하는 비현실적인 순간 튐 속도(시속 18km 초과)를 완벽하게 차단합니다.
+          final bool hasMotion = _sensorService.isPhysicallyMoving;
+          
+          // [1단계] 보행 유효 속도 윈도우 (Walking Speed Window: 0.75 m/s ~ 5.0 m/s)
+          final bool hasMinimumSpeed = (position.speed >= 0.75 && position.speed <= 5.0) || 
+                                       (calculatedSpeed >= 0.75 && calculatedSpeed <= 5.0);
+          
+          // [2단계] 센서 감지 여부와 무관하게 하드웨어 칩셋이 보증하는 명확한 등속/고속 이동 조건 (물리 속도 speed >= 1.0 m/s)
+          // 수학적으로 튀는 calculatedSpeed는 여기에 포함하지 않아 정지 상태의 GPS 뜀(Drift)을 철저히 차단합니다.
+          final bool hasClearSpeed = position.speed >= 1.0;
+
+          // [3단계] 1.5배 오차 범위 신뢰 타원 드리프트 게이트 (1.5x Drift Gate)
+          // 이동거리가 수신 정확도 오차 반경(accuracy)의 1.5배 미만인 미세 지터인 경우, 오차 범위 내의 흔들림 잡음으로 판단해 100% 차단합니다.
+          final bool isWithinErrorBound = distance < position.accuracy * 1.5;
+
+          if (((hasMotion && hasMinimumSpeed) || hasClearSpeed) && !isWithinErrorBound) {
+            isMoving = true;
+          } else {
+            debugPrint('📡 [포그라운드 극강 필터] 제자리 회전/흔들기 차단 - Motion: $hasMotion, Speed: ${position.speed.toStringAsFixed(2)} m/s, CalcSpeed: ${calculatedSpeed.toStringAsFixed(2)} m/s, ErrorBound: $isWithinErrorBound');
+          }
+        } else {
+          // --- 백그라운드 상태 이동 필터링 ---
+          // 백그라운드에서는 가속도 동작 센서가 차단되므로 GPS 속도 및 시간당 이동 거리 비율로 실제 유효한 이동(도보/차량) 여부를 판정
+          // KTX 고속철도 이동(시속 300km/h)까지 정상 측정되도록 상한 임계치를 시속 330km/h(91.6 m/s)로 대폭 확장
+          final double actualSpeed = position.speed > 0 ? position.speed : calculatedSpeed;
+
+          if (actualSpeed >= 0.5 && actualSpeed <= 91.6) {
+            isMoving = true;
+          } else {
+            debugPrint('📡 [백그라운드 필터] 속도 범위 이탈 스킵 - ActualSpeed: ${actualSpeed.toStringAsFixed(2)} m/s');
+          }
+        }
+
+        // 지터 노이즈 보정: 순간적인 위치 도약 등 비현실적인 순간 속도(시속 330km/h 초과) 차단
+        if (timeDiffSec > 0.0 && (distance / timeDiffSec) > 91.6) {
+          isMoving = false;
+          debugPrint('📡 [지터 필터] 비현실적 위치 도약 차단 (속도: ${(distance / timeDiffSec * 3.6).toStringAsFixed(1)} km/h)');
+        }
+
+        if (isMoving) {
+          _checkDateReset();
+          _totalDistance += distance;
+          _dailyDistance += distance;
+          _saveDistanceData();
+          syncDistanceToServer(); // 주기적 서버 동기화 시도
+          debugPrint('📡 [거리 누적] 이동 반영 완료: +${distance.toStringAsFixed(1)}m (누적: ${_dailyDistance.toStringAsFixed(1)}m, 포그라운드: $_isForeground)');
+        }
       }
 
       if (distance < 1.0 && _currentAccuracy == position.accuracy) return;
@@ -186,6 +250,7 @@ class LocationProvider extends ChangeNotifier with WidgetsBindingObserver {
 
     _currentLocation = newLocation;
     _currentAccuracy = position.accuracy;
+    _lastPositionTime = position.timestamp;
     _isGpsActive = true;
 
     // 최초 위치 획득 완료
@@ -228,11 +293,17 @@ class LocationProvider extends ChangeNotifier with WidgetsBindingObserver {
   @override
   void didChangeAppLifecycleState(AppLifecycleState state) {
     if (state == AppLifecycleState.resumed) {
+      _isForeground = true;
       _startCompass();
+      _sensorService.startListening();
       syncDistanceToServer(force: true); // 앱 다시 켜질 때 최신화 동기화
+      debugPrint('📱 [Lifecycle] App Resumed - 포그라운드 센서 융합 모드 가동');
     } else if (state == AppLifecycleState.paused) {
+      _isForeground = false;
       _compassSubscription?.cancel();
+      _sensorService.stopListening(); // 백그라운드 배터리 자원 낭비 최소화
       syncDistanceToServer(force: true); // 백그라운드로 숨을 때 즉시 전송
+      debugPrint('📱 [Lifecycle] App Paused - 백그라운드 GPS 전용 측위 모드 가동');
     }
   }
 
@@ -242,6 +313,7 @@ class LocationProvider extends ChangeNotifier with WidgetsBindingObserver {
     _locationSubscription?.cancel();
     _compassSubscription?.cancel();
     _gpsSignalTimer?.cancel();
+    _sensorService.dispose();
     super.dispose();
   }
 }

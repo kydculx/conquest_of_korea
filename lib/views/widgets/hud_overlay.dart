@@ -1,4 +1,6 @@
+import 'dart:async';
 import 'dart:ui';
+import 'dart:ui' as ui;
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../../core/constants/colors.dart';
@@ -17,7 +19,7 @@ class HudOverlay extends StatelessWidget {
   Widget build(BuildContext context) {
     final game = context.watch<GameProvider>();
     final auth = context.watch<AuthProvider>();
-    
+
     // 기기별 하단 제스처바/내비게이션바 안전 영역 높이 자동 산출
     final double bottomPadding = MediaQuery.of(context).padding.bottom;
     // 여백 조율을 위한 기본 하단 마진
@@ -27,7 +29,7 @@ class HudOverlay extends StatelessWidget {
       children: [
         // 위성 스캔 활성화 시 화면 전술 데코레이션 오버레이 (가장 뒷레이어)
         if (auth.isAuthenticated && game.isScanMode)
-          const _SatelliteScanFullscreenOverlay(),
+          _SatelliteScanFullscreenOverlay(colorHex: auth.profile?.colorHex),
 
         // 상단 좌측 컨트롤 (나침반 & 당일 작전 거리 HUD)
         Positioned(
@@ -49,12 +51,7 @@ class HudOverlay extends StatelessWidget {
         ),
 
         // 상단 우측 컨트롤 영역 (프로필)
-        Positioned(
-          top: 60,
-          right: 20,
-          child: _AuthProfileButton(auth: auth),
-        ),
-
+        Positioned(top: 60, right: 20, child: _AuthProfileButton(auth: auth)),
 
         // 점령 중 안내 텍스트 (택티컬 터미널 메시지 스타일 - 위성 스캔 모드가 아닐 때만 노출)
         if (auth.isAuthenticated && game.isCapturing && !game.isScanMode)
@@ -64,15 +61,15 @@ class HudOverlay extends StatelessWidget {
             right: 0,
             child: Center(
               child: Container(
-                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 16,
+                  vertical: 6,
+                ),
                 decoration: ShapeDecoration(
                   color: GameColors.backgroundTranslucent,
                   shape: BeveledRectangleBorder(
                     borderRadius: BorderRadius.circular(4),
-                    side: BorderSide(
-                      color: GameColors.accentNeon,
-                      width: 1.0,
-                    ),
+                    side: BorderSide(color: GameColors.accentNeon, width: 1.0),
                   ),
                 ),
                 child: Row(
@@ -115,6 +112,16 @@ class HudOverlay extends StatelessWidget {
             ),
           ),
 
+        // 위성 점령 정보창 (최상단 레이어에 상단 중앙 고정 배치)
+        if (auth.isAuthenticated && game.isScanMode)
+          Positioned(
+            top: 170,
+            left: 0,
+            right: 0,
+            child: IgnorePointer(
+              child: Center(child: _SatelliteMapBubble(gameProvider: game)),
+            ),
+          ),
       ],
     );
   }
@@ -153,14 +160,10 @@ class _AuthProfileButton extends StatelessWidget {
               color: color.withValues(alpha: isAuth ? 0.15 : 0.05),
               blurRadius: isAuth ? 8.0 : 4.0,
               spreadRadius: 0.0,
-            )
+            ),
           ],
         ),
-        child: Icon(
-          Icons.person_rounded,
-          color: color,
-          size: 24,
-        ),
+        child: Icon(Icons.person_rounded, color: color, size: 24),
       ),
     );
   }
@@ -173,7 +176,8 @@ class _StartStopCaptureButton extends StatefulWidget {
   const _StartStopCaptureButton({required this.game});
 
   @override
-  State<_StartStopCaptureButton> createState() => _StartStopCaptureButtonState();
+  State<_StartStopCaptureButton> createState() =>
+      _StartStopCaptureButtonState();
 }
 
 class _StartStopCaptureButtonState extends State<_StartStopCaptureButton> {
@@ -241,7 +245,9 @@ class _StartStopCaptureButtonState extends State<_StartStopCaptureButton> {
                 height: 42,
                 child: Container(
                   decoration: BoxDecoration(
-                    borderRadius: const BorderRadius.vertical(top: Radius.circular(42)),
+                    borderRadius: const BorderRadius.vertical(
+                      top: Radius.circular(42),
+                    ),
                     gradient: LinearGradient(
                       begin: Alignment.topCenter,
                       end: Alignment.bottomCenter,
@@ -265,7 +271,9 @@ class _StartStopCaptureButtonState extends State<_StartStopCaptureButton> {
                     ),
                     const SizedBox(height: 1),
                     Text(
-                      isRunning ? GameStrings.stopCaptureMode : GameStrings.startCaptureMode,
+                      isRunning
+                          ? GameStrings.stopCaptureMode
+                          : GameStrings.startCaptureMode,
                       style: const TextStyle(
                         color: Color(0xFF0A1616),
                         fontSize: 12.5,
@@ -286,18 +294,56 @@ class _StartStopCaptureButtonState extends State<_StartStopCaptureButton> {
 
 // --- [신규] 위성 스캔 관련 추가 위젯들 ---
 
-/// 위성 스캔 모드 활성화 상태를 토글하는 전술 위성 버튼 위젯
-
 /// 위성 스캔 모드가 켜졌을 때 화면 전체에 전술 레이더 스캔 효과를 제공하는 오버레이
-class _SatelliteScanFullscreenOverlay extends StatelessWidget {
-  /// [_SatelliteScanFullscreenOverlay] 생성자
-  const _SatelliteScanFullscreenOverlay();
+class _SatelliteScanFullscreenOverlay extends StatefulWidget {
+  final String? colorHex;
+  const _SatelliteScanFullscreenOverlay({this.colorHex});
+
+  @override
+  State<_SatelliteScanFullscreenOverlay> createState() =>
+      _SatelliteScanFullscreenOverlayState();
+}
+
+class _SatelliteScanFullscreenOverlayState
+    extends State<_SatelliteScanFullscreenOverlay>
+    with SingleTickerProviderStateMixin {
+  late AnimationController _animController;
+
+  @override
+  void initState() {
+    super.initState();
+    _animController = AnimationController(
+      vsync: this,
+      duration: const Duration(seconds: 4),
+    )..repeat();
+  }
+
+  @override
+  void dispose() {
+    _animController.dispose();
+    super.dispose();
+  }
+
+  Color _parseColor() {
+    final hexString = widget.colorHex;
+    if (hexString == null || hexString.isEmpty)
+      return const Color(0xFFFF9900); // 디폴트 주황
+    final hexVal = hexString.replaceFirst('#', '');
+    try {
+      if (hexVal.length == 6) {
+        return Color(int.parse('FF$hexVal', radix: 16));
+      } else if (hexVal.length == 8) {
+        return Color(int.parse(hexVal, radix: 16));
+      }
+    } catch (_) {}
+    return const Color(0xFFFF9900);
+  }
 
   @override
   Widget build(BuildContext context) {
-    const double opacity = 0.015;
+    final Color scanColor = _parseColor();
+    const double opacity = 0.008;
     const double borderOpacity = 0.15;
-    const Color scanColor = Color(0xFFFF9900);
 
     return IgnorePointer(
       child: Stack(
@@ -312,12 +358,18 @@ class _SatelliteScanFullscreenOverlay extends StatelessWidget {
               color: scanColor.withValues(alpha: opacity),
             ),
           ),
-          // 정적 전술 조준선 및 스캔라인 효과
+          // 동적 전술 조준선 및 스캔라인 효과
           Positioned.fill(
-            child: CustomPaint(
-              painter: _SatelliteScanPainter(
-                color: scanColor,
-              ),
+            child: AnimatedBuilder(
+              animation: _animController,
+              builder: (context, child) {
+                return CustomPaint(
+                  painter: _SatelliteScanPainter(
+                    color: scanColor,
+                    progress: _animController.value,
+                  ),
+                );
+              },
             ),
           ),
         ],
@@ -326,56 +378,125 @@ class _SatelliteScanFullscreenOverlay extends StatelessWidget {
   }
 }
 
-/// 위성 스캔 화면에 동심 전술 링, Reticle(조준선), 가로 스캔라인 등의 그래픽을 그리는 정적 커스텀 페인터
 class _SatelliteScanPainter extends CustomPainter {
-  /// 페인팅에 사용할 기본 전술 색상
   final Color color;
+  final double progress;
 
-  /// [_SatelliteScanPainter] 생성자
-  _SatelliteScanPainter({required this.color});
+  _SatelliteScanPainter({required this.color, required this.progress});
 
   @override
   void paint(Canvas canvas, Size size) {
     final center = Offset(size.width / 2, size.height / 2);
-    final maxRadius = size.shortestSide * 0.45;
 
-    // 1. 스캔라인 (가로선) 그리기
-    final scanlinePaint = Paint()
+    // 1. 가장자리 어두운 비네팅 효과 (Vignette Shadow Glow)
+    final vignettePaint = Paint()
+      ..shader = ui.Gradient.radial(
+        center,
+        size.longestSide * 0.62,
+        [
+          Colors.transparent,
+          color.withValues(alpha: 0.04),
+          Colors.black.withValues(alpha: 0.42),
+        ],
+        [0.0, 0.65, 1.0],
+      );
+    canvas.drawRect(Rect.fromLTWH(0, 0, size.width, size.height), vignettePaint);
+
+    // 2. 바둑판 형태의 전술 격자 눈금 (+) (Tactical Grid Crosses) - 요동 없이 완전히 고정
+    final gridPaint = Paint()
       ..color = color.withValues(alpha: 0.03)
-      ..strokeWidth = 0.5;
-    for (double y = 0; y < size.height; y += 4.0) {
-      canvas.drawLine(Offset(0, y), Offset(size.width, y), scanlinePaint);
+      ..strokeWidth = 0.8;
+    const double gridSize = 64.0;
+    const double crossLen = 3.0;
+    for (double x = gridSize; x < size.width; x += gridSize) {
+      for (double y = gridSize; y < size.height; y += gridSize) {
+        canvas.drawLine(
+          Offset(x - crossLen, y),
+          Offset(x + crossLen, y),
+          gridPaint,
+        );
+        canvas.drawLine(
+          Offset(x, y - crossLen),
+          Offset(x, y + crossLen),
+          gridPaint,
+        );
+      }
     }
 
-    // 2. 고정 동심 전술 링 (Static Tactical Rings)
-    final staticRingPaint = Paint()
-      ..color = color.withValues(alpha: 0.05)
+    // 3. 네 귀퉁이 전술 조준 꺾쇠 (Corner Brackets)
+    final bracketPaint = Paint()
+      ..color = color.withValues(alpha: 0.35)
       ..style = PaintingStyle.stroke
-      ..strokeWidth = 0.8;
-    canvas.drawCircle(center, maxRadius * 0.5, staticRingPaint);
-    canvas.drawCircle(center, maxRadius, staticRingPaint);
+      ..strokeWidth = 1.8;
+    const double bSize = 20.0;
+    const double margin = 8.0;
 
-    // 3. 중앙 조준선 (Reticle)
-    final reticlePaint = Paint()
-      ..color = color.withValues(alpha: 0.25)
+    // 상좌
+    canvas.drawPath(
+      Path()
+        ..moveTo(margin + bSize, margin)
+        ..lineTo(margin, margin)
+        ..lineTo(margin, margin + bSize),
+      bracketPaint,
+    );
+    // 상우
+    canvas.drawPath(
+      Path()
+        ..moveTo(size.width - margin - bSize, margin)
+        ..lineTo(size.width - margin, margin)
+        ..lineTo(size.width - margin, margin + bSize),
+      bracketPaint,
+    );
+    // 하좌
+    canvas.drawPath(
+      Path()
+        ..moveTo(margin + bSize, size.height - margin)
+        ..lineTo(margin, size.height - margin)
+        ..lineTo(margin, size.height - margin - bSize),
+      bracketPaint,
+    );
+    // 하우
+    canvas.drawPath(
+      Path()
+        ..moveTo(size.width - margin - bSize, size.height - margin)
+        ..lineTo(size.width - margin, size.height - margin)
+        ..lineTo(size.width - margin, size.height - margin - bSize),
+      bracketPaint,
+    );
+
+    // 4. 화면 위에서 아래로 스캔하는 동적 스캔라인 광선 바 (Dynamic Sweeper Beam)
+    final double sweepY = size.height * progress;
+    final sweepPaint = Paint()
+      ..shader = ui.Gradient.linear(Offset(0, sweepY - 35), Offset(0, sweepY), [
+        color.withValues(alpha: 0.0),
+        color.withValues(alpha: 0.07),
+      ]);
+    canvas.drawRect(
+      Rect.fromLTRB(0, sweepY - 35, size.width, sweepY),
+      sweepPaint,
+    );
+
+    // 가로 스캔 강선 레이저
+    final laserPaint = Paint()
+      ..color = color.withValues(alpha: 0.22)
       ..strokeWidth = 1.0;
-    
-    // 중앙 십자선 (중심부 살짝 비우기)
-    const double gap = 8.0;
-    const double len = 16.0;
-    // 가로선
-    canvas.drawLine(Offset(center.dx - len, center.dy), Offset(center.dx - gap, center.dy), reticlePaint);
-    canvas.drawLine(Offset(center.dx + gap, center.dy), Offset(center.dx + len, center.dy), reticlePaint);
-    // 세로선
-    canvas.drawLine(Offset(center.dx, center.dy - len), Offset(center.dx, center.dy - gap), reticlePaint);
-    canvas.drawLine(Offset(center.dx, center.dy + gap), Offset(center.dx, center.dy + len), reticlePaint);
+    canvas.drawLine(Offset(0, sweepY), Offset(size.width, sweepY), laserPaint);
+
+    // 5. 은은한 가로 스캔라인 텍스처 (Static Scanlines)
+    final scanlinePaint = Paint()
+      ..color = color.withValues(alpha: 0.02)
+      ..strokeWidth = 0.5;
+    for (double y = 0; y < size.height; y += 5.0) {
+      canvas.drawLine(Offset(0, y), Offset(size.width, y), scanlinePaint);
+    }
   }
 
   @override
   bool shouldRepaint(covariant _SatelliteScanPainter oldDelegate) {
-    return oldDelegate.color != color;
+    return oldDelegate.color != color || oldDelegate.progress != progress;
   }
 }
+
 
 /// 현재 선택된 타일에 대해 위성 점령 실행 또는 취소 작전을 수행하는 버튼 위젯
 class _SatelliteCaptureActionButton extends StatefulWidget {
@@ -386,10 +507,12 @@ class _SatelliteCaptureActionButton extends StatefulWidget {
   const _SatelliteCaptureActionButton({required this.game});
 
   @override
-  State<_SatelliteCaptureActionButton> createState() => _SatelliteCaptureActionButtonState();
+  State<_SatelliteCaptureActionButton> createState() =>
+      _SatelliteCaptureActionButtonState();
 }
 
-class _SatelliteCaptureActionButtonState extends State<_SatelliteCaptureActionButton> {
+class _SatelliteCaptureActionButtonState
+    extends State<_SatelliteCaptureActionButton> {
   bool _isPressed = false;
 
   @override
@@ -401,7 +524,10 @@ class _SatelliteCaptureActionButtonState extends State<_SatelliteCaptureActionBu
     bool showButton = false;
     String buttonText = '';
     IconData buttonIcon = Icons.play_arrow_rounded;
-    List<Color> gradientColors = [const Color(0xFF00FFD1), const Color(0xFF006859)];
+    List<Color> gradientColors = [
+      const Color(0xFF00FFD1),
+      const Color(0xFF006859),
+    ];
     Color shadowColor = GameColors.accentNeon;
     VoidCallback? onPressed;
 
@@ -416,7 +542,10 @@ class _SatelliteCaptureActionButtonState extends State<_SatelliteCaptureActionBu
       onPressed = () => game.cancelSatelliteCapture();
     } else if (selectedId != null) {
       final existingTile = game.capturedTiles[selectedId];
-      final isTileEmpty = existingTile == null || existingTile.userId == null || existingTile.userId == 'none';
+      final isTileEmpty =
+          existingTile == null ||
+          existingTile.userId == null ||
+          existingTile.userId == 'none';
 
       if (isTileEmpty) {
         final satCooltime = game.remainingSatelliteCaptureCoolSeconds;
@@ -510,7 +639,9 @@ class _SatelliteCaptureActionButtonState extends State<_SatelliteCaptureActionBu
                 height: 42,
                 child: Container(
                   decoration: BoxDecoration(
-                    borderRadius: const BorderRadius.vertical(top: Radius.circular(42)),
+                    borderRadius: const BorderRadius.vertical(
+                      top: Radius.circular(42),
+                    ),
                     gradient: LinearGradient(
                       begin: Alignment.topCenter,
                       end: Alignment.bottomCenter,
@@ -527,11 +658,7 @@ class _SatelliteCaptureActionButtonState extends State<_SatelliteCaptureActionBu
                 child: Column(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
-                    Icon(
-                      buttonIcon,
-                      color: const Color(0xFF0A1616),
-                      size: 36,
-                    ),
+                    Icon(buttonIcon, color: const Color(0xFF0A1616), size: 36),
                     const SizedBox(height: 1),
                     Text(
                       buttonText,
@@ -570,9 +697,7 @@ class _OperationDistanceHud extends StatelessWidget {
 
     return ClipPath(
       clipper: ShapeBorderClipper(
-        shape: BeveledRectangleBorder(
-          borderRadius: BorderRadius.circular(4),
-        ),
+        shape: BeveledRectangleBorder(borderRadius: BorderRadius.circular(4)),
       ),
       child: BackdropFilter(
         filter: ImageFilter.blur(sigmaX: 5, sigmaY: 5),
@@ -618,9 +743,7 @@ class _OperationGoldHud extends StatelessWidget {
 
     return ClipPath(
       clipper: ShapeBorderClipper(
-        shape: BeveledRectangleBorder(
-          borderRadius: BorderRadius.circular(4),
-        ),
+        shape: BeveledRectangleBorder(borderRadius: BorderRadius.circular(4)),
       ),
       child: BackdropFilter(
         filter: ImageFilter.blur(sigmaX: 5, sigmaY: 5),
@@ -668,4 +791,301 @@ class _OperationGoldHud extends StatelessWidget {
   }
 }
 
+/// 선택된 위성 조준 타일 위에 실시간으로 위치가 갱신되는 말풍선 위젯.
+class _SatelliteMapBubble extends StatefulWidget {
+  final GameProvider gameProvider;
 
+  const _SatelliteMapBubble({required this.gameProvider});
+
+  @override
+  State<_SatelliteMapBubble> createState() => _SatelliteMapBubbleState();
+}
+
+/// [_SatelliteMapBubble]의 주기적 화면 갱신을 담당하는 상태 클래스
+class _SatelliteMapBubbleState extends State<_SatelliteMapBubble> {
+  /// 1초 단위로 상태 정보(쿨타임/시간)를 동기화 갱신하기 위한 타이머
+  Timer? _timer;
+
+  @override
+  void initState() {
+    super.initState();
+    _timer = Timer.periodic(const Duration(seconds: 1), (_) {
+      if (mounted) setState(() {});
+    });
+  }
+
+  @override
+  void dispose() {
+    _timer?.cancel();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final game = widget.gameProvider;
+    final tileLatLng = game.selectedScanTileLatLng;
+    final selectedId = game.selectedScanTileId;
+
+    if (tileLatLng == null || selectedId == null)
+      return const SizedBox.shrink();
+
+    final auth = context.read<AuthProvider>();
+
+    // 위성 점령 시도 중에는 팝업 정보창(말풍선)을 완전히 제거하여 화면을 미니멀하게 유지합니다.
+    final bool isCapturing = game.isSatelliteCapturing;
+    if (isCapturing) {
+      return const SizedBox.shrink();
+    }
+
+    // --- 상태 계산 ---
+    Color themeColor = GameColors.accentNeon;
+    bool isError = false;
+    bool isCooltime = false;
+    String detailsText = GameStrings.satScanActive;
+    String? distanceStr;
+    String? timeStr;
+
+    if (isCapturing) {
+      final remainingSec = game.remainingSatelliteCaptureSeconds;
+      detailsText = GameStrings.satCapturingAttempt;
+      timeStr = '$remainingSec초';
+    } else {
+      final existingTile = game.capturedTiles[selectedId];
+      final isTileEmpty =
+          existingTile == null ||
+          existingTile.userId == null ||
+          existingTile.userId == 'none';
+
+      if (isTileEmpty) {
+        final satCooltime = game.remainingSatelliteCaptureCoolSeconds;
+        final isConnected = game.checkSatelliteCaptureConnectivity(selectedId);
+
+        if (satCooltime > 0) {
+          final minutes = satCooltime ~/ 60;
+          final seconds = satCooltime % 60;
+          themeColor = const Color(0xFFFF9900);
+          isCooltime = true;
+          detailsText = GameStrings.satCooltimeWaitingLabel;
+          timeStr =
+              '${minutes.toString().padLeft(2, '0')}:${seconds.toString().padLeft(2, '0')}';
+        } else if (!isConnected) {
+          themeColor = GameColors.error;
+          isError = true;
+          detailsText = GameStrings.satDisconnectedLabel;
+        } else {
+          final durationSec = game.getSatelliteCaptureDurationSeconds(
+            selectedId,
+          );
+          detailsText = GameStrings.satLockOnReady;
+          final mainBaseId = auth.profile?.mainBaseTileId;
+          int distance = 0;
+          if (mainBaseId != null && mainBaseId.isNotEmpty) {
+            final partsBase = mainBaseId.split('_');
+            final bq = int.tryParse(partsBase[1]) ?? 0;
+            final br = int.tryParse(partsBase[2]) ?? 0;
+            final partsTarget = selectedId.split('_');
+            final tq = int.tryParse(partsTarget[1]) ?? 0;
+            final tr = int.tryParse(partsTarget[2]) ?? 0;
+            distance = HexService.hexDistance(bq, br, tq, tr);
+            distanceStr = '$distance GP';
+          }
+
+          // 위성 점령 소모 재화(골드) 부족 여부 검증
+          final double currentGold = game.currentGold;
+          if (currentGold < distance) {
+            themeColor = GameColors.error;
+            isError = true;
+            detailsText = GameStrings.satGoldShortage;
+          }
+
+          timeStr = '$durationSec초';
+        }
+      } else {
+        themeColor = GameColors.error;
+        isError = true;
+        detailsText = GameStrings.satAlreadyCapturedLabel;
+      }
+    }
+
+    return SizedBox(
+      width: 220.0,
+      child: _BubbleColumn(
+        themeColor: themeColor,
+        isError: isError,
+        isCooltime: isCooltime,
+        detailsText: detailsText,
+        distanceStr: distanceStr,
+        timeStr: timeStr,
+      ),
+    );
+  }
+}
+
+/// 정보창 본체 위젯의 래퍼 Column 클래스 (구조 일관성 유지)
+class _BubbleColumn extends StatelessWidget {
+  final Color themeColor;
+  final bool isError;
+  final bool isCooltime;
+  final String detailsText;
+  final String? distanceStr;
+  final String? timeStr;
+
+  const _BubbleColumn({
+    required this.themeColor,
+    required this.isError,
+    required this.isCooltime,
+    required this.detailsText,
+    this.distanceStr,
+    this.timeStr,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    // 하단 삼각형 꼬리를 제거하고 본체만 렌더링합니다.
+    return _BubbleBody(
+      themeColor: themeColor,
+      isError: isError,
+      isCooltime: isCooltime,
+      detailsText: detailsText,
+      distanceStr: distanceStr,
+      timeStr: timeStr,
+    );
+  }
+}
+
+/// 말풍선 본체 위젯 (BeveledRect 테두리 + BackdropBlur 배경)
+class _BubbleBody extends StatelessWidget {
+  final Color themeColor;
+  final bool isError;
+  final bool isCooltime;
+  final String detailsText;
+  final String? distanceStr;
+  final String? timeStr;
+
+  const _BubbleBody({
+    required this.themeColor,
+    required this.isError,
+    required this.isCooltime,
+    required this.detailsText,
+    this.distanceStr,
+    this.timeStr,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return ClipPath(
+      clipper: ShapeBorderClipper(
+        shape: BeveledRectangleBorder(borderRadius: BorderRadius.circular(8)),
+      ),
+      child: BackdropFilter(
+        filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
+        child: Container(
+          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+          decoration: ShapeDecoration(
+            color: GameColors.backgroundMedium.withValues(alpha: 0.9),
+            shape: BeveledRectangleBorder(
+              borderRadius: BorderRadius.circular(8),
+              side: BorderSide(
+                color: themeColor.withValues(alpha: 0.6),
+                width: 1.5,
+              ),
+            ),
+          ),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              // 상태 텍스트
+              Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Container(
+                    width: 5,
+                    height: 5,
+                    margin: const EdgeInsets.only(right: 6, top: 1),
+                    decoration: BoxDecoration(
+                      color: themeColor,
+                      shape: BoxShape.circle,
+                    ),
+                  ),
+                  Flexible(
+                    child: Text(
+                      detailsText,
+                      style: TextStyle(
+                        color: isError
+                            ? GameColors.error
+                            : GameColors.textPrimary,
+                        fontSize: 11.5,
+                        fontWeight: FontWeight.w700,
+                        letterSpacing: 0.4,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+              // 메트릭 배지 (거리 / 시간)
+              if (distanceStr != null || timeStr != null) ...[
+                const SizedBox(height: 7),
+                Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    if (distanceStr != null) ...[
+                      _buildBadge(
+                        GameStrings.satRequiredGold,
+                        distanceStr!,
+                        themeColor,
+                      ),
+                      const SizedBox(width: 8),
+                    ],
+                    if (timeStr != null)
+                      _buildBadge(
+                        isCooltime
+                            ? GameStrings.satCooltimeWaitingText
+                            : GameStrings.satRequiredTime,
+                        timeStr!,
+                        themeColor,
+                      ),
+                  ],
+                ),
+              ],
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildBadge(String label, String value, Color color) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+      decoration: BoxDecoration(
+        color: color.withValues(alpha: 0.10),
+        borderRadius: BorderRadius.circular(3),
+        border: Border.all(color: color.withValues(alpha: 0.30), width: 0.8),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Text(
+            '$label: ',
+            style: TextStyle(
+              color: GameColors.textSecondary,
+              fontSize: 9,
+              fontWeight: FontWeight.w800,
+              fontFamily: 'Courier',
+            ),
+          ),
+          Text(
+            value,
+            style: TextStyle(
+              color: color,
+              fontSize: 9.5,
+              fontWeight: FontWeight.w900,
+              fontFamily: 'Courier',
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}

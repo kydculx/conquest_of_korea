@@ -349,7 +349,6 @@ class _GameScreenState extends State<GameScreen> {
       });
     }
 
-    // Flame 엔진에 최신 상태 전달
     flameGame.updateCapturedTiles(
       capturedTiles: currentTiles,
       capturingTileId: game.capturingTileId,
@@ -361,11 +360,10 @@ class _GameScreenState extends State<GameScreen> {
       isScanMode: game.isScanMode,
       currentUserId: auth.user?.id,
       isSatelliteCapturing: game.isSatelliteCapturing,
+      satelliteCapturePhase: game.satelliteCapturePhase,
+      satelliteTravelProgress: game.satelliteTravelProgress,
       satelliteCaptureProgress: game.satelliteCaptureProgress,
       satelliteCapturingTileId: game.satelliteCapturingTileId,
-      satelliteTravelRatio: game.satelliteCapturingTileId != null
-          ? game.getSatelliteTravelRatio(game.satelliteCapturingTileId!)
-          : 0.8,
     );
 
     final currentLocation =

@@ -10,6 +10,7 @@ import 'components/hq_base_marker.dart';
 import 'components/scan_target_marker.dart';
 import '../services/hex_service.dart';
 import '../models/tile_model.dart';
+import '../providers/game_provider.dart';
 import '../core/constants/colors.dart';
 
 /// Flame 게임 엔진을 상속받아 인게임 전술 지도상에 헥사곤 타일 영역, 요원의 물리 위치 마커, 본부 기지(HQ), 위성 조준 마커 등을 렌더링하고 업데이트를 감시하는 커스텀 게임 엔진 클래스
@@ -37,13 +38,16 @@ class ConquestGame extends FlameGame {
   /// 현재 로그인된 요원의 ID 정보 캐시
   String? _currentUserId;
   /// 현재 위성 원격 타일 점령이 진행 중인지 여부 상태 캐시
+  /// 현재 위성 원격 타일 점령이 진행 중인지 여부 상태 캐시
   bool _isSatelliteCapturing = false;
+  /// 현재 위성 점령의 상태 단계
+  SatelliteCapturePhase _satelliteCapturePhase = SatelliteCapturePhase.none;
+  /// 현재 위성 빔 비행 진행률 (0.0 ~ 1.0)
+  double _satelliteTravelProgress = 0.0;
   /// 현재 위성 점령의 게이지 진행률 (0.0 ~ 1.0)
   double _satelliteCaptureProgress = 0.0;
   /// 위성 점령을 개시한 대상 타일 ID 캐시
   String? _satelliteCapturingTileId;
-  /// 위성 점령 시 동적으로 계산된 화살표 이동 비율 캐시
-  double _satelliteTravelRatio = 0.8;
 
   /// 투영을 담당하는 내부 맵 컨트롤러 반환
   MapController? get mapController => _mapController;
@@ -55,14 +59,18 @@ class ConquestGame extends FlameGame {
   Map<String, HexTile> get lastCapturedTiles => _lastCapturedTiles;
   /// 현재 위성 점령이 활성화되어 시도 중인지 여부
   bool get isSatelliteCapturing => _isSatelliteCapturing;
+  /// 현재 위성 점령의 상태 단계 반환
+  SatelliteCapturePhase get satelliteCapturePhase => _satelliteCapturePhase;
+  /// 위성 빔 비행 진행률 반환
+  double get satelliteTravelProgress => _satelliteTravelProgress;
   /// 위성 점령의 퍼센트 수치 반환
   double get satelliteCaptureProgress => _satelliteCaptureProgress;
   /// 위성 점령 중인 목적지 타일 ID 반환
   String? get satelliteCapturingTileId => _satelliteCapturingTileId;
   /// 위성 궤도 조준경 모드 사용 여부
   bool get isScanMode => _isScanMode;
-  /// 위성 점령 시 화살표 비행 시간 비율 반환
-  double get satelliteTravelRatio => _satelliteTravelRatio;
+  /// 최근에 점령 시도에 사용된 전술 식별 색상 코드
+  String? get lastCapturingColorHex => _lastCapturingColorHex;
 
   @override
   Color backgroundColor() => GameColors.transparent;
@@ -127,8 +135,9 @@ class ConquestGame extends FlameGame {
         capturingColorHex: _lastCapturingColorHex,
         currentUserId: _currentUserId,
         isSatelliteCapturing: _isSatelliteCapturing,
+        satelliteCapturePhase: _satelliteCapturePhase,
+        satelliteTravelProgress: _satelliteTravelProgress,
         satelliteCaptureProgress: _satelliteCaptureProgress,
-        satelliteTravelRatio: _satelliteTravelRatio,
       );
     } else {
       _updateAllPositions();
@@ -147,18 +156,20 @@ class ConquestGame extends FlameGame {
     bool isScanMode = false,
     String? currentUserId,
     bool isSatelliteCapturing = false,
+    SatelliteCapturePhase satelliteCapturePhase = SatelliteCapturePhase.none,
+    double satelliteTravelProgress = 0.0,
     double satelliteCaptureProgress = 0.0,
     String? satelliteCapturingTileId,
-    double satelliteTravelRatio = 0.8,
   }) {
     _lastCapturedTiles = capturedTiles;
     _lastCapturingColorHex = capturingColorHex;
     _isScanMode = isScanMode;
     _currentUserId = currentUserId;
     _isSatelliteCapturing = isSatelliteCapturing;
+    _satelliteCapturePhase = satelliteCapturePhase;
+    _satelliteTravelProgress = satelliteTravelProgress;
     _satelliteCaptureProgress = satelliteCaptureProgress;
     _satelliteCapturingTileId = satelliteCapturingTileId;
-    _satelliteTravelRatio = satelliteTravelRatio;
     if (isLoaded) {
       player.isVisible = !isScanMode;
     }
@@ -195,62 +206,24 @@ class ConquestGame extends FlameGame {
 
     // 점령 중인 타일 특수 상태 처리 (일반 점령)
     if (capturingTileId != null) {
-      if (_tileMap.containsKey(capturingTileId)) {
-        _tileMap[capturingTileId]!.updateData(
-          isCapturing: true,
-          progress: captureProgress,
-          capturingColorHex: capturingColorHex,
-        );
-      } else if (currentLocation != null) {
-        final hex = HexService.latLngToHex(currentLocation);
-        final screenCorners = _calcScreenCorners(hex['q']!, hex['r']!);
-        final tempTile = HexTileComponent(
-          colorHex: null,
-          corners: screenCorners,
-          isCapturing: true,
-          progress: captureProgress,
-          capturingColorHex: capturingColorHex,
-        )..priority = 0;
-        _tileMap[capturingTileId] = tempTile;
-        add(tempTile);
-      }
+      _updateActiveCaptureTile(
+        tileId: capturingTileId,
+        progress: captureProgress,
+        colorHex: capturingColorHex,
+        isCapturing: true,
+        fallbackLocation: currentLocation,
+      );
     }
 
     // 점령 중인 타일 특수 상태 처리 (위성 점령)
     if (isSatelliteCapturing && satelliteCapturingTileId != null) {
-      // 화살표가 도달하는 _satelliteTravelRatio 시점 이후부터 실제 게이지 점령 애니메이션을 0.0 ~ 1.0으로 표현
-      final double adjustedProgress = satelliteCaptureProgress < _satelliteTravelRatio
-          ? 0.0
-          : ((satelliteCaptureProgress - _satelliteTravelRatio) / (1.0 - _satelliteTravelRatio)).clamp(0.0, 1.0);
-
-      // 화살표 도달 이후 시점부터 타일에 점령 애니메이션(펄스/채우기)을 활성화
-      final bool shouldAnimateTile = satelliteCaptureProgress >= _satelliteTravelRatio;
-
-      if (_tileMap.containsKey(satelliteCapturingTileId)) {
-        _tileMap[satelliteCapturingTileId]!.updateData(
-          isCapturing: shouldAnimateTile,
-          progress: adjustedProgress,
-          capturingColorHex: '#FF9900', // 위성 전용 테마 오렌지 색상
-        );
-      } else {
-        final parts = satelliteCapturingTileId.split('_');
-        if (parts.length == 3 && parts[0] == 'hex') {
-          final q = int.tryParse(parts[1]);
-          final r = int.tryParse(parts[2]);
-          if (q != null && r != null) {
-            final screenCorners = _calcScreenCorners(q, r);
-            final tempTile = HexTileComponent(
-              colorHex: null,
-              corners: screenCorners,
-              isCapturing: shouldAnimateTile,
-              progress: adjustedProgress,
-              capturingColorHex: '#FF9900',
-            )..priority = 0;
-            _tileMap[satelliteCapturingTileId] = tempTile;
-            add(tempTile);
-          }
-        }
-      }
+      final bool shouldAnimateTile = _satelliteCapturePhase == SatelliteCapturePhase.capturing;
+      _updateActiveCaptureTile(
+        tileId: satelliteCapturingTileId,
+        progress: shouldAnimateTile ? _satelliteCaptureProgress : 0.0,
+        colorHex: capturingColorHex,
+        isCapturing: shouldAnimateTile,
+      );
     }
 
     // 점령 중이 아닌 타일 상태 초기화
@@ -260,6 +233,51 @@ class ConquestGame extends FlameGame {
         tile.updateData(isCapturing: false, progress: 0.0);
       }
     });
+  }
+
+  /// 점령이 진행 중인 특정 타일(일반 물리 점령 및 위성 원격 점령 공용)의
+  /// 실시간 점령 게이지 데이터 및 펄싱 여부를 동적으로 렌더링하고 동기화합니다.
+  /// 맵에 존재하지 않는 중립 구역인 경우, ID 정보를 역산하여 임시 꼭짓점 좌표를 즉각 투영 렌더링합니다.
+  void _updateActiveCaptureTile({
+    required String tileId,
+    required double progress,
+    required String? colorHex,
+    required bool isCapturing,
+    LatLng? fallbackLocation,
+  }) {
+    if (_tileMap.containsKey(tileId)) {
+      _tileMap[tileId]!.updateData(
+        isCapturing: isCapturing,
+        progress: progress,
+        capturingColorHex: colorHex,
+      );
+    } else {
+      // 맵에 존재하지 않는 중립 구역인 경우
+      int? q;
+      int? r;
+      final parts = tileId.split('_');
+      if (parts.length == 3 && parts[0] == 'hex') {
+        q = int.tryParse(parts[1]);
+        r = int.tryParse(parts[2]);
+      } else if (fallbackLocation != null) {
+        final hex = HexService.latLngToHex(fallbackLocation);
+        q = hex['q'];
+        r = hex['r'];
+      }
+
+      if (q != null && r != null) {
+        final screenCorners = _calcScreenCorners(q, r);
+        final tempTile = HexTileComponent(
+          colorHex: null,
+          corners: screenCorners,
+          isCapturing: isCapturing,
+          progress: progress,
+          capturingColorHex: colorHex,
+        )..priority = 0;
+        _tileMap[tileId] = tempTile;
+        add(tempTile);
+      }
+    }
   }
 
   /// 지도의 특정 헥사곤 좌표(q, r)의 외각 6개 꼭짓점을 디바이스 스크린 픽셀 좌표(Offset) 목록으로 맵핑하여 계산합니다.
@@ -280,6 +298,16 @@ class ConquestGame extends FlameGame {
       final data = _lastCapturedTiles[id];
       if (data != null) {
         tile.updateData(corners: _calcScreenCorners(data.q, data.r));
+      } else {
+        // 임시 점령 중인 중립 타일인 경우 ID에서 q, r을 직접 파싱하여 맵 프로젝션 좌표 실시간 동기화
+        final parts = id.split('_');
+        if (parts.length == 3 && parts[0] == 'hex') {
+          final q = int.tryParse(parts[1]);
+          final r = int.tryParse(parts[2]);
+          if (q != null && r != null) {
+            tile.updateData(corners: _calcScreenCorners(q, r));
+          }
+        }
       }
     });
 

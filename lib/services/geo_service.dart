@@ -70,7 +70,7 @@ class GeoService {
       locationSettings = AppleSettings(
         accuracy: LocationAccuracy.bestForNavigation,
         activityType: ActivityType.otherNavigation,
-        distanceFilter: 0,
+        distanceFilter: 3,
         pauseLocationUpdatesAutomatically: false,
         showBackgroundLocationIndicator: true,
         allowBackgroundLocationUpdates: true,
@@ -78,7 +78,7 @@ class GeoService {
     } else if (!kIsWeb && Platform.isAndroid) {
       locationSettings = AndroidSettings(
         accuracy: LocationAccuracy.best,
-        distanceFilter: 0,
+        distanceFilter: 3,
         forceLocationManager: true, // 구글 서비스를 거치지 않고 하드웨어 직접 제어
         intervalDuration: const Duration(seconds: 1),
         foregroundNotificationConfig: ForegroundNotificationConfig(
@@ -90,7 +90,7 @@ class GeoService {
     } else {
       locationSettings = const LocationSettings(
         accuracy: LocationAccuracy.best,
-        distanceFilter: 0,
+        distanceFilter: 3,
       );
     }
 

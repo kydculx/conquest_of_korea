@@ -14,6 +14,16 @@ import '../core/constants/game_config.dart';
 import '../core/constants/map_config.dart';
 import '../core/constants/strings.dart';
 
+/// 위성 원격 점령의 진행 단계를 구분하는 상태 열거형
+enum SatelliteCapturePhase {
+  /// 대기 상태
+  none,
+  /// 본진에서 대상 타일까지 빔 화살표가 날아가는 상태
+  flying,
+  /// 빔 도착 후 타일을 점령(오렌지 게이지 누적) 중인 상태
+  capturing,
+}
+
 /// 게임의 핵심 인게임 비즈니스 상태 및 점령 로직을 관리하고 UI에 변경을 전파하는 메인 프로바이더 클래스
 class GameProvider extends ChangeNotifier with WidgetsBindingObserver {
   /// 로컬 저장소에 저장될 알림 설정 키
@@ -57,15 +67,21 @@ class GameProvider extends ChangeNotifier with WidgetsBindingObserver {
   LatLng? _selectedScanTileLatLng;
 
   // --- 위성 점령 상태 변수 ---
+  /// 현재 위성 점령의 상태 단계
+  SatelliteCapturePhase _satelliteCapturePhase = SatelliteCapturePhase.none;
   /// 현재 위성 점령을 시도 중인 대상 타일 ID
   String? _satelliteCapturingTileId;
-  /// 위성 점령 진행 진척도 (0.0 ~ 1.0)
+  /// 위성 빔 비행 진행률 (0.0 ~ 1.0)
+  double _satelliteTravelProgress = 0.0;
+  /// 위성 원격 타일 점령 진행률 (0.0 ~ 1.0)
   double _satelliteCaptureProgress = 0.0;
   /// 위성 점령 주기 업데이트 타이머
   Timer? _satelliteCaptureTimer;
-  /// 위성 점령을 개시한 시작 일시
-  DateTime? _satelliteCaptureStartTime;
-  /// 위성 점령 완료에 소요되는 총 시간
+  /// 위성 점령 특정 단계(비행 또는 점령)를 시작한 일시
+  DateTime? _satellitePhaseStartTime;
+  /// 위성 빔 비행 완료에 소요되는 총 시간
+  Duration? _satelliteTravelDuration;
+  /// 위성 타일 점령 완료에 소요되는 총 시간
   Duration? _satelliteCaptureDuration;
   /// 마지막으로 성공한 위성 점령 일시
   DateTime? _lastSatelliteCaptureTime;
@@ -113,26 +129,40 @@ class GameProvider extends ChangeNotifier with WidgetsBindingObserver {
   /// 선택된 위성 조준 타일의 중심 지리 좌표 (맵 스크롤 시 실시간 화면 좌표 변환에 사용)
   LatLng? get selectedScanTileLatLng => _selectedScanTileLatLng;
 
+  /// 현재 위성 점령의 상태 단계 반환
+  SatelliteCapturePhase get satelliteCapturePhase => _satelliteCapturePhase;
+
   /// 현재 위성 점령 진행 중인 타일 ID
   String? get satelliteCapturingTileId => _satelliteCapturingTileId;
+
+  /// 위성 빔 비행 진행률 (0.0 ~ 1.0)
+  double get satelliteTravelProgress => _satelliteTravelProgress;
 
   /// 위성 점령 진행률 (0.0 ~ 1.0)
   double get satelliteCaptureProgress => _satelliteCaptureProgress;
 
   /// 위성 점령 시도가 활성화 중인지 여부
-  bool get isSatelliteCapturing => _satelliteCapturingTileId != null;
+  bool get isSatelliteCapturing => _satelliteCapturePhase != SatelliteCapturePhase.none;
 
   /// 마지막으로 위성 점령에 성공한 일시
   DateTime? get lastSatelliteCaptureTime => _lastSatelliteCaptureTime;
 
-  /// 위성 점령이 완료될 때까지 남은 초 단위 시간
+  /// 위성 점령이 완료될 때까지 남은 초 단위 시간 (비행 시간과 점령 시간의 잔여분 합산)
   int get remainingSatelliteCaptureSeconds {
-    if (_satelliteCapturingTileId == null || _satelliteCaptureStartTime == null || _satelliteCaptureDuration == null) {
+    if (_satelliteCapturePhase == SatelliteCapturePhase.none || _satellitePhaseStartTime == null) {
       return 0;
     }
-    final elapsed = DateTime.now().difference(_satelliteCaptureStartTime!);
-    final remaining = _satelliteCaptureDuration!.inSeconds - elapsed.inSeconds;
-    return remaining > 0 ? remaining : 0;
+    final now = DateTime.now();
+    if (_satelliteCapturePhase == SatelliteCapturePhase.flying) {
+      final elapsed = now.difference(_satellitePhaseStartTime!);
+      final remainingTravel = (_satelliteTravelDuration!.inSeconds - elapsed.inSeconds).clamp(0, double.infinity).toInt();
+      final remainingCapture = _satelliteCaptureDuration!.inSeconds;
+      return remainingTravel + remainingCapture;
+    } else {
+      final elapsed = now.difference(_satellitePhaseStartTime!);
+      final remainingCapture = (_satelliteCaptureDuration!.inSeconds - elapsed.inSeconds).clamp(0, double.infinity).toInt();
+      return remainingCapture;
+    }
   }
 
   /// 위성 조준 장비의 재충전 쿨타임 남은 시간 (초)
@@ -877,8 +907,6 @@ class GameProvider extends ChangeNotifier with WidgetsBindingObserver {
 
     final travelSeconds = dist;
     const captureSeconds = 1; // 점령 고유 소요시간 1초
-    final seconds = travelSeconds + captureSeconds;
-    final duration = Duration(seconds: seconds < 1 ? 1 : seconds);
 
     // 물리 GPS 점령 진행 중인 경우 중단
     if (isCapturing) {
@@ -887,32 +915,44 @@ class GameProvider extends ChangeNotifier with WidgetsBindingObserver {
 
     cancelSatelliteCapture();
 
-    // [요구사항] 위성 점령 실행 시 스캔 조준선 커서 상태를 완전히 초기화(Clear)
-    _selectedScanTileId = null;
-    _selectedScanTileLatLng = null;
-
     _satelliteCapturingTileId = tileId;
+    _satelliteCapturePhase = SatelliteCapturePhase.flying;
+    _satelliteTravelProgress = 0.0;
     _satelliteCaptureProgress = 0.0;
-    _satelliteCaptureStartTime = DateTime.now();
-    _satelliteCaptureDuration = duration;
+    _satellitePhaseStartTime = DateTime.now();
+    _satelliteTravelDuration = Duration(seconds: travelSeconds < 1 ? 1 : travelSeconds);
+    _satelliteCaptureDuration = const Duration(seconds: captureSeconds);
 
     _satelliteCaptureTimer = Timer.periodic(
       const Duration(milliseconds: GameConfig.updateIntervalMs),
       (_) {
         if (_satelliteCapturingTileId == null || _isSavingSatellite) return;
 
-        final elapsed = DateTime.now().difference(_satelliteCaptureStartTime!);
-        _satelliteCaptureProgress = (elapsed.inMilliseconds / _satelliteCaptureDuration!.inMilliseconds).clamp(0.0, 1.0);
+        final now = DateTime.now();
+        if (_satelliteCapturePhase == SatelliteCapturePhase.flying) {
+          final elapsed = now.difference(_satellitePhaseStartTime!);
+          _satelliteTravelProgress = (elapsed.inMilliseconds / _satelliteTravelDuration!.inMilliseconds).clamp(0.0, 1.0);
 
-        if (_satelliteCaptureProgress >= 1.0) {
-          _saveSatelliteCapture(tileId);
-        } else {
+          if (_satelliteTravelProgress >= 1.0) {
+            // 1단계 비행 완료 ➔ 2단계 실제 점령 모드로 순차 전환!
+            _satelliteCapturePhase = SatelliteCapturePhase.capturing;
+            _satellitePhaseStartTime = now;
+            _satelliteCaptureProgress = 0.0;
+          }
           notifyListeners();
+        } else if (_satelliteCapturePhase == SatelliteCapturePhase.capturing) {
+          final elapsed = now.difference(_satellitePhaseStartTime!);
+          _satelliteCaptureProgress = (elapsed.inMilliseconds / _satelliteCaptureDuration!.inMilliseconds).clamp(0.0, 1.0);
+
+          if (_satelliteCaptureProgress >= 1.0) {
+            _saveSatelliteCapture(tileId);
+          } else {
+            notifyListeners();
+          }
         }
       },
     );
 
-    addAlert(GameStrings.satelliteCaptureStart(duration.inSeconds.toString()), AlertType.info);
     notifyListeners();
   }
 
@@ -922,9 +962,12 @@ class GameProvider extends ChangeNotifier with WidgetsBindingObserver {
     _satelliteCaptureTimer?.cancel();
     _satelliteCaptureTimer = null;
     _satelliteCapturingTileId = null;
+    _satelliteCapturePhase = SatelliteCapturePhase.none;
+    _satelliteTravelProgress = 0.0;
     _satelliteCaptureProgress = 0.0;
+    _satelliteTravelDuration = null;
     _satelliteCaptureDuration = null;
-    _satelliteCaptureStartTime = null;
+    _satellitePhaseStartTime = null;
     notifyListeners();
   }
 
@@ -998,6 +1041,11 @@ class GameProvider extends ChangeNotifier with WidgetsBindingObserver {
 
       _capturedTiles[tileId] = tile;
       addAlert(GameStrings.satelliteCaptureSuccess, AlertType.success);
+      
+      // 위성 점령이 최종 성공했으므로 조준 상태를 깔끔하게 비움
+      _selectedScanTileId = null;
+      _selectedScanTileLatLng = null;
+      
       await syncGoldWithServer();
     } else {
       final errMsg = _supabase.lastError != null ? ': ${_supabase.lastError}' : '';
@@ -1006,9 +1054,12 @@ class GameProvider extends ChangeNotifier with WidgetsBindingObserver {
 
     _isSavingSatellite = false;
     _satelliteCapturingTileId = null;
+    _satelliteCapturePhase = SatelliteCapturePhase.none;
+    _satelliteTravelProgress = 0.0;
     _satelliteCaptureProgress = 0.0;
+    _satelliteTravelDuration = null;
     _satelliteCaptureDuration = null;
-    _satelliteCaptureStartTime = null;
+    _satellitePhaseStartTime = null;
     notifyListeners();
   }
 

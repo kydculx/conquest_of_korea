@@ -6,6 +6,7 @@ import '../../core/constants/colors.dart';
 import '../conquest_game.dart';
 import '../../services/hex_service.dart';
 import '../../models/tile_model.dart';
+import '../../providers/game_provider.dart';
 
 /// 위성 스캔 모드에서 사용자가 선택한 타일의 조준선 프리뷰를 렌더링하는 컴포넌트
 /// 위성 궤도 정밀 조준 스캔 및 위성 원격 점령 모드에서 조준선, 본부로부터의 전술적 BFS 최단 경로 안내선, 점령 완료 시 보간 화살표 이동 애니메이션을 그리는 Flame 컴포넌트
@@ -32,15 +33,18 @@ class ScanTargetMarker extends PositionComponent with HasGameReference<ConquestG
     priority = 18; // 플레이어(20)보다는 아래, 일반 타일(0)이나 메인기지(15)보다는 위
   }
 
+
+
   @override
   void update(double dt) {
     super.update(dt);
     _timer += dt;
     
-    // 위성 점령 중일 때 progress 보간 (전체 점령 시간 중 '이동시간(타일당 1초)' 비율을 비행 구간으로 동적 배정)
+    // 위성 점령 중일 때 progress 보간 (비행 중일 때는 _satelliteTravelProgress를 따르고, 점령 상태로 전환되면 도착 완료인 1.0 고정)
     if (game.isSatelliteCapturing && game.satelliteCapturingTileId != null) {
-      final travelRatio = game.satelliteTravelRatio;
-      final target = (game.satelliteCaptureProgress / travelRatio).clamp(0.0, 1.0);
+      final target = game.satelliteCapturePhase == SatelliteCapturePhase.flying
+          ? game.satelliteTravelProgress
+          : 1.0;
       // 매 프레임 dt 비중에 맞춰 목표치로 부드럽게 Lerp
       _smoothProgress += (target - _smoothProgress) * (dt * 10.0).clamp(0.0, 1.0);
     } else {
@@ -104,9 +108,8 @@ class ScanTargetMarker extends PositionComponent with HasGameReference<ConquestG
 
   /// 목적지 헥사곤 타일 내부 맥동 및 글로우 테두리 렌더링
   void _drawDestinationBorder(Canvas canvas, Path path, Color themeColor) {
-    final travelRatio = game.satelliteTravelRatio;
-
-    final bool isActuallyCapturingTile = game.isSatelliteCapturing && game.satelliteCaptureProgress >= travelRatio;
+    // 비행 완료 후 실제 타일 채우기 점령 상태에 진입했는지 여부
+    final bool isActuallyCapturingTile = game.isSatelliteCapturing && game.satelliteCapturePhase == SatelliteCapturePhase.capturing;
 
     if (isActuallyCapturingTile) {
       // 화살표가 도달한 이후 점령이 시작되었을 때의 펄싱 테두리 애니메이션
@@ -133,7 +136,7 @@ class ScanTargetMarker extends PositionComponent with HasGameReference<ConquestG
       // 점령 전(화살표 이동 중이거나 단순 조준 프리뷰 상태인 경우)
       // 위성 점령 실행 중(이동 중)에는 목적지 타일에 은은한 점선 테두리와 비콘 수신 펄스 링 신호 효과를 그립니다.
       if (game.isSatelliteCapturing) {
-        final Color beaconColor = const Color(0xFFFF9900); // 위성 점마 주황색
+        final Color beaconColor = themeColor;
 
         // 1. 은은한 점선 헥사곤 테두리 그리기
         final borderPaint = Paint()
