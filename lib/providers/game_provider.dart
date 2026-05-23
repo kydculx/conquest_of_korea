@@ -796,8 +796,9 @@ class GameProvider extends ChangeNotifier with WidgetsBindingObserver {
     if (bq == null || br == null || tq == null || tr == null) return 0;
 
     final dist = HexService.hexDistance(bq, br, tq, tr);
-    final seconds = (dist * GameConfig.satelliteCaptureSecondsPerTile).round();
-    return seconds < 1 ? 1 : seconds;
+    final travelSeconds = dist;
+    const captureSeconds = 1; // 점령 고유 소요시간 1초
+    return travelSeconds + captureSeconds;
   }
 
   /// 지정한 대상 헥사곤 타일에 대한 위성 연결 점령(Satellite Capture) 타이머를 구동하여 점령을 실행합니다.
@@ -852,7 +853,9 @@ class GameProvider extends ChangeNotifier with WidgetsBindingObserver {
       return;
     }
 
-    final seconds = (dist * GameConfig.satelliteCaptureSecondsPerTile).round();
+    final travelSeconds = dist;
+    const captureSeconds = 1; // 점령 고유 소요시간 1초
+    final seconds = travelSeconds + captureSeconds;
     final duration = Duration(seconds: seconds < 1 ? 1 : seconds);
 
     // 물리 GPS 점령 진행 중인 경우 중단

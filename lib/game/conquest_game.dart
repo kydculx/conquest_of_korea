@@ -211,13 +211,33 @@ class ConquestGame extends FlameGame {
 
     // 점령 중인 타일 특수 상태 처리 (위성 점령)
     if (isSatelliteCapturing && satelliteCapturingTileId != null) {
-      // 화살표가 도달하는 0.2(20%) 시점 이후부터 실제 게이지 점령 애니메이션을 0.0 ~ 1.0으로 표현
-      final double adjustedProgress = satelliteCaptureProgress < 0.2
+      // 본진과 목적지의 거리를 기반으로 이동 비율 산출
+      double travelRatio = 0.8; // 기본 폴백값
+      if (mainBaseTileId != null && mainBaseTileId.isNotEmpty) {
+        try {
+          final partsBase = mainBaseTileId.split('_');
+          final bq = int.tryParse(partsBase[1]) ?? 0;
+          final br = int.tryParse(partsBase[2]) ?? 0;
+          final partsTarget = satelliteCapturingTileId.split('_');
+          final tq = int.tryParse(partsTarget[1]) ?? 0;
+          final tr = int.tryParse(partsTarget[2]) ?? 0;
+          final dist = HexService.hexDistance(bq, br, tq, tr);
+          final travelSeconds = dist.toDouble();
+          const captureSeconds = 1.0;
+          final total = travelSeconds + captureSeconds;
+          if (total > 0.0) {
+            travelRatio = travelSeconds / total;
+          }
+        } catch (_) {}
+      }
+
+      // 화살표가 도달하는 travelRatio 시점 이후부터 실제 게이지 점령 애니메이션을 0.0 ~ 1.0으로 표현
+      final double adjustedProgress = satelliteCaptureProgress < travelRatio
           ? 0.0
-          : ((satelliteCaptureProgress - 0.2) / 0.8).clamp(0.0, 1.0);
+          : ((satelliteCaptureProgress - travelRatio) / (1.0 - travelRatio)).clamp(0.0, 1.0);
 
       // 화살표 도달 이후 시점부터 타일에 점령 애니메이션(펄스/채우기)을 활성화
-      final bool shouldAnimateTile = satelliteCaptureProgress >= 0.2;
+      final bool shouldAnimateTile = satelliteCaptureProgress >= travelRatio;
 
       if (_tileMap.containsKey(satelliteCapturingTileId)) {
         _tileMap[satelliteCapturingTileId]!.updateData(

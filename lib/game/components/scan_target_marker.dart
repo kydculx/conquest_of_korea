@@ -37,9 +37,31 @@ class ScanTargetMarker extends PositionComponent with HasGameReference<ConquestG
     super.update(dt);
     _timer += dt;
     
-    // 위성 점령 중일 때 progress 보간 (전체 점령 진행률의 앞 20%를 화살표 이동 구간으로 배정)
-    if (game.isSatelliteCapturing) {
-      final target = (game.satelliteCaptureProgress / 0.2).clamp(0.0, 1.0);
+    // 위성 점령 중일 때 progress 보간 (전체 점령 시간 중 '이동시간(타일당 1초)' 비율을 비행 구간으로 동적 배정)
+    if (game.isSatelliteCapturing && game.satelliteCapturingTileId != null) {
+      final hqId = game.currentHQTileId;
+      final targetId = game.satelliteCapturingTileId;
+      
+      double travelRatio = 0.8; // 기본 폴백값
+      if (hqId != null && targetId != null) {
+        try {
+          final partsBase = hqId.split('_');
+          final bq = int.tryParse(partsBase[1]) ?? 0;
+          final br = int.tryParse(partsBase[2]) ?? 0;
+          final partsTarget = targetId.split('_');
+          final tq = int.tryParse(partsTarget[1]) ?? 0;
+          final tr = int.tryParse(partsTarget[2]) ?? 0;
+          final dist = HexService.hexDistance(bq, br, tq, tr);
+          final travelSeconds = dist.toDouble();
+          const captureSeconds = 1.0;
+          final total = travelSeconds + captureSeconds;
+          if (total > 0.0) {
+            travelRatio = travelSeconds / total;
+          }
+        } catch (_) {}
+      }
+
+      final target = (game.satelliteCaptureProgress / travelRatio).clamp(0.0, 1.0);
       // 매 프레임 dt 비중에 맞춰 목표치로 부드럽게 Lerp
       _smoothProgress += (target - _smoothProgress) * (dt * 10.0).clamp(0.0, 1.0);
     } else {
@@ -95,16 +117,41 @@ class ScanTargetMarker extends PositionComponent with HasGameReference<ConquestG
     // 3. 본진에서 타겟 타일까지의 전술 경로(점선/화살표) 그리기 (자체적인 경로 가시성 판정 적용)
     _drawTacticalPath(canvas, themeColor);
 
-    // 4. 중심 조준 타겟 그리기 (위성 스캔 모드이고, 화면에 보일 때만 노출)
-    if (game.isScanMode && isTargetVisible) {
+    // 4. 중심 조준 타겟 그리기 (위성 스캔 모드이고, 위성 점령 송신 중이 아니며, 화면에 보일 때만 노출)
+    if (game.isScanMode && !game.isSatelliteCapturing && isTargetVisible) {
       _drawCrosshair(canvas, cx, cy, themeColor);
     }
   }
 
   /// 목적지 헥사곤 타일 내부 맥동 및 글로우 테두리 렌더링
   void _drawDestinationBorder(Canvas canvas, Path path, Color themeColor) {
-    if (game.isSatelliteCapturing) {
-      // [요구사항] 점령하러 가는 동안 목적지 타일에 애니메이션 효과 부여
+    // 본진과 목적지의 거리를 기반으로 이동 비율 산출
+    double travelRatio = 0.8;
+    final hqId = game.currentHQTileId;
+    final targetId = game.isSatelliteCapturing ? game.satelliteCapturingTileId : 'hex_${q}_$r';
+    
+    if (hqId != null && targetId != null) {
+      try {
+        final partsBase = hqId.split('_');
+        final bq = int.tryParse(partsBase[1]) ?? 0;
+        final br = int.tryParse(partsBase[2]) ?? 0;
+        final partsTarget = targetId.split('_');
+        final tq = int.tryParse(partsTarget[1]) ?? 0;
+        final tr = int.tryParse(partsTarget[2]) ?? 0;
+        final dist = HexService.hexDistance(bq, br, tq, tr);
+        final travelSeconds = dist.toDouble();
+        const captureSeconds = 1.0;
+        final total = travelSeconds + captureSeconds;
+        if (total > 0.0) {
+          travelRatio = travelSeconds / total;
+        }
+      } catch (_) {}
+    }
+
+    final bool isActuallyCapturingTile = game.isSatelliteCapturing && game.satelliteCaptureProgress >= travelRatio;
+
+    if (isActuallyCapturingTile) {
+      // 화살표가 도달한 이후 점령이 시작되었을 때의 펄싱 테두리 애니메이션
       final double fillPulse = 0.20 + 0.15 * math.sin(_timer * 8.0);
       final fillPaint = Paint()
         ..color = themeColor.withValues(alpha: fillPulse)
@@ -125,6 +172,12 @@ class ScanTargetMarker extends PositionComponent with HasGameReference<ConquestG
         ..strokeWidth = 2.0;
       canvas.drawPath(path, borderPaint);
     } else {
+      // 점령 전(화살표 이동 중이거나 단순 조준 프리뷰 상태인 경우)
+      // 위성 점령 실행 중(이동 중)에는 타겟커서와 가이드 링도 완전히 보이지 않게 감춥니다.
+      if (game.isSatelliteCapturing) {
+        return; // 이동 중에는 목적지 타일에 가이드 링도 그리지 않음
+      }
+
       final pulse = 0.6 + 0.4 * math.sin(_timer * 5);
 
       final borderGlow = Paint()
