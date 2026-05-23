@@ -635,7 +635,7 @@ class _SatelliteMapBubbleState extends State<_SatelliteMapBubble> {
           if (currentGold < distance) {
             themeColor = GameColors.error;
             isError = true;
-            detailsText = '재화가 부족합니다';
+            detailsText = GameStrings.satGoldShortage;
           }
 
           timeStr = '$durationSec초';
@@ -797,12 +797,12 @@ class _BubbleBody extends StatelessWidget {
                   mainAxisSize: MainAxisSize.min,
                   children: [
                     if (distanceStr != null) ...[
-                      _buildBadge('소요재화', distanceStr!, themeColor),
+                      _buildBadge(GameStrings.satRequiredGold, distanceStr!, themeColor),
                       const SizedBox(width: 8),
                     ],
                     if (timeStr != null)
                       _buildBadge(
-                        isCooltime ? '대기' : '소요시간',
+                        isCooltime ? GameStrings.satCooltimeWaitingText : GameStrings.satRequiredTime,
                         timeStr!,
                         themeColor,
                       ),

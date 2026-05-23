@@ -415,6 +415,15 @@ class GameStrings {
   /// 점령 즉시 실행 버튼 라벨
   static String get captureExecute => 'captureExecute'.tr();
 
+  /// 위성 점령 시 필요 소모 GP 재화 명칭
+  static String get satRequiredGold => 'satRequiredGold'.tr();
+  /// 위성 점령 시 소요시간 명칭
+  static String get satRequiredTime => 'satRequiredTime'.tr();
+  /// 위성 점령 쿨다운 대기 단축 라벨
+  static String get satCooltimeWaitingText => 'satCooltimeWaitingText'.tr();
+  /// 위성 점령 시 보유 재화 부족 상태 메시지
+  static String get satGoldShortage => 'satGoldShortage'.tr();
+
   // --- 정책 동의 관련 ---
   /// 이용 정책 동의 화면 타이틀
   static String get termsAgreement => 'termsAgreement'.tr();
