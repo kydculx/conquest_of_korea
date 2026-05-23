@@ -797,12 +797,12 @@ class _BubbleBody extends StatelessWidget {
                   mainAxisSize: MainAxisSize.min,
                   children: [
                     if (distanceStr != null) ...[
-                      _buildBadge('재화', distanceStr!, themeColor),
+                      _buildBadge('소요재화', distanceStr!, themeColor),
                       const SizedBox(width: 8),
                     ],
                     if (timeStr != null)
                       _buildBadge(
-                        isCooltime ? '대기' : '시간',
+                        isCooltime ? '대기' : '소요시간',
                         timeStr!,
                         themeColor,
                       ),
