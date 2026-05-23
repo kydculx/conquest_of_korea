@@ -801,6 +801,28 @@ class GameProvider extends ChangeNotifier with WidgetsBindingObserver {
     return travelSeconds + captureSeconds;
   }
 
+  /// 본진(HQ) 타일과 대상 타일 간의 거리를 기준으로 하여, 위성 점령의 총 시간 중 '이동(비행) 시간'이 차지하는 비율을 산출합니다.
+  double getSatelliteTravelRatio(String tileId) {
+    final mainBaseId = _authProvider?.profile?.mainBaseTileId;
+    if (mainBaseId == null || mainBaseId.isEmpty) return 0.8;
+
+    final partsBase = mainBaseId.split('_');
+    final bq = int.tryParse(partsBase[1]);
+    final br = int.tryParse(partsBase[2]);
+
+    final partsTarget = tileId.split('_');
+    final tq = int.tryParse(partsTarget[1]);
+    final tr = int.tryParse(partsTarget[2]);
+
+    if (bq == null || br == null || tq == null || tr == null) return 0.8;
+
+    final dist = HexService.hexDistance(bq, br, tq, tr);
+    final travelSeconds = dist.toDouble();
+    const captureSeconds = 1.0; // 점령 고유 소요시간 1초
+    final total = travelSeconds + captureSeconds;
+    return total > 0.0 ? (travelSeconds / total) : 0.8;
+  }
+
   /// 지정한 대상 헥사곤 타일에 대한 위성 연결 점령(Satellite Capture) 타이머를 구동하여 점령을 실행합니다.
   void executeSatelliteCapture(String tileId) {
     if (tileId.isEmpty || _isSavingSatellite) return;

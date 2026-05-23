@@ -39,28 +39,7 @@ class ScanTargetMarker extends PositionComponent with HasGameReference<ConquestG
     
     // 위성 점령 중일 때 progress 보간 (전체 점령 시간 중 '이동시간(타일당 1초)' 비율을 비행 구간으로 동적 배정)
     if (game.isSatelliteCapturing && game.satelliteCapturingTileId != null) {
-      final hqId = game.currentHQTileId;
-      final targetId = game.satelliteCapturingTileId;
-      
-      double travelRatio = 0.8; // 기본 폴백값
-      if (hqId != null && targetId != null) {
-        try {
-          final partsBase = hqId.split('_');
-          final bq = int.tryParse(partsBase[1]) ?? 0;
-          final br = int.tryParse(partsBase[2]) ?? 0;
-          final partsTarget = targetId.split('_');
-          final tq = int.tryParse(partsTarget[1]) ?? 0;
-          final tr = int.tryParse(partsTarget[2]) ?? 0;
-          final dist = HexService.hexDistance(bq, br, tq, tr);
-          final travelSeconds = dist.toDouble();
-          const captureSeconds = 1.0;
-          final total = travelSeconds + captureSeconds;
-          if (total > 0.0) {
-            travelRatio = travelSeconds / total;
-          }
-        } catch (_) {}
-      }
-
+      final travelRatio = game.satelliteTravelRatio;
       final target = (game.satelliteCaptureProgress / travelRatio).clamp(0.0, 1.0);
       // 매 프레임 dt 비중에 맞춰 목표치로 부드럽게 Lerp
       _smoothProgress += (target - _smoothProgress) * (dt * 10.0).clamp(0.0, 1.0);
@@ -125,28 +104,7 @@ class ScanTargetMarker extends PositionComponent with HasGameReference<ConquestG
 
   /// 목적지 헥사곤 타일 내부 맥동 및 글로우 테두리 렌더링
   void _drawDestinationBorder(Canvas canvas, Path path, Color themeColor) {
-    // 본진과 목적지의 거리를 기반으로 이동 비율 산출
-    double travelRatio = 0.8;
-    final hqId = game.currentHQTileId;
-    final targetId = game.isSatelliteCapturing ? game.satelliteCapturingTileId : 'hex_${q}_$r';
-    
-    if (hqId != null && targetId != null) {
-      try {
-        final partsBase = hqId.split('_');
-        final bq = int.tryParse(partsBase[1]) ?? 0;
-        final br = int.tryParse(partsBase[2]) ?? 0;
-        final partsTarget = targetId.split('_');
-        final tq = int.tryParse(partsTarget[1]) ?? 0;
-        final tr = int.tryParse(partsTarget[2]) ?? 0;
-        final dist = HexService.hexDistance(bq, br, tq, tr);
-        final travelSeconds = dist.toDouble();
-        const captureSeconds = 1.0;
-        final total = travelSeconds + captureSeconds;
-        if (total > 0.0) {
-          travelRatio = travelSeconds / total;
-        }
-      } catch (_) {}
-    }
+    final travelRatio = game.satelliteTravelRatio;
 
     final bool isActuallyCapturingTile = game.isSatelliteCapturing && game.satelliteCaptureProgress >= travelRatio;
 

@@ -363,6 +363,9 @@ class _GameScreenState extends State<GameScreen> {
       isSatelliteCapturing: game.isSatelliteCapturing,
       satelliteCaptureProgress: game.satelliteCaptureProgress,
       satelliteCapturingTileId: game.satelliteCapturingTileId,
+      satelliteTravelRatio: game.satelliteCapturingTileId != null
+          ? game.getSatelliteTravelRatio(game.satelliteCapturingTileId!)
+          : 0.8,
     );
 
     final currentLocation =

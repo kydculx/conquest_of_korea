@@ -42,6 +42,8 @@ class ConquestGame extends FlameGame {
   double _satelliteCaptureProgress = 0.0;
   /// 위성 점령을 개시한 대상 타일 ID 캐시
   String? _satelliteCapturingTileId;
+  /// 위성 점령 시 동적으로 계산된 화살표 이동 비율 캐시
+  double _satelliteTravelRatio = 0.8;
 
   /// 투영을 담당하는 내부 맵 컨트롤러 반환
   MapController? get mapController => _mapController;
@@ -59,6 +61,8 @@ class ConquestGame extends FlameGame {
   String? get satelliteCapturingTileId => _satelliteCapturingTileId;
   /// 위성 궤도 조준경 모드 사용 여부
   bool get isScanMode => _isScanMode;
+  /// 위성 점령 시 화살표 비행 시간 비율 반환
+  double get satelliteTravelRatio => _satelliteTravelRatio;
 
   @override
   Color backgroundColor() => GameColors.transparent;
@@ -124,6 +128,7 @@ class ConquestGame extends FlameGame {
         currentUserId: _currentUserId,
         isSatelliteCapturing: _isSatelliteCapturing,
         satelliteCaptureProgress: _satelliteCaptureProgress,
+        satelliteTravelRatio: _satelliteTravelRatio,
       );
     } else {
       _updateAllPositions();
@@ -144,6 +149,7 @@ class ConquestGame extends FlameGame {
     bool isSatelliteCapturing = false,
     double satelliteCaptureProgress = 0.0,
     String? satelliteCapturingTileId,
+    double satelliteTravelRatio = 0.8,
   }) {
     _lastCapturedTiles = capturedTiles;
     _lastCapturingColorHex = capturingColorHex;
@@ -152,6 +158,7 @@ class ConquestGame extends FlameGame {
     _isSatelliteCapturing = isSatelliteCapturing;
     _satelliteCaptureProgress = satelliteCaptureProgress;
     _satelliteCapturingTileId = satelliteCapturingTileId;
+    _satelliteTravelRatio = satelliteTravelRatio;
     if (isLoaded) {
       player.isVisible = !isScanMode;
     }
@@ -211,33 +218,13 @@ class ConquestGame extends FlameGame {
 
     // 점령 중인 타일 특수 상태 처리 (위성 점령)
     if (isSatelliteCapturing && satelliteCapturingTileId != null) {
-      // 본진과 목적지의 거리를 기반으로 이동 비율 산출
-      double travelRatio = 0.8; // 기본 폴백값
-      if (mainBaseTileId != null && mainBaseTileId.isNotEmpty) {
-        try {
-          final partsBase = mainBaseTileId.split('_');
-          final bq = int.tryParse(partsBase[1]) ?? 0;
-          final br = int.tryParse(partsBase[2]) ?? 0;
-          final partsTarget = satelliteCapturingTileId.split('_');
-          final tq = int.tryParse(partsTarget[1]) ?? 0;
-          final tr = int.tryParse(partsTarget[2]) ?? 0;
-          final dist = HexService.hexDistance(bq, br, tq, tr);
-          final travelSeconds = dist.toDouble();
-          const captureSeconds = 1.0;
-          final total = travelSeconds + captureSeconds;
-          if (total > 0.0) {
-            travelRatio = travelSeconds / total;
-          }
-        } catch (_) {}
-      }
-
-      // 화살표가 도달하는 travelRatio 시점 이후부터 실제 게이지 점령 애니메이션을 0.0 ~ 1.0으로 표현
-      final double adjustedProgress = satelliteCaptureProgress < travelRatio
+      // 화살표가 도달하는 _satelliteTravelRatio 시점 이후부터 실제 게이지 점령 애니메이션을 0.0 ~ 1.0으로 표현
+      final double adjustedProgress = satelliteCaptureProgress < _satelliteTravelRatio
           ? 0.0
-          : ((satelliteCaptureProgress - travelRatio) / (1.0 - travelRatio)).clamp(0.0, 1.0);
+          : ((satelliteCaptureProgress - _satelliteTravelRatio) / (1.0 - _satelliteTravelRatio)).clamp(0.0, 1.0);
 
       // 화살표 도달 이후 시점부터 타일에 점령 애니메이션(펄스/채우기)을 활성화
-      final bool shouldAnimateTile = satelliteCaptureProgress >= travelRatio;
+      final bool shouldAnimateTile = satelliteCaptureProgress >= _satelliteTravelRatio;
 
       if (_tileMap.containsKey(satelliteCapturingTileId)) {
         _tileMap[satelliteCapturingTileId]!.updateData(
