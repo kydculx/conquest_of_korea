@@ -433,10 +433,20 @@ class ScanTargetMarker extends PositionComponent with HasGameReference<ConquestG
     final vec = tangent.vector;
     final angle = math.atan2(vec.dy, vec.dx);
 
-    // 화살표가 목적지에 도달할 때 자연스럽게 페이드아웃되도록 투명도 보정
+    // [개선] 화살표가 마지막 목적지 타일에 진입하는 시점부터 자연스럽게 페이드아웃되도록 임계값 동적 산출
+    final shortestPath = _findShortestPathToHQ();
+    double fadeStartProgress = 0.8; // 폴백값
+    if (shortestPath != null && shortestPath.length >= 2) {
+      final int segmentCount = shortestPath.length - 1;
+      fadeStartProgress = (segmentCount - 1) / segmentCount;
+    }
+
     double opacity = 1.0;
-    if (_smoothProgress > 0.8) {
-      opacity = ((1.0 - _smoothProgress) / 0.2).clamp(0.0, 1.0);
+    if (_smoothProgress > fadeStartProgress) {
+      final double range = 1.0 - fadeStartProgress;
+      opacity = range > 0.0
+          ? ((1.0 - _smoothProgress) / range).clamp(0.0, 1.0)
+          : 0.0;
     }
     if (opacity <= 0.0) return;
 
