@@ -539,6 +539,36 @@ class _SatelliteMapBubbleState extends State<_SatelliteMapBubble> {
 
     if (tileLatLng == null || selectedId == null) return const SizedBox.shrink();
 
+    // 화살표 비행 시간 동안 팝업 정보 말풍선 숨김 처리
+    final auth = context.read<AuthProvider>();
+    final bool isCapturing = game.isSatelliteCapturing;
+    if (isCapturing) {
+      double travelRatio = 0.8;
+      final hqId = auth.profile?.mainBaseTileId;
+      final targetId = game.satelliteCapturingTileId;
+      if (hqId != null && targetId != null) {
+        try {
+          final partsBase = hqId.split('_');
+          final bq = int.tryParse(partsBase[1]) ?? 0;
+          final br = int.tryParse(partsBase[2]) ?? 0;
+          final partsTarget = targetId.split('_');
+          final tq = int.tryParse(partsTarget[1]) ?? 0;
+          final tr = int.tryParse(partsTarget[2]) ?? 0;
+          final dist = HexService.hexDistance(bq, br, tq, tr);
+          final travelSeconds = dist.toDouble();
+          const captureSeconds = 1.0;
+          final total = travelSeconds + captureSeconds;
+          if (total > 0.0) {
+            travelRatio = travelSeconds / total;
+          }
+        } catch (_) {}
+      }
+      final bool isTraveling = game.satelliteCaptureProgress < travelRatio;
+      if (isTraveling) {
+        return const SizedBox.shrink(); // 화살표가 이동 중인 동안에는 팝업을 표시하지 않고 숨깁니다.
+      }
+    }
+
     // 1. 선택된 타일 ID에서 q, r 파싱
     int? q;
     int? r;
@@ -571,9 +601,6 @@ class _SatelliteMapBubbleState extends State<_SatelliteMapBubble> {
     } catch (_) {
       return const SizedBox.shrink();
     }
-
-    final auth = context.read<AuthProvider>();
-    final bool isCapturing = game.isSatelliteCapturing;
 
     // --- 상태 계산 ---
     Color themeColor = GameColors.accentNeon;
