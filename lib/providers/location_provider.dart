@@ -186,30 +186,40 @@ class LocationProvider extends ChangeNotifier with WidgetsBindingObserver {
           ? position.timestamp.difference(_lastPositionTime!).inMilliseconds / 1000.0
           : 0.0;
 
-      // 1. 공통 정확도 신뢰성 필터링: 반경 20m 이내이며, 최소 8.0m 이상 실제 크게 이동한 데이터만 1차 인정 (기본 흔들림/회전 지터 영역 락)
-      if (position.accuracy <= 20.0 && distance >= 8.0) {
+      // --- 동적 속도 감응형 임계값 설정 (Dynamic Speed-Responsive Thresholds) ---
+      // 하드웨어 도플러 칩셋이 보증하는 절대 속도가 0.5 m/s (시속 1.8km/h) 이상인 실질 이동 중일 경우, 
+      // 보행 누락을 막기 위해 1차 거리 임계값을 2.5m로 정밀 완화하고 Drift Gate를 동적으로 해제합니다.
+      // 반면 정지/제자리 흔들기 상태(속도 0.5 m/s 미만)일 때는 최소 거리를 8.0m로 올리고 1.5x Drift Gate로 틀어막습니다.
+      final bool isActuallyTravelling = position.speed >= 0.5;
+      
+      final double distanceThreshold = isActuallyTravelling ? 2.5 : 8.0;
+      final double driftGateMultiplier = isActuallyTravelling ? 0.0 : 1.5;
+
+      // 1. 공통 정확도 신뢰성 필터링: 동적 거리 임계치(이동 중 2.5m / 정지 중 8.0m) 적용
+      if (position.accuracy <= 20.0 && distance >= distanceThreshold) {
         bool isMoving = false;
         
         // 순간 계산 속도 계산 (GPS 속도가 유실되었거나 부정확할 때 신뢰할 수 있는 백업 수단)
         final double calculatedSpeed = timeDiffSec > 0.0 ? (distance / timeDiffSec) : position.speed;
 
         if (_isForeground) {
-          // --- 포그라운드 상태 3중 극강 필터링 ---
-          // 가속도 흔들림 센서가 감지되더라도, 실제 물리적 이동 속도가 현실적인 도보/달리기 속도 윈도우(0.75 m/s ~ 5.0 m/s) 내에 있어야 실제 이동 중으로 판단합니다.
-          // 제자리에서 격렬히 흔들거나 휙 돌려 1초 만에 7~8m 이상 점프하는 비현실적인 순간 튐 속도(시속 18km 초과)를 완벽하게 차단합니다.
+          // --- 포그라운드 상태 3중 극강 동적 필터링 ---
+          // 가속도 흔들림 센서가 감지되더라도, 실제 물리적 이동 속도가 현실적인 도보/달리기 속도 윈도우 내에 있어야 실제 이동 중으로 판단합니다.
+          // 제자리에서 격렬히 흔들거나 휙 돌려 1초 만에 7~8m 이상 점프하는 비현실적인 순간 튐 속도를 완벽하게 차단합니다.
           final bool hasMotion = _sensorService.isPhysicallyMoving;
           
-          // [1단계] 보행 유효 속도 윈도우 (Walking Speed Window: 0.75 m/s ~ 5.0 m/s)
-          final bool hasMinimumSpeed = (position.speed >= 0.75 && position.speed <= 5.0) || 
-                                       (calculatedSpeed >= 0.75 && calculatedSpeed <= 5.0);
+          // [1단계] 보행 유효 속도 검증 (동적으로 범위 대응)
+          // 걷고 있을 때는 현실적인 속도(0.5 ~ 5.0 m/s)를, 흔들 때는 엄격한 하한(0.75 m/s)을 둡니다.
+          final double minSpeedLimit = isActuallyTravelling ? 0.4 : 0.75;
+          final bool hasMinimumSpeed = (position.speed >= minSpeedLimit && position.speed <= 5.0) || 
+                                       (calculatedSpeed >= minSpeedLimit && calculatedSpeed <= 5.0);
           
           // [2단계] 센서 감지 여부와 무관하게 하드웨어 칩셋이 보증하는 명확한 등속/고속 이동 조건 (물리 속도 speed >= 1.0 m/s)
           // 수학적으로 튀는 calculatedSpeed는 여기에 포함하지 않아 정지 상태의 GPS 뜀(Drift)을 철저히 차단합니다.
           final bool hasClearSpeed = position.speed >= 1.0;
 
-          // [3단계] 1.5배 오차 범위 신뢰 타원 드리프트 게이트 (1.5x Drift Gate)
-          // 이동거리가 수신 정확도 오차 반경(accuracy)의 1.5배 미만인 미세 지터인 경우, 오차 범위 내의 흔들림 잡음으로 판단해 100% 차단합니다.
-          final bool isWithinErrorBound = distance < position.accuracy * 1.5;
+          // [3단계] 1.5배 오차 범위 신뢰 타원 드리프트 게이트 (이동 보증 시 비활성화 / 정지 시 1.5x 적용)
+          final bool isWithinErrorBound = driftGateMultiplier > 0.0 && (distance < position.accuracy * driftGateMultiplier);
 
           if (((hasMotion && hasMinimumSpeed) || hasClearSpeed) && !isWithinErrorBound) {
             isMoving = true;
