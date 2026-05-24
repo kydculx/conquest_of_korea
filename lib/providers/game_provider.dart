@@ -28,6 +28,12 @@ enum SatelliteCapturePhase {
 class GameProvider extends ChangeNotifier with WidgetsBindingObserver {
   /// 로컬 저장소에 저장될 알림 설정 키
   static const String _notifKey = 'conquest_notifications_enabled';
+  /// 로컬 저장소에 저장될 영토 침공 알림 키
+  static const String _notifTerritoryAttackKey = 'conquest_notif_territory_attack';
+  /// 로컬 저장소에 저장될 위성 점령 완료 알림 키
+  static const String _notifSatelliteCompleteKey = 'conquest_notif_satellite_complete';
+  /// 로컬 저장소에 저장될 시스템 공지 알림 키
+  static const String _notifSystemNoticeKey = 'conquest_notif_system_notice';
   /// 로컬 저장소에 저장될 지도 회전 설정 키
   static const String _rotationModeKey = 'conquest_map_rotation_enabled';
 
@@ -55,6 +61,12 @@ class GameProvider extends ChangeNotifier with WidgetsBindingObserver {
   int _currentMapStyleIndex = 0;
   /// 알림 수신 동의 여부
   bool _isNotificationEnabled = true;
+  /// 영토 침공 알림 여부
+  bool _isNotifTerritoryAttack = true;
+  /// 위성 점령 완료 알림 여부
+  bool _isNotifSatelliteComplete = true;
+  /// 시스템 공지 알림 여부
+  bool _isNotifSystemNotice = true;
   /// 지도 회전 모드(나침반 정렬) 사용 여부
   bool _isMapRotationMode = false;
 
@@ -187,6 +199,15 @@ class GameProvider extends ChangeNotifier with WidgetsBindingObserver {
 
   /// 로컬 푸시 알림 허용 여부
   bool get isNotificationEnabled => _isNotificationEnabled;
+
+  /// 영토 침공 알림 수신 여부
+  bool get isNotifTerritoryAttack => _isNotifTerritoryAttack;
+
+  /// 위성 점령 완료 알림 수신 여부
+  bool get isNotifSatelliteComplete => _isNotifSatelliteComplete;
+
+  /// 시스템 공지 알림 수신 여부
+  bool get isNotifSystemNotice => _isNotifSystemNotice;
 
   /// 지도 회전 모드(나침반 방향에 연동) 활성화 여부
   bool get isMapRotationMode => _isMapRotationMode; // 추가: 맵 회전 여부 getter
@@ -333,7 +354,13 @@ class GameProvider extends ChangeNotifier with WidgetsBindingObserver {
     try {
       final prefs = await SharedPreferences.getInstance();
       _isNotificationEnabled = prefs.getBool(_notifKey) ?? true;
+      _isNotifTerritoryAttack = prefs.getBool(_notifTerritoryAttackKey) ?? true;
+      _isNotifSatelliteComplete = prefs.getBool(_notifSatelliteCompleteKey) ?? true;
+      _isNotifSystemNotice = prefs.getBool(_notifSystemNoticeKey) ?? true;
       _isMapRotationMode = prefs.getBool(_rotationModeKey) ?? false;
+
+      // FCM 알림 구독 동기화 기동
+      _updateFcmSubscriptions();
 
       final lastSatCapTimeStr = prefs.getString('hq_last_satellite_capture_time');
       if (lastSatCapTimeStr != null) {
@@ -665,6 +692,77 @@ class GameProvider extends ChangeNotifier with WidgetsBindingObserver {
     final prefs = await SharedPreferences.getInstance();
     await prefs.setBool(_notifKey, _isNotificationEnabled);
     notifyListeners();
+    await _updateFcmSubscriptions();
+  }
+
+  /// 영토 침공 알림 여부를 토글합니다.
+  Future<void> toggleNotifTerritoryAttack() async {
+    _isNotifTerritoryAttack = !_isNotifTerritoryAttack;
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setBool(_notifTerritoryAttackKey, _isNotifTerritoryAttack);
+    notifyListeners();
+    await _updateFcmSubscriptions();
+  }
+
+  /// 위성 점령 완료 알림 여부를 토글합니다.
+  Future<void> toggleNotifSatelliteComplete() async {
+    _isNotifSatelliteComplete = !_isNotifSatelliteComplete;
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setBool(_notifSatelliteCompleteKey, _isNotifSatelliteComplete);
+    notifyListeners();
+    await _updateFcmSubscriptions();
+  }
+
+  /// 시스템 공지 알림 여부를 토글합니다.
+  Future<void> toggleNotifSystemNotice() async {
+    _isNotifSystemNotice = !_isNotifSystemNotice;
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setBool(_notifSystemNoticeKey, _isNotifSystemNotice);
+    notifyListeners();
+    await _updateFcmSubscriptions();
+  }
+
+  /// SharedPreferences 상태 및 마스터 알림 여부에 맞춰 FCM 구독 토픽을 최신화합니다.
+  Future<void> _updateFcmSubscriptions() async {
+    final ns = NotificationService();
+    if (!ns.isInitialized) {
+      await ns.initialize();
+    }
+
+    const String topicTerritory = 'conquest_territory_attack';
+    const String topicSatellite = 'conquest_satellite_complete';
+    const String topicNotice = 'conquest_system_notice';
+
+    if (!_isNotificationEnabled) {
+      // 마스터 알림이 꺼진 경우 모든 개별 토픽 일제 구독 해제
+      await ns.unsubscribeFromTopic(topicTerritory);
+      await ns.unsubscribeFromTopic(topicSatellite);
+      await ns.unsubscribeFromTopic(topicNotice);
+      debugPrint('🔔 [FCM 구독 통제] 마스터 해제로 인한 모든 토픽 구독 해제 완료.');
+      return;
+    }
+
+    // 영토 침공 알림
+    if (_isNotifTerritoryAttack) {
+      await ns.subscribeToTopic(topicTerritory);
+    } else {
+      await ns.unsubscribeFromTopic(topicTerritory);
+    }
+
+    // 위성 점령 완료 알림
+    if (_isNotifSatelliteComplete) {
+      await ns.subscribeToTopic(topicSatellite);
+    } else {
+      await ns.unsubscribeFromTopic(topicSatellite);
+    }
+
+    // 시스템 공지 알림
+    if (_isNotifSystemNotice) {
+      await ns.subscribeToTopic(topicNotice);
+    } else {
+      await ns.unsubscribeFromTopic(topicNotice);
+    }
+    debugPrint('🔔 [FCM 구독 통제] 개별 설정 최신화 완료 (영토: $_isNotifTerritoryAttack, 위성: $_isNotifSatelliteComplete, 공지: $_isNotifSystemNotice)');
   }
 
   /// 화면 상단에 표시될 새 경고/알림 팝업 메시지를 발행하고 3초 경과 후 자동 페이드아웃 되도록 타이머를 연동합니다.

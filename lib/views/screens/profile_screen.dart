@@ -208,6 +208,40 @@ class ProfileScreen extends StatelessWidget {
                     activeThumbColor: GameColors.accentNeon,
                   ),
                 ),
+                AnimatedSize(
+                  duration: const Duration(milliseconds: 250),
+                  curve: Curves.easeInOut,
+                  child: game.isNotificationEnabled
+                      ? Container(
+                          padding: const EdgeInsets.only(left: 20, right: 12, bottom: 8, top: 4),
+                          color: GameColors.backgroundMedium.withValues(alpha: 0.2),
+                          child: Column(
+                            children: [
+                              _buildSubMenuItem(
+                                title: '영토 침공 및 작전 알림',
+                                subtitle: '내 구역이 적 요원에 의해 침공/함락될 때 수신',
+                                value: game.isNotifTerritoryAttack,
+                                onChanged: (val) => game.toggleNotifTerritoryAttack(),
+                              ),
+                              _buildSubDivider(),
+                              _buildSubMenuItem(
+                                title: '위성 점령 안착 완료 알림',
+                                subtitle: '위성 빔 비행 정지 및 원격 점령 완료 시 수신',
+                                value: game.isNotifSatelliteComplete,
+                                onChanged: (val) => game.toggleNotifSatelliteComplete(),
+                              ),
+                              _buildSubDivider(),
+                              _buildSubMenuItem(
+                                title: '시스템 긴급 전술 지령',
+                                subtitle: '주요 패치 브리핑 및 실시간 작전 공지 수신',
+                                value: game.isNotifSystemNotice,
+                                onChanged: (val) => game.toggleNotifSystemNotice(),
+                              ),
+                            ],
+                          ),
+                        )
+                      : const SizedBox.shrink(),
+                ),
                 _buildDivider(),
                 _buildMenuItem(
                   icon: Icons.my_location_rounded,
@@ -471,6 +505,74 @@ class ProfileScreen extends StatelessWidget {
       color: GameColors.dividerColor.withValues(alpha: 30 / 255),
       indent: 16,
       endIndent: 16,
+    );
+  }
+
+  /// 개별 서브 알림 항목의 On/Off를 미려하게 토글할 수 있는 슬림형 전술 서브 메뉴 아이템 위젯
+  Widget _buildSubMenuItem({
+    required String title,
+    required String subtitle,
+    required bool value,
+    required ValueChanged<bool> onChanged,
+  }) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 4.0),
+      child: Row(
+        children: [
+          // 들여쓰기 가이드라인 라인 연출 (Tactical Link line)
+          Container(
+            width: 2,
+            height: 32,
+            margin: const EdgeInsets.only(right: 12),
+            decoration: BoxDecoration(
+              color: GameColors.accentNeon.withValues(alpha: 0.25),
+              borderRadius: BorderRadius.circular(1),
+            ),
+          ),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Text(
+                  title,
+                  style: TextStyle(
+                    color: GameColors.textPrimary.withValues(alpha: 0.95),
+                    fontWeight: FontWeight.bold,
+                    fontSize: 12.5,
+                  ),
+                ),
+                const SizedBox(height: 1),
+                Text(
+                  subtitle,
+                  style: TextStyle(
+                    color: GameColors.textMuted,
+                    fontSize: 10,
+                  ),
+                ),
+              ],
+            ),
+          ),
+          Transform.scale(
+            scale: 0.8,
+            child: Switch(
+              value: value,
+              onChanged: onChanged,
+              activeThumbColor: GameColors.accentNeon,
+              activeTrackColor: GameColors.accentNeon.withValues(alpha: 0.3),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  /// 개별 서브 알림 사이를 구분해주는 세밀한 라인 연출
+  Widget _buildSubDivider() {
+    return Divider(
+      height: 6,
+      color: GameColors.dividerColor.withValues(alpha: 15 / 255),
+      indent: 14,
     );
   }
 
