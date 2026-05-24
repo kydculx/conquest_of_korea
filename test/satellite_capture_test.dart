@@ -131,7 +131,9 @@ void main() {
   final testUserId = 'test-user-123';
   final enemyUserId = 'enemy-user-456';
 
-  setUp(() {
+  setUp(() async {
+    SharedPreferences.setMockInitialValues({});
+
     fakeSupabase = FakeSupabaseService();
     fakeAuth = FakeAuthProvider();
     fakeLocation = FakeLocationProvider();
@@ -145,6 +147,7 @@ void main() {
       teamId: 'none',
       mainBaseTileId: 'hex_0_0',
       createdAt: DateTime.now(),
+      gold: 100.0,
     );
   });
 
@@ -281,14 +284,14 @@ void main() {
       // hexDistance([0,0], [0,0]) = 0 -> 최소 1초
       expect(gameProvider.getSatelliteCaptureDurationSeconds('hex_0_0'), equals(1));
 
-      // hexDistance([0,0], [1,0]) = 1 -> 1초
-      expect(gameProvider.getSatelliteCaptureDurationSeconds('hex_1_0'), equals(1));
+      // hexDistance([0,0], [1,0]) = 1 -> 2초
+      expect(gameProvider.getSatelliteCaptureDurationSeconds('hex_1_0'), equals(2));
 
-      // hexDistance([0,0], [2,0]) = 2 -> 2초
-      expect(gameProvider.getSatelliteCaptureDurationSeconds('hex_2_0'), equals(2));
+      // hexDistance([0,0], [2,0]) = 2 -> 3초
+      expect(gameProvider.getSatelliteCaptureDurationSeconds('hex_2_0'), equals(3));
 
-      // hexDistance([0,0], [5,0]) = 5 -> 5초
-      expect(gameProvider.getSatelliteCaptureDurationSeconds('hex_5_0'), equals(5));
+      // hexDistance([0,0], [5,0]) = 5 -> 6초
+      expect(gameProvider.getSatelliteCaptureDurationSeconds('hex_5_0'), equals(6));
     });
   });
 

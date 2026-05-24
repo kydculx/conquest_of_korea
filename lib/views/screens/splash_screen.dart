@@ -116,6 +116,7 @@ class _SplashScreenState extends State<SplashScreen>
 
   @override
   Widget build(BuildContext context) {
+    final double bottomPadding = MediaQuery.of(context).padding.bottom;
     return Scaffold(
       backgroundColor: GameColors.tacticalBlack,
       body: Stack(
@@ -214,7 +215,7 @@ class _SplashScreenState extends State<SplashScreen>
 
           // 3. 하단 텍스트 및 로딩 상태
           Positioned(
-            bottom: 80,
+            bottom: 60.0 + bottomPadding,
             left: 20,
             right: 20,
             child: Opacity(

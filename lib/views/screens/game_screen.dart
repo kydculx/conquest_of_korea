@@ -324,6 +324,9 @@ class _GameScreenState extends State<GameScreen> {
     final flameGame = context.read<ConquestGame>();
     final loc = context.read<LocationProvider>();
 
+    final double topPadding = MediaQuery.of(context).padding.top;
+    final double topOffset = topPadding > 0 ? topPadding + 12.0 : 24.0;
+
     // 인증은 되었으나 프로필 정보가 없는 경우 (SNS 최초 로그인 등) 설정 화면으로 리다이렉트
     if (auth.isAuthenticated && auth.profile == null && !auth.isLoading) {
       return const SocialProfileSetupScreen();
@@ -382,7 +385,7 @@ class _GameScreenState extends State<GameScreen> {
           // 전술 알림 레이어
           if (game.alerts.isNotEmpty)
             Positioned(
-              top: 150,
+              top: topOffset + 90.0,
               left: 20,
               right: 20,
               child: Column(

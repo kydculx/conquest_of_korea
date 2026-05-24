@@ -20,8 +20,14 @@ class HudOverlay extends StatelessWidget {
     final game = context.watch<GameProvider>();
     final auth = context.watch<AuthProvider>();
 
-    // 기기별 하단 제스처바/내비게이션바 안전 영역 높이 자동 산출
+    // 기기별 상하단 안전 영역 높이 자동 산출
+    final double topPadding = MediaQuery.of(context).padding.top;
     final double bottomPadding = MediaQuery.of(context).padding.bottom;
+    
+    // Y축 정밀 오프셋 연산
+    final double topOffset = topPadding > 0 ? topPadding + 12.0 : 24.0;
+    final double bubbleTopOffset = topPadding > 0 ? topPadding + 120.0 : 132.0;
+
     // 여백 조율을 위한 기본 하단 마진
     final double baseBottomMargin = bottomPadding > 0 ? 24.0 : 40.0;
 
@@ -33,7 +39,7 @@ class HudOverlay extends StatelessWidget {
 
         // 상단 좌측 컨트롤 (나침반 & 당일 작전 거리 HUD)
         Positioned(
-          top: 60,
+          top: topOffset,
           left: 20,
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
@@ -52,11 +58,11 @@ class HudOverlay extends StatelessWidget {
 
         // 상단 우측 컨트롤 영역 (랭킹 및 프로필)
         Positioned(
-          top: 60,
+          top: topOffset,
           right: 76,
           child: _RankingButton(isAuthenticated: auth.isAuthenticated),
         ),
-        Positioned(top: 60, right: 20, child: _AuthProfileButton(auth: auth)),
+        Positioned(top: topOffset, right: 20, child: _AuthProfileButton(auth: auth)),
 
         // 점령 중 안내 텍스트 (택티컬 터미널 메시지 스타일 - 위성 스캔 모드가 아닐 때만 노출)
         if (auth.isAuthenticated && game.isCapturing && !game.isScanMode)
@@ -120,7 +126,7 @@ class HudOverlay extends StatelessWidget {
         // 위성 점령 정보창 (최상단 레이어에 상단 중앙 고정 배치)
         if (auth.isAuthenticated && game.isScanMode)
           Positioned(
-            top: 170,
+            top: bubbleTopOffset,
             left: 0,
             right: 0,
             child: IgnorePointer(
@@ -372,8 +378,9 @@ class _SatelliteScanFullscreenOverlayState
 
   Color _parseColor() {
     final hexString = widget.colorHex;
-    if (hexString == null || hexString.isEmpty)
+    if (hexString == null || hexString.isEmpty) {
       return const Color(0xFFFF9900); // 디폴트 주황
+    }
     final hexVal = hexString.replaceFirst('#', '');
     try {
       if (hexVal.length == 6) {
@@ -872,8 +879,9 @@ class _SatelliteMapBubbleState extends State<_SatelliteMapBubble> {
     final tileLatLng = game.selectedScanTileLatLng;
     final selectedId = game.selectedScanTileId;
 
-    if (tileLatLng == null || selectedId == null)
+    if (tileLatLng == null || selectedId == null) {
       return const SizedBox.shrink();
+    }
 
     final auth = context.read<AuthProvider>();
 
