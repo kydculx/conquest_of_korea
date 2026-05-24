@@ -50,7 +50,12 @@ class HudOverlay extends StatelessWidget {
           ),
         ),
 
-        // 상단 우측 컨트롤 영역 (프로필)
+        // 상단 우측 컨트롤 영역 (랭킹 및 프로필)
+        Positioned(
+          top: 60,
+          right: 76,
+          child: _RankingButton(isAuthenticated: auth.isAuthenticated),
+        ),
         Positioned(top: 60, right: 20, child: _AuthProfileButton(auth: auth)),
 
         // 점령 중 안내 텍스트 (택티컬 터미널 메시지 스타일 - 위성 스캔 모드가 아닐 때만 노출)
@@ -164,6 +169,47 @@ class _AuthProfileButton extends StatelessWidget {
           ],
         ),
         child: Icon(Icons.person_rounded, color: color, size: 24),
+      ),
+    );
+  }
+}
+
+class _RankingButton extends StatelessWidget {
+  final bool isAuthenticated;
+  const _RankingButton({required this.isAuthenticated});
+
+  @override
+  Widget build(BuildContext context) {
+    final Color color = isAuthenticated ? GameColors.accentNeon : GameColors.textMuted;
+
+    return GestureDetector(
+      onTap: () {
+        if (isAuthenticated) {
+          Navigator.pushNamed(context, '/ranking');
+        } else {
+          Navigator.pushNamed(context, '/login');
+        }
+      },
+      child: Container(
+        padding: const EdgeInsets.all(8),
+        decoration: ShapeDecoration(
+          color: GameColors.backgroundMedium,
+          shape: BeveledRectangleBorder(
+            borderRadius: BorderRadius.circular(10),
+            side: BorderSide(
+              color: color.withValues(alpha: isAuthenticated ? 0.4 : 0.15),
+              width: 1.0,
+            ),
+          ),
+          shadows: [
+            BoxShadow(
+              color: color.withValues(alpha: isAuthenticated ? 0.15 : 0.05),
+              blurRadius: isAuthenticated ? 8.0 : 4.0,
+              spreadRadius: 0.0,
+            ),
+          ],
+        ),
+        child: Icon(Icons.emoji_events_rounded, color: color, size: 24),
       ),
     );
   }

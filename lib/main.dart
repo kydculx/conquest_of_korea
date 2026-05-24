@@ -19,7 +19,9 @@ import 'views/screens/auth/login_screen.dart';
 import 'views/screens/auth/terms_agreement_screen.dart';
 import 'views/screens/auth/signup_screen.dart';
 import 'views/screens/profile_screen.dart';
+import 'views/screens/ranking_screen.dart';
 import 'providers/auth_provider.dart';
+import 'providers/ranking_provider.dart';
 
 import 'package:easy_localization/easy_localization.dart';
 
@@ -94,6 +96,12 @@ void main() async {
             },
           ),
 
+          // Ranking Provider — 요원 전술 랭킹 상태
+          ChangeNotifierProxyProvider<AuthProvider, RankingProvider>(
+            create: (ctx) => RankingProvider(supabase: ctx.read<SupabaseService>()),
+            update: (_, auth, ranking) => ranking!..setAuthProvider(auth),
+          ),
+
           // Flame 게임 엔진 인스턴스
           Provider(create: (_) => ConquestGame()),
         ],
@@ -123,6 +131,7 @@ class _ConquestApp extends StatelessWidget {
         '/profile': (context) => const ProfileScreen(),
         '/terms-agreement': (context) => const TermsAgreementScreen(),
         '/signup': (context) => const SignupScreen(),
+        '/ranking': (context) => const RankingScreen(),
       },
     );
   }

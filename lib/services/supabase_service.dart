@@ -3,6 +3,7 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 import '../core/app_config.dart';
 import '../core/constants/game_config.dart';
 import '../models/tile_model.dart';
+import '../models/user_profile.dart';
 
 /// Supabase 백엔드 데이터베이스 및 Realtime 데이터 처리를 담당하는 네트워크 통신 서비스 클래스
 class SupabaseService {
@@ -128,6 +129,40 @@ class SupabaseService {
     } catch (e) {
       debugPrint('❌ gold_rate 조회 실패: $e');
       return null;
+    }
+  }
+
+  /// 지정한 랭킹 타입에 따라 상위 100위까지의 요원 프로필 목록을 조회합니다.
+  Future<List<UserProfile>> fetchTopRankings(String rankType) async {
+    try {
+      final response = await _client
+          .from('profiles')
+          .select('*')
+          .order(rankType, ascending: false)
+          .limit(100);
+      
+      return (response as List)
+          .map((e) => UserProfile.fromJson(e as Map<String, dynamic>))
+          .toList();
+    } catch (e) {
+      debugPrint('❌ 랭킹 조회 실패 ($rankType): $e');
+      return [];
+    }
+  }
+
+  /// 특정 요원의 현재 랭킹 순위 숫자를 연산하여 반환합니다. (1부터 시작)
+  Future<int> fetchMyRanking(String userId, String rankType, double myValue) async {
+    try {
+      final response = await _client
+          .from('profiles')
+          .select('id')
+          .gt(rankType, myValue);
+      
+      final count = (response as List).length;
+      return count + 1;
+    } catch (e) {
+      debugPrint('❌ 내 순위 조회 실패 ($rankType): $e');
+      return 0;
     }
   }
 }
