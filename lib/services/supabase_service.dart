@@ -151,12 +151,16 @@ class SupabaseService {
   }
 
   /// 특정 요원의 현재 랭킹 순위 숫자를 연산하여 반환합니다. (1부터 시작)
-  Future<int> fetchMyRanking(String userId, String rankType, double myValue) async {
+  Future<int> fetchMyRanking(String userId, String rankType, dynamic myValue) async {
     try {
+      final queryVal = rankType == 'captured_tiles_count'
+          ? (myValue as num).toInt()
+          : myValue;
+
       final response = await _client
           .from('profiles')
           .select('id')
-          .gt(rankType, myValue);
+          .gt(rankType, queryVal);
       
       final count = (response as List).length;
       return count + 1;

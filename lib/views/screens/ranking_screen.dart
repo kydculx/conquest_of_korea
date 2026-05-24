@@ -70,9 +70,11 @@ class _RankingScreenState extends State<RankingScreen> {
           // 하단 고정 내 랭킹 앵커 배너 (로그인 유저가 있고 프로필 정보가 유효할 시 항시 노출)
           if (auth.isAuthenticated && auth.profile != null)
             Positioned(
-              left: 0,
-              right: 0,
-              bottom: 0,
+              left: 16,
+              right: 16,
+              bottom: MediaQuery.of(context).padding.bottom > 0
+                  ? MediaQuery.of(context).padding.bottom + 8.0
+                  : 16.0,
               child: _MyRankingFloatingBanner(
                 ranking: ranking,
                 myProfile: auth.profile!,
@@ -197,7 +199,7 @@ class _RankingListView extends StatelessWidget {
         left: 16,
         right: 16,
         top: 8,
-        bottom: 96 + MediaQuery.of(context).padding.bottom, // 하단 플로팅 배너 간섭 방지 패딩
+        bottom: 120 + MediaQuery.of(context).padding.bottom, // 하단 플로팅 배너 간섭 방지 패딩
       ),
       itemCount: list.length,
       itemBuilder: (context, index) {
@@ -391,21 +393,13 @@ class _MyRankingFloatingBanner extends StatelessWidget {
       agentColor = Color(int.parse('FF$hex', radix: 16));
     } catch (_) {}
 
-    // 여백 및 안전 영역 처리
-    final double bottomPadding = MediaQuery.of(context).padding.bottom;
-
     return Container(
-      padding: EdgeInsets.only(
-        left: 20,
-        right: 20,
-        top: 16,
-        bottom: bottomPadding > 0 ? bottomPadding + 10 : 16,
-      ),
+      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
       decoration: ShapeDecoration(
         color: GameColors.backgroundMedium,
         shape: BeveledRectangleBorder(
-          borderRadius: const BorderRadius.vertical(top: Radius.circular(16)),
-          side: BorderSide(color: GameColors.accentNeon.withValues(alpha: 0.3), width: 1.5),
+          borderRadius: BorderRadius.circular(12),
+          side: BorderSide(color: GameColors.accentNeon.withValues(alpha: 0.4), width: 1.5),
         ),
         shadows: [
           BoxShadow(
@@ -428,7 +422,7 @@ class _MyRankingFloatingBanner extends StatelessWidget {
               ),
             ),
             child: Text(
-              rank > 0 ? '$rank위' : '계산 중',
+              rank > 0 ? '$rank위' : '순위 미정',
               style: TextStyle(
                 color: GameColors.tacticalBlack,
                 fontSize: 14,
