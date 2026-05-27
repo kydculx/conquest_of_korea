@@ -6,7 +6,7 @@ import '../../core/constants/strings.dart';
 import '../../providers/game_provider.dart';
 import 'game_screen.dart';
 
-/// 전술 맵 컨셉의 고급 스플래시 화면 (Rich Aesthetics & Radar Scan Animation)
+/// 전술 맵 컨셉의 정적 스플래시 화면 (애니메이션 제거 및 즉시 진입 최적화)
 class SplashScreen extends StatefulWidget {
   /// 스플래시 화면을 생성하는 기본 생성자
   const SplashScreen({super.key});
@@ -15,96 +15,53 @@ class SplashScreen extends StatefulWidget {
   State<SplashScreen> createState() => _SplashScreenState();
 }
 
-/// [SplashScreen]의 상태 관리 및 애니메이션 연출을 담당하는 State 클래스
-class _SplashScreenState extends State<SplashScreen>
-    with SingleTickerProviderStateMixin {
-  /// 레이더 스캔 애니메이션을 제어하는 컨트롤러
-  late AnimationController _radarController;
-
-  /// 레이더 펄스의 크기와 불투명도를 조정하는 애니메이션
-  late Animation<double> _pulseAnimation;
-
-  /// 텍스트 및 로고 페이드인 효과를 담당하는 애니메이션
-  late Animation<double> _fadeInAnimation;
-
-  /// 스플래시 화면의 최소 노출 시간(2.5초)이 경과했는지 여부
-  bool _minTimeElapsed = false;
-
+class _SplashScreenState extends State<SplashScreen> {
   @override
   void initState() {
     super.initState();
 
-    // 레이더 펄스 애니메이션 설정 (무한 반복)
-    _radarController = AnimationController(
-      vsync: this,
-      duration: const Duration(milliseconds: 2200),
-    );
-
-    _pulseAnimation = Tween<double>(begin: 0.0, end: 1.0).animate(
-      CurvedAnimation(
-        parent: _radarController,
-        curve: const Interval(0.0, 0.85, curve: Curves.easeOut),
-      ),
-    );
-
-    _fadeInAnimation = Tween<double>(begin: 0.0, end: 1.0).animate(
-      CurvedAnimation(
-        parent: _radarController,
-        curve: const Interval(0.0, 0.40, curve: Curves.easeIn),
-      ),
-    );
-
-    _radarController.repeat();
-
-    // 최소 연출 시간 2.5초 설정
-    Timer(const Duration(milliseconds: 2500), () {
-      if (mounted) {
-        setState(() {
-          _minTimeElapsed = true;
-        });
-        _checkInitializationAndNavigate();
-      }
-    });
-
-    // GameProvider 초기화 상태 모니터링
+    // GameProvider 초기화 상태 즉시 감지 및 연동
     WidgetsBinding.instance.addPostFrameCallback((_) {
       final game = context.read<GameProvider>();
-      game.addListener(_onGameProviderChanged);
+
+      // 이미 초기화가 완료된 상태라면 딜레이 없이 즉시 네비게이션 실행
+      if (game.isInitialized) {
+        _navigateToGame();
+      } else {
+        game.addListener(_onGameProviderChanged);
+      }
     });
   }
 
   /// [GameProvider]의 상태가 변경될 때 호출되는 리스너 콜백
   void _onGameProviderChanged() {
-    _checkInitializationAndNavigate();
+    final game = context.read<GameProvider>();
+    if (game.isInitialized) {
+      game.removeListener(_onGameProviderChanged);
+      _navigateToGame();
+    }
   }
 
-  /// 앱의 초기화 상태와 최소 연출 시간 경과 여부를 확인하고 메인 화면으로 이동
-  void _checkInitializationAndNavigate() {
+  /// 메인 전술 맵 화면으로 쾌속 화면 전환을 수행합니다.
+  void _navigateToGame() {
     if (!mounted) return;
-    final game = context.read<GameProvider>();
 
-    // 최소 시간이 경과하고 게임 초기화(위성 동기화)가 완료되었을 때 메인으로 전환
-    if (_minTimeElapsed && game.isInitialized) {
-      game.removeListener(_onGameProviderChanged);
-
-      // 멋진 페이드 아웃 전환 효과 적용
-      Navigator.pushReplacement(
-        context,
-        PageRouteBuilder(
-          pageBuilder: (context, animation, secondaryAnimation) =>
-              const GameScreen(),
-          transitionsBuilder: (context, animation, secondaryAnimation, child) {
-            return FadeTransition(opacity: animation, child: child);
-          },
-          transitionDuration: const Duration(milliseconds: 800),
-        ),
-      );
-    }
+    Navigator.pushReplacement(
+      context,
+      PageRouteBuilder(
+        pageBuilder: (context, animation, secondaryAnimation) =>
+            const GameScreen(),
+        transitionsBuilder: (context, animation, secondaryAnimation, child) {
+          // 자연스러운 150ms 신속 페이드 트랜지션 적용으로 덜컹거림 차단
+          return FadeTransition(opacity: animation, child: child);
+        },
+        transitionDuration: const Duration(milliseconds: 150),
+      ),
+    );
   }
 
   @override
   void dispose() {
-    _radarController.dispose();
     try {
       final game = context.read<GameProvider>();
       game.removeListener(_onGameProviderChanged);
@@ -115,6 +72,7 @@ class _SplashScreenState extends State<SplashScreen>
   @override
   Widget build(BuildContext context) {
     final double bottomPadding = MediaQuery.of(context).padding.bottom;
+
     return Scaffold(
       backgroundColor: GameColors.tacticalBlack,
       body: Stack(
@@ -122,92 +80,57 @@ class _SplashScreenState extends State<SplashScreen>
           // 1. 배경 Grid 격자 연출
           Positioned.fill(child: CustomPaint(painter: _TacticalGridPainter())),
 
-          // 2. 중앙 레이더 스캔 및 로고
+          // 2. 중앙 레이더 스캔 이미지 및 로고 (애니메이션이 소거된 정적 룩)
           Center(
-            child: AnimatedBuilder(
-              animation: _radarController,
-              builder: (context, child) {
-                return Stack(
-                  alignment: Alignment.center,
-                  children: [
-                    // 레이더 원형 펄스 1
-                    Container(
-                      width: 280 * _pulseAnimation.value,
-                      height: 280 * _pulseAnimation.value,
-                      decoration: BoxDecoration(
-                        shape: BoxShape.circle,
-                        border: Border.all(
-                          color: GameColors.accentNeon.withValues(
-                            alpha: (1.0 - _pulseAnimation.value) * 0.4,
-                          ),
-                          width: 1.5,
-                        ),
-                      ),
+            child: Stack(
+              alignment: Alignment.center,
+              children: [
+                // 정적 레이더 원형 라인 1
+                Container(
+                  width: 280,
+                  height: 280,
+                  decoration: BoxDecoration(
+                    shape: BoxShape.circle,
+                    border: Border.all(
+                      color: GameColors.accentNeon.withValues(alpha: 0.15),
+                      width: 1.5,
                     ),
-                    // 레이더 원형 펄스 2 (지연 발생 효과)
-                    Container(
-                      width: 280 * ((_pulseAnimation.value + 0.3) % 1.0),
-                      height: 280 * ((_pulseAnimation.value + 0.3) % 1.0),
-                      decoration: BoxDecoration(
-                        shape: BoxShape.circle,
-                        border: Border.all(
-                          color: GameColors.accentNeon.withValues(
-                            alpha:
-                                (1.0 - ((_pulseAnimation.value + 0.3) % 1.0)) *
-                                0.25,
-                          ),
-                          width: 1.0,
-                        ),
-                      ),
+                  ),
+                ),
+                // 정적 레이더 원형 라인 2
+                Container(
+                  width: 200,
+                  height: 200,
+                  decoration: BoxDecoration(
+                    shape: BoxShape.circle,
+                    border: Border.all(
+                      color: GameColors.accentNeon.withValues(alpha: 0.1),
+                      width: 1.0,
                     ),
-                    // 중앙 스캐너 선
-                    Transform.rotate(
-                      angle: _radarController.value * 2 * 3.14159265,
-                      child: Container(
-                        width: 240,
-                        height: 240,
-                        decoration: BoxDecoration(
-                          shape: BoxShape.circle,
-                          gradient: SweepGradient(
-                            center: Alignment.center,
-                            colors: [
-                              GameColors.accentNeon.withValues(alpha: 0.15),
-                              GameColors.transparent,
-                            ],
-                            stops: const [0.2, 1.0],
-                          ),
-                        ),
-                      ),
-                    ),
+                  ),
+                ),
 
-                    // 메인 전술 아이콘
-                    Opacity(
-                      opacity: _fadeInAnimation.value,
-                      child: Container(
-                        width: 80,
-                        height: 80,
-                        decoration: ShapeDecoration(
-                          color: GameColors.backgroundMedium.withValues(
-                            alpha: 0.8,
-                          ),
-                          shape: BeveledRectangleBorder(
-                            borderRadius: BorderRadius.circular(16),
-                            side: BorderSide(
-                              color: GameColors.accentNeon,
-                              width: 1.5,
-                            ),
-                          ),
-                        ),
-                        child: Icon(
-                          Icons.radar_rounded,
-                          color: GameColors.accentNeon,
-                          size: 40,
-                        ),
+                // 메인 전술 아이콘 (정적 렌더링)
+                Container(
+                  width: 80,
+                  height: 80,
+                  decoration: ShapeDecoration(
+                    color: GameColors.backgroundMedium.withValues(alpha: 0.9),
+                    shape: BeveledRectangleBorder(
+                      borderRadius: BorderRadius.circular(16),
+                      side: BorderSide(
+                        color: GameColors.accentNeon,
+                        width: 1.5,
                       ),
                     ),
-                  ],
-                );
-              },
+                  ),
+                  child: Icon(
+                    Icons.radar_rounded,
+                    color: GameColors.accentNeon,
+                    size: 40,
+                  ),
+                ),
+              ],
             ),
           ),
 
@@ -216,64 +139,61 @@ class _SplashScreenState extends State<SplashScreen>
             bottom: 60.0 + bottomPadding,
             left: 20,
             right: 20,
-            child: Opacity(
-              opacity: _fadeInAnimation.value,
-              child: Column(
-                children: [
-                  Text(
-                    GameStrings.appName.toUpperCase(),
-                    style: TextStyle(
-                      color: GameColors.textPrimary,
-                      fontSize: 22,
-                      fontWeight: FontWeight.w900,
-                      letterSpacing: 4.0,
-                      shadows: [
-                        Shadow(
-                          color: GameColors.accentNeon.withValues(alpha: 0.6),
-                          blurRadius: 10,
-                        ),
-                      ],
-                    ),
-                  ),
-                  const SizedBox(height: 8),
-                  Text(
-                    'TACTICAL POSITION & TERRITORY CONQUEST',
-                    style: TextStyle(
-                      color: GameColors.textMuted,
-                      fontSize: 10,
-                      fontWeight: FontWeight.bold,
-                      letterSpacing: 2.0,
-                    ),
-                  ),
-                  const SizedBox(height: 48),
-                  // 로딩 표시기
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      SizedBox(
-                        width: 14,
-                        height: 14,
-                        child: CircularProgressIndicator(
-                          strokeWidth: 1.5,
-                          valueColor: AlwaysStoppedAnimation<Color>(
-                            GameColors.accentNeon,
-                          ),
-                        ),
-                      ),
-                      const SizedBox(width: 12),
-                      Text(
-                        'SATELLITE SYNC IN PROGRESS...',
-                        style: TextStyle(
-                          color: GameColors.accentNeon,
-                          fontSize: 11,
-                          fontWeight: FontWeight.w800,
-                          letterSpacing: 1.5,
-                        ),
+            child: Column(
+              children: [
+                Text(
+                  GameStrings.appName.toUpperCase(),
+                  style: TextStyle(
+                    color: GameColors.textPrimary,
+                    fontSize: 22,
+                    fontWeight: FontWeight.w900,
+                    letterSpacing: 4.0,
+                    shadows: [
+                      Shadow(
+                        color: GameColors.accentNeon.withValues(alpha: 0.5),
+                        blurRadius: 10,
                       ),
                     ],
                   ),
-                ],
-              ),
+                ),
+                const SizedBox(height: 8),
+                Text(
+                  'TACTICAL POSITION & TERRITORY CONQUEST',
+                  style: TextStyle(
+                    color: GameColors.textMuted,
+                    fontSize: 10,
+                    fontWeight: FontWeight.bold,
+                    letterSpacing: 2.0,
+                  ),
+                ),
+                const SizedBox(height: 48),
+                // 로딩 표시기
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    SizedBox(
+                      width: 14,
+                      height: 14,
+                      child: CircularProgressIndicator(
+                        strokeWidth: 1.5,
+                        valueColor: AlwaysStoppedAnimation<Color>(
+                          GameColors.accentNeon,
+                        ),
+                      ),
+                    ),
+                    const SizedBox(width: 12),
+                    Text(
+                      'SATELLITE SYNC IN PROGRESS...',
+                      style: TextStyle(
+                        color: GameColors.accentNeon,
+                        fontSize: 11,
+                        fontWeight: FontWeight.w800,
+                        letterSpacing: 1.5,
+                      ),
+                    ),
+                  ],
+                ),
+              ],
             ),
           ),
         ],
