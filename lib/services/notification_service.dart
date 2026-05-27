@@ -50,6 +50,13 @@ class NotificationService {
         debugPrint('푸시 알림 권한 승인됨');
       }
 
+      // iOS/macOS 포그라운드 알림 수신 시 상단 배너/사운드 노출 보장 옵션 활성화
+      await _fcm?.setForegroundNotificationPresentationOptions(
+        alert: true,
+        badge: true,
+        sound: true,
+      );
+
       await _localNotifications
           .resolvePlatformSpecificImplementation<
             AndroidFlutterLocalNotificationsPlugin
