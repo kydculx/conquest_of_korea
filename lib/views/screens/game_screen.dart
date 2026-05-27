@@ -81,9 +81,9 @@ class _GameScreenState extends State<GameScreen> {
                   horizontal: 20,
                   vertical: 12,
                 ),
-                shape: BeveledRectangleBorder(
-                  borderRadius: BorderRadius.circular(6),
-                  side: BorderSide(color: GameColors.textMuted, width: 1.0),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(16),
+                  side: BorderSide(color: GameColors.dividerColor, width: 1.0),
                 ),
               ),
               child: Text(
@@ -107,8 +107,8 @@ class _GameScreenState extends State<GameScreen> {
                   horizontal: 20,
                   vertical: 12,
                 ),
-                shape: BeveledRectangleBorder(
-                  borderRadius: BorderRadius.circular(6),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(16),
                 ),
               ),
               child: Text(
@@ -161,9 +161,9 @@ class _GameScreenState extends State<GameScreen> {
                   horizontal: 20,
                   vertical: 12,
                 ),
-                shape: BeveledRectangleBorder(
-                  borderRadius: BorderRadius.circular(6),
-                  side: BorderSide(color: GameColors.textMuted, width: 1.0),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(16),
+                  side: BorderSide(color: GameColors.dividerColor, width: 1.0),
                 ),
               ),
               child: Text(
@@ -187,8 +187,8 @@ class _GameScreenState extends State<GameScreen> {
                   horizontal: 20,
                   vertical: 12,
                 ),
-                shape: BeveledRectangleBorder(
-                  borderRadius: BorderRadius.circular(6),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(16),
                 ),
               ),
               child: Text(

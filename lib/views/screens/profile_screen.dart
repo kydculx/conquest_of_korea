@@ -295,7 +295,7 @@ class ProfileScreen extends StatelessWidget {
     );
   }
 
-  /// 세련된 기하학적 형태(Beveled)의 외부 테두리를 적용하여 설정 메뉴 항목들의 컨테이너를 이루는 위젯입니다.
+  /// 부드러운 둥근 모서리(Rounded)의 외부 테두리를 적용하여 설정 메뉴 항목들의 컨테이너를 이루는 위젯입니다.
   Widget _buildMenuCard(List<Widget> children) {
     return Container(
       decoration: ShapeDecoration(
@@ -451,8 +451,8 @@ class ProfileScreen extends StatelessWidget {
             style: ElevatedButton.styleFrom(
               backgroundColor: GameColors.error,
               foregroundColor: GameColors.tacticalWhite,
-              shape: BeveledRectangleBorder(
-                borderRadius: BorderRadius.circular(4),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(16),
               ),
             ),
             child: Text(
@@ -492,8 +492,8 @@ class ProfileScreen extends StatelessWidget {
             style: ElevatedButton.styleFrom(
               backgroundColor: GameColors.error,
               foregroundColor: GameColors.tacticalWhite,
-              shape: BeveledRectangleBorder(
-                borderRadius: BorderRadius.circular(4),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(16),
               ),
             ),
             child: Text(
@@ -540,8 +540,8 @@ class ProfileScreen extends StatelessWidget {
                     height: 96,
                     decoration: ShapeDecoration(
                       color: previewColor.withValues(alpha: 0.15),
-                      shape: BeveledRectangleBorder(
-                        borderRadius: BorderRadius.circular(20),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(24),
                         side: BorderSide(color: previewColor, width: 2.5),
                       ),
                       shadows: [
@@ -646,8 +646,8 @@ class ProfileScreen extends StatelessWidget {
                           ],
                         ),
                         behavior: SnackBarBehavior.floating,
-                        shape: BeveledRectangleBorder(
-                          borderRadius: BorderRadius.circular(4),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(16),
                           side: BorderSide(
                             color: GameColors.success.withValues(alpha: 0.4),
                           ),
@@ -667,8 +667,8 @@ class ProfileScreen extends StatelessWidget {
                     horizontal: 22,
                     vertical: 12,
                   ),
-                  shape: BeveledRectangleBorder(
-                    borderRadius: BorderRadius.circular(8),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(16),
                   ),
                 ),
                 child: Text(
@@ -815,8 +815,8 @@ class ProfileScreen extends StatelessWidget {
             style: ElevatedButton.styleFrom(
               backgroundColor: GameColors.accentNeon,
               foregroundColor: GameColors.tacticalBlack,
-              shape: BeveledRectangleBorder(
-                borderRadius: BorderRadius.circular(4),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(16),
               ),
             ),
             child: Text(

@@ -1058,7 +1058,7 @@ class _BubbleColumn extends StatelessWidget {
   }
 }
 
-/// 말풍선 본체 위젯 (BeveledRect 테두리 + BackdropBlur 배경)
+/// 말풍선 본체 위젯 (Cozy 버블 테두리 + BackdropBlur 배경)
 class _BubbleBody extends StatelessWidget {
   final Color themeColor;
   final bool isError;

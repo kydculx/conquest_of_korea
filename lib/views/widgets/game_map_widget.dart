@@ -425,8 +425,8 @@ class _GameMapWidgetState extends State<GameMapWidget>
         foregroundColor: isActive
             ? GameColors.accentNeon
             : GameColors.tacticalWhite,
-        shape: BeveledRectangleBorder(
-          borderRadius: BorderRadius.circular(6),
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(12),
           side: BorderSide(
             color: isActive ? GameColors.accentNeon : GameColors.dividerColor,
             width: 1.2,
@@ -459,8 +459,8 @@ class _GameMapWidgetState extends State<GameMapWidget>
               style: OutlinedButton.styleFrom(
                 foregroundColor: Colors.white70,
                 side: const BorderSide(color: Colors.white30, width: 1.0),
-                shape: BeveledRectangleBorder(
-                  borderRadius: BorderRadius.circular(4),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(16),
                 ),
               ),
               onPressed: () => Navigator.pop(context),
@@ -470,8 +470,8 @@ class _GameMapWidgetState extends State<GameMapWidget>
               style: OutlinedButton.styleFrom(
                 foregroundColor: GameColors.error,
                 side: BorderSide(color: GameColors.error, width: 1.0),
-                shape: BeveledRectangleBorder(
-                  borderRadius: BorderRadius.circular(4),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(16),
                 ),
               ),
               onPressed: () {
