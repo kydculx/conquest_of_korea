@@ -59,7 +59,6 @@ class SupabaseService {
         'p_r': tile.r,
         'p_user_id': tile.userId,
         'p_color_hex': tile.colorHex,
-        'p_bounds': tile.bounds,
         'p_target_capture_count': tile.captureCount,
         'p_shield_duration_seconds': GameConfig.tileShieldDurationSeconds,
       };

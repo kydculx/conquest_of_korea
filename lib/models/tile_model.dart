@@ -1,4 +1,5 @@
 import '../core/constants/game_config.dart';
+import '../services/hex_service.dart';
 
 /// 특정 에이전트 관점에서의 H3 헥사곤 타일 점령 소유 상태를 구분하는 열거형
 enum TileStatus {
@@ -29,14 +30,16 @@ class HexTile {
   /// 타일을 지배하는 요원의 고유 헥사 네온 컬러 코드 (중립 시 null)
   final String? colorHex;
 
-  /// 헥사곤 타일의 테두리를 그리는 6개의 꼭짓점 위경도 좌표 쌍 목록
-  final List<List<double>> bounds;
-
   /// 타일이 최종 점령(소유권 이전)된 일시 (UTC 기준)
   final DateTime capturedAt;
 
   /// 이 타일이 전체 게임 생애 주기 동안 총 몇 번 점령되었는지의 빈도수
   final int captureCount;
+
+  /// 헥사곤 타일의 테두리를 그리는 6개의 꼭짓점 위경도 좌표 쌍 목록 (q, r에 근거하여 온디맨드 역산)
+  List<List<double>> get bounds => HexService.getHexCorners(q, r)
+      .map((latLng) => [latLng.latitude, latLng.longitude])
+      .toList();
 
   /// HexTile 생성자
   const HexTile({
@@ -45,27 +48,18 @@ class HexTile {
     required this.r,
     this.userId,
     this.colorHex,
-    required this.bounds,
     required this.capturedAt,
     this.captureCount = 1,
   });
 
   /// Map 구조의 JSON 데이터로부터 HexTile 인스턴스를 생성하는 팩토리 메서드
   factory HexTile.fromJson(Map<String, dynamic> json) {
-    final rawBounds = json['bounds'];
-    final bounds = rawBounds is List
-        ? rawBounds
-            .map((b) => (b as List).map((e) => (e as num).toDouble()).toList())
-            .toList()
-        : <List<double>>[];
-
     return HexTile(
       id: json['id'] as String,
       q: json['q'] as int,
       r: json['r'] as int,
       userId: json['user_id'] as String?,
       colorHex: json['color_hex'] as String?,
-      bounds: bounds,
       capturedAt: json['captured_at'] != null
           ? DateTime.parse(json['captured_at'] as String).toUtc()
           : DateTime.now().toUtc(),
@@ -80,7 +74,6 @@ class HexTile {
         'r': r,
         'user_id': userId,
         'color_hex': colorHex,
-        'bounds': bounds,
         'captured_at': capturedAt.toUtc().toIso8601String(),
         'capture_status': 'captured',
         'capture_count': captureCount,
@@ -90,7 +83,6 @@ class HexTile {
   HexTile copyWith({
     String? userId,
     String? colorHex,
-    List<List<double>>? bounds,
     int? captureCount,
   }) {
     return HexTile(
@@ -99,7 +91,6 @@ class HexTile {
       r: r,
       userId: userId ?? this.userId,
       colorHex: colorHex ?? this.colorHex,
-      bounds: bounds ?? this.bounds,
       capturedAt: capturedAt,
       captureCount: captureCount ?? this.captureCount,
     );

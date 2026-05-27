@@ -74,7 +74,6 @@ void main() {
         'p_r': 999,
         'p_user_id': testUserId,
         'p_color_hex': '#FF0000',
-        'p_bounds': [],
         'p_target_capture_count': 1,
         'p_shield_duration_seconds': 60,
       };

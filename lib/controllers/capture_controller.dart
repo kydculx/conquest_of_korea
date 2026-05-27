@@ -152,7 +152,6 @@ class CaptureController {
       r: hex['r']!,
       userId: _userId,
       colorHex: _colorHex,
-      bounds: HexService.getHexCorners(hex['q']!, hex['r']!).map((l) => [l.latitude, l.longitude]).toList(),
       capturedAt: DateTime.now().toUtc(),
       captureCount: _targetCaptureCount, // 계산된 목표 점령 횟수를 데이터 모델에 주입
     );

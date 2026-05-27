@@ -43,7 +43,6 @@ class FakeSupabaseService implements SupabaseService {
         r: 0,
         userId: 'none',
         colorHex: '#FFFFFF',
-        bounds: [],
         capturedAt: DateTime.now(),
         captureCount: 0,
       ),
@@ -184,7 +183,6 @@ void main() {
         r: 0,
         userId: testUserId,
         colorHex: '#FF0000',
-        bounds: [],
         capturedAt: DateTime.now(),
         captureCount: 1,
       );
@@ -203,7 +201,6 @@ void main() {
         r: 0,
         userId: testUserId,
         colorHex: '#FF0000',
-        bounds: [],
         capturedAt: DateTime.now(),
         captureCount: 1,
       );
@@ -223,7 +220,6 @@ void main() {
         r: 0,
         userId: testUserId,
         colorHex: '#FF0000',
-        bounds: [],
         capturedAt: DateTime.now(),
         captureCount: 1,
       );
@@ -233,7 +229,6 @@ void main() {
         r: 0,
         userId: testUserId,
         colorHex: '#FF0000',
-        bounds: [],
         capturedAt: DateTime.now(),
         captureCount: 1,
       );
@@ -252,7 +247,6 @@ void main() {
         r: 0,
         userId: testUserId,
         colorHex: '#FF0000',
-        bounds: [],
         capturedAt: DateTime.now(),
         captureCount: 1,
       );
@@ -263,7 +257,6 @@ void main() {
         r: 0,
         userId: enemyUserId,
         colorHex: '#0000FF',
-        bounds: [],
         capturedAt: DateTime.now(),
         captureCount: 1,
       );
@@ -304,7 +297,6 @@ void main() {
         r: 0,
         userId: testUserId,
         colorHex: '#FF0000',
-        bounds: [],
         capturedAt: DateTime.now(),
         captureCount: 1,
       );
@@ -333,7 +325,6 @@ void main() {
         r: 0,
         userId: testUserId,
         colorHex: '#FF0000',
-        bounds: [],
         capturedAt: DateTime.now(),
         captureCount: 1,
       );

@@ -137,16 +137,12 @@ class GameProvider extends ChangeNotifier with WidgetsBindingObserver {
         if (parts.length == 3) {
           final q = int.tryParse(parts[1]) ?? 0;
           final r = int.tryParse(parts[2]) ?? 0;
-          final corners = HexService.getHexCorners(q, r);
-          final boundsList = corners.map((latLng) => [latLng.latitude, latLng.longitude]).toList();
-
           copy[myMainBaseId] = HexTile(
             id: myMainBaseId,
             q: q,
             r: r,
             userId: myId,
             colorHex: myColor,
-            bounds: boundsList,
             capturedAt: DateTime.now().toUtc(),
             captureCount: 1,
           );
@@ -1150,7 +1146,6 @@ class GameProvider extends ChangeNotifier with WidgetsBindingObserver {
       r: r,
       userId: myId,
       colorHex: myColor,
-      bounds: HexService.getHexCorners(q, r).map((l) => [l.latitude, l.longitude]).toList(),
       capturedAt: DateTime.now().toUtc(),
       captureCount: 1, // 위성 점령은 점령 카운트 1로 초기화 (또는 고정)
     );

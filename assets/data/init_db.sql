@@ -40,7 +40,6 @@ create table public.captured_tiles (
   r int not null,
   user_id uuid references auth.users(id),
   color_hex text,
-  bounds jsonb not null,
   captured_at timestamptz default now(),
   capture_status text default 'captured',
   capture_count int not null default 1 -- 각 타일마다 점령된 총 횟수 (최초 1, 재점령 시 2, 3...)
@@ -64,6 +63,7 @@ create policy "Authenticated users can update captured tiles."
 -- [신규] 구버전 충돌 방지를 위한 안전한 DROP 구문 선언
 DROP FUNCTION IF EXISTS public.safe_capture_tile(text, int, int, text, text, jsonb, int, int);
 DROP FUNCTION IF EXISTS public.safe_capture_tile(text, int, int, uuid, text, jsonb, int, int);
+DROP FUNCTION IF EXISTS public.safe_capture_tile(text, int, int, uuid, text, int, int);
 DROP FUNCTION IF EXISTS public.sync_user_gold_and_count(uuid, int);
 DROP FUNCTION IF EXISTS public.on_captured_tile_change();
 
@@ -74,7 +74,6 @@ CREATE OR REPLACE FUNCTION safe_capture_tile(
   p_r int,
   p_user_id uuid,
   p_color_hex text,
-  p_bounds jsonb,
   p_target_capture_count int,
   p_shield_duration_seconds int
 ) RETURNS boolean
@@ -99,8 +98,8 @@ BEGIN
   END IF;
 
   -- 3. 안전하게 Upsert(점령 저장) 실행
-  INSERT INTO public.captured_tiles (id, q, r, user_id, color_hex, bounds, captured_at, capture_count)
-  VALUES (p_tile_id, p_q, p_r, p_user_id, p_color_hex, p_bounds, now(), p_target_capture_count)
+  INSERT INTO public.captured_tiles (id, q, r, user_id, color_hex, captured_at, capture_count)
+  VALUES (p_tile_id, p_q, p_r, p_user_id, p_color_hex, now(), p_target_capture_count)
   ON CONFLICT (id) DO UPDATE
   SET user_id = EXCLUDED.user_id,
       color_hex = EXCLUDED.color_hex,
