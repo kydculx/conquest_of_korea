@@ -86,7 +86,8 @@ void main() async {
             AuthProvider,
             GameProvider
           >(
-            create: (ctx) => GameProvider(supabase: ctx.read<SupabaseService>()),
+            create: (ctx) =>
+                GameProvider(supabase: ctx.read<SupabaseService>()),
             update: (_, loc, auth, game) {
               game!.setLocationProvider(loc);
               game.setAuthProvider(auth);
@@ -96,7 +97,8 @@ void main() async {
 
           // Ranking Provider — 요원 전술 랭킹 상태
           ChangeNotifierProxyProvider<AuthProvider, RankingProvider>(
-            create: (ctx) => RankingProvider(supabase: ctx.read<SupabaseService>()),
+            create: (ctx) =>
+                RankingProvider(supabase: ctx.read<SupabaseService>()),
             update: (_, auth, ranking) => ranking!..setAuthProvider(auth),
           ),
 

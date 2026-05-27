@@ -757,14 +757,24 @@ class GameProvider extends ChangeNotifier with WidgetsBindingObserver {
     const String topicTerritory = 'conquest_territory_attack';
     const String topicSatellite = 'conquest_satellite_complete';
     const String topicNotice = 'conquest_system_notice';
+    final userId = _authProvider?.user?.id;
+    final String? topicPersonal = userId != null ? 'user_$userId' : null;
 
     if (!_isNotificationEnabled) {
-      // 마스터 알림이 꺼진 경우 모든 개별 토픽 일제 구독 해제
+      // 마스터 알림이 꺼진 경우 모든 개별 및 개인 토픽 일제 구독 해제
       await ns.unsubscribeFromTopic(topicTerritory);
       await ns.unsubscribeFromTopic(topicSatellite);
       await ns.unsubscribeFromTopic(topicNotice);
+      if (topicPersonal != null) {
+        await ns.unsubscribeFromTopic(topicPersonal);
+      }
       debugPrint('🔔 [FCM 구독 통제] 마스터 해제로 인한 모든 토픽 구독 해제 완료.');
       return;
+    }
+
+    // 마스터 알림이 켜져 있는 경우 개인 토픽 다시 구독
+    if (topicPersonal != null) {
+      await ns.subscribeToTopic(topicPersonal);
     }
 
     // 영토 침공 알림
