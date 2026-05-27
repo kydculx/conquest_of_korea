@@ -1,9 +1,10 @@
 import 'dart:math' as math;
 import 'package:flutter/material.dart';
+import 'package:google_fonts/google_fonts.dart';
 import '../../core/constants/colors.dart';
 import '../../core/constants/strings.dart';
 
-/// 게임 데이터 로딩 및 GPS 연결 대기 시 표시하는 전술적 로딩 화면
+/// 게임 데이터 로딩 및 GPS 연결 대기 시 표시하는 Cozy 파스텔 로딩 화면
 class LoadingOverlay extends StatefulWidget {
   final String message;
   LoadingOverlay({super.key, String? message})
@@ -35,19 +36,19 @@ class _LoadingOverlayState extends State<LoadingOverlay>
   @override
   Widget build(BuildContext context) {
     return Container(
-      color: GameColors.tacticalBlack.withValues(alpha: 220 / 255),
+      color: GameColors.backgroundMedium.withValues(alpha: 0.95), // 뽀얀 우유빛 크림 오버레이
       child: Center(
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            // 레이더 스타일 로딩 애니메이션
+            // Cozy 3색 버블 스피너 애니메이션
             SizedBox(
-              width: 120,
-              height: 120,
+              width: 100,
+              height: 100,
               child: AnimatedBuilder(
                 animation: _controller,
                 builder: (context, child) {
-                  return CustomPaint(painter: _RadarPainter(_controller.value));
+                  return CustomPaint(painter: _CozyBubbleSpinnerPainter(_controller.value));
                 },
               ),
             ),
@@ -63,20 +64,21 @@ class _LoadingOverlayState extends State<LoadingOverlay>
                     children: [
                       Text(
                         widget.message,
-                        style: TextStyle(
-                          color: GameColors.accentNeon,
+                        style: GoogleFonts.fredoka(
+                          color: GameColors.textPrimary,
                           fontSize: 16,
                           fontWeight: FontWeight.bold,
-                          letterSpacing: 2,
+                          letterSpacing: 0.5,
                         ),
                       ),
                       const SizedBox(height: 8),
                       Text(
-                        'STRATEGIC NETWORK CONNECTING...',
-                        style: TextStyle(
-                          color: GameColors.dividerColor,
-                          fontSize: 10,
-                          letterSpacing: 1.5,
+                        'strategically connecting base...',
+                        style: GoogleFonts.quicksand(
+                          color: GameColors.textMuted,
+                          fontSize: 11,
+                          fontWeight: FontWeight.bold,
+                          letterSpacing: 0.2,
                         ),
                       ),
                     ],
@@ -91,138 +93,58 @@ class _LoadingOverlayState extends State<LoadingOverlay>
   }
 }
 
-class _RadarPainter extends CustomPainter {
+/// 3개의 파스텔 버블이 원 궤도를 돌며 귀엽게 공전하는 스피너
+class _CozyBubbleSpinnerPainter extends CustomPainter {
   final double progress;
-  _RadarPainter(this.progress);
+  _CozyBubbleSpinnerPainter(this.progress);
 
   @override
   void paint(Canvas canvas, Size size) {
     final center = Offset(size.width / 2, size.height / 2);
-    final radius = size.width / 2;
+    final radius = size.width / 2 - 10.0; // 버블 반지름 여유분 확보
 
-    // 1. 미세 그리드 배경 (Tech Grid Background)
-    final gridPaint = Paint()
-      ..color = GameColors.techGrid
+    // 1. 공전 궤도선 (조약돌 링)
+    final orbitPaint = Paint()
+      ..color = GameColors.dividerColor.withValues(alpha: 0.2)
       ..style = PaintingStyle.stroke
-      ..strokeWidth = 0.5;
+      ..strokeWidth = 2.0;
+    canvas.drawCircle(center, radius, orbitPaint);
 
-    const double gridSpacing = 12.0;
-    // 가로 격자선
-    for (
-      double y = center.dy - radius;
-      y <= center.dy + radius;
-      y += gridSpacing
-    ) {
-      canvas.drawLine(
-        Offset(center.dx - radius, y),
-        Offset(center.dx + radius, y),
-        gridPaint,
-      );
+    // 2. 3색 파스텔 솜사탕 버블 (120도 간격)
+    final colors = [
+      const Color(0xFFE57373), // 솜사탕 핑크
+      const Color(0xFF90CAF9), // 솜사탕 블루
+      const Color(0xFFFFB74D), // 솜사탕 옐로우
+    ];
+
+    final double baseAngle = progress * math.pi * 2;
+
+    for (int i = 0; i < 3; i++) {
+      final double angle = baseAngle + (i * 2 * math.pi / 3);
+      final double bubbleX = center.dx + radius * math.cos(angle);
+      final double bubbleY = center.dy + radius * math.sin(angle);
+      final bubbleCenter = Offset(bubbleX, bubbleY);
+
+      // 개별 버블 젤리 글로우
+      final glowPaint = Paint()
+        ..color = colors[i].withValues(alpha: 0.3)
+        ..style = PaintingStyle.fill;
+      canvas.drawCircle(bubbleCenter, 10.0, glowPaint);
+
+      // 개별 버블 알갱이
+      final corePaint = Paint()
+        ..color = colors[i]
+        ..style = PaintingStyle.fill;
+      canvas.drawCircle(bubbleCenter, 6.0, corePaint);
+
+      // 화이트 젤리 반사광 광원 데코
+      final highlightPaint = Paint()
+        ..color = Colors.white.withValues(alpha: 0.6)
+        ..style = PaintingStyle.fill;
+      canvas.drawCircle(Offset(bubbleX - 2, bubbleY - 2), 2.0, highlightPaint);
     }
-    // 세로 격자선
-    for (
-      double x = center.dx - radius;
-      x <= center.dx + radius;
-      x += gridSpacing
-    ) {
-      canvas.drawLine(
-        Offset(x, center.dy - radius),
-        Offset(x, center.dy + radius),
-        gridPaint,
-      );
-    }
-
-    // 기본 네온 펜
-    final bgPaint = Paint()
-      ..color = GameColors.accentNeon.withValues(alpha: 40 / 255)
-      ..style = PaintingStyle.stroke
-      ..strokeWidth = 1.0;
-
-    // 2. 동심원 그리기
-    canvas.drawCircle(center, radius, bgPaint);
-    canvas.drawCircle(center, radius * 0.7, bgPaint);
-    canvas.drawCircle(center, radius * 0.4, bgPaint);
-
-    // 3. 십자선 (중앙 눈금 포함)
-    canvas.drawLine(
-      Offset(center.dx - radius, center.dy),
-      Offset(center.dx + radius, center.dy),
-      bgPaint,
-    );
-    canvas.drawLine(
-      Offset(center.dx, center.dy - radius),
-      Offset(center.dx, center.dy + radius),
-      bgPaint,
-    );
-
-    // 4. 방위각 눈금선 (Degree Ticks)
-    final tickPaint = Paint()
-      ..color = GameColors.accentNeon.withValues(alpha: 80 / 255)
-      ..style = PaintingStyle.stroke
-      ..strokeWidth = 1.0;
-
-    // 15도마다 외곽선에 미세 눈금 추가
-    for (int angleDeg = 0; angleDeg < 360; angleDeg += 15) {
-      final double rad = angleDeg * math.pi / 180;
-      final double startDist =
-          radius - (angleDeg % 45 == 0 ? 8.0 : 4.0); // 45도 눈금은 조금 더 길게
-      final double endDist = radius;
-
-      final startOffset = Offset(
-        center.dx + startDist * math.cos(rad),
-        center.dy + startDist * math.sin(rad),
-      );
-      final endOffset = Offset(
-        center.dx + endDist * math.cos(rad),
-        center.dy + endDist * math.sin(rad),
-      );
-      canvas.drawLine(startOffset, endOffset, tickPaint);
-    }
-
-    // 5. 회전하는 스캔 빔 (Sweep Gradient Shader)
-    final sweepShader = SweepGradient(
-      center: Alignment.center,
-      startAngle: 0.0,
-      endAngle: math.pi * 2,
-      colors: [
-        GameColors.accentNeon.withValues(alpha: 0.0),
-        GameColors.accentNeon.withValues(alpha: 180 / 255),
-      ],
-      stops: const [0.75, 1.0],
-      transform: GradientRotation(progress * math.pi * 2 - math.pi / 2),
-    ).createShader(Rect.fromCircle(center: center, radius: radius));
-
-    final scanPaint = Paint()
-      ..shader = sweepShader
-      ..style = PaintingStyle.fill;
-    canvas.drawCircle(center, radius, scanPaint);
-
-    // 6. 스캔 스위퍼 경계면의 밝은 하이라이트 도트 및 라인
-    final angle = progress * math.pi * 2 - math.pi / 2;
-    final sweepLineEnd = Offset(
-      center.dx + radius * math.cos(angle),
-      center.dy + radius * math.sin(angle),
-    );
-
-    // 스위퍼 선
-    final sweeperLinePaint = Paint()
-      ..color = GameColors.accentNeon.withValues(alpha: 0.9)
-      ..style = PaintingStyle.stroke
-      ..strokeWidth = 1.5;
-    canvas.drawLine(center, sweepLineEnd, sweeperLinePaint);
-
-    // 스위퍼 헤드 도트 (펄싱 느낌의 외부 글로우 추가)
-    final dotCorePaint = Paint()
-      ..color = GameColors.tacticalWhite
-      ..style = PaintingStyle.fill;
-    final dotGlowPaint = Paint()
-      ..color = GameColors.accentNeon.withValues(alpha: 0.6)
-      ..style = PaintingStyle.fill;
-
-    canvas.drawCircle(sweepLineEnd, 5.0, dotGlowPaint);
-    canvas.drawCircle(sweepLineEnd, 2.5, dotCorePaint);
   }
 
   @override
-  bool shouldRepaint(covariant _RadarPainter oldDelegate) => true;
+  bool shouldRepaint(covariant _CozyBubbleSpinnerPainter oldDelegate) => true;
 }

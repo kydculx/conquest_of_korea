@@ -1,7 +1,8 @@
 import 'package:flutter/material.dart';
+import 'package:google_fonts/google_fonts.dart';
 import '../../core/constants/colors.dart';
 
-/// 하이테크 전술 다크 테마 공통 뒤로가기 버튼
+/// Cozy 파스텔 테마 공통 뒤로가기 버튼
 class TacticalBackButton extends StatelessWidget {
   final VoidCallback? onPressed;
   final double size;
@@ -13,7 +14,7 @@ class TacticalBackButton extends StatelessWidget {
     return IconButton(
       icon: Icon(
         Icons.arrow_back_ios_new_rounded,
-        color: GameColors.accentNeon,
+        color: const Color(0xFFE57373), // 솜사탕 핑크 레드 액센트
         size: size,
       ),
       onPressed: onPressed ?? () => Navigator.of(context).pop(),
@@ -21,7 +22,7 @@ class TacticalBackButton extends StatelessWidget {
   }
 }
 
-/// 하이테크 전술 다크 테마 공통 닫기 버튼
+/// Cozy 파스텔 테마 공통 닫기 버튼
 class TacticalCloseButton extends StatelessWidget {
   final VoidCallback? onPressed;
   final double size;
@@ -31,13 +32,13 @@ class TacticalCloseButton extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return IconButton(
-      icon: Icon(Icons.close_rounded, color: GameColors.accentNeon, size: size),
+      icon: Icon(Icons.close_rounded, color: const Color(0xFFE57373), size: size),
       onPressed: onPressed,
     );
   }
 }
 
-/// 하이테크 전술 다크 테마 공통 AppBar 위젯
+/// Cozy 파스텔 테마 공통 AppBar 위젯
 class TacticalAppBar extends StatelessWidget implements PreferredSizeWidget {
   final String? titleText;
   final Widget? title;
@@ -83,9 +84,10 @@ class TacticalAppBar extends StatelessWidget implements PreferredSizeWidget {
           (titleText != null
               ? Text(
                   titleText!,
-                  style: const TextStyle(
+                  style: GoogleFonts.fredoka(
+                    color: GameColors.textPrimary,
                     fontWeight: FontWeight.bold,
-                    letterSpacing: 1.2,
+                    letterSpacing: 0.5,
                     fontSize: 16,
                   ),
                 )

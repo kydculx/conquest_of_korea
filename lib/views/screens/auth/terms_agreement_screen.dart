@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:google_fonts/google_fonts.dart';
 import '../../../providers/auth_provider.dart';
 import '../../../core/constants/colors.dart';
 import '../../../core/constants/strings.dart';
@@ -68,7 +69,7 @@ class _TermsAgreementScreenState extends State<TermsAgreementScreen> {
       context: context,
       backgroundColor: GameColors.backgroundMedium,
       shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
+        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
       ),
       builder: (context) {
         return Container(
@@ -79,11 +80,11 @@ class _TermsAgreementScreenState extends State<TermsAgreementScreen> {
             children: [
               Text(
                 title,
-                style: TextStyle(
+                style: GoogleFonts.fredoka(
                   color: GameColors.accentNeon,
                   fontSize: 16,
                   fontWeight: FontWeight.bold,
-                  letterSpacing: 0.8,
+                  letterSpacing: 0.5,
                 ),
               ),
               const SizedBox(height: 16),
@@ -91,10 +92,11 @@ class _TermsAgreementScreenState extends State<TermsAgreementScreen> {
                 child: SingleChildScrollView(
                   child: Text(
                     detailText,
-                    style: TextStyle(
+                    style: GoogleFonts.quicksand(
                       color: GameColors.textSecondary,
                       fontSize: 13,
                       height: 1.6,
+                      fontWeight: FontWeight.bold,
                     ),
                   ),
                 ),
@@ -104,14 +106,14 @@ class _TermsAgreementScreenState extends State<TermsAgreementScreen> {
                 onPressed: () => Navigator.pop(context),
                 style: ElevatedButton.styleFrom(
                   backgroundColor: GameColors.accentNeon,
-                  foregroundColor: GameColors.tacticalBlack,
+                  foregroundColor: Colors.white,
                   shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(5),
+                    borderRadius: BorderRadius.circular(20),
                   ),
                 ),
                 child: Text(
                   GameStrings.confirm,
-                  style: const TextStyle(fontWeight: FontWeight.bold),
+                  style: GoogleFonts.fredoka(fontWeight: FontWeight.bold),
                 ),
               ),
             ],
@@ -184,13 +186,13 @@ class _TermsAgreementScreenState extends State<TermsAgreementScreen> {
       ),
       extendBodyBehindAppBar: true,
       body: Container(
-        decoration: BoxDecoration(
+        decoration: const BoxDecoration(
           gradient: LinearGradient(
             begin: Alignment.topCenter,
             end: Alignment.bottomCenter,
             colors: [
-              GameColors.tacticalGray.withValues(alpha: 0.8),
-              GameColors.tacticalBlack,
+              Color(0xFFE3F2FD),
+              Color(0xFFFFF9C4),
             ],
           ),
         ),
@@ -203,21 +205,21 @@ class _TermsAgreementScreenState extends State<TermsAgreementScreen> {
                 const SizedBox(height: 20),
                 Text(
                   GameStrings.appName,
-                  style: TextStyle(
+                  style: GoogleFonts.fredoka(
                     fontSize: 12,
-                    fontWeight: FontWeight.w800,
-                    color: GameColors.accentNeon,
-                    letterSpacing: 1.5,
+                    fontWeight: FontWeight.bold,
+                    color: const Color(0xFFE57373),
+                    letterSpacing: 0.5,
                   ),
                 ),
                 const SizedBox(height: 8),
                 Text(
                   GameStrings.signupTitle,
-                  style: TextStyle(
+                  style: GoogleFonts.fredoka(
                     fontSize: 22,
                     fontWeight: FontWeight.bold,
                     color: GameColors.textPrimary,
-                    letterSpacing: 1,
+                    letterSpacing: 0.5,
                   ),
                 ),
                 const SizedBox(height: 30),
@@ -225,19 +227,19 @@ class _TermsAgreementScreenState extends State<TermsAgreementScreen> {
                 // 전체 동의 타일
                 Container(
                   decoration: BoxDecoration(
-                    color: GameColors.tacticalWhite.withValues(alpha: 0.05),
-                    borderRadius: BorderRadius.circular(8),
+                    color: Colors.white.withValues(alpha: 0.6),
+                    borderRadius: BorderRadius.circular(16),
                     border: Border.all(
                       color: _isAllAgreed
                           ? GameColors.accentNeon.withValues(alpha: 0.4)
-                          : GameColors.dividerColor,
-                      width: 1,
+                          : GameColors.dividerColor.withValues(alpha: 0.3),
+                      width: 1.2,
                     ),
                   ),
                   child: CheckboxListTile(
                     title: Text(
                       GameStrings.agreeAll,
-                      style: TextStyle(
+                      style: GoogleFonts.fredoka(
                         color: GameColors.textPrimary,
                         fontWeight: FontWeight.bold,
                         fontSize: 14,
@@ -246,7 +248,7 @@ class _TermsAgreementScreenState extends State<TermsAgreementScreen> {
                     value: _isAllAgreed,
                     onChanged: _toggleAgreeAll,
                     activeColor: GameColors.accentNeon,
-                    checkColor: GameColors.tacticalBlack,
+                    checkColor: Colors.white,
                     controlAffinity: ListTileControlAffinity.leading,
                   ),
                 ),
@@ -308,28 +310,41 @@ class _TermsAgreementScreenState extends State<TermsAgreementScreen> {
                 ),
 
                 // 계속 진행 버튼
-                ElevatedButton(
-                  onPressed: _isAllRequiredAgreed ? _handleContinue : null,
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: GameColors.accentNeon,
-                    foregroundColor: GameColors.tacticalBlack,
-                    disabledBackgroundColor: GameColors.tacticalGray.withValues(
-                      alpha: 0.5,
-                    ),
-                    disabledForegroundColor: GameColors.textMuted,
-                    padding: const EdgeInsets.symmetric(vertical: 16),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(5),
-                    ),
-                    elevation: _isAllRequiredAgreed ? 8 : 0,
-                    shadowColor: GameColors.accentNeon.withValues(alpha: 0.5),
+                Container(
+                  decoration: BoxDecoration(
+                    borderRadius: BorderRadius.circular(20),
+                    boxShadow: _isAllRequiredAgreed
+                        ? [
+                            BoxShadow(
+                              color: Colors.black.withValues(alpha: 0.03),
+                              blurRadius: 10,
+                              offset: const Offset(0, 4),
+                            ),
+                          ]
+                        : null,
                   ),
-                  child: Text(
-                    GameStrings.agreeAndContinue,
-                    style: const TextStyle(
-                      fontWeight: FontWeight.bold,
-                      fontSize: 16,
-                      letterSpacing: 1,
+                  child: ElevatedButton(
+                    onPressed: _isAllRequiredAgreed ? _handleContinue : null,
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: GameColors.accentNeon,
+                      foregroundColor: Colors.white,
+                      disabledBackgroundColor: GameColors.tacticalGray.withValues(
+                        alpha: 0.3,
+                      ),
+                      disabledForegroundColor: GameColors.textMuted,
+                      padding: const EdgeInsets.symmetric(vertical: 16),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(20),
+                      ),
+                      elevation: 0,
+                    ),
+                    child: Text(
+                      GameStrings.agreeAndContinue,
+                      style: GoogleFonts.fredoka(
+                        fontWeight: FontWeight.bold,
+                        fontSize: 16,
+                        letterSpacing: 0.5,
+                      ),
                     ),
                   ),
                 ),
@@ -367,11 +382,11 @@ class _TermsAgreementScreenState extends State<TermsAgreementScreen> {
     return Container(
       margin: const EdgeInsets.only(bottom: 12),
       decoration: BoxDecoration(
-        color: GameColors.tacticalWhite.withValues(alpha: 0.02),
-        borderRadius: BorderRadius.circular(6),
+        color: Colors.white.withValues(alpha: 0.4),
+        borderRadius: BorderRadius.circular(12),
         border: Border.all(
           color: value
-              ? GameColors.accentNeon.withValues(alpha: 0.2)
+              ? GameColors.accentNeon.withValues(alpha: 0.3)
               : GameColors.borderLight,
           width: 0.8,
         ),
@@ -379,27 +394,28 @@ class _TermsAgreementScreenState extends State<TermsAgreementScreen> {
       child: CheckboxListTile(
         title: Text(
           label,
-          style: TextStyle(
+          style: GoogleFonts.fredoka(
             color: value ? GameColors.textPrimary : GameColors.textSecondary,
             fontSize: 12.5,
-            fontWeight: value ? FontWeight.w600 : FontWeight.normal,
+            fontWeight: FontWeight.bold,
           ),
         ),
         subtitle: isOptional
             ? null
             : Text(
                 '(${GameStrings.confirm} 필수)',
-                style: TextStyle(
+                style: GoogleFonts.quicksand(
                   color: value
-                      ? GameColors.accentNeon.withValues(alpha: 0.6)
+                      ? GameColors.accentNeon.withValues(alpha: 0.8)
                       : GameColors.textMuted,
                   fontSize: 10,
+                  fontWeight: FontWeight.bold,
                 ),
               ),
         value: value,
         onChanged: onChanged,
         activeColor: GameColors.accentNeon,
-        checkColor: GameColors.tacticalBlack,
+        checkColor: Colors.white,
         controlAffinity: ListTileControlAffinity.leading,
         secondary: onViewDetail != null
             ? TextButton(
@@ -414,7 +430,7 @@ class _TermsAgreementScreenState extends State<TermsAgreementScreen> {
                 ),
                 child: Text(
                   GameStrings.viewDetail,
-                  style: TextStyle(
+                  style: GoogleFonts.fredoka(
                     color: GameColors.accentNeon,
                     fontSize: 10.5,
                     decoration: TextDecoration.underline,

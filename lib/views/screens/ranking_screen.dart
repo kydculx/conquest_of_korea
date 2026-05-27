@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:google_fonts/google_fonts.dart';
 import '../../core/constants/colors.dart';
 import '../../core/constants/strings.dart';
 import '../../providers/auth_provider.dart';
@@ -86,11 +87,11 @@ class _RankingCategoryTabs extends StatelessWidget {
   Widget build(BuildContext context) {
     return Container(
       margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-      padding: const EdgeInsets.all(3),
+      padding: const EdgeInsets.all(4),
       decoration: BoxDecoration(
         color: GameColors.tacticalGray.withValues(alpha: 0.5),
-        borderRadius: BorderRadius.circular(8),
-        border: Border.all(color: GameColors.dividerColor, width: 1.0),
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(color: GameColors.dividerColor, width: 1.2),
       ),
       child: Row(
         children: [
@@ -125,12 +126,12 @@ class _TabItem extends StatelessWidget {
           duration: const Duration(milliseconds: 200),
           padding: const EdgeInsets.symmetric(vertical: 10),
           decoration: BoxDecoration(
-            color: isActive ? GameColors.accentNeon : Colors.transparent,
-            borderRadius: BorderRadius.circular(6),
+            color: isActive ? GameColors.accentNeon.withValues(alpha: 0.85) : Colors.transparent,
+            borderRadius: BorderRadius.circular(16),
             boxShadow: isActive
                 ? [
                     BoxShadow(
-                      color: GameColors.accentNeon.withValues(alpha: 0.35),
+                      color: GameColors.accentNeon.withValues(alpha: 0.15),
                       blurRadius: 8,
                       spreadRadius: 0.5,
                     ),
@@ -140,12 +141,12 @@ class _TabItem extends StatelessWidget {
           child: Center(
             child: Text(
               label,
-              style: TextStyle(
+              style: GoogleFonts.fredoka(
                 color: isActive
-                    ? GameColors.tacticalBlack
+                    ? Colors.white
                     : GameColors.textSecondary,
                 fontSize: 13,
-                fontWeight: isActive ? FontWeight.w900 : FontWeight.bold,
+                fontWeight: FontWeight.bold,
               ),
             ),
           ),
@@ -218,13 +219,13 @@ class _RankingListTile extends StatelessWidget {
     Color rankColor = GameColors.textSecondary;
     IconData? medalIcon;
     if (rank == 1) {
-      rankColor = const Color(0xFFFFD700); // Gold
+      rankColor = const Color(0xFFFFB74D); // Gold (솜사탕 옐로우)
       medalIcon = Icons.emoji_events_rounded;
     } else if (rank == 2) {
-      rankColor = const Color(0xFFC0C0C0); // Silver
+      rankColor = const Color(0xFFB0BEC5); // Silver (파스텔 실버)
       medalIcon = Icons.emoji_events_rounded;
     } else if (rank == 3) {
-      rankColor = const Color(0xFFCD7F32); // Bronze
+      rankColor = const Color(0xFFFFAB91); // Bronze (파스텔 오렌지)
       medalIcon = Icons.emoji_events_rounded;
     }
 
@@ -239,14 +240,14 @@ class _RankingListTile extends StatelessWidget {
       margin: const EdgeInsets.only(bottom: 10),
       decoration: ShapeDecoration(
         color: isMe
-            ? GameColors.accentNeon.withValues(alpha: 0.12)
-            : GameColors.tacticalGray.withValues(alpha: 0.25),
-        shape: BeveledRectangleBorder(
-          borderRadius: BorderRadius.circular(8),
+            ? GameColors.accentNeon.withValues(alpha: 0.08)
+            : GameColors.tacticalGray.withValues(alpha: 0.15),
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(16),
           side: BorderSide(
             color: isMe
-                ? GameColors.accentNeon.withValues(alpha: 0.7)
-                : GameColors.dividerColor,
+                ? GameColors.accentNeon.withValues(alpha: 0.5)
+                : GameColors.dividerColor.withValues(alpha: 0.3),
             width: isMe ? 1.5 : 1.0,
           ),
         ),
@@ -263,10 +264,10 @@ class _RankingListTile extends StatelessWidget {
               else
                 Text(
                   '$rank',
-                  style: TextStyle(
+                  style: GoogleFonts.fredoka(
                     color: rankColor,
                     fontSize: 14,
-                    fontWeight: FontWeight.w900,
+                    fontWeight: FontWeight.bold,
                   ),
                 ),
               const Spacer(),
@@ -279,9 +280,9 @@ class _RankingListTile extends StatelessWidget {
                   shape: BoxShape.circle,
                   boxShadow: [
                     BoxShadow(
-                      color: agentColor.withValues(alpha: 0.8),
+                      color: agentColor.withValues(alpha: 0.4),
                       blurRadius: 4.0,
-                      spreadRadius: 1.0,
+                      spreadRadius: 0.5,
                     ),
                   ],
                 ),
@@ -294,7 +295,7 @@ class _RankingListTile extends StatelessWidget {
             Expanded(
               child: Text(
                 profile.nickname,
-                style: TextStyle(
+                style: GoogleFonts.fredoka(
                   color: isMe ? GameColors.accentNeon : GameColors.textPrimary,
                   fontSize: 14,
                   fontWeight: FontWeight.bold,
@@ -306,13 +307,13 @@ class _RankingListTile extends StatelessWidget {
               Container(
                 margin: const EdgeInsets.only(left: 6),
                 padding: const EdgeInsets.symmetric(
-                  horizontal: 5,
-                  vertical: 1.5,
+                  horizontal: 6,
+                  vertical: 2,
                 ),
                 decoration: ShapeDecoration(
                   color: GameColors.accentNeon,
-                  shape: BeveledRectangleBorder(
-                    borderRadius: BorderRadius.circular(3),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(8),
                   ),
                 ),
               ),
@@ -320,11 +321,10 @@ class _RankingListTile extends StatelessWidget {
         ),
         trailing: Text(
           _formatRankingValue(rankingType, profile),
-          style: TextStyle(
+          style: GoogleFonts.quicksand(
             color: isMe ? GameColors.accentNeon : GameColors.textSecondary,
             fontSize: 13,
-            fontWeight: FontWeight.w900,
-            fontFamily: 'monospace',
+            fontWeight: FontWeight.bold,
           ),
         ),
       ),
@@ -361,19 +361,19 @@ class _MyRankingFloatingBanner extends StatelessWidget {
       padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
       decoration: ShapeDecoration(
         color: GameColors.backgroundMedium,
-        shape: BeveledRectangleBorder(
-          borderRadius: BorderRadius.circular(12),
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(20),
           side: BorderSide(
-            color: GameColors.accentNeon.withValues(alpha: 0.4),
+            color: GameColors.accentNeon.withValues(alpha: 0.25),
             width: 1.5,
           ),
         ),
         shadows: [
           BoxShadow(
-            color: GameColors.accentNeon.withValues(alpha: 0.15),
-            blurRadius: 15.0,
-            spreadRadius: 2.0,
-            offset: const Offset(0, -3),
+            color: Colors.black.withValues(alpha: 0.04),
+            blurRadius: 12.0,
+            spreadRadius: 1.0,
+            offset: const Offset(0, -4),
           ),
         ],
       ),
@@ -384,16 +384,16 @@ class _MyRankingFloatingBanner extends StatelessWidget {
             padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
             decoration: ShapeDecoration(
               color: GameColors.accentNeon,
-              shape: BeveledRectangleBorder(
-                borderRadius: BorderRadius.circular(4),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(10),
               ),
             ),
             child: Text(
               rank > 0 ? GameStrings.rankUnit(rank) : GameStrings.rankUnranked,
-              style: TextStyle(
-                color: GameColors.tacticalBlack,
+              style: GoogleFonts.fredoka(
+                color: Colors.white,
                 fontSize: 14,
-                fontWeight: FontWeight.w900,
+                fontWeight: FontWeight.bold,
               ),
             ),
           ),
@@ -414,7 +414,7 @@ class _MyRankingFloatingBanner extends StatelessWidget {
                         shape: BoxShape.circle,
                         boxShadow: [
                           BoxShadow(
-                            color: agentColor.withValues(alpha: 0.8),
+                            color: agentColor.withValues(alpha: 0.4),
                             blurRadius: 3,
                             spreadRadius: 0.5,
                           ),
@@ -425,7 +425,7 @@ class _MyRankingFloatingBanner extends StatelessWidget {
                     Expanded(
                       child: Text(
                         GameStrings.nicknameWithMe(myProfile.nickname),
-                        style: TextStyle(
+                        style: GoogleFonts.fredoka(
                           color: GameColors.textPrimary,
                           fontSize: 13.5,
                           fontWeight: FontWeight.bold,
@@ -438,7 +438,7 @@ class _MyRankingFloatingBanner extends StatelessWidget {
                 const SizedBox(height: 2),
                 Text(
                   GameStrings.top100Stats,
-                  style: TextStyle(color: GameColors.textMuted, fontSize: 10),
+                  style: GoogleFonts.quicksand(color: GameColors.textMuted, fontSize: 10, fontWeight: FontWeight.bold),
                 ),
               ],
             ),
@@ -446,11 +446,10 @@ class _MyRankingFloatingBanner extends StatelessWidget {
           // 내 기록 가독화 출력
           Text(
             _formatMyValue(ranking.currentType),
-            style: TextStyle(
+            style: GoogleFonts.quicksand(
               color: GameColors.accentNeon,
               fontSize: 15,
-              fontWeight: FontWeight.w900,
-              fontFamily: 'monospace',
+              fontWeight: FontWeight.bold,
             ),
           ),
         ],

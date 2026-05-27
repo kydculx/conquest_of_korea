@@ -2,6 +2,7 @@ import 'dart:io';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:google_fonts/google_fonts.dart';
 import '../../../core/constants/colors.dart';
 import '../../../core/constants/strings.dart';
 import '../../../core/utils/error_translator.dart';
@@ -77,13 +78,13 @@ class _LoginScreenState extends State<LoginScreen> {
         leadingOnPressed: _handleBackToGame,
       ),
       body: Container(
-        decoration: BoxDecoration(
+        decoration: const BoxDecoration(
           gradient: LinearGradient(
             begin: Alignment.topCenter,
             end: Alignment.bottomCenter,
             colors: [
-              GameColors.tacticalGray.withValues(alpha: 0.8),
-              GameColors.tacticalBlack,
+              Color(0xFFE3F2FD),
+              Color(0xFFFFF9C4),
             ],
           ),
         ),
@@ -95,15 +96,15 @@ class _LoginScreenState extends State<LoginScreen> {
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
                 // Logo or Title
-                Icon(Icons.security, size: 80, color: GameColors.accentNeon),
+                const Icon(Icons.security, size: 80, color: Color(0xFFE57373)),
                 const SizedBox(height: 20),
                 Text(
                   GameStrings.appName.toUpperCase(),
                   textAlign: TextAlign.center,
-                  style: TextStyle(
+                  style: GoogleFonts.fredoka(
                     fontSize: 28,
                     fontWeight: FontWeight.bold,
-                    letterSpacing: 4,
+                    letterSpacing: 1.5,
                     color: GameColors.textPrimary,
                   ),
                 ),
@@ -111,11 +112,11 @@ class _LoginScreenState extends State<LoginScreen> {
                 Text(
                   GameStrings.tacticalMissionStart,
                   textAlign: TextAlign.center,
-                  style: TextStyle(
+                  style: GoogleFonts.quicksand(
                     fontSize: 14,
-                    color: GameColors.accentNeon,
-                    letterSpacing: 2,
-                    fontWeight: FontWeight.w500,
+                    color: const Color(0xFFE57373),
+                    letterSpacing: 0.5,
+                    fontWeight: FontWeight.bold,
                   ),
                 ),
                 const SizedBox(height: 50),
@@ -147,37 +148,46 @@ class _LoginScreenState extends State<LoginScreen> {
                 // Login Button
                 Consumer<AuthProvider>(
                   builder: (context, auth, _) {
-                    return ElevatedButton(
-                      onPressed: auth.isLoading ? null : _handleLogin,
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: GameColors.accentNeon,
-                        foregroundColor: GameColors.tacticalBlack,
-                        padding: const EdgeInsets.symmetric(vertical: 15),
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(5),
-                        ),
-                        elevation: 5,
-                        shadowColor: GameColors.accentNeon.withValues(
-                          alpha: 0.5,
-                        ),
+                    return Container(
+                      decoration: BoxDecoration(
+                        borderRadius: BorderRadius.circular(20),
+                        boxShadow: [
+                          BoxShadow(
+                            color: Colors.black.withValues(alpha: 0.03),
+                            blurRadius: 10,
+                            offset: const Offset(0, 4),
+                          ),
+                        ],
                       ),
-                      child: auth.isLoading
-                          ? SizedBox(
-                              height: 20,
-                              width: 20,
-                              child: CircularProgressIndicator(
-                                strokeWidth: 2,
-                                color: GameColors.tacticalBlack,
+                      child: ElevatedButton(
+                        onPressed: auth.isLoading ? null : _handleLogin,
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: GameColors.accentNeon,
+                          foregroundColor: Colors.white,
+                          padding: const EdgeInsets.symmetric(vertical: 15),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(20),
+                          ),
+                          elevation: 0,
+                        ),
+                        child: auth.isLoading
+                            ? const SizedBox(
+                                height: 20,
+                                width: 20,
+                                child: CircularProgressIndicator(
+                                  strokeWidth: 2,
+                                  color: Colors.white,
+                                ),
+                              )
+                            : Text(
+                                GameStrings.login,
+                                style: GoogleFonts.fredoka(
+                                  fontWeight: FontWeight.bold,
+                                  fontSize: 16,
+                                  letterSpacing: 1.0,
+                                ),
                               ),
-                            )
-                          : Text(
-                              GameStrings.login,
-                              style: const TextStyle(
-                                fontWeight: FontWeight.bold,
-                                fontSize: 16,
-                                letterSpacing: 2,
-                              ),
-                            ),
+                      ),
                     );
                   },
                 ),
@@ -344,24 +354,30 @@ class _LoginScreenState extends State<LoginScreen> {
     return TextField(
       controller: controller,
       obscureText: isObscure,
-      style: TextStyle(color: GameColors.textPrimary),
+      style: GoogleFonts.quicksand(color: GameColors.textPrimary, fontWeight: FontWeight.bold),
       decoration: InputDecoration(
         labelText: label,
-        labelStyle: TextStyle(
+        labelStyle: GoogleFonts.fredoka(
           color: GameColors.textMuted,
           fontSize: 12,
-          letterSpacing: 1,
+          fontWeight: FontWeight.bold,
         ),
-        prefixIcon: Icon(icon, color: GameColors.accentNeon, size: 20),
+        prefixIcon: Icon(icon, color: const Color(0xFFE57373), size: 20),
         suffixIcon: suffixIcon,
-        enabledBorder: UnderlineInputBorder(
-          borderSide: BorderSide(color: GameColors.dividerColor),
+        border: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(16),
+          borderSide: BorderSide.none,
         ),
-        focusedBorder: UnderlineInputBorder(
-          borderSide: BorderSide(color: GameColors.accentNeon),
+        enabledBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(16),
+          borderSide: BorderSide.none,
+        ),
+        focusedBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(16),
+          borderSide: BorderSide(color: GameColors.accentNeon.withValues(alpha: 0.5), width: 1.5),
         ),
         filled: true,
-        fillColor: GameColors.tacticalWhite.withValues(alpha: 0.05),
+        fillColor: Colors.white.withValues(alpha: 0.6),
       ),
     );
   }

@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:google_fonts/google_fonts.dart';
 import '../../core/constants/colors.dart';
 import '../../core/constants/strings.dart';
 import '../../core/theme.dart';
@@ -51,34 +52,32 @@ class ProfileScreen extends StatelessWidget {
                 padding: const EdgeInsets.all(24),
                 decoration: ShapeDecoration(
                   color: GameColors.backgroundMedium.withValues(alpha: 0.85),
-                  shape: BeveledRectangleBorder(
-                    borderRadius: const BorderRadius.only(
-                      topLeft: Radius.circular(16),
-                      bottomRight: Radius.circular(16),
-                    ),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(24),
                     side: BorderSide(
-                      color: GameColors.accentNeon.withValues(alpha: 0.4),
-                      width: 1.5,
+                      color: GameColors.accentNeon.withValues(alpha: 0.25),
+                      width: 1.2,
                     ),
                   ),
                   shadows: [
                     BoxShadow(
-                      color: GameColors.accentNeon.withValues(alpha: 0.05),
-                      blurRadius: 15,
-                      spreadRadius: 2,
+                      color: Colors.black.withValues(alpha: 0.04),
+                      blurRadius: 16,
+                      spreadRadius: 1,
+                      offset: const Offset(0, 6),
                     ),
                   ],
                 ),
                 child: Column(
                   children: [
-                    // 전술적 팔각 프로필 컨테이너
+                    // 전술적 둥근 프로필 컨테이너
                     Container(
                       width: 80,
                       height: 80,
                       decoration: ShapeDecoration(
                         color: teamColor.withValues(alpha: 0.15),
-                        shape: BeveledRectangleBorder(
-                          borderRadius: BorderRadius.circular(16),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(20),
                           side: BorderSide(color: teamColor, width: 2.0),
                         ),
                       ),
@@ -89,22 +88,21 @@ class ProfileScreen extends StatelessWidget {
                     const SizedBox(height: 16),
                     Text(
                       profile.nickname,
-                      style: TextStyle(
+                      style: GoogleFonts.fredoka(
                         color: GameColors.textPrimary,
                         fontSize: 24,
                         fontWeight: FontWeight.bold,
-                        letterSpacing: 1.0,
+                        letterSpacing: 0.5,
                       ),
                     ),
                     const SizedBox(height: 4),
                     Text(
                       user?.email ?? '',
-                      style: TextStyle(
-                        color: GameColors.textSecondary.withValues(
-                          alpha: 120 / 255,
-                        ),
+                      style: GoogleFonts.quicksand(
+                        color: GameColors.textMuted,
                         fontSize: 14,
-                        letterSpacing: 0.5,
+                        fontWeight: FontWeight.bold,
+                        letterSpacing: 0.2,
                       ),
                     ),
                     const SizedBox(height: 20),
@@ -282,14 +280,14 @@ class ProfileScreen extends StatelessWidget {
       children: [
         Text(
           label,
-          style: TextStyle(color: GameColors.textMuted, fontSize: 12),
+          style: GoogleFonts.quicksand(color: GameColors.textMuted, fontSize: 12, fontWeight: FontWeight.bold),
         ),
         const SizedBox(height: 4),
         Text(
           value,
-          style: TextStyle(
+          style: GoogleFonts.fredoka(
             color: color,
-            fontSize: 18,
+            fontSize: 20,
             fontWeight: FontWeight.bold,
           ),
         ),
@@ -302,8 +300,8 @@ class ProfileScreen extends StatelessWidget {
     return Container(
       decoration: ShapeDecoration(
         color: GameColors.backgroundMedium.withValues(alpha: 0.6),
-        shape: BeveledRectangleBorder(
-          borderRadius: BorderRadius.circular(8),
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(16),
           side: BorderSide(
             color: GameColors.dividerColor.withValues(alpha: 0.15),
             width: 1,
@@ -329,20 +327,21 @@ class ProfileScreen extends StatelessWidget {
       leading: Icon(icon, color: activeTitleColor.withValues(alpha: 180 / 255)),
       title: Text(
         title,
-        style: TextStyle(
+        style: GoogleFonts.fredoka(
           color: activeTitleColor,
           fontWeight: FontWeight.bold,
           fontSize: 14,
-          letterSpacing: 0.5,
+          letterSpacing: 0.2,
         ),
       ),
       subtitle: subtitle != null
           ? Text(
               subtitle,
-              style: TextStyle(
+              style: GoogleFonts.quicksand(
                 color: GameColors.textMuted,
                 fontSize: 11,
-                letterSpacing: 0.3,
+                fontWeight: FontWeight.bold,
+                letterSpacing: 0.1,
               ),
             )
           : null,

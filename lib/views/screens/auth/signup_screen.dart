@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:google_fonts/google_fonts.dart';
 import '../../../core/constants/colors.dart';
 import '../../../core/constants/strings.dart';
 import '../../../core/utils/error_translator.dart';
@@ -283,13 +284,13 @@ class _SignupScreenState extends State<SignupScreen> {
       ),
       extendBodyBehindAppBar: true,
       body: Container(
-        decoration: BoxDecoration(
+        decoration: const BoxDecoration(
           gradient: LinearGradient(
             begin: Alignment.topCenter,
             end: Alignment.bottomCenter,
             colors: [
-              GameColors.tacticalGray.withValues(alpha: 0.8),
-              GameColors.tacticalBlack,
+              Color(0xFFE3F2FD),
+              Color(0xFFFFF9C4),
             ],
           ),
         ),
@@ -302,11 +303,11 @@ class _SignupScreenState extends State<SignupScreen> {
                 const SizedBox(height: 20),
                 Text(
                   GameStrings.signupTitle,
-                  style: TextStyle(
+                  style: GoogleFonts.fredoka(
                     fontSize: 24,
                     fontWeight: FontWeight.bold,
                     color: GameColors.textPrimary,
-                    letterSpacing: 1,
+                    letterSpacing: 0.5,
                   ),
                 ),
                 const SizedBox(height: 40),
@@ -329,11 +330,11 @@ class _SignupScreenState extends State<SignupScreen> {
                         onPressed: _isCheckingNickname ? null : _checkNickname,
                         style: TextButton.styleFrom(
                           backgroundColor: GameColors.accentNeon.withValues(
-                            alpha: 0.1,
+                            alpha: 0.15,
                           ),
                           foregroundColor: GameColors.accentNeon,
                           shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(5),
+                            borderRadius: BorderRadius.circular(16),
                           ),
                         ),
                         child: _isCheckingNickname
@@ -347,7 +348,7 @@ class _SignupScreenState extends State<SignupScreen> {
                               )
                             : Text(
                                 GameStrings.checkDuplicate,
-                                style: const TextStyle(
+                                style: GoogleFonts.fredoka(
                                   fontWeight: FontWeight.bold,
                                   fontSize: 12,
                                 ),
@@ -391,11 +392,11 @@ class _SignupScreenState extends State<SignupScreen> {
                         onPressed: _isCheckingEmail ? null : _checkEmail,
                         style: TextButton.styleFrom(
                           backgroundColor: GameColors.accentNeon.withValues(
-                            alpha: 0.1,
+                            alpha: 0.15,
                           ),
                           foregroundColor: GameColors.accentNeon,
                           shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(5),
+                            borderRadius: BorderRadius.circular(16),
                           ),
                         ),
                         child: _isCheckingEmail
@@ -409,7 +410,7 @@ class _SignupScreenState extends State<SignupScreen> {
                               )
                             : Text(
                                 GameStrings.checkDuplicate,
-                                style: const TextStyle(
+                                style: GoogleFonts.fredoka(
                                   fontWeight: FontWeight.bold,
                                   fontSize: 12,
                                 ),
@@ -461,33 +462,46 @@ class _SignupScreenState extends State<SignupScreen> {
                 // Signup Button
                 Consumer<AuthProvider>(
                   builder: (context, auth, _) {
-                    return ElevatedButton(
-                      onPressed: auth.isLoading ? null : _handleSignup,
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: GameColors.accentNeon,
-                        foregroundColor: GameColors.tacticalBlack,
-                        padding: const EdgeInsets.symmetric(vertical: 15),
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(5),
-                        ),
+                    return Container(
+                      decoration: BoxDecoration(
+                        borderRadius: BorderRadius.circular(20),
+                        boxShadow: [
+                          BoxShadow(
+                            color: Colors.black.withValues(alpha: 0.03),
+                            blurRadius: 10,
+                            offset: const Offset(0, 4),
+                          ),
+                        ],
                       ),
-                      child: auth.isLoading
-                          ? SizedBox(
-                              height: 20,
-                              width: 20,
-                              child: CircularProgressIndicator(
-                                strokeWidth: 2,
-                                color: GameColors.tacticalBlack,
+                      child: ElevatedButton(
+                        onPressed: auth.isLoading ? null : _handleSignup,
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: GameColors.accentNeon,
+                          foregroundColor: Colors.white,
+                          padding: const EdgeInsets.symmetric(vertical: 15),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(20),
+                          ),
+                          elevation: 0,
+                        ),
+                        child: auth.isLoading
+                            ? const SizedBox(
+                                height: 20,
+                                width: 20,
+                                child: CircularProgressIndicator(
+                                  strokeWidth: 2,
+                                  color: Colors.white,
+                                ),
+                              )
+                            : Text(
+                                GameStrings.signup,
+                                style: GoogleFonts.fredoka(
+                                  fontWeight: FontWeight.bold,
+                                  fontSize: 16,
+                                  letterSpacing: 1.0,
+                                ),
                               ),
-                            )
-                          : Text(
-                              GameStrings.signup,
-                              style: const TextStyle(
-                                fontWeight: FontWeight.bold,
-                                fontSize: 16,
-                                letterSpacing: 2,
-                              ),
-                            ),
+                      ),
                     );
                   },
                 ),
@@ -515,24 +529,30 @@ class _SignupScreenState extends State<SignupScreen> {
     return TextField(
       controller: controller,
       obscureText: isObscure,
-      style: TextStyle(color: GameColors.textPrimary),
+      style: GoogleFonts.quicksand(color: GameColors.textPrimary, fontWeight: FontWeight.bold),
       decoration: InputDecoration(
         labelText: label,
-        labelStyle: TextStyle(
+        labelStyle: GoogleFonts.fredoka(
           color: GameColors.textMuted,
           fontSize: 12,
-          letterSpacing: 1,
+          fontWeight: FontWeight.bold,
         ),
-        prefixIcon: Icon(icon, color: GameColors.accentNeon, size: 20),
+        prefixIcon: Icon(icon, color: const Color(0xFFE57373), size: 20),
         suffixIcon: suffixIcon,
-        enabledBorder: UnderlineInputBorder(
-          borderSide: BorderSide(color: GameColors.dividerColor),
+        border: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(16),
+          borderSide: BorderSide.none,
         ),
-        focusedBorder: UnderlineInputBorder(
-          borderSide: BorderSide(color: GameColors.accentNeon),
+        enabledBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(16),
+          borderSide: BorderSide.none,
+        ),
+        focusedBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(16),
+          borderSide: BorderSide(color: GameColors.accentNeon.withValues(alpha: 0.5), width: 1.5),
         ),
         filled: true,
-        fillColor: GameColors.tacticalWhite.withValues(alpha: 0.05),
+        fillColor: Colors.white.withValues(alpha: 0.6),
       ),
     );
   }

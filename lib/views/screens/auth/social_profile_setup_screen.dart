@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:google_fonts/google_fonts.dart';
 import '../../../core/constants/colors.dart';
 import '../../../core/constants/strings.dart';
 import '../../../core/utils/error_translator.dart';
@@ -182,13 +183,13 @@ class _SocialProfileSetupScreenState extends State<SocialProfileSetupScreen> {
         children: [
           // 1. 하이테크 전술 배경 그리드 & 그라데이션
           Container(
-            decoration: BoxDecoration(
+            decoration: const BoxDecoration(
               gradient: LinearGradient(
                 begin: Alignment.topCenter,
                 end: Alignment.bottomCenter,
                 colors: [
-                  GameColors.tacticalGray.withValues(alpha: 0.8),
-                  GameColors.tacticalBlack,
+                  Color(0xFFE3F2FD),
+                  Color(0xFFFFF9C4),
                 ],
               ),
             ),
@@ -209,29 +210,29 @@ class _SocialProfileSetupScreenState extends State<SocialProfileSetupScreen> {
                     child: Icon(
                       Icons.radar_outlined,
                       size: 76,
-                      color: GameColors.accentNeon,
+                      color: const Color(0xFFE57373),
                     ),
                   ),
                   const SizedBox(height: 24),
                   Text(
                     GameStrings.setupProfile.toUpperCase(),
                     textAlign: TextAlign.center,
-                    style: TextStyle(
+                    style: GoogleFonts.fredoka(
                       fontSize: 24,
                       fontWeight: FontWeight.bold,
                       color: GameColors.textPrimary,
-                      letterSpacing: 3,
+                      letterSpacing: 1.5,
                     ),
                   ),
                   const SizedBox(height: 8),
                   Text(
                     GameStrings.setupProfileSub,
                     textAlign: TextAlign.center,
-                    style: TextStyle(
+                    style: GoogleFonts.quicksand(
                       fontSize: 12,
-                      color: GameColors.accentNeon.withValues(alpha: 0.8),
-                      letterSpacing: 1.5,
-                      fontWeight: FontWeight.w500,
+                      color: const Color(0xFFE57373),
+                      letterSpacing: 0.5,
+                      fontWeight: FontWeight.bold,
                     ),
                   ),
                   const SizedBox(height: 45),
@@ -243,13 +244,13 @@ class _SocialProfileSetupScreenState extends State<SocialProfileSetupScreen> {
                       Expanded(
                         child: TextField(
                           controller: _nicknameController,
-                          style: TextStyle(color: GameColors.textPrimary),
+                          style: GoogleFonts.quicksand(color: GameColors.textPrimary, fontWeight: FontWeight.bold),
                           decoration: InputDecoration(
                             labelText: GameStrings.nickname,
-                            labelStyle: TextStyle(
+                            labelStyle: GoogleFonts.fredoka(
                               color: GameColors.textMuted,
                               fontSize: 12,
-                              letterSpacing: 1,
+                              fontWeight: FontWeight.bold,
                             ),
                             prefixIcon: Icon(
                               Icons.person_outline,
@@ -257,25 +258,29 @@ class _SocialProfileSetupScreenState extends State<SocialProfileSetupScreen> {
                                   ? (_isNicknameAvailable
                                         ? GameColors.success
                                         : GameColors.error)
-                                  : GameColors.accentNeon,
+                                  : const Color(0xFFE57373),
                               size: 20,
                             ),
-                            enabledBorder: UnderlineInputBorder(
-                              borderSide: BorderSide(
-                                color: GameColors.dividerColor,
-                              ),
+                            border: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(16),
+                              borderSide: BorderSide.none,
                             ),
-                            focusedBorder: UnderlineInputBorder(
-                              borderSide: BorderSide(
-                                color: GameColors.accentNeon,
-                              ),
+                            enabledBorder: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(16),
+                              borderSide: BorderSide.none,
                             ),
+                            focusedBorder: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(16),
+                              borderSide: BorderSide(color: GameColors.accentNeon.withValues(alpha: 0.5), width: 1.5),
+                            ),
+                            filled: true,
+                            fillColor: Colors.white.withValues(alpha: 0.6),
                           ),
                         ),
                       ),
                       const SizedBox(width: 15),
                       SizedBox(
-                        height: 42,
+                        height: 48,
                         child: OutlinedButton(
                           onPressed: _isChecking ? null : _checkNickname,
                           style: OutlinedButton.styleFrom(
@@ -283,15 +288,16 @@ class _SocialProfileSetupScreenState extends State<SocialProfileSetupScreen> {
                               color: _isChecking
                                   ? GameColors.dividerColor
                                   : GameColors.accentNeon.withValues(
-                                      alpha: 0.5,
+                                      alpha: 0.35,
                                     ),
+                              width: 1.2,
                             ),
                             backgroundColor: GameColors.accentNeon.withValues(
-                              alpha: 0.05,
+                              alpha: 0.1,
                             ),
                             foregroundColor: GameColors.accentNeon,
                             shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(5),
+                              borderRadius: BorderRadius.circular(16),
                             ),
                             padding: const EdgeInsets.symmetric(horizontal: 16),
                           ),
@@ -306,10 +312,9 @@ class _SocialProfileSetupScreenState extends State<SocialProfileSetupScreen> {
                                 )
                               : Text(
                                   GameStrings.checkDuplicate,
-                                  style: TextStyle(
+                                  style: GoogleFonts.fredoka(
                                     fontWeight: FontWeight.bold,
                                     fontSize: 12,
-                                    letterSpacing: 0.8,
                                   ),
                                 ),
                         ),
@@ -337,37 +342,46 @@ class _SocialProfileSetupScreenState extends State<SocialProfileSetupScreen> {
                   // 최종 등록 승인 버튼
                   Consumer<AuthProvider>(
                     builder: (context, auth, _) {
-                      return ElevatedButton(
-                        onPressed: auth.isLoading ? null : _handleSave,
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: GameColors.accentNeon,
-                          foregroundColor: GameColors.tacticalBlack,
-                          padding: const EdgeInsets.symmetric(vertical: 16),
-                          elevation: 6,
-                          shadowColor: GameColors.accentNeon.withValues(
-                            alpha: 0.4,
-                          ),
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(5),
-                          ),
+                      return Container(
+                        decoration: BoxDecoration(
+                          borderRadius: BorderRadius.circular(20),
+                          boxShadow: [
+                            BoxShadow(
+                              color: Colors.black.withValues(alpha: 0.03),
+                              blurRadius: 10,
+                              offset: const Offset(0, 4),
+                            ),
+                          ],
                         ),
-                        child: auth.isLoading
-                            ? SizedBox(
-                                height: 20,
-                                width: 20,
-                                child: CircularProgressIndicator(
-                                  strokeWidth: 2.5,
-                                  color: GameColors.tacticalBlack,
+                        child: ElevatedButton(
+                          onPressed: auth.isLoading ? null : _handleSave,
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: GameColors.accentNeon,
+                            foregroundColor: Colors.white,
+                            padding: const EdgeInsets.symmetric(vertical: 16),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(20),
+                            ),
+                            elevation: 0,
+                          ),
+                          child: auth.isLoading
+                              ? const SizedBox(
+                                  height: 20,
+                                  width: 20,
+                                  child: CircularProgressIndicator(
+                                    strokeWidth: 2.5,
+                                    color: Colors.white,
+                                  ),
+                                )
+                              : Text(
+                                  GameStrings.setupComplete,
+                                  style: GoogleFonts.fredoka(
+                                    fontWeight: FontWeight.bold,
+                                    fontSize: 16,
+                                    letterSpacing: 1.0,
+                                  ),
                                 ),
-                              )
-                            : Text(
-                                GameStrings.setupComplete,
-                                style: const TextStyle(
-                                  fontWeight: FontWeight.bold,
-                                  fontSize: 16,
-                                  letterSpacing: 2,
-                                ),
-                              ),
+                        ),
                       );
                     },
                   ),
