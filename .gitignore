@@ -58,3 +58,8 @@ ios/Runner/GoogleService-Info.plist
 scratch/
 android/build/
 *.html
+
+# Supabase Secrets & Temp files
+supabase/conquest-of-korea-*.json
+supabase/.temp/
+.supabase/
