@@ -1,13 +1,12 @@
 import 'dart:async';
+import 'dart:math' as math;
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:google_fonts/google_fonts.dart';
-import '../../core/constants/colors.dart';
-import '../../core/constants/strings.dart';
 import '../../providers/game_provider.dart';
 import 'game_screen.dart';
 
-/// 군더더기 없는 미니멀 테크니컬 컨셉의 스플래시 화면 (Orbitron 및 Share Tech Mono 구글 폰트 적용)
+/// 아기자기하고 화사한 코지 파스텔 룩의 스플래시 화면 (동글동글 Fredoka 폰트 및 둥실둥실 플로팅 애니메이션)
 class SplashScreen extends StatefulWidget {
   /// 스플래시 화면을 생성하는 기본 생성자
   const SplashScreen({super.key});
@@ -18,11 +17,8 @@ class SplashScreen extends StatefulWidget {
 
 class _SplashScreenState extends State<SplashScreen>
     with SingleTickerProviderStateMixin {
-  /// 페이드인 및 맥동 효과 제어용 애니메이션 컨트롤러
+  /// 은은한 둥실둥실 구름 부유(Floating) 애니메이션을 위한 컨트롤러
   late AnimationController _animationController;
-
-  /// 배경 격자 서서히 밝아지는 페이드인 애니메이션
-  late Animation<double> _fadeInAnimation;
 
   /// 스플래시 화면 최소 감상 연출 시간(1.2초) 경과 여부
   bool _minTimeElapsed = false;
@@ -31,16 +27,11 @@ class _SplashScreenState extends State<SplashScreen>
   void initState() {
     super.initState();
 
+    // 2.5초 주기의 부드러운 위아래 둥실둥실 부유 효과 애니메이션 가동
     _animationController = AnimationController(
       vsync: this,
-      duration: const Duration(milliseconds: 2000),
-    );
-
-    _fadeInAnimation = Tween<double>(begin: 0.0, end: 1.0).animate(
-      CurvedAnimation(parent: _animationController, curve: Curves.easeIn),
-    );
-
-    _animationController.forward();
+      duration: const Duration(milliseconds: 2500),
+    )..repeat();
 
     // 1.2초의 쾌적한 최소 연출 대기 시간 구성
     Timer(const Duration(milliseconds: 1200), () {
@@ -78,7 +69,7 @@ class _SplashScreenState extends State<SplashScreen>
           pageBuilder: (context, animation, secondaryAnimation) =>
               const GameScreen(),
           transitionsBuilder: (context, animation, secondaryAnimation, child) {
-            // 자연스럽고 군더더기 없는 300ms 페이드아웃 전환 적용
+            // 부드러운 300ms 페이드아웃 전환 적용
             return FadeTransition(opacity: animation, child: child);
           },
           transitionDuration: const Duration(milliseconds: 300),
@@ -101,50 +92,100 @@ class _SplashScreenState extends State<SplashScreen>
   Widget build(BuildContext context) {
     final double bottomPadding = MediaQuery.of(context).padding.bottom;
 
+    // 화사한 파스텔 파란색 및 소프트 민트 테마 컬러 정의
+    const Color pastelBgStart = Color(0xFFE3F2FD); // 베이비 스카이 블루
+    const Color pastelBgEnd = Color(0xFFE8F5E9); // 밀크 민트 크림
+    const Color softNavyText = Color(0xFF37474F); // 부드럽고 가독성 높은 차콜 네이비
+    const Color softMutedText = Color(0xFF78909C); // 차분한 파스텔 세컨더리 그레이
+    const Color pastelPink = Color(0xFFF8BBD0); // 솜사탕 핑크 액센트
+    const Color pastelBlue = Color(0xFF90CAF9); // 소프트 블루 액센트
+
     return Scaffold(
-      backgroundColor: GameColors.tacticalBlack,
       body: Stack(
         children: [
-          // 1. 배경 Grid 격자 연출 (미니멀 반투명 격자)
-          Positioned.fill(child: CustomPaint(painter: _TacticalGridPainter())),
+          // 1. 화사하고 산뜻한 파스텔 그라디언트 배경
+          Positioned.fill(
+            child: Container(
+              decoration: const BoxDecoration(
+                gradient: LinearGradient(
+                  begin: Alignment.topCenter,
+                  end: Alignment.bottomCenter,
+                  colors: [pastelBgStart, pastelBgEnd],
+                ),
+              ),
+            ),
+          ),
 
-          // 2. 화면 정중앙에 위치한 메인 게임 제목 (CONQUEST OF KOREA)
+          // 2. 두둥실 뭉게구름과 귀여운 미니 헥사곤 버블 배경 페인터
+          Positioned.fill(
+            child: CustomPaint(
+              painter: _CozySkyPainter(animValue: _animationController.value),
+            ),
+          ),
+
+          // 3. 화면 정중앙에 위치한 둥실둥실 플로팅 게임 제목
           Center(
             child: AnimatedBuilder(
               animation: _animationController,
               builder: (context, child) {
-                return Opacity(
-                  opacity: _fadeInAnimation.value,
+                // 은은한 상하 8px 부유(Floating) 애니메이션 계산
+                final double floatOffsetY =
+                    8.0 * math.sin(_animationController.value * 2 * math.pi);
+
+                return Transform.translate(
+                  offset: Offset(0, floatOffsetY),
                   child: Column(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
-                      // 전술 네온 블루 섀도우가 깔린 메인 타이틀 (구글 Orbitron SF 폰트)
+                      // 동글동글하고 귀여운 구름 모양 실루엣 로고 배경
+                      Container(
+                        padding: const EdgeInsets.all(16),
+                        decoration: BoxDecoration(
+                          color: Colors.white.withValues(alpha: 0.9),
+                          shape: BoxShape.circle,
+                          boxShadow: [
+                            BoxShadow(
+                              color: Colors.black.withValues(alpha: 0.05),
+                              blurRadius: 10,
+                              offset: const Offset(0, 4),
+                            ),
+                          ],
+                        ),
+                        child: const Icon(
+                          Icons.cloud_queue_rounded,
+                          color: pastelBlue,
+                          size: 48,
+                        ),
+                      ),
+                      const SizedBox(height: 24),
+                      // 솜사탕 같이 둥글고 귀여운 구글 Fredoka 원형 볼드 폰트 적용
                       Text(
-                        GameStrings.appName.toUpperCase(),
+                        'Conquest World',
                         textAlign: TextAlign.center,
-                        style: GoogleFonts.orbitron(
-                          color: GameColors.textPrimary,
-                          fontSize: 32,
-                          fontWeight: FontWeight.w900,
-                          letterSpacing: 4.0,
+                        style: GoogleFonts.fredoka(
+                          color: softNavyText,
+                          fontSize: 36,
+                          fontWeight: FontWeight.bold,
+                          letterSpacing: 0.5,
                           shadows: [
                             Shadow(
-                              color: GameColors.info.withValues(alpha: 0.6),
-                              blurRadius: 15,
+                              color: Colors.white.withValues(alpha: 0.8),
+                              offset: const Offset(0, 2),
+                              blurRadius: 2,
                             ),
                           ],
                         ),
                       ),
-                      const SizedBox(height: 12),
-                      // 미니멀 서브 헤더 (구글 Share Tech Mono 콘솔 폰트)
+                      const SizedBox(height: 8),
+                      // 아기자기한 서브 타이틀 (Quicksand 폰트)
                       Text(
-                        'REAL-TIME GEOGRAPHIC CONQUEST',
+                        'MY COZY CONQUEST ADVENTURE',
                         textAlign: TextAlign.center,
-                        style: GoogleFonts.shareTechMono(
-                          color: GameColors.textMuted,
+                        style: GoogleFonts.quicksand(
+                          color: softMutedText,
                           fontSize: 10,
-                          fontWeight: FontWeight.bold,
-                          letterSpacing: 2.0,
+                          fontWeight: FontWeight.w900,
+                          letterSpacing: 2.5,
                         ),
                       ),
                     ],
@@ -154,7 +195,7 @@ class _SplashScreenState extends State<SplashScreen>
             ),
           ),
 
-          // 3. 하단부 로딩 인디케이터
+          // 4. 하단부 아기자기한 로딩 인디케이터
           Positioned(
             bottom: 60.0 + bottomPadding,
             left: 20,
@@ -162,29 +203,33 @@ class _SplashScreenState extends State<SplashScreen>
             child: AnimatedBuilder(
               animation: _animationController,
               builder: (context, child) {
+                // 은은한 깜빡임 펄스 효과
+                final double opacity =
+                    0.6 +
+                    (0.4 * math.sin(_animationController.value * 2 * math.pi));
+
                 return Opacity(
-                  opacity: _fadeInAnimation.value,
+                  opacity: opacity,
                   child: Row(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
-                      SizedBox(
+                      // 동글동글 아기자기한 커스텀 테마 로더
+                      const SizedBox(
                         width: 14,
                         height: 14,
                         child: CircularProgressIndicator(
-                          strokeWidth: 1.5,
-                          valueColor: AlwaysStoppedAnimation<Color>(
-                            GameColors.info.withValues(alpha: 0.6),
-                          ),
+                          strokeWidth: 2.0,
+                          valueColor: AlwaysStoppedAnimation<Color>(pastelPink),
                         ),
                       ),
                       const SizedBox(width: 12),
-                      // 구글 Share Tech Mono 콘솔 폰트
+                      // 아기자기한 모험 준비 알림 텍스트 (Quicksand 폰트)
                       Text(
-                        'CONNECTING TO SATELLITE SYSTEM...',
-                        style: GoogleFonts.shareTechMono(
-                          color: GameColors.textMuted,
+                        'PREPARING FOR EXPEDITION...',
+                        style: GoogleFonts.quicksand(
+                          color: softMutedText,
                           fontSize: 10,
-                          fontWeight: FontWeight.w800,
+                          fontWeight: FontWeight.w900,
                           letterSpacing: 1.5,
                         ),
                       ),
@@ -200,27 +245,96 @@ class _SplashScreenState extends State<SplashScreen>
   }
 }
 
-/// 전술 격자 배경을 미니멀하게 그려주는 커스텀 페인터
-class _TacticalGridPainter extends CustomPainter {
+/// 아기자기한 뭉게구름과 둥글둥글 파스텔 헥사곤 버블을 그려주는 커스텀 페인터
+class _CozySkyPainter extends CustomPainter {
+  final double animValue;
+
+  _CozySkyPainter({required this.animValue});
+
   @override
   void paint(Canvas canvas, Size size) {
-    final paint = Paint()
-      ..color = GameColors.dividerColor.withValues(alpha: 0.1)
-      ..strokeWidth = 0.5;
+    final cloudPaint = Paint()
+      ..color = Colors.white.withValues(alpha: 0.45)
+      ..style = PaintingStyle.fill;
 
-    const double step = 40.0;
+    // 1. 화면 좌우에 두둥실 뜬 아기자기한 미니 구름들 드로잉
+    final double leftCloudOffset = 6.0 * math.sin(animValue * 2 * math.pi);
+    final double rightCloudOffset = 5.0 * math.cos(animValue * 2 * math.pi);
 
-    // 세로선 그리기
-    for (double x = 0; x < size.width; x += step) {
-      canvas.drawLine(Offset(x, 0), Offset(x, size.height), paint);
-    }
+    // 좌측 구름 버블들
+    canvas.drawCircle(
+      Offset(size.width * 0.15 + leftCloudOffset, size.height * 0.22),
+      25,
+      cloudPaint,
+    );
+    canvas.drawCircle(
+      Offset(size.width * 0.20 + leftCloudOffset, size.height * 0.20),
+      30,
+      cloudPaint,
+    );
+    canvas.drawCircle(
+      Offset(size.width * 0.26 + leftCloudOffset, size.height * 0.23),
+      20,
+      cloudPaint,
+    );
 
-    // 가로선 그리기
-    for (double y = 0; y < size.height; y += step) {
-      canvas.drawLine(Offset(0, y), Offset(size.width, y), paint);
+    // 우측 구름 버블들
+    canvas.drawCircle(
+      Offset(size.width * 0.76 + rightCloudOffset, size.height * 0.70),
+      20,
+      cloudPaint,
+    );
+    canvas.drawCircle(
+      Offset(size.width * 0.82 + rightCloudOffset, size.height * 0.68),
+      28,
+      cloudPaint,
+    );
+    canvas.drawCircle(
+      Offset(size.width * 0.88 + rightCloudOffset, size.height * 0.71),
+      22,
+      cloudPaint,
+    );
+
+    // 2. 둥글둥글하고 반투명한 파스텔 헥사곤 버블 아스라이 흩뿌리기
+    final hexPaint = Paint()
+      ..color = const Color(0xFFF8BBD0)
+          .withValues(alpha: 0.12) // 솜사탕 핑크
+      ..style = PaintingStyle.fill;
+
+    final List<Offset> hexCenters = [
+      Offset(size.width * 0.80, size.height * 0.15),
+      Offset(size.width * 0.22, size.height * 0.75),
+      Offset(size.width * 0.50, size.height * 0.80),
+    ];
+
+    final List<double> hexSizes = [30.0, 35.0, 22.0];
+    final List<Color> hexColors = [
+      const Color(0xFFF8BBD0).withValues(alpha: 0.12), // 솜사탕 핑크
+      const Color(0xFFB3E5FC).withValues(alpha: 0.15), // 소프트 블루
+      const Color(0xFFC8E6C9).withValues(alpha: 0.12), // 소프트 그린
+    ];
+
+    for (int i = 0; i < hexCenters.length; i++) {
+      final center = hexCenters[i];
+      final double radius = hexSizes[i];
+      hexPaint.color = hexColors[i];
+
+      final path = Path();
+      for (int j = 0; j < 6; j++) {
+        final double angle = (j * 60 + 30) * math.pi / 180;
+        final double x = center.dx + radius * math.cos(angle);
+        final double y = center.dy + radius * math.sin(angle);
+        if (j == 0) {
+          path.moveTo(x, y);
+        } else {
+          path.lineTo(x, y);
+        }
+      }
+      path.close();
+      canvas.drawPath(path, hexPaint);
     }
   }
 
   @override
-  bool shouldRepaint(covariant CustomPainter oldDelegate) => false;
+  bool shouldRepaint(covariant CustomPainter oldDelegate) => true;
 }
