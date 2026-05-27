@@ -4,7 +4,11 @@ create table public.profiles (
   nickname text unique,
   color_hex text not null,
   main_base_tile_id text,
-  created_at timestamptz default now()
+  created_at timestamptz default now(),
+  is_notifications_enabled boolean default true,
+  notif_territory_attack boolean default true,
+  notif_satellite_complete boolean default true,
+  notif_system_notice boolean default true
 );
 
 -- RLS (Row Level Security) 설정
