@@ -304,8 +304,8 @@ class _CozyControlDeck extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      margin: const EdgeInsets.symmetric(horizontal: 16),
-      padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 14),
+      margin: const EdgeInsets.symmetric(horizontal: 12),
+      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 14),
       decoration: ShapeDecoration(
         color: GameColors.backgroundMedium.withValues(alpha: 0.95),
         shape: RoundedRectangleBorder(
@@ -329,29 +329,193 @@ class _CozyControlDeck extends StatelessWidget {
           // 1. 상단: 뽀얀 캡슐 모양 상태 가이드 뱃지
           _buildInfoCapsule(),
           const SizedBox(height: 14),
-          // 2. 하단: 입체 삼각 편대 조작계 (나침반 - 점령버튼 - 스캔버튼)
+          // 2. 하단: 5성 펜타 조약돌 데크 수평 편대 (지도스타일 - 나침반 - 점령버튼 - 스캔버튼 - 내위치)
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              // 좌측: 나침반 앵커 (가로세로 60 규격 최적화)
+              // 극좌측 날개: 지도 스타일 순환 버튼 (가로세로 42)
+              SizedBox(
+                width: 42,
+                height: 42,
+                child: Center(child: _MapStyleCycleButton(game: game)),
+              ),
+              // 중앙 좌측: 나침반 앵커 (가로세로 60)
               const SizedBox(
                 width: 60,
                 height: 60,
                 child: Center(child: TacticalCompass()),
               ),
-              // 중앙: 대형 원형 점령 버튼
+              // 중앙 정중앙: 대형 원형 점령 버튼
               game.isScanMode
                   ? _SatelliteCaptureActionButton(game: game)
                   : _StartStopCaptureButton(game: game),
-              // 우측: 위성 스캔 토글 젤리 버튼
+              // 중앙 우측: 위성 스캔 토글 젤리 버튼
               SizedBox(
                 width: 60,
                 height: 60,
                 child: Center(child: _ScanToggleActionButton(game: game)),
               ),
+              // 극우측 날개: 내 위치 / 맵 회전 토글 버튼 (가로세로 42)
+              SizedBox(
+                width: 42,
+                height: 42,
+                child: Center(child: _MapFollowRotationButton(game: game)),
+              ),
             ],
           ),
         ],
+      ),
+    );
+  }
+}
+
+/// [신규] 하단 조작계 극좌측 날개에 배치되는 지도 스타일 순환 버튼
+class _MapStyleCycleButton extends StatefulWidget {
+  final GameProvider game;
+  const _MapStyleCycleButton({required this.game});
+
+  @override
+  State<_MapStyleCycleButton> createState() => _MapStyleCycleButtonState();
+}
+
+class _MapStyleCycleButtonState extends State<_MapStyleCycleButton> {
+  bool _isPressed = false;
+
+  IconData _getMapStyleIcon(String iconName) {
+    const iconMap = <String, IconData>{
+      'explore': Icons.explore,
+      'brightness_5': Icons.brightness_5,
+      'map': Icons.map,
+      'public': Icons.public,
+      'straighten': Icons.straighten,
+      'filter_hdr': Icons.filter_hdr,
+      'landscape': Icons.landscape,
+      'directions_bike': Icons.directions_bike,
+      'layers_clear': Icons.layers_clear,
+    };
+    return iconMap[iconName] ?? Icons.map;
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final game = widget.game;
+    final isActive = !game.showMap;
+    return GestureDetector(
+      onTapDown: (_) => setState(() => _isPressed = true),
+      onTapCancel: () => setState(() => _isPressed = false),
+      onTapUp: (_) {
+        setState(() => _isPressed = false);
+        game.cycleMapStyle();
+      },
+      child: AnimatedScale(
+        scale: _isPressed ? 0.9 : 1.0,
+        duration: const Duration(milliseconds: 100),
+        child: AnimatedContainer(
+          duration: const Duration(milliseconds: 150),
+          width: 42,
+          height: 42,
+          decoration: BoxDecoration(
+            shape: BoxShape.circle,
+            color: isActive
+                ? const Color(0xFFE57373).withValues(alpha: 0.15)
+                : Colors.white.withValues(alpha: 0.08),
+            border: Border.all(
+              color: isActive
+                  ? const Color(0xFFE57373).withValues(alpha: 0.4)
+                  : Colors.white.withValues(alpha: 0.25),
+              width: 1.2,
+            ),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withValues(alpha: 0.05),
+                blurRadius: 4,
+                offset: const Offset(0, 2),
+              )
+            ],
+          ),
+          child: Center(
+            child: Icon(
+              _getMapStyleIcon(game.currentMapStyle.icon),
+              color: isActive ? const Color(0xFFE57373) : GameColors.textSecondary,
+              size: 20,
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+/// [신규] 하단 조작계 극우측 날개에 배치되는 내 위치 찾기 및 맵 회전 토글 버튼
+class _MapFollowRotationButton extends StatefulWidget {
+  final GameProvider game;
+  const _MapFollowRotationButton({required this.game});
+
+  @override
+  State<_MapFollowRotationButton> createState() => _MapFollowRotationButtonState();
+}
+
+class _MapFollowRotationButtonState extends State<_MapFollowRotationButton> {
+  bool _isPressed = false;
+
+  @override
+  Widget build(BuildContext context) {
+    final game = widget.game;
+    final isFollowing = game.isFollowingUser;
+    final isRotation = game.isMapRotationMode;
+
+    IconData icon = Icons.location_searching;
+    if (isFollowing) {
+      icon = isRotation ? Icons.explore : Icons.my_location;
+    }
+
+    final Color accentColor = const Color(0xFF90CAF9); // 솜사탕 블루
+
+    return GestureDetector(
+      onTapDown: (_) => setState(() => _isPressed = true),
+      onTapCancel: () => setState(() => _isPressed = false),
+      onTapUp: (_) {
+        setState(() => _isPressed = false);
+        if (!isFollowing) {
+          game.setFollowingUser(true);
+        } else {
+          game.toggleFollowingUser(); // 맵 추적 켜진 상태에선 추적을 끄는 대신, 추적 모드를 토글하거나 리 rebias 로직으로 활용 가능
+        }
+      },
+      child: AnimatedScale(
+        scale: _isPressed ? 0.9 : 1.0,
+        duration: const Duration(milliseconds: 100),
+        child: AnimatedContainer(
+          duration: const Duration(milliseconds: 150),
+          width: 42,
+          height: 42,
+          decoration: BoxDecoration(
+            shape: BoxShape.circle,
+            color: isFollowing
+                ? accentColor.withValues(alpha: 0.15)
+                : Colors.white.withValues(alpha: 0.08),
+            border: Border.all(
+              color: isFollowing
+                  ? accentColor.withValues(alpha: 0.4)
+                  : Colors.white.withValues(alpha: 0.25),
+              width: 1.2,
+            ),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withValues(alpha: 0.05),
+                blurRadius: 4,
+                offset: const Offset(0, 2),
+              )
+            ],
+          ),
+          child: Center(
+            child: Icon(
+              icon,
+              color: isFollowing ? accentColor : GameColors.textSecondary,
+              size: 20,
+            ),
+          ),
+        ),
       ),
     );
   }

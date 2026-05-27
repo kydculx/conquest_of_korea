@@ -30,7 +30,7 @@ class GameMapWidget extends StatefulWidget {
 class _GameMapWidgetState extends State<GameMapWidget>
     with TickerProviderStateMixin {
   final MapController _mapController = MapController();
-  bool _isFollowing = true;
+  bool _lastIsFollowing = true; // 추가: 이전 추적 상태 캐싱
   bool _isPinching = false; // 추가: 핀치 줌 진행 중 여부 플래그
   int _pointerCount = 0; // 추가: 화면에 터치 중인 활성 포인터(손가락) 개수
   double _currentZoom = MapConfig.focusZoom;
@@ -71,7 +71,7 @@ class _GameMapWidgetState extends State<GameMapWidget>
     // 1. 위치 이동은 내 위치 추적 활성화 상태이고 사용자가 지도를 조작 중(터치/핀치)이 아니며, 이동 애니메이션이 진행 중이지 않을 때만 수행
     final isAnimating =
         _animationController != null && _animationController!.isAnimating;
-    if (_isFollowing && !_isPinching && _pointerCount == 0 && !isAnimating) {
+    if (gameProvider.isFollowingUser && !_isPinching && _pointerCount == 0 && !isAnimating) {
       _mapController.move(loc.currentLocation!, _currentZoom);
     }
 
@@ -98,8 +98,8 @@ class _GameMapWidgetState extends State<GameMapWidget>
   void didUpdateWidget(GameMapWidget oldWidget) {
     super.didUpdateWidget(oldWidget);
     // 위치가 갱신되었고 '내 위치 추적' 모드라면 지도를 이동시킴 (맵 회전 모드가 아닐 때만 딜레이 애니메이션 적용)
-    if (_isFollowing && widget.initialLocation != oldWidget.initialLocation) {
-      final gameProvider = Provider.of<GameProvider>(context, listen: false);
+    final gameProvider = Provider.of<GameProvider>(context, listen: false);
+    if (gameProvider.isFollowingUser && widget.initialLocation != oldWidget.initialLocation) {
       if (!gameProvider.isMapRotationMode) {
         _animatedMapMove(widget.initialLocation, MapConfig.focusZoom, 0.0);
       }
@@ -177,6 +177,25 @@ class _GameMapWidgetState extends State<GameMapWidget>
   Widget build(BuildContext context) {
     return Consumer<GameProvider>(
       builder: (context, gameProvider, child) {
+        // 전역 추적 상태 전이 감지 및 내 위치 애니메이션 복귀
+        if (gameProvider.isFollowingUser && !_lastIsFollowing) {
+          _lastIsFollowing = true;
+          final loc = _locProvider;
+          if (loc != null && loc.currentLocation != null) {
+            final double targetRotation =
+                gameProvider.isMapRotationMode ? -loc.heading : 0.0;
+            WidgetsBinding.instance.addPostFrameCallback((_) {
+              _animatedMapMove(
+                loc.currentLocation!,
+                MapConfig.focusZoom,
+                targetRotation,
+              );
+            });
+          }
+        } else if (!gameProvider.isFollowingUser && _lastIsFollowing) {
+          _lastIsFollowing = false;
+        }
+
         return Stack(
           children: [
             // 베이스 맵 레이어
@@ -240,9 +259,11 @@ class _GameMapWidgetState extends State<GameMapWidget>
                         event.source ==
                             MapEventSource.flingAnimationController) {
                       // 활성 포인터가 정확히 1개이고 핀치 줌 중이 아닐 때만 트래킹을 해제
-                      if (_pointerCount == 1 && !_isPinching && _isFollowing) {
+                      if (_pointerCount == 1 && !_isPinching && gameProvider.isFollowingUser) {
                         WidgetsBinding.instance.addPostFrameCallback((_) {
-                          if (mounted) setState(() => _isFollowing = false);
+                          if (mounted) {
+                            gameProvider.setFollowingUser(false);
+                          }
                         });
                       }
                       _stopAnimation();
@@ -319,113 +340,9 @@ class _GameMapWidgetState extends State<GameMapWidget>
             Positioned.fill(
               child: IgnorePointer(child: GameWidget(game: widget.game)),
             ),
-
-            // 지도 컨트롤 UI
-            Positioned(
-              right: 16,
-              bottom: 120,
-              child: Column(
-                children: [
-                  _buildMapAction(
-                    icon: !_isFollowing
-                        ? Icons.location_searching
-                        : (gameProvider.isMapRotationMode
-                              ? Icons.explore
-                              : Icons.my_location),
-                    onPressed: () {
-                      final loc = _locProvider;
-                      if (_isFollowing) {
-                        gameProvider.toggleMapRotationMode();
-                        if (loc != null && loc.currentLocation != null) {
-                          if (gameProvider.isMapRotationMode) {
-                            _mapController.rotate(-loc.heading);
-                          } else {
-                            _mapController.rotate(0.0);
-                          }
-                          widget.game.updateProjection(_mapController);
-                        }
-                      } else {
-                        setState(() => _isFollowing = true);
-                        if (loc != null && loc.currentLocation != null) {
-                          final double targetRotation =
-                              gameProvider.isMapRotationMode
-                              ? -loc.heading
-                              : 0.0;
-                          _animatedMapMove(
-                            loc.currentLocation!,
-                            MapConfig.focusZoom,
-                            targetRotation,
-                          );
-                        } else {
-                          _animatedMapMove(
-                            widget.initialLocation,
-                            MapConfig.focusZoom,
-                            0.0,
-                          );
-                        }
-                      }
-                    },
-                    isActive: _isFollowing,
-                  ),
-
-                  const SizedBox(height: 8),
-                  _buildMapAction(
-                    icon: _getMapStyleIcon(gameProvider.currentMapStyle.icon),
-                    onPressed: () => gameProvider.cycleMapStyle(),
-                    isActive: !gameProvider.showMap,
-                  ),
-                ],
-              ),
-            ),
           ],
         );
       },
-    );
-  }
-
-  IconData _getMapStyleIcon(String iconName) {
-    const iconMap = <String, IconData>{
-      'dark_mode': Icons.dark_mode,
-      'satellite_alt': Icons.satellite_alt,
-      'terrain': Icons.terrain,
-      'add_road': Icons.add_road,
-      'explore': Icons.explore,
-      'brightness_5': Icons.brightness_5,
-      'map': Icons.map,
-      'public': Icons.public,
-      'straighten': Icons.straighten,
-      'filter_hdr': Icons.filter_hdr,
-      'landscape': Icons.landscape,
-      'directions_bike': Icons.directions_bike,
-      'layers_clear': Icons.layers_clear,
-    };
-    return iconMap[iconName] ?? Icons.map;
-  }
-
-  Widget _buildMapAction({
-    required IconData icon,
-    required VoidCallback onPressed,
-    bool isActive = false,
-  }) {
-    return SizedBox(
-      width: 40,
-      height: 40,
-      child: FloatingActionButton.small(
-        heroTag: null,
-        onPressed: onPressed,
-        backgroundColor: GameColors.backgroundMedium.withValues(alpha: 0.85),
-        foregroundColor: isActive
-            ? GameColors.accentNeon
-            : GameColors.tacticalWhite,
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(12),
-          side: BorderSide(
-            color: isActive ? GameColors.accentNeon : GameColors.dividerColor,
-            width: 1.2,
-          ),
-        ),
-        child: Icon(icon, size: 18),
-      ),
     );
   }
 

@@ -91,6 +91,9 @@ class GameProvider extends ChangeNotifier with WidgetsBindingObserver {
   /// 지도 회전 모드(나침반 정렬) 사용 여부
   bool _isMapRotationMode = false;
 
+  /// 지도 카메라가 요원의 GPS 실시간 위치를 추적(Following)하고 있는지 여부
+  bool _isFollowingUser = true;
+
   // --- 위성 스캔 상태 ---
   /// 위성 궤도 정밀 스캔 모드 활성화 여부
   bool _isScanMode = false;
@@ -288,6 +291,23 @@ class GameProvider extends ChangeNotifier with WidgetsBindingObserver {
 
   /// 지도 회전 모드(나침반 방향에 연동) 활성화 여부
   bool get isMapRotationMode => _isMapRotationMode; // 추가: 맵 회전 여부 getter
+
+  /// 지도 카메라가 요원의 GPS 실시간 위치를 추적(Following)하고 있는지 여부
+  bool get isFollowingUser => _isFollowingUser;
+
+  /// 지도 카메라 추적 상태 명시적 업데이트
+  void setFollowingUser(bool value) {
+    if (_isFollowingUser != value) {
+      _isFollowingUser = value;
+      notifyListeners();
+    }
+  }
+
+  /// 지도 카메라 추적 상태 토글
+  void toggleFollowingUser() {
+    _isFollowingUser = !_isFollowingUser;
+    notifyListeners();
+  }
 
   /// 현재 지정된 지도 스타일 환경 설정
   MapStyle get currentMapStyle => MapConfig.mapStyles[_currentMapStyleIndex];
