@@ -258,6 +258,21 @@ class AuthProvider extends ChangeNotifier {
     }
   }
 
+  /// 프로필 알림 수신 동의 상태 업데이트
+  Future<void> updateNotificationsEnabled(bool enabled) async {
+    if (_profile == null) return;
+
+    _setLoading(true);
+    try {
+      final updatedProfile = _profile!.copyWith(isNotificationsEnabled: enabled);
+      await _authService.updateProfile(updatedProfile);
+      _profile = updatedProfile;
+      notifyListeners();
+    } finally {
+      _setLoading(false);
+    }
+  }
+
   /// 메인 기지 설정/재설정
   Future<void> updateMainBase(String tileId) async {
     if (_profile == null) return;

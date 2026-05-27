@@ -45,6 +45,9 @@ class UserProfile {
   /// 마케팅 수신 정책 동의 시각
   final DateTime? marketingAgreedAt;
 
+  /// 알림 동의 활성화 여부
+  final bool isNotificationsEnabled;
+
   /// UserProfile 생성자
   UserProfile({
     required this.id,
@@ -59,6 +62,7 @@ class UserProfile {
     this.privacyAgreedAt,
     this.locationAgreedAt,
     this.marketingAgreedAt,
+    this.isNotificationsEnabled = true,
     this.gold = 0.0,
     this.capturedTilesCount = 0,
     this.lastGoldUpdatedAt,
@@ -92,6 +96,7 @@ class UserProfile {
       marketingAgreedAt: json['marketing_agreed_at'] != null
           ? DateTime.parse(json['marketing_agreed_at'] as String)
           : null,
+      isNotificationsEnabled: json['is_notifications_enabled'] as bool? ?? true,
     );
   }
 
@@ -111,6 +116,7 @@ class UserProfile {
       'privacy_agreed_at': privacyAgreedAt?.toIso8601String(),
       'location_agreed_at': locationAgreedAt?.toIso8601String(),
       'marketing_agreed_at': marketingAgreedAt?.toIso8601String(),
+      'is_notifications_enabled': isNotificationsEnabled,
     };
   }
 
@@ -127,6 +133,7 @@ class UserProfile {
       'privacy_agreed_at': privacyAgreedAt?.toIso8601String(),
       'location_agreed_at': locationAgreedAt?.toIso8601String(),
       'marketing_agreed_at': marketingAgreedAt?.toIso8601String(),
+      'is_notifications_enabled': isNotificationsEnabled,
     };
   }
 
@@ -144,6 +151,7 @@ class UserProfile {
     DateTime? privacyAgreedAt,
     DateTime? locationAgreedAt,
     DateTime? marketingAgreedAt,
+    bool? isNotificationsEnabled,
     double? gold,
     int? capturedTilesCount,
     DateTime? lastGoldUpdatedAt,
@@ -161,6 +169,7 @@ class UserProfile {
       privacyAgreedAt: privacyAgreedAt ?? this.privacyAgreedAt,
       locationAgreedAt: locationAgreedAt ?? this.locationAgreedAt,
       marketingAgreedAt: marketingAgreedAt ?? this.marketingAgreedAt,
+      isNotificationsEnabled: isNotificationsEnabled ?? this.isNotificationsEnabled,
       gold: gold ?? this.gold,
       capturedTilesCount: capturedTilesCount ?? this.capturedTilesCount,
       lastGoldUpdatedAt: lastGoldUpdatedAt ?? this.lastGoldUpdatedAt,

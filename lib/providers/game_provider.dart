@@ -711,12 +711,22 @@ class GameProvider extends ChangeNotifier with WidgetsBindingObserver {
     return status;
   }
 
-  /// 알림 수신 동의 여부를 전환하고 변경 설정을 디바이스 로컬 저장소에 보관합니다.
+  /// 알림 수신 동의 여부를 전환하고 변경 설정을 디바이스 로컬 저장소 및 원격 DB 프로필에 보관합니다.
   Future<void> toggleNotifications() async {
     _isNotificationEnabled = !_isNotificationEnabled;
     final prefs = await SharedPreferences.getInstance();
     await prefs.setBool(_notifKey, _isNotificationEnabled);
     notifyListeners();
+
+    // 원격 DB 프로필 동기화
+    if (_authProvider != null && _authProvider!.isAuthenticated) {
+      try {
+        await _authProvider!.updateNotificationsEnabled(_isNotificationEnabled);
+      } catch (e) {
+        debugPrint('⚠️ 원격 DB 프로필 알림 설정 동기화 실패: $e');
+      }
+    }
+
     await _updateFcmSubscriptions();
   }
 

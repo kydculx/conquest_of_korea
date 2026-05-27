@@ -1,7 +1,10 @@
 import { JWT } from "npm:google-auth-library@^9.0.0"
+import { createClient } from "npm:@supabase/supabase-js@2.39.0"
 
 // Deno 환경 변수에서 Firebase 서비스 계정 키 JSON을 획득합니다.
 const serviceAccountJson = Deno.env.get("FIREBASE_SERVICE_ACCOUNT_JSON");
+const supabaseUrl = Deno.env.get("SUPABASE_URL");
+const supabaseServiceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
 
 Deno.serve(async (req: Request) => {
   // CORS 프리플라이트 요청 처리 (Flutter 웹/클라이언트 호출 대응)
@@ -25,6 +28,35 @@ Deno.serve(async (req: Request) => {
 
     if (!fcm_token && !topic) {
       throw new Error("fcm_token 또는 topic 파라미터 중 하나는 필수입니다.");
+    }
+
+    // 1대1 개인 알림(토픽 'user_userId') DB 수준 차단 필터링 개시
+    if (topic && topic.startsWith("user_")) {
+      const userId = topic.replace("user_", "");
+      if (supabaseUrl && supabaseServiceKey && userId) {
+        try {
+          const supabase = createClient(supabaseUrl, supabaseServiceKey);
+          const { data: profile, error } = await supabase
+            .from("profiles")
+            .select("is_notifications_enabled")
+            .eq("id", userId)
+            .maybeSingle();
+
+          if (error) {
+            console.error(`⚠️ DB 프로필 조회 실패 (user: ${userId}):`, error.message);
+          } else if (profile && profile.is_notifications_enabled === false) {
+            console.log(`🔔 [알림 원격 차단] 요원(${userId})이 설정에서 알림을 비활성화했으므로 FCM 발송을 중단(Skip)합니다.`);
+            return new Response(JSON.stringify({ success: true, filtered: true, reason: "user_disabled" }), {
+              headers: {
+                "Content-Type": "application/json",
+                "Access-Control-Allow-Origin": "*",
+              },
+            });
+          }
+        } catch (dbErr) {
+          console.error("⚠️ 알림 필터링 DB 쿼리 중 예외 발생:", (dbErr as Error).message);
+        }
+      }
     }
 
     // 1. google-auth-library를 사용해 Firebase Admin용 JWT 클라이언트 생성 (Deno & Node 호환)
