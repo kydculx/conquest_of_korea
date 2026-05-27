@@ -189,14 +189,6 @@ class NotificationService {
     if (!_initialized) return;
 
     try {
-      if (defaultTargetPlatform == TargetPlatform.iOS) {
-        final apnsToken = await _fcm?.getAPNSToken();
-        if (apnsToken == null) {
-          debugPrint('⚠️ iOS APNS 토큰이 아직 준비되지 않아 주제 구독($topic)을 보류합니다.');
-          return;
-        }
-      }
-
       await _fcm?.subscribeToTopic(topic);
       debugPrint('✅ 주제 구독 성공: $topic');
     } catch (e) {
@@ -209,13 +201,8 @@ class NotificationService {
     if (!_initialized) return;
 
     try {
-      if (defaultTargetPlatform == TargetPlatform.iOS) {
-        final apnsToken = await _fcm?.getAPNSToken();
-        if (apnsToken == null) return;
-      }
-
       await _fcm?.unsubscribeFromTopic(topic);
-      debugPrint('✅ 주제 구독 해제 성공: $topic');
+      debugPrint('🔔 주제 구독 해제 완료: $topic');
     } catch (e) {
       debugPrint('⚠️ 주제 구독 해제 실패($topic): $e');
     }

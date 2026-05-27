@@ -39,6 +39,9 @@ void main() {
     try {
       final profiles = await client.from('profiles').select('*').limit(5);
       print('👤 profiles sample (top 5):');
+      if (profiles.isNotEmpty) {
+        print('🔑 profiles columns: ${profiles[0].keys.toList()}');
+      }
       for (var p in profiles) {
         print('  - ID: ${p['id']}, Nick: ${p['nickname']}, Gold: ${p['gold']}, CapturedCount: ${p['captured_tiles_count']}, LastUpdated: ${p['last_gold_updated_at']}');
       }

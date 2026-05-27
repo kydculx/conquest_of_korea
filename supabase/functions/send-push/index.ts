@@ -21,10 +21,10 @@ Deno.serve(async (req: Request) => {
     }
 
     const serviceAccount = JSON.parse(serviceAccountJson);
-    const { fcm_token, title, body, data_payload } = await req.json();
+    const { fcm_token, topic, title, body, data_payload } = await req.json();
 
-    if (!fcm_token) {
-      throw new Error("fcm_token 파라미터가 누락되었습니다.");
+    if (!fcm_token && !topic) {
+      throw new Error("fcm_token 또는 topic 파라미터 중 하나는 필수입니다.");
     }
 
     // 1. google-auth-library를 사용해 Firebase Admin용 JWT 클라이언트 생성 (Deno & Node 호환)
@@ -42,8 +42,17 @@ Deno.serve(async (req: Request) => {
       throw new Error("Google OAuth 토큰 획득에 실패했습니다.");
     }
 
-    // 3. FCM v1 API 호출로 푸시 전송 (notification 객체 필수 포함)
+    // 3. FCM v1 API 호출로 푸시 전송
     const fcmUrl = `https://fcm.googleapis.com/v1/projects/${serviceAccount.project_id}/messages:send`;
+    
+    // 대상 유형 지정 (token 또는 topic)
+    const messageTarget: Record<string, string> = {};
+    if (fcm_token) {
+      messageTarget.token = fcm_token;
+    } else if (topic) {
+      messageTarget.topic = topic;
+    }
+
     const fcmResponse = await fetch(fcmUrl, {
       method: "POST",
       headers: {
@@ -52,7 +61,7 @@ Deno.serve(async (req: Request) => {
       },
       body: JSON.stringify({
         message: {
-          token: fcm_token,
+          ...messageTarget,
           notification: {
             title: title || "전술 경보",
             body: body || "새로운 작전 명령이 도착했습니다.",
@@ -64,6 +73,10 @@ Deno.serve(async (req: Request) => {
           apns: {
             payload: {
               aps: {
+                alert: {
+                  title: title || "전술 경보",
+                  body: body || "새로운 작전 명령이 도착했습니다.",
+                },
                 contentAvailable: true,
                 sound: "default",
               },
