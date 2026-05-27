@@ -26,10 +26,9 @@ class HudOverlay extends StatelessWidget {
 
     // Y축 정밀 오프셋 연산
     final double topOffset = topPadding > 0 ? topPadding + 12.0 : 24.0;
-    final double bubbleTopOffset = topPadding > 0 ? topPadding + 120.0 : 132.0;
 
     // 여백 조율을 위한 기본 하단 마진
-    final double baseBottomMargin = bottomPadding > 0 ? 24.0 : 40.0;
+    final double baseBottomMargin = bottomPadding > 0 ? 16.0 : 32.0;
 
     return Stack(
       children: [
@@ -37,96 +36,34 @@ class HudOverlay extends StatelessWidget {
         if (auth.isAuthenticated && game.isScanMode)
           _SatelliteScanFullscreenOverlay(colorHex: auth.profile?.colorHex),
 
-        // 상단 좌측 컨트롤 (나침반 & 당일 작전 거리 HUD)
-        Positioned(
-          top: topOffset,
-          left: 20,
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              const TacticalCompass(),
-              const SizedBox(height: 10),
-              if (auth.isAuthenticated) ...[const _OperationGoldHud()],
-            ],
-          ),
-        ),
-
-        // 상단 우측 컨트롤 영역 (랭킹 및 프로필)
-        Positioned(
-          top: topOffset,
-          right: 76,
-          child: _RankingButton(isAuthenticated: auth.isAuthenticated),
-        ),
-        Positioned(
-          top: topOffset,
-          right: 20,
-          child: _AuthProfileButton(auth: auth),
-        ),
-
-        // 점령 중 안내 텍스트 (택티컬 터미널 메시지 스타일 - 위성 스캔 모드가 아닐 때만 노출)
-        if (auth.isAuthenticated && game.isCapturing && !game.isScanMode)
-          Positioned(
-            bottom: 130 + baseBottomMargin + bottomPadding,
-            left: 0,
-            right: 0,
-            child: Center(
-              child: Container(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 16,
-                  vertical: 6,
-                ),
-                decoration: ShapeDecoration(
-                  color: GameColors.backgroundTranslucent,
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(12),
-                    side: BorderSide(color: GameColors.accentNeon, width: 1.2),
-                  ),
-                ),
-                child: Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Container(
-                      width: 6,
-                      height: 6,
-                      margin: const EdgeInsets.only(right: 6),
-                      decoration: BoxDecoration(
-                        color: GameColors.accentNeon,
-                        shape: BoxShape.circle,
-                      ),
-                    ),
-                    Text(
-                      '[ 알림: ${GameStrings.capturingZone} ]',
-                      style: GoogleFonts.fredoka(
-                        color: GameColors.textPrimary,
-                        fontSize: 11,
-                        fontWeight: FontWeight.bold,
-                        letterSpacing: 0.5,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            ),
-          ),
-
-        // 점령 관련 버튼 하단 배치
+        // [상단] 솜사탕 올인원 헤더 바
         if (auth.isAuthenticated)
           Positioned(
-            bottom: baseBottomMargin + bottomPadding - 16,
+            top: topOffset,
             left: 0,
             right: 0,
             child: Center(
-              child: game.isScanMode
-                  ? _SatelliteCaptureActionButton(game: game)
-                  : _StartStopCaptureButton(game: game),
+              child: _CozyHeaderBar(auth: auth, game: game),
             ),
           ),
 
-        // 위성 점령 정보창 (최상단 레이어에 상단 중앙 고정 배치)
+        // [하단] 둥실 젤리 플로팅 조작 데크
+        if (auth.isAuthenticated)
+          Positioned(
+            bottom: baseBottomMargin + bottomPadding,
+            left: 0,
+            right: 0,
+            child: _CozyControlDeck(
+              auth: auth,
+              game: game,
+              bottomPadding: bottomPadding,
+            ),
+          ),
+
+        // [위성 모드] 스캔 정보창 (하단 컨트롤 데크 바로 위에 둥실 뜬 형태로 배치)
         if (auth.isAuthenticated && game.isScanMode)
           Positioned(
-            top: bubbleTopOffset,
+            bottom: 110 + baseBottomMargin + bottomPadding,
             left: 0,
             right: 0,
             child: IgnorePointer(
@@ -138,86 +75,307 @@ class HudOverlay extends StatelessWidget {
   }
 }
 
-class _AuthProfileButton extends StatelessWidget {
+/// [상단] '솜사탕 올인원' 헤더 캡슐 바
+class _CozyHeaderBar extends StatelessWidget {
   final AuthProvider auth;
-  const _AuthProfileButton({required this.auth});
+  final GameProvider game;
+
+  const _CozyHeaderBar({required this.auth, required this.game});
 
   @override
   Widget build(BuildContext context) {
     final bool isAuth = auth.isAuthenticated;
-    final Color color = isAuth ? GameColors.accentNeon : GameColors.textMuted;
+    final String nickname = auth.profile?.nickname ?? 'Guest';
+    final double gold = game.currentGold;
+    final int capturedCount = game.myCapturedCount;
+    final double goldRate = game.goldRate;
+    final double ratePerHour = capturedCount * goldRate;
+    final Color profileColor = isAuth ? GameColors.accentNeon : GameColors.textMuted;
 
-    return GestureDetector(
-      onTap: () {
-        if (isAuth) {
-          Navigator.pushNamed(context, '/profile');
-        } else {
-          Navigator.pushNamed(context, '/login');
-        }
-      },
-      child: Container(
-        padding: const EdgeInsets.all(8),
-        decoration: ShapeDecoration(
-          color: GameColors.backgroundMedium,
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(16),
-            side: BorderSide(
-              color: color.withValues(alpha: isAuth ? 0.3 : 0.1),
-              width: 1.2,
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+      decoration: ShapeDecoration(
+        color: GameColors.backgroundMedium.withValues(alpha: 0.92),
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(30),
+          side: BorderSide(
+            color: GameColors.accentNeon.withValues(alpha: 0.25),
+            width: 1.2,
+          ),
+        ),
+        shadows: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.04),
+            blurRadius: 12,
+            offset: const Offset(0, 4),
+          ),
+        ],
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          // 프로필 터치 영역
+          GestureDetector(
+            onTap: () {
+              if (isAuth) {
+                Navigator.pushNamed(context, '/profile');
+              } else {
+                Navigator.pushNamed(context, '/login');
+              }
+            },
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                // 둥근 아바타 모양의 원형 프로필 배경
+                Container(
+                  width: 28,
+                  height: 28,
+                  decoration: BoxDecoration(
+                    color: profileColor.withValues(alpha: 0.15),
+                    shape: BoxShape.circle,
+                  ),
+                  child: Center(
+                    child: Icon(Icons.person_rounded, color: profileColor, size: 16),
+                  ),
+                ),
+                const SizedBox(width: 8),
+                Text(
+                  nickname,
+                  style: GoogleFonts.fredoka(
+                    color: GameColors.textPrimary,
+                    fontSize: 12,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+              ],
             ),
           ),
-          shadows: [
-            BoxShadow(
-              color: color.withValues(alpha: isAuth ? 0.08 : 0.02),
-              blurRadius: isAuth ? 8.0 : 4.0,
-              spreadRadius: 0.0,
+          // 구분선
+          Container(
+            height: 12,
+            width: 1.2,
+            margin: const EdgeInsets.symmetric(horizontal: 12),
+            color: GameColors.dividerColor,
+          ),
+          // 실시간 골드 영역
+          Row(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.baseline,
+            textBaseline: TextBaseline.alphabetic,
+            children: [
+              Text(
+                '${gold.toStringAsFixed(0)} GP',
+                style: GoogleFonts.fredoka(
+                  color: GameColors.textPrimary,
+                  fontSize: 12.5,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+              const SizedBox(width: 4),
+              Text(
+                '(+${ratePerHour.toStringAsFixed(1)}/h)',
+                style: GoogleFonts.quicksand(
+                  color: GameColors.textMuted,
+                  fontSize: 9,
+                  fontWeight: FontWeight.w800,
+                ),
+              ),
+            ],
+          ),
+          // 구분선
+          Container(
+            height: 12,
+            width: 1.2,
+            margin: const EdgeInsets.symmetric(horizontal: 12),
+            color: GameColors.dividerColor,
+          ),
+          // 랭킹 터치 영역
+          GestureDetector(
+            onTap: () {
+              if (isAuth) {
+                Navigator.pushNamed(context, '/ranking');
+              } else {
+                Navigator.pushNamed(context, '/login');
+              }
+            },
+            child: Container(
+              width: 28,
+              height: 28,
+              decoration: BoxDecoration(
+                color: GameColors.accentNeon.withValues(alpha: 0.15),
+                shape: BoxShape.circle,
+              ),
+              child: Center(
+                child: Icon(
+                  Icons.emoji_events_rounded,
+                  color: GameColors.accentNeon,
+                  size: 16,
+                ),
+              ),
             ),
-          ],
-        ),
-        child: Icon(Icons.person_rounded, color: color, size: 24),
+          ),
+        ],
       ),
     );
   }
 }
 
-class _RankingButton extends StatelessWidget {
-  final bool isAuthenticated;
-  const _RankingButton({required this.isAuthenticated});
+/// [하단] '둥실 젤리' 플로팅 조작 데크
+class _CozyControlDeck extends StatelessWidget {
+  final AuthProvider auth;
+  final GameProvider game;
+  final double bottomPadding;
+
+  const _CozyControlDeck({
+    required this.auth,
+    required this.game,
+    required this.bottomPadding,
+  });
 
   @override
   Widget build(BuildContext context) {
-    final Color color = isAuthenticated
-        ? GameColors.accentNeon
-        : GameColors.textMuted;
-
-    return GestureDetector(
-      onTap: () {
-        if (isAuthenticated) {
-          Navigator.pushNamed(context, '/ranking');
-        } else {
-          Navigator.pushNamed(context, '/login');
-        }
-      },
-      child: Container(
-        padding: const EdgeInsets.all(8),
-        decoration: ShapeDecoration(
-          color: GameColors.backgroundMedium,
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(16),
-            side: BorderSide(
-              color: color.withValues(alpha: isAuthenticated ? 0.3 : 0.1),
-              width: 1.2,
+    return Container(
+      margin: const EdgeInsets.symmetric(horizontal: 16),
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+      decoration: ShapeDecoration(
+        color: GameColors.backgroundMedium.withValues(alpha: 0.95),
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(24),
+          side: BorderSide(
+            color: GameColors.accentNeon.withValues(alpha: 0.2),
+            width: 1.2,
+          ),
+        ),
+        shadows: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.05),
+            blurRadius: 16,
+            offset: const Offset(0, 6),
+          ),
+        ],
+      ),
+      child: Row(
+        children: [
+          // 1. 좌측: 나침반 컴포넌트 탑재
+          const TacticalCompass(),
+          const SizedBox(width: 14),
+          // 2. 중앙: 실시간 상태 메타 정보 텍스트
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                if (game.isCapturing && !game.isScanMode) ...[
+                  Row(
+                    children: [
+                      Container(
+                        width: 6,
+                        height: 6,
+                        decoration: BoxDecoration(
+                          color: GameColors.success,
+                          shape: BoxShape.circle,
+                        ),
+                      ),
+                      const SizedBox(width: 6),
+                      Text(
+                        '영역 점령 진행 중',
+                        style: GoogleFonts.fredoka(
+                          color: GameColors.success,
+                          fontSize: 10.5,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 2),
+                  Text(
+                    GameStrings.capturingZone,
+                    style: GoogleFonts.quicksand(
+                      color: GameColors.textSecondary,
+                      fontSize: 11,
+                      fontWeight: FontWeight.w700,
+                    ),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                ] else if (game.isScanMode) ...[
+                  Row(
+                    children: [
+                      Container(
+                        width: 6,
+                        height: 6,
+                        decoration: BoxDecoration(
+                          color: GameColors.accentNeon,
+                          shape: BoxShape.circle,
+                        ),
+                      ),
+                      const SizedBox(width: 6),
+                      Text(
+                        '위성 스캔 모드',
+                        style: GoogleFonts.fredoka(
+                          color: GameColors.accentNeon,
+                          fontSize: 10.5,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 2),
+                  Text(
+                    game.selectedScanTileId != null
+                        ? '선택 타일 점령 분석 중...'
+                        : '타일을 눌러 스캔하세요',
+                    style: GoogleFonts.quicksand(
+                      color: GameColors.textSecondary,
+                      fontSize: 11,
+                      fontWeight: FontWeight.w700,
+                    ),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                ] else ...[
+                  Row(
+                    children: [
+                      Container(
+                        width: 6,
+                        height: 6,
+                        decoration: BoxDecoration(
+                          color: GameColors.textMuted,
+                          shape: BoxShape.circle,
+                        ),
+                      ),
+                      const SizedBox(width: 6),
+                      Text(
+                        '점령 대기 상태',
+                        style: GoogleFonts.fredoka(
+                          color: GameColors.textMuted,
+                          fontSize: 10.5,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 2),
+                  Text(
+                    '점령 모드를 개시해 주세요',
+                    style: GoogleFonts.quicksand(
+                      color: GameColors.textSecondary,
+                      fontSize: 11,
+                      fontWeight: FontWeight.w700,
+                    ),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                ],
+              ],
             ),
           ),
-          shadows: [
-            BoxShadow(
-              color: color.withValues(alpha: isAuthenticated ? 0.08 : 0.02),
-              blurRadius: isAuthenticated ? 8.0 : 4.0,
-              spreadRadius: 0.0,
-            ),
-          ],
-        ),
-        child: Icon(Icons.emoji_events_rounded, color: color, size: 24),
+          const SizedBox(width: 10),
+          // 3. 우측: 수동 점령 및 위성 점령 실행 젤리 버튼
+          game.isScanMode
+              ? _SatelliteCaptureActionButton(game: game)
+              : _StartStopCaptureButton(game: game),
+        ],
       ),
     );
   }
@@ -727,67 +885,6 @@ class _SatelliteCaptureActionButtonState
                       ),
                     ),
                   ],
-                ),
-              ),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-}
-
-/// 요원의 현재 GP 재화 잔액 및 초당 GP 생산율을 표시하는 자금 관리 HUD 위젯
-class _OperationGoldHud extends StatelessWidget {
-  /// [_OperationGoldHud] 생성자
-  const _OperationGoldHud();
-
-  @override
-  Widget build(BuildContext context) {
-    final game = context.watch<GameProvider>();
-    final double gold = game.currentGold;
-    final int capturedCount = game.myCapturedCount;
-    final double goldRate = game.goldRate;
-    final double ratePerHour = capturedCount * goldRate;
-
-    return ClipPath(
-      clipper: ShapeBorderClipper(
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-      ),
-      child: BackdropFilter(
-        filter: ImageFilter.blur(sigmaX: 5, sigmaY: 5),
-        child: Container(
-          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-          decoration: ShapeDecoration(
-            color: GameColors.backgroundMedium.withValues(alpha: 0.8),
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(12),
-              side: BorderSide(
-                color: GameColors.accentNeon.withValues(alpha: 0.35),
-                width: 1.2,
-              ),
-            ),
-          ),
-          child: Row(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.baseline,
-            textBaseline: TextBaseline.alphabetic,
-            children: [
-              Text(
-                '${gold.toStringAsFixed(0)} GP',
-                style: GoogleFonts.fredoka(
-                  color: GameColors.textPrimary,
-                  fontSize: 12,
-                  fontWeight: FontWeight.bold,
-                ),
-              ),
-              const SizedBox(width: 5),
-              Text(
-                '(+${ratePerHour.toStringAsFixed(1)}/h)',
-                style: GoogleFonts.quicksand(
-                  color: GameColors.textMuted,
-                  fontSize: 9,
-                  fontWeight: FontWeight.w800,
                 ),
               ),
             ],

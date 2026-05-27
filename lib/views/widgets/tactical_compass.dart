@@ -82,23 +82,23 @@ class _TacticalCompassPainter extends CustomPainter {
     final center = Offset(size.width / 2, size.height / 2);
     final radius = size.width / 2;
 
-    // GPS 신호 강도에 따라 테두리 네온 색 결정 (정상: 네온그린, 경고: 네온레드)
+    // GPS 신호 강도에 따라 테두리 네온 색 결정 (정상: 파스텔블루, 경고: 파스텔솜사탕핑크)
     final Color neonColor = isSignalGood
         ? GameColors.accentNeon
         : GameColors.error;
 
-    // 1. 반투명 하이테크 배경 디스크
+    // 1. 반투명 하이테크 배경 디스크 (Cozy 크림 화이트)
     final bgPaint = Paint()
-      ..color = GameColors.backgroundMedium.withValues(alpha: 0.85)
+      ..color = GameColors.backgroundMedium.withValues(alpha: 0.9)
       ..style = PaintingStyle.fill;
     canvas.drawCircle(center, radius - 2, bgPaint);
 
     // 2. 바깥쪽 테두리 글로우 링 (맥박 효과 적용)
-    final glowAlpha = isSignalGood ? 0.8 : (0.4 + (pulseValue * 0.4));
+    final glowAlpha = isSignalGood ? 0.7 : (0.3 + (pulseValue * 0.4));
     final borderPaint = Paint()
       ..color = neonColor.withValues(alpha: glowAlpha)
       ..style = PaintingStyle.stroke
-      ..strokeWidth = 2.0;
+      ..strokeWidth = 2.5; // 약간 도톰하게 젤리 느낌 부여
 
     canvas.drawCircle(center, radius - 2, borderPaint);
 
@@ -109,34 +109,32 @@ class _TacticalCompassPainter extends CustomPainter {
     final double headingRad = -heading * (math.pi / 180.0);
     canvas.rotate(headingRad);
 
-    final tickPaint = Paint()
-      ..style = PaintingStyle.stroke
-      ..strokeWidth = 1.0;
-
-    // 30도 간격으로 나침반 눈금 및 방위 표시 그리기
+    // 30도 간격으로 나침반 둥글둥글 도트 눈금 그리기
     for (int angle = 0; angle < 360; angle += 30) {
       // 0도(N)가 캔버스 12시 방향을 향하도록 -90도 영점 보정
       final double angleRad = (angle - 90) * (math.pi / 180.0);
       final double cosVal = math.cos(angleRad);
       final double sinVal = math.sin(angleRad);
 
-      // 90도 단위 주요 눈금(N, E, S, W 등)은 길게 표현
       final bool isMajor = angle % 90 == 0;
-      final double innerRadius = isMajor ? radius - 8.0 : radius - 5.0;
-      final double outerRadius = radius - 3.0;
 
-      tickPaint.color = isMajor
-          ? (angle == 0
-                ? Colors.red
-                : GameColors.textPrimary.withValues(alpha: 0.8))
-          : GameColors.textMuted.withValues(alpha: 0.5);
-      tickPaint.strokeWidth = isMajor ? 1.5 : 1.0;
-
-      canvas.drawLine(
-        Offset(cosVal * innerRadius, sinVal * innerRadius),
-        Offset(cosVal * outerRadius, sinVal * outerRadius),
-        tickPaint,
-      );
+      if (!isMajor) {
+        // 주요 방위가 아닐 때는 귀여운 미니 파스텔 도트를 그림
+        final dotPaint = Paint()
+          ..color = GameColors.textMuted.withValues(alpha: 0.35)
+          ..style = PaintingStyle.fill;
+        final double dotDist = radius - 6.0;
+        canvas.drawCircle(Offset(cosVal * dotDist, sinVal * dotDist), 1.5, dotPaint);
+      } else {
+        // 주요 90도 방위일 때는 조금 더 뚜렷한 파스텔 도트를 그림
+        final dotPaint = Paint()
+          ..color = angle == 0
+              ? const Color(0xFFE57373)
+              : GameColors.textSecondary.withValues(alpha: 0.6);
+          dotPaint.style = PaintingStyle.fill;
+        final double dotDist = radius - 7.0;
+        canvas.drawCircle(Offset(cosVal * dotDist, sinVal * dotDist), 2.5, dotPaint);
+      }
 
       // 주요 방위 텍스트(N, E, S, W) 표기
       if (isMajor) {
@@ -145,7 +143,7 @@ class _TacticalCompassPainter extends CustomPainter {
         switch (angle) {
           case 0:
             dirText = 'N';
-            txtColor = Colors.redAccent; // 정북은 전술적 가독성을 위해 적색 표시
+            txtColor = const Color(0xFFE57373); // 정북은 파스텔 솜사탕 핑크 레드
             break;
           case 90:
             dirText = 'E';
@@ -163,9 +161,9 @@ class _TacticalCompassPainter extends CustomPainter {
             text: dirText,
             style: TextStyle(
               color: txtColor,
-              fontSize: 9.0,
-              fontWeight: FontWeight.w900,
-              fontFamily: 'monospace',
+              fontSize: 9.5,
+              fontWeight: FontWeight.bold,
+              fontFamily: 'Fredoka',
             ),
           ),
           textDirection: TextDirection.ltr,
@@ -175,7 +173,7 @@ class _TacticalCompassPainter extends CustomPainter {
         // 텍스트가 바깥쪽을 향하도록 정렬 및 캔버스 상 회전 보정
         canvas.save();
         // 텍스트 배치 중심으로 이동
-        final double textDist = radius - 14.0;
+        final double textDist = radius - 15.0;
         canvas.translate(cosVal * textDist, sinVal * textDist);
         // N, E, S, W 글자가 읽기 편하도록 안쪽 각도로 회전
         canvas.rotate(angleRad + math.pi / 2);
@@ -187,13 +185,15 @@ class _TacticalCompassPainter extends CustomPainter {
       }
     }
 
-    // 북쪽 가리키는 미세 삼각 지시선
+    // 북쪽 가리키는 미세 삼각 지시선 -> 귀엽고 둥글둥글한 젤리 핀 지침
     final northArrowPaint = Paint()
-      ..color = Colors.red
+      ..color = const Color(0xFFE57373)
       ..style = PaintingStyle.fill;
 
+    // 둥글둥글한 눈물방울 혹은 버블 모양의 핀
+    canvas.drawCircle(Offset(0, -(radius - 12)), 4.0, northArrowPaint);
     final path = Path()
-      ..moveTo(0, -(radius - 7))
+      ..moveTo(0, -(radius - 6))
       ..lineTo(-3, -(radius - 12))
       ..lineTo(3, -(radius - 12))
       ..close();
@@ -201,23 +201,22 @@ class _TacticalCompassPainter extends CustomPainter {
 
     canvas.restore(); // 회전 복구
 
-    // 4. 화면 수직 윗부분(사용자가 폰을 쥐고 있는 진행 방향)을 지시하는 고정 인덱스 눈금선
+    // 4. 화면 수직 윗부분(사용자가 폰을 쥐고 있는 진행 방향)을 지시하는 고정 인덱스 눈금선 -> 앙증맞은 솜사탕 핑크 미니 도트로 교체
     final indexPaint = Paint()
-      ..color = GameColors.accentNeon.withValues(alpha: 0.9)
-      ..style = PaintingStyle.stroke
-      ..strokeWidth = 2.0;
+      ..color = GameColors.accentNeon.withValues(alpha: 0.95)
+      ..style = PaintingStyle.fill;
 
-    canvas.drawLine(
-      Offset(center.dx, center.dy - radius + 1),
-      Offset(center.dx, center.dy - radius + 6),
+    canvas.drawCircle(
+      Offset(center.dx, center.dy - radius + 5),
+      3.0,
       indexPaint,
     );
 
-    // 5. 중심 조준 레티클 도트
+    // 5. 중심 조진 레티클 도트
     final dotPaint = Paint()
       ..color = neonColor.withValues(alpha: 0.8)
       ..style = PaintingStyle.fill;
-    canvas.drawCircle(center, 2.0, dotPaint);
+    canvas.drawCircle(center, 3.0, dotPaint);
   }
 
   @override
