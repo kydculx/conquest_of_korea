@@ -1,10 +1,9 @@
-import { serve } from "https://deno.land/std@0.177.0/http/server.ts"
 import { JWT } from "npm:google-auth-library@^9.0.0"
 
 // Deno 환경 변수에서 Firebase 서비스 계정 키 JSON을 획득합니다.
 const serviceAccountJson = Deno.env.get("FIREBASE_SERVICE_ACCOUNT_JSON");
 
-serve(async (req) => {
+Deno.serve(async (req: Request) => {
   // CORS 프리플라이트 요청 처리 (Flutter 웹/클라이언트 호출 대응)
   if (req.method === "OPTIONS") {
     return new Response("ok", {
@@ -89,7 +88,7 @@ serve(async (req) => {
     });
 
   } catch (error) {
-    return new Response(JSON.stringify({ success: false, error: error.message }), {
+    return new Response(JSON.stringify({ success: false, error: (error as Error).message }), {
       status: 500,
       headers: {
         "Content-Type": "application/json",
