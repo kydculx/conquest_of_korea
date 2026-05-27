@@ -48,6 +48,15 @@ class UserProfile {
   /// 알림 동의 활성화 여부
   final bool isNotificationsEnabled;
 
+  /// 영토 침공 알림 동의 여부
+  final bool notifTerritoryAttack;
+
+  /// 위성 점령 완료 알림 동의 여부
+  final bool notifSatelliteComplete;
+
+  /// 시스템 공지 알림 동의 여부
+  final bool notifSystemNotice;
+ 
   /// UserProfile 생성자
   UserProfile({
     required this.id,
@@ -63,6 +72,9 @@ class UserProfile {
     this.locationAgreedAt,
     this.marketingAgreedAt,
     this.isNotificationsEnabled = true,
+    this.notifTerritoryAttack = true,
+    this.notifSatelliteComplete = true,
+    this.notifSystemNotice = true,
     this.gold = 0.0,
     this.capturedTilesCount = 0,
     this.lastGoldUpdatedAt,
@@ -97,6 +109,9 @@ class UserProfile {
           ? DateTime.parse(json['marketing_agreed_at'] as String)
           : null,
       isNotificationsEnabled: json['is_notifications_enabled'] as bool? ?? true,
+      notifTerritoryAttack: json['notif_territory_attack'] as bool? ?? true,
+      notifSatelliteComplete: json['notif_satellite_complete'] as bool? ?? true,
+      notifSystemNotice: json['notif_system_notice'] as bool? ?? true,
     );
   }
 
@@ -117,6 +132,9 @@ class UserProfile {
       'location_agreed_at': locationAgreedAt?.toIso8601String(),
       'marketing_agreed_at': marketingAgreedAt?.toIso8601String(),
       'is_notifications_enabled': isNotificationsEnabled,
+      'notif_territory_attack': notifTerritoryAttack,
+      'notif_satellite_complete': notifSatelliteComplete,
+      'notif_system_notice': notifSystemNotice,
     };
   }
 
@@ -134,6 +152,9 @@ class UserProfile {
       'location_agreed_at': locationAgreedAt?.toIso8601String(),
       'marketing_agreed_at': marketingAgreedAt?.toIso8601String(),
       'is_notifications_enabled': isNotificationsEnabled,
+      'notif_territory_attack': notifTerritoryAttack,
+      'notif_satellite_complete': notifSatelliteComplete,
+      'notif_system_notice': notifSystemNotice,
     };
   }
 
@@ -152,6 +173,9 @@ class UserProfile {
     DateTime? locationAgreedAt,
     DateTime? marketingAgreedAt,
     bool? isNotificationsEnabled,
+    bool? notifTerritoryAttack,
+    bool? notifSatelliteComplete,
+    bool? notifSystemNotice,
     double? gold,
     int? capturedTilesCount,
     DateTime? lastGoldUpdatedAt,
@@ -170,6 +194,9 @@ class UserProfile {
       locationAgreedAt: locationAgreedAt ?? this.locationAgreedAt,
       marketingAgreedAt: marketingAgreedAt ?? this.marketingAgreedAt,
       isNotificationsEnabled: isNotificationsEnabled ?? this.isNotificationsEnabled,
+      notifTerritoryAttack: notifTerritoryAttack ?? this.notifTerritoryAttack,
+      notifSatelliteComplete: notifSatelliteComplete ?? this.notifSatelliteComplete,
+      notifSystemNotice: notifSystemNotice ?? this.notifSystemNotice,
       gold: gold ?? this.gold,
       capturedTilesCount: capturedTilesCount ?? this.capturedTilesCount,
       lastGoldUpdatedAt: lastGoldUpdatedAt ?? this.lastGoldUpdatedAt,

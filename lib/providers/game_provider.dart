@@ -711,22 +711,29 @@ class GameProvider extends ChangeNotifier with WidgetsBindingObserver {
     return status;
   }
 
+  /// 4대 알림 동의 상태를 원격 DB 프로필에 실시간 동기화합니다.
+  Future<void> _syncNotificationsToRemote() async {
+    if (_authProvider != null && _authProvider!.isAuthenticated) {
+      try {
+        await _authProvider!.updateGranularNotifications(
+          isMasterEnabled: _isNotificationEnabled,
+          territoryAttack: _isNotifTerritoryAttack,
+          satelliteComplete: _isNotifSatelliteComplete,
+          systemNotice: _isNotifSystemNotice,
+        );
+      } catch (e) {
+        debugPrint('⚠️ 원격 DB 프로필 알림 일괄 동기화 실패: $e');
+      }
+    }
+  }
+
   /// 알림 수신 동의 여부를 전환하고 변경 설정을 디바이스 로컬 저장소 및 원격 DB 프로필에 보관합니다.
   Future<void> toggleNotifications() async {
     _isNotificationEnabled = !_isNotificationEnabled;
     final prefs = await SharedPreferences.getInstance();
     await prefs.setBool(_notifKey, _isNotificationEnabled);
     notifyListeners();
-
-    // 원격 DB 프로필 동기화
-    if (_authProvider != null && _authProvider!.isAuthenticated) {
-      try {
-        await _authProvider!.updateNotificationsEnabled(_isNotificationEnabled);
-      } catch (e) {
-        debugPrint('⚠️ 원격 DB 프로필 알림 설정 동기화 실패: $e');
-      }
-    }
-
+    await _syncNotificationsToRemote();
     await _updateFcmSubscriptions();
   }
 
@@ -736,6 +743,7 @@ class GameProvider extends ChangeNotifier with WidgetsBindingObserver {
     final prefs = await SharedPreferences.getInstance();
     await prefs.setBool(_notifTerritoryAttackKey, _isNotifTerritoryAttack);
     notifyListeners();
+    await _syncNotificationsToRemote();
     await _updateFcmSubscriptions();
   }
 
@@ -745,6 +753,7 @@ class GameProvider extends ChangeNotifier with WidgetsBindingObserver {
     final prefs = await SharedPreferences.getInstance();
     await prefs.setBool(_notifSatelliteCompleteKey, _isNotifSatelliteComplete);
     notifyListeners();
+    await _syncNotificationsToRemote();
     await _updateFcmSubscriptions();
   }
 
@@ -754,6 +763,7 @@ class GameProvider extends ChangeNotifier with WidgetsBindingObserver {
     final prefs = await SharedPreferences.getInstance();
     await prefs.setBool(_notifSystemNoticeKey, _isNotifSystemNotice);
     notifyListeners();
+    await _syncNotificationsToRemote();
     await _updateFcmSubscriptions();
   }
 

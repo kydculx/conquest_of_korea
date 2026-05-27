@@ -38,20 +38,51 @@ Deno.serve(async (req: Request) => {
           const supabase = createClient(supabaseUrl, supabaseServiceKey);
           const { data: profile, error } = await supabase
             .from("profiles")
-            .select("is_notifications_enabled")
+            .select("is_notifications_enabled, notif_territory_attack, notif_satellite_complete, notif_system_notice")
             .eq("id", userId)
             .maybeSingle();
 
           if (error) {
             console.error(`⚠️ DB 프로필 조회 실패 (user: ${userId}):`, error.message);
-          } else if (profile && profile.is_notifications_enabled === false) {
-            console.log(`🔔 [알림 원격 차단] 요원(${userId})이 설정에서 알림을 비활성화했으므로 FCM 발송을 중단(Skip)합니다.`);
-            return new Response(JSON.stringify({ success: true, filtered: true, reason: "user_disabled" }), {
-              headers: {
-                "Content-Type": "application/json",
-                "Access-Control-Allow-Origin": "*",
-              },
-            });
+          } else if (profile) {
+            // 마스터 알림 스위치 꺼짐 여부
+            if (profile.is_notifications_enabled === false) {
+              console.log(`🔔 [알림 마스터 차단] 요원(${userId})의 마스터 알림 비활성화로 푸시 취소`);
+              return new Response(JSON.stringify({ success: true, filtered: true, reason: "master_disabled" }), {
+                headers: {
+                  "Content-Type": "application/json",
+                  "Access-Control-Allow-Origin": "*",
+                },
+              });
+            }
+
+            // 개별 알림 타입 쿼리
+            const notificationType = data_payload?.type || (data_payload && data_payload.type);
+            if (notificationType) {
+              let shouldFilter = false;
+              let filterReason = "";
+
+              if (notificationType === "territory_attack" && profile.notif_territory_attack === false) {
+                shouldFilter = true;
+                filterReason = "territory_attack_disabled";
+              } else if (notificationType === "satellite_complete" && profile.notif_satellite_complete === false) {
+                shouldFilter = true;
+                filterReason = "satellite_complete_disabled";
+              } else if (notificationType === "system_notice" && profile.notif_system_notice === false) {
+                shouldFilter = true;
+                filterReason = "system_notice_disabled";
+              }
+
+              if (shouldFilter) {
+                console.log(`🔔 [알림 세부 차단] 요원(${userId})의 '${notificationType}' 알림 비활성화로 푸시 취소 (${filterReason})`);
+                return new Response(JSON.stringify({ success: true, filtered: true, reason: filterReason }), {
+                  headers: {
+                    "Content-Type": "application/json",
+                    "Access-Control-Allow-Origin": "*",
+                  },
+                });
+              }
+            }
           }
         } catch (dbErr) {
           console.error("⚠️ 알림 필터링 DB 쿼리 중 예외 발생:", (dbErr as Error).message);

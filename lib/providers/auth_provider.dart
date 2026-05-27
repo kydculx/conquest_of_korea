@@ -258,13 +258,23 @@ class AuthProvider extends ChangeNotifier {
     }
   }
 
-  /// 프로필 알림 수신 동의 상태 업데이트
-  Future<void> updateNotificationsEnabled(bool enabled) async {
+  /// 4대 알림 수신 동의 상태 일괄 업데이트
+  Future<void> updateGranularNotifications({
+    required bool isMasterEnabled,
+    required bool territoryAttack,
+    required bool satelliteComplete,
+    required bool systemNotice,
+  }) async {
     if (_profile == null) return;
 
     _setLoading(true);
     try {
-      final updatedProfile = _profile!.copyWith(isNotificationsEnabled: enabled);
+      final updatedProfile = _profile!.copyWith(
+        isNotificationsEnabled: isMasterEnabled,
+        notifTerritoryAttack: territoryAttack,
+        notifSatelliteComplete: satelliteComplete,
+        notifSystemNotice: systemNotice,
+      );
       await _authService.updateProfile(updatedProfile);
       _profile = updatedProfile;
       notifyListeners();
