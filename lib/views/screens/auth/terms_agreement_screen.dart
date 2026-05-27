@@ -42,7 +42,11 @@ class _TermsAgreementScreenState extends State<TermsAgreementScreen> {
 
   /// 필수 항목 및 마케팅 선택 항목을 포함하여 모든 목록의 동의 완료 상태를 반환합니다.
   bool get _isAllAgreed =>
-      _agreeAge && _agreeTerms && _agreePrivacy && _agreeLocation && _agreeMarketing;
+      _agreeAge &&
+      _agreeTerms &&
+      _agreePrivacy &&
+      _agreeLocation &&
+      _agreeMarketing;
 
   /// '전체 동의' 체크 박스 활성화 상태에 맞추어 모든 개별 동의 필드들을 일괄 제어합니다.
   void _toggleAgreeAll(bool? value) {
@@ -57,7 +61,7 @@ class _TermsAgreementScreenState extends State<TermsAgreementScreen> {
   }
 
   /// 상세 약관 콘텐츠 전문을 보여주는 모달 바텀시트를 화면에 띄웁니다.
-  /// 
+  ///
   /// [title]은 바텀시트 상단 타이틀이며, [detailText]는 표시될 세부 약관 문자열입니다.
   void _showDetailBottomSheet(String title, String detailText) {
     showModalBottomSheet(
@@ -255,12 +259,14 @@ class _TermsAgreementScreenState extends State<TermsAgreementScreen> {
                       _buildAgreementTile(
                         label: GameStrings.agreeAge,
                         value: _agreeAge,
-                        onChanged: (val) => setState(() => _agreeAge = val ?? false),
+                        onChanged: (val) =>
+                            setState(() => _agreeAge = val ?? false),
                       ),
                       _buildAgreementTile(
                         label: GameStrings.agreeTerms,
                         value: _agreeTerms,
-                        onChanged: (val) => setState(() => _agreeTerms = val ?? false),
+                        onChanged: (val) =>
+                            setState(() => _agreeTerms = val ?? false),
                         onViewDetail: () => _showDetailBottomSheet(
                           GameStrings.agreeTermsBottomSheetTitle,
                           GameStrings.agreeTermsDetail,
@@ -269,7 +275,8 @@ class _TermsAgreementScreenState extends State<TermsAgreementScreen> {
                       _buildAgreementTile(
                         label: GameStrings.agreePrivacy,
                         value: _agreePrivacy,
-                        onChanged: (val) => setState(() => _agreePrivacy = val ?? false),
+                        onChanged: (val) =>
+                            setState(() => _agreePrivacy = val ?? false),
                         onViewDetail: () => _showDetailBottomSheet(
                           GameStrings.agreePrivacyBottomSheetTitle,
                           GameStrings.agreePrivacyDetail,
@@ -278,7 +285,8 @@ class _TermsAgreementScreenState extends State<TermsAgreementScreen> {
                       _buildAgreementTile(
                         label: GameStrings.agreeLocation,
                         value: _agreeLocation,
-                        onChanged: (val) => setState(() => _agreeLocation = val ?? false),
+                        onChanged: (val) =>
+                            setState(() => _agreeLocation = val ?? false),
                         onViewDetail: () => _showDetailBottomSheet(
                           GameStrings.agreeLocationBottomSheetTitle,
                           GameStrings.agreeLocationDetail,
@@ -287,7 +295,8 @@ class _TermsAgreementScreenState extends State<TermsAgreementScreen> {
                       _buildAgreementTile(
                         label: GameStrings.agreeMarketing,
                         value: _agreeMarketing,
-                        onChanged: (val) => setState(() => _agreeMarketing = val ?? false),
+                        onChanged: (val) =>
+                            setState(() => _agreeMarketing = val ?? false),
                         onViewDetail: () => _showDetailBottomSheet(
                           GameStrings.agreeMarketingBottomSheetTitle,
                           GameStrings.agreeMarketingDetail,
@@ -304,7 +313,9 @@ class _TermsAgreementScreenState extends State<TermsAgreementScreen> {
                   style: ElevatedButton.styleFrom(
                     backgroundColor: GameColors.accentNeon,
                     foregroundColor: GameColors.tacticalBlack,
-                    disabledBackgroundColor: GameColors.tacticalGray.withValues(alpha: 0.5),
+                    disabledBackgroundColor: GameColors.tacticalGray.withValues(
+                      alpha: 0.5,
+                    ),
                     disabledForegroundColor: GameColors.textMuted,
                     padding: const EdgeInsets.symmetric(vertical: 16),
                     shape: RoundedRectangleBorder(
@@ -343,7 +354,7 @@ class _TermsAgreementScreenState extends State<TermsAgreementScreen> {
   }
 
   /// 개별 약관의 동의 상태와 상세 내용 링크 버튼을 제공하는 약관 동의 체크박스 위젯을 렌더링합니다.
-  /// 
+  ///
   /// [label]은 약관 명칭이며, [value]는 동의 여부 상태, [onChanged]는 상태 값 변화 콜백입니다.
   /// [onViewDetail]을 구현하면 우측에 상세 약관 뷰 팝업을 연동하는 버튼을 띄우며, [isOptional]이 참이면 선택 사항으로 식별합니다.
   Widget _buildAgreementTile({
@@ -379,7 +390,9 @@ class _TermsAgreementScreenState extends State<TermsAgreementScreen> {
             : Text(
                 '(${GameStrings.confirm} 필수)',
                 style: TextStyle(
-                  color: value ? GameColors.accentNeon.withValues(alpha: 0.6) : GameColors.textMuted,
+                  color: value
+                      ? GameColors.accentNeon.withValues(alpha: 0.6)
+                      : GameColors.textMuted,
                   fontSize: 10,
                 ),
               ),
@@ -393,7 +406,10 @@ class _TermsAgreementScreenState extends State<TermsAgreementScreen> {
                 onPressed: onViewDetail,
                 style: TextButton.styleFrom(
                   minimumSize: Size.zero,
-                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 8,
+                    vertical: 4,
+                  ),
                   tapTargetSize: MaterialTapTargetSize.shrinkWrap,
                 ),
                 child: Text(

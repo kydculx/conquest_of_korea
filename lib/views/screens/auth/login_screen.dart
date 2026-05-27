@@ -244,7 +244,9 @@ class _LoginScreenState extends State<LoginScreen> {
                         onPressed: () async {
                           final authProvider = context.read<AuthProvider>();
                           final navigator = Navigator.of(context);
-                          final scaffoldMessenger = ScaffoldMessenger.of(context);
+                          final scaffoldMessenger = ScaffoldMessenger.of(
+                            context,
+                          );
                           try {
                             await authProvider.signInWithApple();
                             navigator.pop();
@@ -263,14 +265,14 @@ class _LoginScreenState extends State<LoginScreen> {
                           size: 30,
                         ),
                       ),
-
                   ],
                 ),
                 const SizedBox(height: 30),
 
                 // Register Link
                 TextButton(
-                  onPressed: () => Navigator.pushNamed(context, '/terms-agreement'),
+                  onPressed: () =>
+                      Navigator.pushNamed(context, '/terms-agreement'),
                   child: Text(
                     GameStrings.createAccount,
                     style: TextStyle(
@@ -299,7 +301,7 @@ class _LoginScreenState extends State<LoginScreen> {
   }
 
   /// 구글, 애플, 카카오 등의 소셜 로그인 버튼을 공통 원형 디자인으로 구성하는 헬퍼 메서드입니다.
-  /// 
+  ///
   /// [onPressed]는 버튼 탭 이벤트이며, [color]는 버튼의 배경 색상, [child]는 내부에 렌더링될 아이콘 위젯입니다.
   Widget _buildSocialCircleButton({
     required VoidCallback onPressed,
@@ -329,7 +331,7 @@ class _LoginScreenState extends State<LoginScreen> {
   }
 
   /// 로그인 화면의 입력 필드 디자인을 일관되게 규격화하는 커스텀 텍스트 필드 헬퍼 메서드입니다.
-  /// 
+  ///
   /// [controller]는 입력을 수집하며, [label]은 입력 유도 문구이고, [icon]은 접두사 아이콘입니다.
   /// [isObscure]가 참이면 텍스트를 마스킹하고, [suffixIcon]은 입력란 우측에 덧붙여질 버튼 등입니다.
   Widget _buildTextField({

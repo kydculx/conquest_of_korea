@@ -32,8 +32,7 @@ class MapConfig {
     ),
     MapStyle(
       name: 'mapStyleDark',
-      url:
-          'https://{s}.basemaps.cartocdn.com/dark_nolabels/{z}/{x}/{y}{r}.png',
+      url: 'https://{s}.basemaps.cartocdn.com/dark_nolabels/{z}/{x}/{y}{r}.png',
       icon: 'dark_mode',
       colorMatrix: <double>[
         2.2, 0.0, 0.0, 0, -0.15, // Red (도로 대조 대폭 상승 및 배경 딥블랙 유지)

@@ -12,23 +12,23 @@ class AlertWidget extends StatelessWidget {
   Widget build(BuildContext context) {
     final color = switch (alert.type) {
       AlertType.success => GameColors.success,
-      AlertType.warn    => GameColors.warning,
-      AlertType.error   => GameColors.error,
-      AlertType.info    => GameColors.info,
+      AlertType.warn => GameColors.warning,
+      AlertType.error => GameColors.error,
+      AlertType.info => GameColors.info,
     };
 
     final icon = switch (alert.type) {
       AlertType.success => Icons.check_circle_outline_rounded,
-      AlertType.warn    => Icons.warning_amber_rounded,
-      AlertType.error   => Icons.error_outline_rounded,
-      AlertType.info    => Icons.info_outline_rounded,
+      AlertType.warn => Icons.warning_amber_rounded,
+      AlertType.error => Icons.error_outline_rounded,
+      AlertType.info => Icons.info_outline_rounded,
     };
 
     final typeLabel = switch (alert.type) {
       AlertType.success => 'SUCCESS',
-      AlertType.warn    => 'WARNING',
-      AlertType.error   => 'CRITICAL',
-      AlertType.info    => 'SYSTEM',
+      AlertType.warn => 'WARNING',
+      AlertType.error => 'CRITICAL',
+      AlertType.info => 'SYSTEM',
     };
 
     return Container(
@@ -40,17 +40,14 @@ class AlertWidget extends StatelessWidget {
             topLeft: Radius.circular(8),
             bottomRight: Radius.circular(8),
           ),
-          side: BorderSide(
-            color: color.withValues(alpha: 0.5),
-            width: 1.0,
-          ),
+          side: BorderSide(color: color.withValues(alpha: 0.5), width: 1.0),
         ),
         shadows: [
           BoxShadow(
             color: color.withValues(alpha: 0.1),
             blurRadius: 4,
             spreadRadius: 0,
-          )
+          ),
         ],
       ),
       child: IntrinsicHeight(

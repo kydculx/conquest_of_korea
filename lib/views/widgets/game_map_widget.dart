@@ -69,7 +69,8 @@ class _GameMapWidgetState extends State<GameMapWidget>
     final gameProvider = Provider.of<GameProvider>(context, listen: false);
 
     // 1. 위치 이동은 내 위치 추적 활성화 상태이고 사용자가 지도를 조작 중(터치/핀치)이 아니며, 이동 애니메이션이 진행 중이지 않을 때만 수행
-    final isAnimating = _animationController != null && _animationController!.isAnimating;
+    final isAnimating =
+        _animationController != null && _animationController!.isAnimating;
     if (_isFollowing && !_isPinching && _pointerCount == 0 && !isAnimating) {
       _mapController.move(loc.currentLocation!, _currentZoom);
     }
@@ -276,10 +277,26 @@ class _GameMapWidgetState extends State<GameMapWidget>
                         if (gameProvider.isScanMode) {
                           return ColorFiltered(
                             colorFilter: const ColorFilter.matrix(<double>[
-                              0.2126 * 0.9, 0.7152 * 0.9, 0.0722 * 0.9, 0, 15,
-                              0.2126 * 0.8, 0.7152 * 0.8, 0.0722 * 0.8, 0, 10,
-                              0.2126 * 0.7, 0.7152 * 0.7, 0.0722 * 0.7, 0, 5,
-                              0,            0,            0,            1, 0,
+                              0.2126 * 0.9,
+                              0.7152 * 0.9,
+                              0.0722 * 0.9,
+                              0,
+                              15,
+                              0.2126 * 0.8,
+                              0.7152 * 0.8,
+                              0.0722 * 0.8,
+                              0,
+                              10,
+                              0.2126 * 0.7,
+                              0.7152 * 0.7,
+                              0.0722 * 0.7,
+                              0,
+                              5,
+                              0,
+                              0,
+                              0,
+                              1,
+                              0,
                             ]),
                             child: tileLayer,
                           );
@@ -302,8 +319,6 @@ class _GameMapWidgetState extends State<GameMapWidget>
             Positioned.fill(
               child: IgnorePointer(child: GameWidget(game: widget.game)),
             ),
-
-
 
             // 지도 컨트롤 UI
             Positioned(
@@ -471,5 +486,3 @@ class _GameMapWidgetState extends State<GameMapWidget>
     );
   }
 }
-
-

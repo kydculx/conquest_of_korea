@@ -42,7 +42,8 @@ class _TacticalCompassState extends State<TacticalCompass>
     final accuracy = loc.currentAccuracy;
 
     // GPS 신호 품질 판별 (15m 이하: 양호, 15m 초과 또는 비활성: 경고)
-    final bool isSignalGood = isGpsActive && accuracy <= GameConfig.captureAccuracyThreshold;
+    final bool isSignalGood =
+        isGpsActive && accuracy <= GameConfig.captureAccuracyThreshold;
 
     return AnimatedBuilder(
       animation: _pulseController,
@@ -50,9 +51,7 @@ class _TacticalCompassState extends State<TacticalCompass>
         return Container(
           width: 60,
           height: 60,
-          decoration: const BoxDecoration(
-            shape: BoxShape.circle,
-          ),
+          decoration: const BoxDecoration(shape: BoxShape.circle),
           child: CustomPaint(
             painter: _TacticalCompassPainter(
               heading: heading,
@@ -127,7 +126,9 @@ class _TacticalCompassPainter extends CustomPainter {
       final double outerRadius = radius - 3.0;
 
       tickPaint.color = isMajor
-          ? (angle == 0 ? Colors.red : GameColors.textPrimary.withValues(alpha: 0.8))
+          ? (angle == 0
+                ? Colors.red
+                : GameColors.textPrimary.withValues(alpha: 0.8))
           : GameColors.textMuted.withValues(alpha: 0.5);
       tickPaint.strokeWidth = isMajor ? 1.5 : 1.0;
 
@@ -185,12 +186,12 @@ class _TacticalCompassPainter extends CustomPainter {
         canvas.restore();
       }
     }
-    
+
     // 북쪽 가리키는 미세 삼각 지시선
     final northArrowPaint = Paint()
       ..color = Colors.red
       ..style = PaintingStyle.fill;
-    
+
     final path = Path()
       ..moveTo(0, -(radius - 7))
       ..lineTo(-3, -(radius - 12))

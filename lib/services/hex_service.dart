@@ -19,8 +19,12 @@ class HexService {
     final double dPhi = (p2.latitude - p1.latitude) * math.pi / 180;
     final double dLambda = (p2.longitude - p1.longitude) * math.pi / 180;
 
-    final double a = math.sin(dPhi / 2) * math.sin(dPhi / 2) +
-        math.cos(phi1) * math.cos(phi2) * math.sin(dLambda / 2) * math.sin(dLambda / 2);
+    final double a =
+        math.sin(dPhi / 2) * math.sin(dPhi / 2) +
+        math.cos(phi1) *
+            math.cos(phi2) *
+            math.sin(dLambda / 2) *
+            math.sin(dLambda / 2);
     final double c = 2 * math.atan2(math.sqrt(a), math.sqrt(1 - a));
 
     return R * c;
@@ -48,9 +52,14 @@ class HexService {
   }
 
   /// 물리 위도/경도 좌표를 전술 맵의 정수 헥사곤 좌표(q, r) 쌍으로 계산 변환합니다.
-  static Map<String, int> latLngToHex(LatLng location, {double hexSize = GameConfig.tileSize}) {
+  static Map<String, int> latLngToHex(
+    LatLng location, {
+    double hexSize = GameConfig.tileSize,
+  }) {
     final double latRad = originLat * math.pi / 180;
-    final double x = (location.longitude - originLng) * (111320 * math.cos(latRad) / hexSize);
+    final double x =
+        (location.longitude - originLng) *
+        (111320 * math.cos(latRad) / hexSize);
     final double y = (location.latitude - originLat) * (111320 / hexSize);
 
     final double q = (math.sqrt(3) / 3) * x - (1 / 3) * y;
@@ -61,7 +70,11 @@ class HexService {
   }
 
   /// 헥사곤 좌표(q, r)를 물리 지도 상의 위도/경도 중심 좌표(LatLng)로 역변환합니다.
-  static LatLng hexToLatLng(int q, int r, {double hexSize = GameConfig.tileSize}) {
+  static LatLng hexToLatLng(
+    int q,
+    int r, {
+    double hexSize = GameConfig.tileSize,
+  }) {
     final double x = math.sqrt(3) * q + (math.sqrt(3) / 2) * r;
     final double y = (3 / 2) * r.toDouble();
 
@@ -73,7 +86,11 @@ class HexService {
   }
 
   /// 특정 타일(q, r)의 외곽 테두리를 형성하는 6개 꼭짓점의 위도/경도 좌표 목록을 계산하여 반환합니다.
-  static List<LatLng> getHexCorners(int q, int r, {double hexSize = GameConfig.tileSize}) {
+  static List<LatLng> getHexCorners(
+    int q,
+    int r, {
+    double hexSize = GameConfig.tileSize,
+  }) {
     final LatLng center = hexToLatLng(q, r, hexSize: hexSize);
     final double latRad = originLat * math.pi / 180;
     final double latScale = hexSize / 111320;
@@ -108,7 +125,7 @@ class HexService {
     final int dist = hexDistance(q1, r1, q2, r2);
     if (dist == 0) {
       return [
-        {'q': q1, 'r': r1}
+        {'q': q1, 'r': r1},
       ];
     }
 

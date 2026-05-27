@@ -45,9 +45,11 @@ class SupabaseService {
     return _client
         .from('captured_tiles')
         .stream(primaryKey: ['id'])
-        .map((list) => list
-            .map((e) => HexTile.fromJson(Map<String, dynamic>.from(e)))
-            .toList());
+        .map(
+          (list) => list
+              .map((e) => HexTile.fromJson(Map<String, dynamic>.from(e)))
+              .toList(),
+        );
   }
 
   Future<bool> captureTile(HexTile tile) async {
@@ -63,7 +65,7 @@ class SupabaseService {
         'p_shield_duration_seconds': GameConfig.tileShieldDurationSeconds,
       };
       debugPrint('🏹 RPC 점령 안전 트랜잭션 전송 중: ${tile.id}, 파라미터: $params');
-      
+
       final response = await _client.rpc('safe_capture_tile', params: params);
 
       debugPrint('🚀 RPC 트랜잭션 처리 결과: $response');
@@ -142,7 +144,7 @@ class SupabaseService {
           .select('*')
           .order(rankType, ascending: false)
           .limit(100);
-      
+
       return (response as List)
           .map((e) => UserProfile.fromJson(e as Map<String, dynamic>))
           .toList();
@@ -153,7 +155,11 @@ class SupabaseService {
   }
 
   /// 특정 요원의 현재 랭킹 순위 숫자를 연산하여 반환합니다. (1부터 시작)
-  Future<int> fetchMyRanking(String userId, String rankType, dynamic myValue) async {
+  Future<int> fetchMyRanking(
+    String userId,
+    String rankType,
+    dynamic myValue,
+  ) async {
     try {
       final queryVal = rankType == 'captured_tiles_count'
           ? (myValue as num).toInt()
@@ -163,7 +169,7 @@ class SupabaseService {
           .from('profiles')
           .select('id')
           .gt(rankType, queryVal);
-      
+
       final count = (response as List).length;
       return count + 1;
     } catch (e) {

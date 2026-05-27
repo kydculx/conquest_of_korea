@@ -22,7 +22,7 @@ class HudOverlay extends StatelessWidget {
     // 기기별 상하단 안전 영역 높이 자동 산출
     final double topPadding = MediaQuery.of(context).padding.top;
     final double bottomPadding = MediaQuery.of(context).padding.bottom;
-    
+
     // Y축 정밀 오프셋 연산
     final double topOffset = topPadding > 0 ? topPadding + 12.0 : 24.0;
     final double bubbleTopOffset = topPadding > 0 ? topPadding + 120.0 : 132.0;
@@ -46,9 +46,7 @@ class HudOverlay extends StatelessWidget {
             children: [
               const TacticalCompass(),
               const SizedBox(height: 10),
-              if (auth.isAuthenticated) ...[
-                const _OperationGoldHud(),
-              ],
+              if (auth.isAuthenticated) ...[const _OperationGoldHud()],
             ],
           ),
         ),
@@ -59,7 +57,11 @@ class HudOverlay extends StatelessWidget {
           right: 76,
           child: _RankingButton(isAuthenticated: auth.isAuthenticated),
         ),
-        Positioned(top: topOffset, right: 20, child: _AuthProfileButton(auth: auth)),
+        Positioned(
+          top: topOffset,
+          right: 20,
+          child: _AuthProfileButton(auth: auth),
+        ),
 
         // 점령 중 안내 텍스트 (택티컬 터미널 메시지 스타일 - 위성 스캔 모드가 아닐 때만 노출)
         if (auth.isAuthenticated && game.isCapturing && !game.isScanMode)
@@ -183,7 +185,9 @@ class _RankingButton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final Color color = isAuthenticated ? GameColors.accentNeon : GameColors.textMuted;
+    final Color color = isAuthenticated
+        ? GameColors.accentNeon
+        : GameColors.textMuted;
 
     return GestureDetector(
       onTap: () {
@@ -450,7 +454,10 @@ class _SatelliteScanPainter extends CustomPainter {
         ],
         [0.0, 0.65, 1.0],
       );
-    canvas.drawRect(Rect.fromLTWH(0, 0, size.width, size.height), vignettePaint);
+    canvas.drawRect(
+      Rect.fromLTWH(0, 0, size.width, size.height),
+      vignettePaint,
+    );
 
     // 2. 바둑판 형태의 전술 격자 눈금 (+) (Tactical Grid Crosses) - 요동 없이 완전히 고정
     final gridPaint = Paint()
@@ -546,7 +553,6 @@ class _SatelliteScanPainter extends CustomPainter {
     return oldDelegate.color != color || oldDelegate.progress != progress;
   }
 }
-
 
 /// 현재 선택된 타일에 대해 위성 점령 실행 또는 취소 작전을 수행하는 버튼 위젯
 class _SatelliteCaptureActionButton extends StatefulWidget {
@@ -729,8 +735,6 @@ class _SatelliteCaptureActionButtonState
     );
   }
 }
-
-
 
 /// 요원의 현재 GP 재화 잔액 및 초당 GP 생산율을 표시하는 자금 관리 HUD 위젯
 class _OperationGoldHud extends StatelessWidget {

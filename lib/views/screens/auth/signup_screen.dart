@@ -74,8 +74,6 @@ class _SignupScreenState extends State<SignupScreen> {
     });
   }
 
-
-
   @override
   void dispose() {
     _emailController.dispose();
@@ -167,13 +165,16 @@ class _SignupScreenState extends State<SignupScreen> {
 
   /// 필수 서비스 이용 약관의 동의 정보를 기반으로 회원 가입 및 계정 생성을 요청합니다.
   Future<void> _handleSignup() async {
-    final args = ModalRoute.of(context)?.settings.arguments as Map<String, dynamic>?;
+    final args =
+        ModalRoute.of(context)?.settings.arguments as Map<String, dynamic>?;
     final termsAgreedAt = args?['termsAgreedAt'] as DateTime?;
     final privacyAgreedAt = args?['privacyAgreedAt'] as DateTime?;
     final locationAgreedAt = args?['locationAgreedAt'] as DateTime?;
     final marketingAgreedAt = args?['marketingAgreedAt'] as DateTime?;
 
-    if (termsAgreedAt == null || privacyAgreedAt == null || locationAgreedAt == null) {
+    if (termsAgreedAt == null ||
+        privacyAgreedAt == null ||
+        locationAgreedAt == null) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('필수 정책 동의 정보가 누락되었습니다. 다시 시도해주세요.')),
       );
@@ -209,7 +210,7 @@ class _SignupScreenState extends State<SignupScreen> {
     // 현재 GPS 기준 현재타일을 구하여 내 기지로 지정
     final loc = context.read<LocationProvider>();
     final currentLocation = loc.currentLocation;
-    
+
     String? mainBaseTileId;
     if (currentLocation != null) {
       final hex = HexService.latLngToHex(currentLocation);
@@ -254,7 +255,10 @@ class _SignupScreenState extends State<SignupScreen> {
                 },
                 child: Text(
                   GameStrings.confirm,
-                  style: TextStyle(color: GameColors.accentNeon, fontWeight: FontWeight.bold),
+                  style: TextStyle(
+                    color: GameColors.accentNeon,
+                    fontWeight: FontWeight.bold,
+                  ),
                 ),
               ),
             ],
@@ -497,7 +501,7 @@ class _SignupScreenState extends State<SignupScreen> {
   }
 
   /// 회원가입 입력 필드 디자인의 통일성을 위한 커스텀 텍스트 폼 필드를 빌드하는 헬퍼 메서드입니다.
-  /// 
+  ///
   /// [controller]는 텍스트 입력을 제어하며, [label]은 입력란의 힌트/라벨 텍스트입니다.
   /// [icon]은 입력란 좌측의 접두사 아이콘이며, [isObscure]가 참이면 텍스트를 마스킹 처리합니다.
   /// [suffixIcon]은 입력란 우측에 들어갈 부가적인 아이콘 버튼(예: 패스워드 표시 토글)입니다.

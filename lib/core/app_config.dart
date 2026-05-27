@@ -12,8 +12,10 @@ class AppConfig {
   static String get supabaseAnonKey => dotenv.env['SUPABASE_ANON_KEY'] ?? '';
 
   /// 구글 웹 클라이언트 ID (환경 변수 로드)
-  static String get googleWebClientId => dotenv.env['GOOGLE_WEB_CLIENT_ID'] ?? '';
+  static String get googleWebClientId =>
+      dotenv.env['GOOGLE_WEB_CLIENT_ID'] ?? '';
 
   /// 구글 iOS 클라이언트 ID (환경 변수 로드)
-  static String get googleIosClientId => dotenv.env['GOOGLE_IOS_CLIENT_ID'] ?? '';
+  static String get googleIosClientId =>
+      dotenv.env['GOOGLE_IOS_CLIENT_ID'] ?? '';
 }

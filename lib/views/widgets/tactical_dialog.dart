@@ -47,7 +47,10 @@ class TacticalDialog extends StatelessWidget {
 
     return Dialog(
       backgroundColor: Colors.transparent,
-      insetPadding: const EdgeInsets.symmetric(horizontal: 24.0, vertical: 24.0),
+      insetPadding: const EdgeInsets.symmetric(
+        horizontal: 24.0,
+        vertical: 24.0,
+      ),
       child: ClipRRect(
         borderRadius: BorderRadius.circular(16),
         child: Container(
@@ -74,9 +77,7 @@ class TacticalDialog extends StatelessWidget {
               Positioned.fill(
                 child: Opacity(
                   opacity: 0.4,
-                  child: CustomPaint(
-                    painter: TacticalDialogGridPainter(),
-                  ),
+                  child: CustomPaint(painter: TacticalDialogGridPainter()),
                 ),
               ),
               Padding(
@@ -88,11 +89,7 @@ class TacticalDialog extends StatelessWidget {
                     Row(
                       children: [
                         if (icon != null) ...[
-                          Icon(
-                            icon,
-                            color: activeAccent,
-                            size: 24,
-                          ),
+                          Icon(icon, color: activeAccent, size: 24),
                           const SizedBox(width: 12),
                         ],
                         Expanded(
@@ -110,7 +107,9 @@ class TacticalDialog extends StatelessWidget {
                     ),
                     const SizedBox(height: 16),
                     Divider(
-                      color: GameColors.dividerColor.withValues(alpha: 40 / 255),
+                      color: GameColors.dividerColor.withValues(
+                        alpha: 40 / 255,
+                      ),
                       height: 1,
                     ),
                     if (content != null) ...[

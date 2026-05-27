@@ -10,21 +10,28 @@ class HexTileComponent extends PositionComponent
     with HasGameReference<ConquestGame> {
   /// 타일이 점령되었을 때 칠해질 요원의 진영 색상 (Hex)
   String? colorHex;
+
   /// 스크린 기준으로 산출된 헥사곤 꼭짓점 6개의 픽셀 좌표 리스트
   List<Offset> corners;
+
   /// 현재 이 타일이 요원(물리/위성)에 의해 점령 시도 중인지 여부
   bool isCapturing;
+
   /// 점령 시도의 진행 진척도 (0.0 ~ 1.0)
   double progress;
+
   /// 현재 이 타일을 점령 시도 중인 요원의 진영 색상 (Hex)
   String? capturingColorHex;
 
   /// 타일 내부 영역을 채울 때 사용하는 Paint 객체
   late Paint _fillPaint;
+
   /// 점령 진행 중일 때 외곽선 애니메이션을 드로잉하는 Paint 객체
   late Paint _capturePaint;
+
   /// 매 프레임 그리기 성능 향상을 위해 꼭짓점 좌표를 기반으로 빌드해 보관하는 그리기 패스 객체
   Path? _cachedPath;
+
   /// 점령 외곽선 펄스 애니메이션 속도를 계산하기 위한 타임 누적 값
   double _timer = 0;
 
@@ -132,10 +139,14 @@ class HexTileComponent extends PositionComponent
         final dx = cx - c.dx;
         final dy = cy - c.dy;
         final dist = math.sqrt(dx * dx + dy * dy);
-        
+
         // 중심 방향으로 padding만큼 이동
-        final double insetX = dist > padding ? c.dx + (dx / dist) * padding : c.dx;
-        final double insetY = dist > padding ? c.dy + (dy / dist) * padding : c.dy;
+        final double insetX = dist > padding
+            ? c.dx + (dx / dist) * padding
+            : c.dx;
+        final double insetY = dist > padding
+            ? c.dy + (dy / dist) * padding
+            : c.dy;
 
         if (i == 0) {
           _cachedPath!.moveTo(insetX, insetY);
@@ -167,7 +178,7 @@ class HexTileComponent extends PositionComponent
       // 내부 채우기 애니메이션 (아래에서 위로 progress만큼 차오름)
       canvas.save();
       canvas.clipPath(_cachedPath!);
-      
+
       double minY = corners[0].dy;
       double maxY = corners[0].dy;
       for (final c in corners) {
@@ -187,7 +198,7 @@ class HexTileComponent extends PositionComponent
       final fillPaint = Paint()
         ..color = captureColor.withValues(alpha: 130 / 255)
         ..style = PaintingStyle.fill;
-      
+
       canvas.drawRect(fillRect, fillPaint);
       canvas.restore();
     }

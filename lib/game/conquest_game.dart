@@ -17,58 +17,83 @@ import '../core/constants/colors.dart';
 class ConquestGame extends FlameGame {
   /// 요원 본인을 지도 상에 나타내는 2D 방향 컴포넌트
   late PlayerComponent player;
+
   /// 화면 좌표와 지도 좌표 간 변환(투영)을 수행하는 FlutterMap 지도 컨트롤러 캐시 객체
   MapController? _mapController;
+
   /// 마지막으로 전달받은 서버 기준 점령 타일 목록 캐시
   Map<String, HexTile> _lastCapturedTiles = {};
+
   /// 렌더링에 사용 중인 Flame 컴포넌트 맵 (Key: 타일 ID, Value: 헥사곤 컴포넌트)
   final Map<String, HexTileComponent> _tileMap = {};
+
   /// 실시간 렌더링 주기를 계측하여 화면에 그리는 FPS 컴포넌트
   FpsTextComponent? _fpsComponent;
+
   /// 본부 기지(HQ) 아이콘 및 링 반경 연출을 시각화하는 마커 컴포넌트
   HQBaseMarker? _hqMarker;
+
   /// 위성 궤도 스캔 시 락온(Lock-on) 연출 및 게이지를 그리는 조준마커 컴포넌트
   ScanTargetMarker? _scanTargetMarker;
+
   /// 현재 설정된 요원의 본부 기지(HQ) 타일 ID
   String? _currentHQTileId;
+
   /// 최근에 점령 시도에 사용된 전술 식별 색상 코드
   String? _lastCapturingColorHex;
+
   /// 현재 위성 궤도 스캔 조준 장치 활성화 여부 상태 캐시
   bool _isScanMode = false;
+
   /// 현재 로그인된 요원의 ID 정보 캐시
   String? _currentUserId;
+
   /// 현재 위성 원격 타일 점령이 진행 중인지 여부 상태 캐시
   /// 현재 위성 원격 타일 점령이 진행 중인지 여부 상태 캐시
   bool _isSatelliteCapturing = false;
+
   /// 현재 위성 점령의 상태 단계
   SatelliteCapturePhase _satelliteCapturePhase = SatelliteCapturePhase.none;
+
   /// 현재 위성 빔 비행 진행률 (0.0 ~ 1.0)
   double _satelliteTravelProgress = 0.0;
+
   /// 현재 위성 점령의 게이지 진행률 (0.0 ~ 1.0)
   double _satelliteCaptureProgress = 0.0;
+
   /// 위성 점령을 개시한 대상 타일 ID 캐시
   String? _satelliteCapturingTileId;
 
   /// 투영을 담당하는 내부 맵 컨트롤러 반환
   MapController? get mapController => _mapController;
+
   /// 본부 기지가 설치된 타일 ID 반환
   String? get currentHQTileId => _currentHQTileId;
+
   /// 현재 사용자 ID 반환
   String? get currentUserId => _currentUserId;
+
   /// 최근 서버 데이터 기준 캐싱된 전체 점령지 맵 반환
   Map<String, HexTile> get lastCapturedTiles => _lastCapturedTiles;
+
   /// 현재 위성 점령이 활성화되어 시도 중인지 여부
   bool get isSatelliteCapturing => _isSatelliteCapturing;
+
   /// 현재 위성 점령의 상태 단계 반환
   SatelliteCapturePhase get satelliteCapturePhase => _satelliteCapturePhase;
+
   /// 위성 빔 비행 진행률 반환
   double get satelliteTravelProgress => _satelliteTravelProgress;
+
   /// 위성 점령의 퍼센트 수치 반환
   double get satelliteCaptureProgress => _satelliteCaptureProgress;
+
   /// 위성 점령 중인 목적지 타일 ID 반환
   String? get satelliteCapturingTileId => _satelliteCapturingTileId;
+
   /// 위성 궤도 조준경 모드 사용 여부
   bool get isScanMode => _isScanMode;
+
   /// 최근에 점령 시도에 사용된 전술 식별 색상 코드
   String? get lastCapturingColorHex => _lastCapturingColorHex;
 
@@ -110,6 +135,7 @@ class ConquestGame extends FlameGame {
 
   /// 프레임 갱신 주기를 제어하기 위해 누적 보관하는 델타 타임 합산 값
   double _dtSum = 0.0;
+
   /// 프레임 오차를 방지하고 연산을 규격화하기 위해 60 FPS 주기로 강제하는 고정 타임 기준값 (1/60초)
   static const double _fixedDeltaTime = 1 / 60; // 60 FPS 강제 제한
 
@@ -130,7 +156,9 @@ class ConquestGame extends FlameGame {
       updateCapturedTiles(
         capturedTiles: _lastCapturedTiles,
         mainBaseTileId: _currentHQTileId,
-        selectedScanTileId: _scanTargetMarker != null ? 'hex_${_scanTargetMarker!.q}_${_scanTargetMarker!.r}' : null,
+        selectedScanTileId: _scanTargetMarker != null
+            ? 'hex_${_scanTargetMarker!.q}_${_scanTargetMarker!.r}'
+            : null,
         isScanMode: _scanTargetMarker != null,
         capturingColorHex: _lastCapturingColorHex,
         currentUserId: _currentUserId,
@@ -217,7 +245,8 @@ class ConquestGame extends FlameGame {
 
     // 점령 중인 타일 특수 상태 처리 (위성 점령)
     if (isSatelliteCapturing && satelliteCapturingTileId != null) {
-      final bool shouldAnimateTile = _satelliteCapturePhase == SatelliteCapturePhase.capturing;
+      final bool shouldAnimateTile =
+          _satelliteCapturePhase == SatelliteCapturePhase.capturing;
       _updateActiveCaptureTile(
         tileId: satelliteCapturingTileId,
         progress: shouldAnimateTile ? _satelliteCaptureProgress : 0.0,
@@ -228,7 +257,9 @@ class ConquestGame extends FlameGame {
 
     // 점령 중이 아닌 타일 상태 초기화
     _tileMap.forEach((id, tile) {
-      final isStillCapturing = id == capturingTileId || (isSatelliteCapturing && id == satelliteCapturingTileId);
+      final isStillCapturing =
+          id == capturingTileId ||
+          (isSatelliteCapturing && id == satelliteCapturingTileId);
       if (!isStillCapturing && tile.isCapturing) {
         tile.updateData(isCapturing: false, progress: 0.0);
       }
@@ -371,7 +402,9 @@ class ConquestGame extends FlameGame {
     int? targetR;
 
     // 위성 점령이 진행 중일 때는 위성 모드가 꺼져 있어도 마커를 계속 유지함
-    final activeTileId = _isSatelliteCapturing ? _satelliteCapturingTileId : (isScanMode ? selectedScanTileId : null);
+    final activeTileId = _isSatelliteCapturing
+        ? _satelliteCapturingTileId
+        : (isScanMode ? selectedScanTileId : null);
 
     if (activeTileId != null && activeTileId.isNotEmpty) {
       final parts = activeTileId.split('_');
@@ -383,7 +416,10 @@ class ConquestGame extends FlameGame {
 
     if (_scanTargetMarker != null) {
       // 이미 같은 타일의 마커가 조준되어 있다면 새로 삭제/생성하지 않고 재사용함
-      if (targetQ != null && targetR != null && _scanTargetMarker!.q == targetQ && _scanTargetMarker!.r == targetR) {
+      if (targetQ != null &&
+          targetR != null &&
+          _scanTargetMarker!.q == targetQ &&
+          _scanTargetMarker!.r == targetR) {
         return;
       }
       remove(_scanTargetMarker!);

@@ -122,8 +122,6 @@ class ProfileScreen extends StatelessWidget {
                 ),
               ),
 
-
-
               const SizedBox(height: 24),
               Text(
                 GameStrings.operationSettings,
@@ -159,29 +157,39 @@ class ProfileScreen extends StatelessWidget {
                   curve: Curves.easeInOut,
                   child: game.isNotificationEnabled
                       ? Container(
-                          padding: const EdgeInsets.only(left: 20, right: 12, bottom: 8, top: 4),
-                          color: GameColors.backgroundMedium.withValues(alpha: 0.2),
+                          padding: const EdgeInsets.only(
+                            left: 20,
+                            right: 12,
+                            bottom: 8,
+                            top: 4,
+                          ),
+                          color: GameColors.backgroundMedium.withValues(
+                            alpha: 0.2,
+                          ),
                           child: Column(
                             children: [
                               _buildSubMenuItem(
                                 title: GameStrings.notifTerritoryAttackTitle,
                                 subtitle: GameStrings.notifTerritoryAttackSub,
                                 value: game.isNotifTerritoryAttack,
-                                onChanged: (val) => game.toggleNotifTerritoryAttack(),
+                                onChanged: (val) =>
+                                    game.toggleNotifTerritoryAttack(),
                               ),
                               _buildSubDivider(),
                               _buildSubMenuItem(
                                 title: GameStrings.notifSatelliteCompleteTitle,
                                 subtitle: GameStrings.notifSatelliteCompleteSub,
                                 value: game.isNotifSatelliteComplete,
-                                onChanged: (val) => game.toggleNotifSatelliteComplete(),
+                                onChanged: (val) =>
+                                    game.toggleNotifSatelliteComplete(),
                               ),
                               _buildSubDivider(),
                               _buildSubMenuItem(
                                 title: GameStrings.notifSystemNoticeTitle,
                                 subtitle: GameStrings.notifSystemNoticeSub,
                                 value: game.isNotifSystemNotice,
-                                onChanged: (val) => game.toggleNotifSystemNotice(),
+                                onChanged: (val) =>
+                                    game.toggleNotifSystemNotice(),
                               ),
                             ],
                           ),
@@ -239,7 +247,9 @@ class ProfileScreen extends StatelessWidget {
                       await auth.deleteAccount();
                       if (context.mounted) {
                         ScaffoldMessenger.of(context).showSnackBar(
-                          SnackBar(content: Text(GameStrings.deleteAccountSuccess)),
+                          SnackBar(
+                            content: Text(GameStrings.deleteAccountSuccess),
+                          ),
                         );
                       }
                     }
@@ -264,10 +274,8 @@ class ProfileScreen extends StatelessWidget {
     );
   }
 
-
-
   /// 프로필 상단 카드에 표기될 핵심 통계 수치 항목을 빌드하는 도우미 위젯입니다.
-  /// 
+  ///
   /// [label]은 항목명, [value]는 기록값, [color]는 강조 텍스트 색상입니다.
   Widget _buildStatItem(String label, String value, Color color) {
     return Column(
@@ -393,10 +401,7 @@ class ProfileScreen extends StatelessWidget {
                 const SizedBox(height: 1),
                 Text(
                   subtitle,
-                  style: TextStyle(
-                    color: GameColors.textMuted,
-                    fontSize: 10,
-                  ),
+                  style: TextStyle(color: GameColors.textMuted, fontSize: 10),
                 ),
               ],
             ),
@@ -502,7 +507,7 @@ class ProfileScreen extends StatelessWidget {
     );
   }
 
-  /// 사용자가 원하는 고유 전술 색상을 RGB 슬라이더 조작을 통해 직접 믹싱하고 
+  /// 사용자가 원하는 고유 전술 색상을 RGB 슬라이더 조작을 통해 직접 믹싱하고
   /// 서버 데이터에 영구 보존할 수 있도록 지원하는 컬러 피커 다이얼로그 팝업입니다.
   void _showColorPicker(BuildContext context, AuthProvider auth) {
     Color currentColor = TacticalTheme.parseColor(
@@ -520,7 +525,7 @@ class ProfileScreen extends StatelessWidget {
           final hexString =
               '#${r.toRadixString(16).padLeft(2, '0')}${g.toRadixString(16).padLeft(2, '0')}${b.toRadixString(16).padLeft(2, '0')}'
                   .toUpperCase();
- 
+
           return TacticalDialog(
             title: GameStrings.tacticalColorSetupTitle,
             icon: Icons.tune_rounded,
@@ -548,14 +553,21 @@ class ProfileScreen extends StatelessWidget {
                         ),
                       ],
                     ),
-                    child: Icon(Icons.radar_rounded, color: previewColor, size: 48),
+                    child: Icon(
+                      Icons.radar_rounded,
+                      color: previewColor,
+                      size: 48,
+                    ),
                   ),
                 ),
                 const SizedBox(height: 30),
- 
+
                 // RGB 슬라이더 카드형 배경
                 Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 16),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 10,
+                    vertical: 16,
+                  ),
                   decoration: BoxDecoration(
                     color: GameColors.tacticalWhite.withValues(alpha: 0.03),
                     borderRadius: BorderRadius.circular(10),
@@ -596,11 +608,17 @@ class ProfileScreen extends StatelessWidget {
                 onPressed: () => Navigator.pop(context),
                 style: TextButton.styleFrom(
                   foregroundColor: GameColors.textMuted,
-                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 16,
+                    vertical: 12,
+                  ),
                 ),
                 child: Text(
                   GameStrings.cancel,
-                  style: const TextStyle(fontWeight: FontWeight.bold, letterSpacing: 0.5),
+                  style: const TextStyle(
+                    fontWeight: FontWeight.bold,
+                    letterSpacing: 0.5,
+                  ),
                 ),
               ),
               ElevatedButton(
@@ -646,14 +664,20 @@ class ProfileScreen extends StatelessWidget {
                       : GameColors.tacticalWhite,
                   elevation: 8,
                   shadowColor: previewColor.withValues(alpha: 0.6),
-                  padding: const EdgeInsets.symmetric(horizontal: 22, vertical: 12),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 22,
+                    vertical: 12,
+                  ),
                   shape: BeveledRectangleBorder(
                     borderRadius: BorderRadius.circular(8),
                   ),
                 ),
                 child: Text(
                   GameStrings.apply,
-                  style: const TextStyle(fontWeight: FontWeight.bold, letterSpacing: 1.0),
+                  style: const TextStyle(
+                    fontWeight: FontWeight.bold,
+                    letterSpacing: 1.0,
+                  ),
                 ),
               ),
             ],
@@ -716,9 +740,13 @@ class ProfileScreen extends StatelessWidget {
                     alpha: 40 / 255,
                   ),
                   thumbColor: GameColors.tacticalWhite,
-                  thumbShape: const RoundSliderThumbShape(enabledThumbRadius: 6.0),
+                  thumbShape: const RoundSliderThumbShape(
+                    enabledThumbRadius: 6.0,
+                  ),
                   overlayColor: activeColor.withValues(alpha: 40 / 255),
-                  overlayShape: const RoundSliderOverlayShape(overlayRadius: 14.0),
+                  overlayShape: const RoundSliderOverlayShape(
+                    overlayRadius: 14.0,
+                  ),
                   valueIndicatorColor: activeColor,
                   valueIndicatorTextStyle: TextStyle(
                     color: GameColors.tacticalBlack,
@@ -747,12 +775,12 @@ class ProfileScreen extends StatelessWidget {
       ],
     );
   }
- 
+
   /// 요원의 현 GPS 물리 위치를 기점으로 삼아 메인 본부 기지(HQ) 헥사곤 좌표를 재설정(이전)하도록 통제하는 비동기 메서드입니다.
   Future<void> _handleRebase(BuildContext context, AuthProvider auth) async {
     final loc = context.read<LocationProvider>();
     final currentLocation = loc.currentLocation;
- 
+
     if (currentLocation == null) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
@@ -763,10 +791,10 @@ class ProfileScreen extends StatelessWidget {
       );
       return;
     }
- 
+
     final hex = HexService.latLngToHex(currentLocation);
     final tileId = 'hex_${hex['q']}_${hex['r']}';
- 
+
     final confirm = await showDialog<bool>(
       context: context,
       builder: (context) => TacticalDialog(
@@ -800,7 +828,7 @@ class ProfileScreen extends StatelessWidget {
         ],
       ),
     );
- 
+
     if (confirm == true && context.mounted) {
       try {
         await auth.updateMainBase(tileId);
@@ -827,4 +855,3 @@ class ProfileScreen extends StatelessWidget {
     }
   }
 }
-

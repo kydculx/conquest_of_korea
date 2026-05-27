@@ -34,7 +34,10 @@ class FakeSupabaseService implements SupabaseService {
   }
 
   @override
-  Future<TileStatus> checkTileStatusFromServer(String tileId, String currentUserId) async {
+  Future<TileStatus> checkTileStatusFromServer(
+    String tileId,
+    String currentUserId,
+  ) async {
     final tile = mockTiles.firstWhere(
       (t) => t.id == tileId,
       orElse: () => HexTile(
@@ -71,19 +74,14 @@ class FakeSupabaseService implements SupabaseService {
 // Mock User 클래스 (supabase_flutter의 User를 흉내냄)
 class MockUser extends supabase_flutter.User {
   MockUser({required super.id})
-      : super(
-          appMetadata: {},
-          userMetadata: {},
-          aud: '',
-          createdAt: '',
-        );
+    : super(appMetadata: {}, userMetadata: {}, aud: '', createdAt: '');
 }
 
 // Fake AuthProvider 구현
 class FakeAuthProvider extends ChangeNotifier implements AuthProvider {
   @override
   supabase_flutter.User? user;
-  
+
   @override
   UserProfile? profile;
 
@@ -107,10 +105,10 @@ class FakeAuthProvider extends ChangeNotifier implements AuthProvider {
 class FakeLocationProvider extends ChangeNotifier implements LocationProvider {
   @override
   bool isGpsActive = true;
-  
+
   @override
   LatLng? currentLocation;
-  
+
   @override
   double currentAccuracy = 10.0;
 
@@ -272,19 +270,31 @@ void main() {
   group('거리 비례 소요 시간 (getSatelliteCaptureDurationSeconds) 테스트', () {
     test('메인 기지와 거리에 따라 올바른 점령 시간을 초 단위로 계산해야 함', () async {
       final gameProvider = await createInitializedGameProvider();
-      
+
       // 1타일당 소요 시간: satelliteCaptureSecondsPerTile (1.0)
       // hexDistance([0,0], [0,0]) = 0 -> 최소 1초
-      expect(gameProvider.getSatelliteCaptureDurationSeconds('hex_0_0'), equals(1));
+      expect(
+        gameProvider.getSatelliteCaptureDurationSeconds('hex_0_0'),
+        equals(1),
+      );
 
       // hexDistance([0,0], [1,0]) = 1 -> 2초
-      expect(gameProvider.getSatelliteCaptureDurationSeconds('hex_1_0'), equals(2));
+      expect(
+        gameProvider.getSatelliteCaptureDurationSeconds('hex_1_0'),
+        equals(2),
+      );
 
       // hexDistance([0,0], [2,0]) = 2 -> 3초
-      expect(gameProvider.getSatelliteCaptureDurationSeconds('hex_2_0'), equals(3));
+      expect(
+        gameProvider.getSatelliteCaptureDurationSeconds('hex_2_0'),
+        equals(3),
+      );
 
       // hexDistance([0,0], [5,0]) = 5 -> 6초
-      expect(gameProvider.getSatelliteCaptureDurationSeconds('hex_5_0'), equals(6));
+      expect(
+        gameProvider.getSatelliteCaptureDurationSeconds('hex_5_0'),
+        equals(6),
+      );
     });
   });
 
@@ -334,13 +344,22 @@ void main() {
       final cooltimeHalf = GameConfig.satelliteCaptureCooltime ~/ 2;
       final lastCaptureTime = DateTime.now().subtract(cooltimeHalf);
       final prefs = await SharedPreferences.getInstance();
-      await prefs.setString('hq_last_satellite_capture_time', lastCaptureTime.toIso8601String());
+      await prefs.setString(
+        'hq_last_satellite_capture_time',
+        lastCaptureTime.toIso8601String(),
+      );
 
       // Provider를 새로 초기화하여 마지막 캡처 시각을 쿨타임 중으로 로드하도록 함
       final newGameProvider = await createInitializedGameProvider();
 
-      expect(newGameProvider.remainingSatelliteCaptureCoolSeconds, greaterThan(0));
-      expect(newGameProvider.remainingSatelliteCaptureCoolSeconds, lessThanOrEqualTo(GameConfig.satelliteCaptureCooltime.inSeconds));
+      expect(
+        newGameProvider.remainingSatelliteCaptureCoolSeconds,
+        greaterThan(0),
+      );
+      expect(
+        newGameProvider.remainingSatelliteCaptureCoolSeconds,
+        lessThanOrEqualTo(GameConfig.satelliteCaptureCooltime.inSeconds),
+      );
 
       // 3. 쿨타임 대기 상태에서 점령 시도 -> 차단되어야 함
       newGameProvider.executeSatelliteCapture('hex_1_0');

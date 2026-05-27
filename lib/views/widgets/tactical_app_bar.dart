@@ -6,11 +6,7 @@ class TacticalBackButton extends StatelessWidget {
   final VoidCallback? onPressed;
   final double size;
 
-  const TacticalBackButton({
-    super.key,
-    this.onPressed,
-    this.size = 20,
-  });
+  const TacticalBackButton({super.key, this.onPressed, this.size = 20});
 
   @override
   Widget build(BuildContext context) {
@@ -30,20 +26,12 @@ class TacticalCloseButton extends StatelessWidget {
   final VoidCallback? onPressed;
   final double size;
 
-  const TacticalCloseButton({
-    super.key,
-    this.onPressed,
-    this.size = 24,
-  });
+  const TacticalCloseButton({super.key, this.onPressed, this.size = 24});
 
   @override
   Widget build(BuildContext context) {
     return IconButton(
-      icon: Icon(
-        Icons.close_rounded,
-        color: GameColors.accentNeon,
-        size: size,
-      ),
+      icon: Icon(Icons.close_rounded, color: GameColors.accentNeon, size: size),
       onPressed: onPressed,
     );
   }
@@ -90,16 +78,18 @@ class TacticalAppBar extends StatelessWidget implements PreferredSizeWidget {
     }
 
     return AppBar(
-      title: title ?? (titleText != null
-          ? Text(
-              titleText!,
-              style: const TextStyle(
-                fontWeight: FontWeight.bold,
-                letterSpacing: 1.2,
-                fontSize: 16,
-              ),
-            )
-          : null),
+      title:
+          title ??
+          (titleText != null
+              ? Text(
+                  titleText!,
+                  style: const TextStyle(
+                    fontWeight: FontWeight.bold,
+                    letterSpacing: 1.2,
+                    fontSize: 16,
+                  ),
+                )
+              : null),
       centerTitle: centerTitle,
       backgroundColor: backgroundColor,
       elevation: elevation,
@@ -110,7 +100,6 @@ class TacticalAppBar extends StatelessWidget implements PreferredSizeWidget {
   }
 
   @override
-  Size get preferredSize => Size.fromHeight(
-        kToolbarHeight + (bottom?.preferredSize.height ?? 0.0),
-      );
+  Size get preferredSize =>
+      Size.fromHeight(kToolbarHeight + (bottom?.preferredSize.height ?? 0.0));
 }

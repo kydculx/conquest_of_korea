@@ -44,10 +44,7 @@ class GameAlert {
   }) : createdAt = createdAt ?? DateTime.now();
 
   /// 현재 시간을 기반으로 고유 ID를 부여하여 새 [GameAlert] 객체를 생성하는 팩토리 메서드
-  factory GameAlert.create({
-    required String message,
-    required AlertType type,
-  }) {
+  factory GameAlert.create({required String message, required AlertType type}) {
     return GameAlert(
       id: DateTime.now().millisecondsSinceEpoch.toString(),
       message: message,

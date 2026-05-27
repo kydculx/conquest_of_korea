@@ -31,18 +31,14 @@ class GameConfig {
   static const double satelliteCaptureSecondsPerTile = 1.0;
 
   /// 위성 점령 완료 후 재사용 대기 시간 (쿨타임)
-  static const Duration satelliteCaptureCooltime = Duration(
-    seconds: 10,
-  );
+  static const Duration satelliteCaptureCooltime = Duration(seconds: 10);
 
   /// 서버 부하 방지를 위해 점령 요청 후 대기하는 딜레이 시간
   static const Duration serverCheckDelay = Duration(seconds: 3);
 
   /// 백그라운드 상태에서 위치 및 상태를 확인하는 체크 주기
-  static const Duration backgroundCheckInterval = Duration(
-    seconds: 30,
-  );
-  
+  static const Duration backgroundCheckInterval = Duration(seconds: 30);
+
   /// 지도에 그려질 점령 타일의 불투명도 레벨 (0.0 ~ 1.0)
   static const double tileOpacity = 0.5;
 

@@ -6,10 +6,8 @@ import '../../core/constants/strings.dart';
 /// 게임 데이터 로딩 및 GPS 연결 대기 시 표시하는 전술적 로딩 화면
 class LoadingOverlay extends StatefulWidget {
   final String message;
-  LoadingOverlay({
-    super.key,
-    String? message,
-  }) : message = message ?? GameStrings.analyzingTacticalData;
+  LoadingOverlay({super.key, String? message})
+    : message = message ?? GameStrings.analyzingTacticalData;
 
   @override
   State<LoadingOverlay> createState() => _LoadingOverlayState();

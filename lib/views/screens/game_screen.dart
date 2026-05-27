@@ -31,7 +31,6 @@ class GameScreen extends StatefulWidget {
 
 /// [GameScreen]의 생명주기와 위치 추적 권한 및 배터리 절전 예외 처리를 관장하는 상태 클래스입니다.
 class _GameScreenState extends State<GameScreen> {
-
   @override
   void initState() {
     super.initState();
@@ -78,13 +77,13 @@ class _GameScreenState extends State<GameScreen> {
             TextButton(
               onPressed: () => Navigator.pop(context),
               style: TextButton.styleFrom(
-                padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 20,
+                  vertical: 12,
+                ),
                 shape: BeveledRectangleBorder(
                   borderRadius: BorderRadius.circular(6),
-                  side: BorderSide(
-                    color: GameColors.textMuted,
-                    width: 1.0,
-                  ),
+                  side: BorderSide(color: GameColors.textMuted, width: 1.0),
                 ),
               ),
               child: Text(
@@ -104,7 +103,10 @@ class _GameScreenState extends State<GameScreen> {
               style: ElevatedButton.styleFrom(
                 backgroundColor: GameColors.accentNeon,
                 foregroundColor: GameColors.tacticalBlack,
-                padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 20,
+                  vertical: 12,
+                ),
                 shape: BeveledRectangleBorder(
                   borderRadius: BorderRadius.circular(6),
                 ),
@@ -123,7 +125,7 @@ class _GameScreenState extends State<GameScreen> {
     );
   }
 
-  /// OS가 임의로 백그라운드 서비스 동작 및 위치 권한 추적을 정지시키는 것을 방지하기 위해 
+  /// OS가 임의로 백그라운드 서비스 동작 및 위치 권한 추적을 정지시키는 것을 방지하기 위해
   /// 배터리 최적화 무시 설정 대상인지 점검하고 필요시 가이드 팝업을 연계합니다.
   Future<void> _checkAndPromptBatteryOptimization(GeoService geo) async {
     final bool isIgnoring = await geo.isIgnoringBatteryOptimizations();
@@ -155,13 +157,13 @@ class _GameScreenState extends State<GameScreen> {
             TextButton(
               onPressed: () => Navigator.pop(context),
               style: TextButton.styleFrom(
-                padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 20,
+                  vertical: 12,
+                ),
                 shape: BeveledRectangleBorder(
                   borderRadius: BorderRadius.circular(6),
-                  side: BorderSide(
-                    color: GameColors.textMuted,
-                    width: 1.0,
-                  ),
+                  side: BorderSide(color: GameColors.textMuted, width: 1.0),
                 ),
               ),
               child: Text(
@@ -181,7 +183,10 @@ class _GameScreenState extends State<GameScreen> {
               style: ElevatedButton.styleFrom(
                 backgroundColor: GameColors.accentNeon,
                 foregroundColor: GameColors.tacticalBlack,
-                padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 20,
+                  vertical: 12,
+                ),
                 shape: BeveledRectangleBorder(
                   borderRadius: BorderRadius.circular(6),
                 ),
@@ -209,7 +214,6 @@ class _GameScreenState extends State<GameScreen> {
 
     final double topPadding = MediaQuery.of(context).padding.top;
     final double topOffset = topPadding > 0 ? topPadding + 12.0 : 24.0;
-
 
     // 인증은 되었으나 프로필 정보가 없는 경우 (SNS 최초 로그인 등) 약관 동의 화면으로 리다이렉트
     if (auth.isAuthenticated && auth.profile == null && !auth.isLoading) {
@@ -244,8 +248,7 @@ class _GameScreenState extends State<GameScreen> {
       satelliteCapturingTileId: game.satelliteCapturingTileId,
     );
 
-    final currentLocation =
-        loc.currentLocation ?? MapConfig.defaultPosition;
+    final currentLocation = loc.currentLocation ?? MapConfig.defaultPosition;
 
     return Scaffold(
       backgroundColor: GameColors.tacticalBlack,
@@ -278,9 +281,7 @@ class _GameScreenState extends State<GameScreen> {
             },
             child: game.isInitialized
                 ? const SizedBox.shrink()
-                : LoadingOverlay(
-                    message: GameStrings.tacticalSatelliteSync,
-                  ),
+                : LoadingOverlay(message: GameStrings.tacticalSatelliteSync),
           ),
         ],
       ),

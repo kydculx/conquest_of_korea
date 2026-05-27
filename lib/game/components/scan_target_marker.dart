@@ -10,47 +10,49 @@ import '../../providers/game_provider.dart';
 
 /// 위성 스캔 모드에서 사용자가 선택한 타일의 조준선 프리뷰를 렌더링하는 컴포넌트
 /// 위성 궤도 정밀 조준 스캔 및 위성 원격 점령 모드에서 조준선, 본부로부터의 전술적 BFS 최단 경로 안내선, 점령 완료 시 보간 화살표 이동 애니메이션을 그리는 Flame 컴포넌트
-class ScanTargetMarker extends PositionComponent with HasGameReference<ConquestGame> {
+class ScanTargetMarker extends PositionComponent
+    with HasGameReference<ConquestGame> {
   /// 스캔 조준된 대상 타일의 H3 q축 좌표값
   final int q;
+
   /// 스캔 조준된 대상 타일의 H3 r축 좌표값
   final int r;
-  
+
   /// 대상 헥사곤 거점의 지리적 위경도(LatLng) 꼭짓점 좌표 리스트
   final List<LatLng> _latLngCorners;
+
   /// 화면 스크린 기준으로 투영 계산된 헥사곤 꼭짓점의 픽셀 좌표 리스트
   List<Offset> _screenCorners = [];
+
   /// 펄싱 및 애니메이션 주기를 결정하기 위한 시간 누적 값
   double _timer = 0;
+
   /// 계단식 점령 진행률을 매끄러운 60 FPS 흐름으로 표현하기 위해 보간 가미한 진행률 변수
   double _smoothProgress = 0.0;
-  
+
   /// ScanTargetMarker 생성자로 조준 대상 좌표를 설정받고 렌더링 우선순위(Priority)를 조율합니다.
-  ScanTargetMarker({
-    required this.q,
-    required this.r,
-  }) : _latLngCorners = HexService.getHexCorners(q, r) {
+  ScanTargetMarker({required this.q, required this.r})
+    : _latLngCorners = HexService.getHexCorners(q, r) {
     priority = 18; // 플레이어(20)보다는 아래, 일반 타일(0)이나 메인기지(15)보다는 위
   }
-
-
 
   @override
   void update(double dt) {
     super.update(dt);
     _timer += dt;
-    
+
     // 위성 점령 중일 때 progress 보간 (비행 중일 때는 _satelliteTravelProgress를 따르고, 점령 상태로 전환되면 도착 완료인 1.0 고정)
     if (game.isSatelliteCapturing && game.satelliteCapturingTileId != null) {
       final target = game.satelliteCapturePhase == SatelliteCapturePhase.flying
           ? game.satelliteTravelProgress
           : 1.0;
       // 매 프레임 dt 비중에 맞춰 목표치로 부드럽게 Lerp
-      _smoothProgress += (target - _smoothProgress) * (dt * 10.0).clamp(0.0, 1.0);
+      _smoothProgress +=
+          (target - _smoothProgress) * (dt * 10.0).clamp(0.0, 1.0);
     } else {
       _smoothProgress = 0.0;
     }
-    
+
     if (game.mapController != null) {
       _screenCorners = _latLngCorners.map((latlng) {
         final offset = game.mapController!.camera.latLngToScreenOffset(latlng);
@@ -64,7 +66,7 @@ class ScanTargetMarker extends PositionComponent with HasGameReference<ConquestG
     if (_screenCorners.isEmpty) return;
 
     final gameSize = game.size;
-    
+
     // [개선] 목적지 타일 자체의 화면 노출 여부를 판단
     final isTargetVisible = _screenCorners.any(
       (c) =>
@@ -109,7 +111,9 @@ class ScanTargetMarker extends PositionComponent with HasGameReference<ConquestG
   /// 목적지 헥사곤 타일 내부 맥동 및 글로우 테두리 렌더링
   void _drawDestinationBorder(Canvas canvas, Path path, Color themeColor) {
     // 비행 완료 후 실제 타일 채우기 점령 상태에 진입했는지 여부
-    final bool isActuallyCapturingTile = game.isSatelliteCapturing && game.satelliteCapturePhase == SatelliteCapturePhase.capturing;
+    final bool isActuallyCapturingTile =
+        game.isSatelliteCapturing &&
+        game.satelliteCapturePhase == SatelliteCapturePhase.capturing;
 
     if (isActuallyCapturingTile) {
       // 화살표가 도달한 이후 점령이 시작되었을 때의 펄싱 테두리 애니메이션
@@ -153,7 +157,9 @@ class ScanTargetMarker extends PositionComponent with HasGameReference<ConquestG
           while (distance < pathMetric.length) {
             final Path extractPath = pathMetric.extractPath(
               distance,
-              distance + dashWidth > pathMetric.length ? pathMetric.length : distance + dashWidth,
+              distance + dashWidth > pathMetric.length
+                  ? pathMetric.length
+                  : distance + dashWidth,
             );
             canvas.drawPath(extractPath, borderPaint);
             distance += totalDash;
@@ -185,7 +191,7 @@ class ScanTargetMarker extends PositionComponent with HasGameReference<ConquestG
           ..strokeWidth = 1.2;
         canvas.drawCircle(Offset(cx, cy), 4.0 + (16.0 * pulse), ringPaint);
 
-        return; 
+        return;
       }
 
       final pulse = 0.6 + 0.4 * math.sin(_timer * 5);
@@ -257,8 +263,10 @@ class ScanTargetMarker extends PositionComponent with HasGameReference<ConquestG
 
   /// BFS 경로 산출 연산을 최소화하기 위해 마지막으로 정상 계산된 전술 경로를 보관하는 캐시 리스트
   List<Map<String, int>>? _cachedPath;
+
   /// 캐시 경로가 산출된 기준이 되는 본부 기지 타일 ID 캐시
   String? _cachedHQTileId;
+
   /// 캐시 경로 산출에 기여한 요원의 점령 영토 목록 맵 캐시
   Map<String, HexTile>? _cachedCapturedTiles;
 
@@ -291,13 +299,18 @@ class ScanTargetMarker extends PositionComponent with HasGameReference<ConquestG
 
     final queue = <List<Map<String, int>>>[
       [
-        {'q': hqQ, 'r': hqR}
-      ]
+        {'q': hqQ, 'r': hqR},
+      ],
     ];
     final visited = <String>{'hex_${hqQ}_$hqR'};
 
     const directions = [
-      [1, 0], [1, -1], [0, -1], [-1, 0], [-1, 1], [0, 1]
+      [1, 0],
+      [1, -1],
+      [0, -1],
+      [-1, 0],
+      [-1, 1],
+      [0, 1],
     ];
 
     List<Map<String, int>>? resultPath;
@@ -456,15 +469,35 @@ class ScanTargetMarker extends PositionComponent with HasGameReference<ConquestG
     canvas.drawCircle(Offset(cx, cy), r1, circlePaint);
     canvas.drawCircle(Offset(cx, cy), r2, circlePaint);
 
-    canvas.drawLine(Offset(cx, cy - r2 - crossLen), Offset(cx, cy - r1), linePaint);
-    canvas.drawLine(Offset(cx, cy + r1), Offset(cx, cy + r2 + crossLen), linePaint);
-    canvas.drawLine(Offset(cx - r2 - crossLen, cy), Offset(cx - r1, cy), linePaint);
-    canvas.drawLine(Offset(cx + r1, cy), Offset(cx + r2 + crossLen, cy), linePaint);
+    canvas.drawLine(
+      Offset(cx, cy - r2 - crossLen),
+      Offset(cx, cy - r1),
+      linePaint,
+    );
+    canvas.drawLine(
+      Offset(cx, cy + r1),
+      Offset(cx, cy + r2 + crossLen),
+      linePaint,
+    );
+    canvas.drawLine(
+      Offset(cx - r2 - crossLen, cy),
+      Offset(cx - r1, cy),
+      linePaint,
+    );
+    canvas.drawLine(
+      Offset(cx + r1, cy),
+      Offset(cx + r2 + crossLen, cy),
+      linePaint,
+    );
 
     final dotPaint = Paint()
       ..color = color
       ..style = PaintingStyle.fill;
     final double dotPulse = 0.3 + 0.7 * (0.5 + 0.5 * math.sin(_timer * 8));
-    canvas.drawCircle(Offset(cx, cy), 2.5, dotPaint..color = color.withValues(alpha: dotPulse));
+    canvas.drawCircle(
+      Offset(cx, cy),
+      2.5,
+      dotPaint..color = color.withValues(alpha: dotPulse),
+    );
   }
 }

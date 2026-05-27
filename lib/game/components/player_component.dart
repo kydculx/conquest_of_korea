@@ -10,16 +10,20 @@ import '../../core/constants/map_config.dart';
 class PlayerComponent extends PositionComponent {
   /// 요원의 현재 실제 GPS 지리적 위치 좌표
   LatLng _location = MapConfig.defaultPosition;
+
   /// 요원의 현재 지리적 위치 좌표 반환
   LatLng get location => _location;
+
   /// 나침반 센서로부터 계산된 요원의 주시 방향 각도 (라디안 단위)
   double _heading = 0.0;
+
   /// 플레이어 커서 컴포넌트의 가시성(화면 렌더링) 여부
   bool isVisible = true;
-  
+
   // 가독성 개선을 위한 애니메이션 변수
   /// 펄스 애니메이션 계산용 시간 스케일 누적 값
   double _pulseTime = 0;
+
   /// 주기적으로 가감되는 크기(Scale) 비율 변수
   double _pulseScale = 1.0;
 
@@ -74,19 +78,23 @@ class PlayerComponent extends PositionComponent {
     final radarPaint = Paint()
       ..style = PaintingStyle.stroke
       ..strokeWidth = 1.0;
-    
+
     // 정적 전술 타겟 원
     radarPaint.color = GameColors.accentNeon.withValues(alpha: 0.15);
     canvas.drawCircle(center, baseRadius * 1.4, radarPaint);
-    
+
     // 밖으로 퍼져나가는 스캔 웨이브 효과 (두 개의 엇갈리는 주기)
     final wave1 = (_pulseTime * 0.5) % 1.0;
     final wave2 = ((_pulseTime * 0.5) + 0.5) % 1.0;
-    
-    radarPaint.color = GameColors.accentNeon.withValues(alpha: (1.0 - wave1) * 0.3);
+
+    radarPaint.color = GameColors.accentNeon.withValues(
+      alpha: (1.0 - wave1) * 0.3,
+    );
     canvas.drawCircle(center, baseRadius * (0.8 + wave1 * 1.0), radarPaint);
 
-    radarPaint.color = GameColors.accentNeon.withValues(alpha: (1.0 - wave2) * 0.3);
+    radarPaint.color = GameColors.accentNeon.withValues(
+      alpha: (1.0 - wave2) * 0.3,
+    );
     canvas.drawCircle(center, baseRadius * (0.8 + wave2 * 1.0), radarPaint);
 
     // 2. 전방 전술 레이저 조준 라인 (Dashed Laser Guide)
@@ -101,25 +109,36 @@ class PlayerComponent extends PositionComponent {
       )
       ..style = PaintingStyle.stroke
       ..strokeWidth = 1.5;
-    
+
     // 전방으로 연장되는 점선 그리기
     const int dashCount = 6;
     final double dashStart = -radius * 1.4;
     final double dashLength = radius * 0.35;
     final double dashSpace = radius * 0.18;
     for (int i = 0; i < dashCount; i++) {
-      final double yStart = center.dy + dashStart - (i * (dashLength + dashSpace));
+      final double yStart =
+          center.dy + dashStart - (i * (dashLength + dashSpace));
       final double yEnd = yStart - dashLength;
-      canvas.drawLine(Offset(center.dx, yStart), Offset(center.dx, yEnd), laserPaint);
+      canvas.drawLine(
+        Offset(center.dx, yStart),
+        Offset(center.dx, yEnd),
+        laserPaint,
+      );
     }
 
     // 3. 프리미엄 스텔스기 스타일의 입체 화살표 패스 정의
     final arrowPath = ui.Path()
       ..moveTo(center.dx, center.dy - radius * 1.25) // 전면 앞코
       ..lineTo(center.dx - radius * 0.95, center.dy + radius * 0.9) // 좌측 하단 날개끝
-      ..lineTo(center.dx - radius * 0.25, center.dy + radius * 0.35) // 좌측 안쪽 꺾임선
+      ..lineTo(
+        center.dx - radius * 0.25,
+        center.dy + radius * 0.35,
+      ) // 좌측 안쪽 꺾임선
       ..lineTo(center.dx, center.dy + radius * 0.6) // 중앙 후방 홈
-      ..lineTo(center.dx + radius * 0.25, center.dy + radius * 0.35) // 우측 안쪽 꺾임선
+      ..lineTo(
+        center.dx + radius * 0.25,
+        center.dy + radius * 0.35,
+      ) // 우측 안쪽 꺾임선
       ..lineTo(center.dx + radius * 0.95, center.dy + radius * 0.9) // 우측 하단 날개끝
       ..close();
 
@@ -173,7 +192,10 @@ class PlayerComponent extends PositionComponent {
         ..shader = ui.Gradient.linear(
           Offset(center.dx, center.dy),
           Offset(center.dx + radius, center.dy),
-          [GameColors.accentNeon, GameColors.accentNeon.withValues(alpha: 0.55)],
+          [
+            GameColors.accentNeon,
+            GameColors.accentNeon.withValues(alpha: 0.55),
+          ],
         )
         ..style = PaintingStyle.fill,
     );

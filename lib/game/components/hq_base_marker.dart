@@ -104,7 +104,7 @@ class HQBaseMarker extends PositionComponent
       ..close();
     canvas.drawPath(annexPath, annexPaint);
     canvas.drawPath(annexPath, annexBorder);
-    
+
     // 후방 부속 타워 미세 안테나 핀
     canvas.drawLine(
       Offset(cx - 10, cy - 14),
@@ -116,14 +116,10 @@ class HQBaseMarker extends PositionComponent
 
     // 3. 전방 주 지휘관 본관 건물 (Main Command Center Block)
     final mainBuildingPaint = Paint()
-      ..shader = ui.Gradient.linear(
-        Offset(cx, cy - 8),
-        Offset(cx, cy + 11),
-        [
-          GameColors.backgroundMedium,
-          GameColors.tacticalBlack,
-        ],
-      )
+      ..shader = ui.Gradient.linear(Offset(cx, cy - 8), Offset(cx, cy + 11), [
+        GameColors.backgroundMedium,
+        GameColors.tacticalBlack,
+      ])
       ..style = PaintingStyle.fill;
 
     final mainBuildingBorder = Paint()
@@ -133,8 +129,8 @@ class HQBaseMarker extends PositionComponent
 
     // 모던한 복합 사다리꼴 형태의 본부 건물 실루엣
     final mainBuildingPath = Path()
-      ..moveTo(cx - 10, cy - 8)  // 옥상 좌측
-      ..lineTo(cx + 14, cy - 8)  // 옥상 우측
+      ..moveTo(cx - 10, cy - 8) // 옥상 좌측
+      ..lineTo(cx + 14, cy - 8) // 옥상 우측
       ..lineTo(cx + 16, cy + 11) // 하단 우측
       ..lineTo(cx - 12, cy + 11) // 하단 좌측
       ..close();
@@ -148,12 +144,12 @@ class HQBaseMarker extends PositionComponent
 
     const double winW = 3.0;
     const double winH = 2.0;
-    
+
     // 1층 창문들 (3개 정렬)
     canvas.drawRect(Rect.fromLTWH(cx - 6, cy + 3, winW, winH), windowPaint);
     canvas.drawRect(Rect.fromLTWH(cx, cy + 3, winW, winH), windowPaint);
     canvas.drawRect(Rect.fromLTWH(cx + 6, cy + 3, winW, winH), windowPaint);
-    
+
     // 2층 창문들 (3개 정렬)
     canvas.drawRect(Rect.fromLTWH(cx - 6, cy - 3, winW, winH), windowPaint);
     canvas.drawRect(Rect.fromLTWH(cx, cy - 3, winW, winH), windowPaint);
@@ -197,7 +193,7 @@ class HQBaseMarker extends PositionComponent
       ..color = GameColors.colorAccent.withValues(alpha: 0.8)
       ..style = PaintingStyle.stroke
       ..strokeWidth = 1.0;
-      
+
     final gatePath = Path()
       ..moveTo(cx - 3, cy + 11)
       ..lineTo(cx - 3, cy + 7)

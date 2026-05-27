@@ -49,8 +49,6 @@ class _SocialProfileSetupScreenState extends State<SocialProfileSetupScreen> {
     });
   }
 
-
-
   @override
   void dispose() {
     _nicknameController.dispose();
@@ -119,13 +117,16 @@ class _SocialProfileSetupScreenState extends State<SocialProfileSetupScreen> {
     }
 
     // 약관 동의 화면으로부터 넘어온 동의 시각 인자 획득
-    final args = ModalRoute.of(context)?.settings.arguments as Map<String, dynamic>?;
+    final args =
+        ModalRoute.of(context)?.settings.arguments as Map<String, dynamic>?;
     final termsAgreedAt = args?['termsAgreedAt'] as DateTime?;
     final privacyAgreedAt = args?['privacyAgreedAt'] as DateTime?;
     final locationAgreedAt = args?['locationAgreedAt'] as DateTime?;
     final marketingAgreedAt = args?['marketingAgreedAt'] as DateTime?;
 
-    if (termsAgreedAt == null || privacyAgreedAt == null || locationAgreedAt == null) {
+    if (termsAgreedAt == null ||
+        privacyAgreedAt == null ||
+        locationAgreedAt == null) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('약관 동의 기록이 존재하지 않습니다. 다시 시도해 주세요.')),
       );
@@ -139,7 +140,7 @@ class _SocialProfileSetupScreenState extends State<SocialProfileSetupScreen> {
     // 현재 GPS 기준 현재타일을 구하여 내 기지로 지정
     final loc = context.read<LocationProvider>();
     final currentLocation = loc.currentLocation;
-    
+
     String? mainBaseTileId;
     if (currentLocation != null) {
       final hex = HexService.latLngToHex(currentLocation);
@@ -172,14 +173,10 @@ class _SocialProfileSetupScreenState extends State<SocialProfileSetupScreen> {
     }
   }
 
-
-
   @override
   Widget build(BuildContext context) {
     final Widget mainContent = Scaffold(
-      appBar: TacticalAppBar(
-        showBackButton: true,
-      ),
+      appBar: TacticalAppBar(showBackButton: true),
       extendBodyBehindAppBar: true,
       body: Stack(
         children: [
@@ -196,12 +193,8 @@ class _SocialProfileSetupScreenState extends State<SocialProfileSetupScreen> {
               ),
             ),
           ),
-          Positioned.fill(
-            child: CustomPaint(
-              painter: _TacticalGridPainter(),
-            ),
-          ),
-          
+          Positioned.fill(child: CustomPaint(painter: _TacticalGridPainter())),
+
           // 2. 메인 스크롤 콘텐츠
           SafeArea(
             child: SingleChildScrollView(
@@ -289,9 +282,13 @@ class _SocialProfileSetupScreenState extends State<SocialProfileSetupScreen> {
                             side: BorderSide(
                               color: _isChecking
                                   ? GameColors.dividerColor
-                                  : GameColors.accentNeon.withValues(alpha: 0.5),
+                                  : GameColors.accentNeon.withValues(
+                                      alpha: 0.5,
+                                    ),
                             ),
-                            backgroundColor: GameColors.accentNeon.withValues(alpha: 0.05),
+                            backgroundColor: GameColors.accentNeon.withValues(
+                              alpha: 0.05,
+                            ),
                             foregroundColor: GameColors.accentNeon,
                             shape: RoundedRectangleBorder(
                               borderRadius: BorderRadius.circular(5),
@@ -347,7 +344,9 @@ class _SocialProfileSetupScreenState extends State<SocialProfileSetupScreen> {
                           foregroundColor: GameColors.tacticalBlack,
                           padding: const EdgeInsets.symmetric(vertical: 16),
                           elevation: 6,
-                          shadowColor: GameColors.accentNeon.withValues(alpha: 0.4),
+                          shadowColor: GameColors.accentNeon.withValues(
+                            alpha: 0.4,
+                          ),
                           shape: RoundedRectangleBorder(
                             borderRadius: BorderRadius.circular(5),
                           ),

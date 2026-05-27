@@ -56,7 +56,7 @@ class UserProfile {
 
   /// 시스템 공지 알림 동의 여부
   final bool notifSystemNotice;
- 
+
   /// UserProfile 생성자
   UserProfile({
     required this.id,
@@ -193,9 +193,11 @@ class UserProfile {
       privacyAgreedAt: privacyAgreedAt ?? this.privacyAgreedAt,
       locationAgreedAt: locationAgreedAt ?? this.locationAgreedAt,
       marketingAgreedAt: marketingAgreedAt ?? this.marketingAgreedAt,
-      isNotificationsEnabled: isNotificationsEnabled ?? this.isNotificationsEnabled,
+      isNotificationsEnabled:
+          isNotificationsEnabled ?? this.isNotificationsEnabled,
       notifTerritoryAttack: notifTerritoryAttack ?? this.notifTerritoryAttack,
-      notifSatelliteComplete: notifSatelliteComplete ?? this.notifSatelliteComplete,
+      notifSatelliteComplete:
+          notifSatelliteComplete ?? this.notifSatelliteComplete,
       notifSystemNotice: notifSystemNotice ?? this.notifSystemNotice,
       gold: gold ?? this.gold,
       capturedTilesCount: capturedTilesCount ?? this.capturedTilesCount,

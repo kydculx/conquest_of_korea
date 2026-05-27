@@ -23,10 +23,13 @@ class RankingProvider extends ChangeNotifier {
   // --- Getters ---
   /// 상위 100위까지의 요원 프로필 목록
   List<UserProfile> get topRankings => List.unmodifiable(_topRankings);
+
   /// 현재 인증된 요원의 전체 랭킹 순위
   int get myRanking => _myRanking;
+
   /// 랭킹 정보 조회 진행 중 여부
   bool get isLoading => _isLoading;
+
   /// 현재 적용 중인 랭킹 기준 지표 타입
   String get currentType => _currentType;
 
@@ -64,7 +67,11 @@ class RankingProvider extends ChangeNotifier {
 
       if (profile != null && userId != null) {
         final double myValue = profile.capturedTilesCount.toDouble();
-        myRankingFuture = _supabase.fetchMyRanking(userId, _currentType, myValue);
+        myRankingFuture = _supabase.fetchMyRanking(
+          userId,
+          _currentType,
+          myValue,
+        );
       }
 
       // 3. 두 쿼리를 병렬 수행하여 대기 지연 최소화

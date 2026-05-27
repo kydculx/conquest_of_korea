@@ -9,28 +9,37 @@ import '../services/geo_service.dart';
 class LocationProvider extends ChangeNotifier with WidgetsBindingObserver {
   /// GPS 기반 로케이션 수신 처리를 수행하는 내부 위치 서비스 객체
   GeoService? _geoService;
+
   /// 물리 위치 데이터 스트림 구독 객체
   StreamSubscription<Position>? _locationSubscription;
+
   /// 나침반 각도(헤딩) 센서 스트림 구독 객체
   StreamSubscription<CompassEvent>? _compassSubscription;
+
   /// GPS 신호 끊김을 판단하기 위한 모니터링 타이머
   Timer? _gpsSignalTimer;
 
   /// 위도, 경도 좌표 정보를 담은 현재 획득 위치
   LatLng? _currentLocation;
+
   /// 현재 수신 중인 GPS 신호의 오차 정확도 반경 (미터 단위)
   double _currentAccuracy = 999.0;
+
   /// 디바이스가 바라보는 북쪽 기준의 회전 각도 (0.0 ~ 360.0 도)
   double _heading = 0.0;
+
   /// GPS 신호 수신이 실시간으로 원활하게 활성화되어 있는지 여부
   bool _isGpsActive = false;
 
   /// 현재 획득한 요원의 지도상 좌표 정보 (LatLng)
   LatLng? get currentLocation => _currentLocation;
+
   /// 현재 GPS 수신의 오차 정확도 범위 값 (미터)
   double get currentAccuracy => _currentAccuracy;
+
   /// 디바이스의 나침반 방향 각도 값
   double get heading => _heading;
+
   /// GPS 하드웨어 및 데이터 수신이 정상 활성화 상태인지 확인
   bool get isGpsActive => _isGpsActive;
 
@@ -50,6 +59,7 @@ class LocationProvider extends ChangeNotifier with WidgetsBindingObserver {
 
   /// 최초 1회 GPS 좌표를 안정적으로 획득했음을 탐지하기 위한 Completer
   final Completer<void> _firstLocationCompleter = Completer<void>();
+
   /// 최초 1회 GPS 좌표 수신이 완료될 때까지 대기할 수 있는 Future 객체
   Future<void> get firstLocationFuture => _firstLocationCompleter.future;
 
@@ -92,7 +102,9 @@ class LocationProvider extends ChangeNotifier with WidgetsBindingObserver {
     _geoService!.stopTracking();
     await Future.delayed(const Duration(milliseconds: 500));
     await _geoService!.startTracking();
-    _locationSubscription = _geoService!.locationStream.listen(_onPositionUpdate);
+    _locationSubscription = _geoService!.locationStream.listen(
+      _onPositionUpdate,
+    );
     notifyListeners();
   }
 

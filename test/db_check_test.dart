@@ -43,7 +43,9 @@ void main() {
         print('🔑 profiles columns: ${profiles[0].keys.toList()}');
       }
       for (var p in profiles) {
-        print('  - ID: ${p['id']}, Nick: ${p['nickname']}, Gold: ${p['gold']}, CapturedCount: ${p['captured_tiles_count']}, LastUpdated: ${p['last_gold_updated_at']}');
+        print(
+          '  - ID: ${p['id']}, Nick: ${p['nickname']}, Gold: ${p['gold']}, CapturedCount: ${p['captured_tiles_count']}, LastUpdated: ${p['last_gold_updated_at']}',
+        );
       }
     } catch (e) {
       print('❌ profiles 조회 에러: $e');
@@ -57,7 +59,9 @@ void main() {
         final tiles = await client.from('captured_tiles').select('*').limit(5);
         print('🗺️ captured_tiles sample (top 5):');
         for (var t in tiles) {
-          print('  - TileID: ${t['id']}, UserID: ${t['user_id']}, CapturedAt: ${t['captured_at']}');
+          print(
+            '  - TileID: ${t['id']}, UserID: ${t['user_id']}, CapturedAt: ${t['captured_at']}',
+          );
         }
       }
     } catch (e) {
@@ -67,7 +71,8 @@ void main() {
     // 6. safe_capture_tile RPC 호출 테스트
     try {
       print('🏹 safe_capture_tile RPC 테스트 시작...');
-      final testUserId = 'de0a3e9e-c6d1-41d4-9f17-f1796b5f5df9'; // profiles에 존재하는 실서버 사용자 ID
+      final testUserId =
+          'de0a3e9e-c6d1-41d4-9f17-f1796b5f5df9'; // profiles에 존재하는 실서버 사용자 ID
       final params = {
         'p_tile_id': 'test_rpc_tile_id_123',
         'p_q': 999,

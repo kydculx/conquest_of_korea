@@ -86,17 +86,15 @@ class _SplashScreenState extends State<SplashScreen>
     // 최소 시간이 경과하고 게임 초기화(위성 동기화)가 완료되었을 때 메인으로 전환
     if (_minTimeElapsed && game.isInitialized) {
       game.removeListener(_onGameProviderChanged);
-      
+
       // 멋진 페이드 아웃 전환 효과 적용
       Navigator.pushReplacement(
         context,
         PageRouteBuilder(
-          pageBuilder: (context, animation, secondaryAnimation) => const GameScreen(),
+          pageBuilder: (context, animation, secondaryAnimation) =>
+              const GameScreen(),
           transitionsBuilder: (context, animation, secondaryAnimation, child) {
-            return FadeTransition(
-              opacity: animation,
-              child: child,
-            );
+            return FadeTransition(opacity: animation, child: child);
           },
           transitionDuration: const Duration(milliseconds: 800),
         ),
@@ -122,11 +120,7 @@ class _SplashScreenState extends State<SplashScreen>
       body: Stack(
         children: [
           // 1. 배경 Grid 격자 연출
-          Positioned.fill(
-            child: CustomPaint(
-              painter: _TacticalGridPainter(),
-            ),
-          ),
+          Positioned.fill(child: CustomPaint(painter: _TacticalGridPainter())),
 
           // 2. 중앙 레이더 스캔 및 로고
           Center(
@@ -158,7 +152,9 @@ class _SplashScreenState extends State<SplashScreen>
                         shape: BoxShape.circle,
                         border: Border.all(
                           color: GameColors.accentNeon.withValues(
-                            alpha: (1.0 - ((_pulseAnimation.value + 0.3) % 1.0)) * 0.25,
+                            alpha:
+                                (1.0 - ((_pulseAnimation.value + 0.3) % 1.0)) *
+                                0.25,
                           ),
                           width: 1.0,
                         ),
@@ -191,7 +187,9 @@ class _SplashScreenState extends State<SplashScreen>
                         width: 80,
                         height: 80,
                         decoration: ShapeDecoration(
-                          color: GameColors.backgroundMedium.withValues(alpha: 0.8),
+                          color: GameColors.backgroundMedium.withValues(
+                            alpha: 0.8,
+                          ),
                           shape: BeveledRectangleBorder(
                             borderRadius: BorderRadius.circular(16),
                             side: BorderSide(

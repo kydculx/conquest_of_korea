@@ -7,8 +7,9 @@ import '../core/constants/strings.dart';
 
 /// 디바이스의 물리 GPS 하드웨어를 직접 제어하고, 실시간 위치 스트림 데이터 수신 및 백그라운드 배터리 최적화 설정을 관리하는 서비스 클래스
 class GeoService {
-  static const MethodChannel _batteryChannel =
-      MethodChannel('com.watercherry.conquest_mobile/battery');
+  static const MethodChannel _batteryChannel = MethodChannel(
+    'com.watercherry.conquest_mobile/battery',
+  );
 
   StreamSubscription<Position>? _positionStreamSubscription;
   final StreamController<Position> _locationController =
@@ -18,8 +19,9 @@ class GeoService {
   Future<bool> isIgnoringBatteryOptimizations() async {
     if (kIsWeb || !Platform.isAndroid) return true;
     try {
-      final bool isIgnoring =
-          await _batteryChannel.invokeMethod('isIgnoringBatteryOptimizations');
+      final bool isIgnoring = await _batteryChannel.invokeMethod(
+        'isIgnoringBatteryOptimizations',
+      );
       return isIgnoring;
     } on PlatformException catch (e) {
       debugPrint('배터리 최적화 여부 확인 실패: $e');
