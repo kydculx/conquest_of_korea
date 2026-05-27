@@ -678,9 +678,9 @@ class _MapFollowRotationButtonState extends State<_MapFollowRotationButton> {
     final isFollowing = game.isFollowingUser;
     final isRotation = game.isMapRotationMode;
 
-    IconData icon = Icons.location_searching;
+    IconData icon = Icons.near_me_outlined;
     if (isFollowing) {
-      icon = isRotation ? Icons.explore : Icons.my_location;
+      icon = isRotation ? Icons.navigation : Icons.near_me;
     }
 
     final gradientColors = isFollowing
