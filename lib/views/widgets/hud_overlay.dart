@@ -19,11 +19,6 @@ class HudOverlay extends StatelessWidget {
     final game = context.watch<GameProvider>();
     final auth = context.watch<AuthProvider>();
 
-    // 인증되지 않은 경우 아무것도 렌더링하지 않음
-    if (!auth.isAuthenticated) {
-      return const SizedBox.shrink();
-    }
-
     // 기기별 상하단 안전 영역 높이 자동 산출
     final double topPadding = MediaQuery.of(context).padding.top;
     final double bottomPadding = MediaQuery.of(context).padding.bottom;
@@ -75,20 +70,21 @@ class HudOverlay extends StatelessWidget {
           ),
         ),
 
-        // [하단 중앙] 콤팩트해진 점령 전술 조작 버튼 (단독 독점 배치)
-        Positioned(
-          bottom: baseBottomMargin + bottomPadding,
-          left: (screenWidth - 76) / 2,
-          child: SizedBox(
-            width: 76,
-            height: 76,
-            child: Center(
-              child: game.isScanMode
-                  ? _SatelliteCaptureActionButton(game: game)
-                  : _StartStopCaptureButton(game: game),
+        // [하단 중앙] 콤팩트해진 점령 전술 조작 버튼 (오직 로그인 요원에게만 노출)
+        if (auth.isAuthenticated)
+          Positioned(
+            bottom: baseBottomMargin + bottomPadding,
+            left: (screenWidth - 76) / 2,
+            child: SizedBox(
+              width: 76,
+              height: 76,
+              child: Center(
+                child: game.isScanMode
+                    ? _SatelliteCaptureActionButton(game: game)
+                    : _StartStopCaptureButton(game: game),
+              ),
             ),
           ),
-        ),
 
         // [하단 우측] 접이식 플로팅 전술 메뉴 (랭킹, 테마, 모드 수납)
         Positioned(
@@ -810,7 +806,12 @@ class _ScanToggleActionButtonState extends State<_ScanToggleActionButton> {
       onTapCancel: () => setState(() => _isPressed = false),
       onTapUp: (_) {
         setState(() => _isPressed = false);
-        widget.game.toggleScanMode();
+        final auth = context.read<AuthProvider>();
+        if (auth.isAuthenticated) {
+          widget.game.toggleScanMode();
+        } else {
+          Navigator.pushNamed(context, '/login');
+        }
       },
       child: AnimatedScale(
         scale: _isPressed ? 0.88 : 1.0,
