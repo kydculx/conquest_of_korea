@@ -2,17 +2,17 @@ import 'package:flutter/material.dart';
 
 /// 게임 전반에서 사용되는 공용 전술 컬러 클래스 (외부 제어 및 동적 갱신 가능)
 class GameColors {
-  /// 핵심 네온 액센트 컬러
-  static Color accentNeon = const Color(0xFF00FFD1);
+  /// 핵심 솜사탕 블루 액센트 컬러
+  static Color accentNeon = const Color(0xFF90CAF9);
 
-  /// 부가 액센트 컬러 (accentNeon과 동일값 유지)
-  static Color colorAccent = const Color(0xFF00FFD1);
+  /// 부가 액센트 컬러
+  static Color colorAccent = const Color(0xFF90CAF9);
 
-  /// 세련된 다크 그레이-네이비 컬러 (Slate 800 수준)
-  static Color tacticalGray = const Color(0xFF1E293B);
+  /// 부드러운 스카이 실버 민트 컬러
+  static Color tacticalGray = const Color(0xFFECEFF1);
 
-  /// 옵시디언 딥 미드나잇 블랙 컬러 (눈 피로 저감 및 입체감 제공)
-  static Color tacticalBlack = const Color(0xFF0B0F19);
+  /// 화사한 베이비 스카이 블루 배경 컬러
+  static Color tacticalBlack = const Color(0xFFE3F2FD);
 
   /// 완전 투명 색상
   static Color transparent = const Color(0x00000000);
@@ -20,11 +20,11 @@ class GameColors {
   /// 전술 화이트 컬러
   static Color tacticalWhite = const Color(0xFFFFFFFF);
 
-  /// 은은한 불투명 딥 다크 배경 컬러
-  static Color backgroundMedium = const Color(0xF20B0F19);
+  /// 화사하고 부드러운 우유빛 반투명 크림 배경 컬러
+  static Color backgroundMedium = const Color(0xF2FFFFFF);
 
-  /// 반투명 전술 오버레이 배경 컬러
-  static Color backgroundTranslucent = const Color(0xCC0B0F19);
+  /// 반투명 우유빛 오버레이 배경 컬러
+  static Color backgroundTranslucent = const Color(0xCCFFFFFF);
 
   /// 카카오 브랜드 옐로우 컬러
   static Color kakaoYellow = const Color(0xFFFEE500);
@@ -32,38 +32,38 @@ class GameColors {
   /// 카카오 브랜드 텍스트 컬러
   static Color kakaoText = const Color(0xFF191919);
 
-  /// 가독성을 높인 메인 텍스트용 아이스 화이트 컬러 (Slate 50 수준)
-  static Color textPrimary = const Color(0xFFF8FAFC);
+  /// 가독성을 대폭 높인 메인 텍스트용 차콜 네이비 컬러
+  static Color textPrimary = const Color(0xFF37474F);
 
-  /// 서브 텍스트용 소프트 아이스 실버 컬러 (Slate 300 수준)
-  static Color textSecondary = const Color(0xFFCBD5E1);
+  /// 서브 텍스트용 소프트 실버 네이비 컬러
+  static Color textSecondary = const Color(0xFF546E7A);
 
-  /// 비활성/설명용 은은한 뮤티드 그레이 컬러 (Slate 500 수준)
-  static Color textMuted = const Color(0xFF64748B);
+  /// 설명용 은은한 파스텔 블루 그레이 컬러
+  static Color textMuted = const Color(0xFF78909C);
 
-  /// 은은한 미세 분리선 컬러
-  static Color dividerColor = const Color(0x22FFFFFF);
+  /// 파스텔 톤에 어울리는 연한 차콜 구분선 컬러
+  static Color dividerColor = const Color(0x1537474F);
 
-  /// 매우 연한 미세 테두리 컬러
-  static Color borderLight = const Color(0x11FFFFFF);
+  /// 매우 연한 아기자기 테두리 컬러
+  static Color borderLight = const Color(0x0F37474F);
 
-  /// 전술 네온 테두리 컬러
-  static Color borderNeon = const Color(0x6600FFD1);
+  /// 파스텔 블루 글로우 테두리 컬러
+  static Color borderNeon = const Color(0x3390CAF9);
 
   /// 정밀 미세 격자선 컬러
-  static Color techGrid = const Color(0x0CFFFFFF);
+  static Color techGrid = const Color(0x0537474F);
 
-  /// 에메랄드 형광 네온 그린 컬러 (성공/안전 상태)
-  static Color success = const Color(0xFF10B981);
+  /// 상큼하고 부드러운 파스텔 그린 컬러 (성공/안전 상태)
+  static Color success = const Color(0xFF81C784);
 
-  /// 하이테크 경고 오렌지 옐로우 컬러 (주의/경고 상태)
-  static Color warning = const Color(0xFFF59E0B);
+  /// 달콤한 파스텔 옐로우 오렌지 컬러 (주의/경고 상태)
+  static Color warning = const Color(0xFFFFB74D);
 
-  /// 날카로운 크림슨 레이저 레드 컬러 (위험/에러 상태)
-  static Color error = const Color(0xFFEF4444);
+  /// 부드러운 파스텔 솜사탕 핑크 레드 컬러 (위험/에러 상태)
+  static Color error = const Color(0xFFE57373);
 
-  /// 일렉트릭 사이언 테크니컬 블루 컬러 (일반 정보 상태)
-  static Color info = const Color(0xFF3B82F6);
+  /// 화사한 파스텔 라이트 블루 컬러 (일반 정보 상태)
+  static Color info = const Color(0xFF64B5F6);
 
   /// 외부(API, DB, 파일 등)에서 넘어온 헥사 코드로 공용 컬러들을 동적 제어하는 메서드
   static void updateCommonColors({

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:google_fonts/google_fonts.dart';
 import '../../core/constants/colors.dart';
 
 /// 하이테크 전술 테마용 미세 격자 백그라운드 페인터 (다이얼로그 전용)
@@ -52,23 +53,23 @@ class TacticalDialog extends StatelessWidget {
         vertical: 24.0,
       ),
       child: ClipRRect(
-        borderRadius: BorderRadius.circular(16),
+        borderRadius: BorderRadius.circular(20),
         child: Container(
           width: maxWidth,
           decoration: ShapeDecoration(
             color: GameColors.backgroundMedium.withValues(alpha: 0.95),
-            shape: BeveledRectangleBorder(
-              borderRadius: BorderRadius.circular(16),
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(20),
               side: BorderSide(
-                color: activeAccent.withValues(alpha: 0.4),
+                color: activeAccent.withValues(alpha: 0.3),
                 width: 1.5,
               ),
             ),
             shadows: [
               BoxShadow(
-                color: activeAccent.withValues(alpha: 0.15),
-                blurRadius: 25,
-                spreadRadius: 3,
+                color: activeAccent.withValues(alpha: 0.08),
+                blurRadius: 20,
+                spreadRadius: 2,
               ),
             ],
           ),
@@ -95,11 +96,11 @@ class TacticalDialog extends StatelessWidget {
                         Expanded(
                           child: Text(
                             title,
-                            style: TextStyle(
+                            style: GoogleFonts.fredoka(
                               color: GameColors.textPrimary,
                               fontSize: 16,
                               fontWeight: FontWeight.bold,
-                              letterSpacing: 1.2,
+                              letterSpacing: 0.5,
                             ),
                           ),
                         ),

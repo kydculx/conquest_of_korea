@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:google_fonts/google_fonts.dart';
 import '../../models/alert_model.dart';
 import '../../core/constants/colors.dart';
 
@@ -35,17 +36,14 @@ class AlertWidget extends StatelessWidget {
       margin: const EdgeInsets.only(bottom: 8),
       decoration: ShapeDecoration(
         color: GameColors.backgroundMedium.withValues(alpha: 0.95),
-        shape: BeveledRectangleBorder(
-          borderRadius: const BorderRadius.only(
-            topLeft: Radius.circular(8),
-            bottomRight: Radius.circular(8),
-          ),
-          side: BorderSide(color: color.withValues(alpha: 0.5), width: 1.0),
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(12),
+          side: BorderSide(color: color.withValues(alpha: 0.3), width: 1.2),
         ),
         shadows: [
           BoxShadow(
-            color: color.withValues(alpha: 0.1),
-            blurRadius: 4,
+            color: color.withValues(alpha: 0.05),
+            blurRadius: 6,
             spreadRadius: 0,
           ),
         ],
@@ -59,7 +57,8 @@ class AlertWidget extends StatelessWidget {
               decoration: BoxDecoration(
                 color: color,
                 borderRadius: const BorderRadius.only(
-                  topLeft: Radius.circular(4),
+                  topLeft: Radius.circular(12),
+                  bottomLeft: Radius.circular(12),
                 ),
               ),
             ),
@@ -80,21 +79,21 @@ class AlertWidget extends StatelessWidget {
                   children: [
                     Text(
                       '[ STATUS // $typeLabel ]',
-                      style: TextStyle(
+                      style: GoogleFonts.fredoka(
                         color: color.withValues(alpha: 0.8),
                         fontSize: 9,
-                        fontWeight: FontWeight.w900,
-                        letterSpacing: 1.5,
+                        fontWeight: FontWeight.bold,
+                        letterSpacing: 0.5,
                       ),
                     ),
                     const SizedBox(height: 3),
                     Text(
                       alert.message,
-                      style: TextStyle(
+                      style: GoogleFonts.quicksand(
                         color: GameColors.textPrimary,
                         fontSize: 12,
                         fontWeight: FontWeight.bold,
-                        letterSpacing: 0.3,
+                        letterSpacing: 0.1,
                       ),
                     ),
                   ],

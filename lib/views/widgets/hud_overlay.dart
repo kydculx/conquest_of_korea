@@ -3,6 +3,7 @@ import 'dart:ui';
 import 'dart:ui' as ui;
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:google_fonts/google_fonts.dart';
 import '../../core/constants/colors.dart';
 import '../../core/constants/strings.dart';
 import '../../providers/game_provider.dart';
@@ -77,17 +78,17 @@ class HudOverlay extends StatelessWidget {
                 ),
                 decoration: ShapeDecoration(
                   color: GameColors.backgroundTranslucent,
-                  shape: BeveledRectangleBorder(
-                    borderRadius: BorderRadius.circular(4),
-                    side: BorderSide(color: GameColors.accentNeon, width: 1.0),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(12),
+                    side: BorderSide(color: GameColors.accentNeon, width: 1.2),
                   ),
                 ),
                 child: Row(
                   mainAxisSize: MainAxisSize.min,
                   children: [
                     Container(
-                      width: 5,
-                      height: 5,
+                      width: 6,
+                      height: 6,
                       margin: const EdgeInsets.only(right: 6),
                       decoration: BoxDecoration(
                         color: GameColors.accentNeon,
@@ -95,12 +96,12 @@ class HudOverlay extends StatelessWidget {
                       ),
                     ),
                     Text(
-                      '[ 시스템: ${GameStrings.capturingZone} ]',
-                      style: TextStyle(
+                      '[ 알림: ${GameStrings.capturingZone} ]',
+                      style: GoogleFonts.fredoka(
                         color: GameColors.textPrimary,
                         fontSize: 11,
                         fontWeight: FontWeight.bold,
-                        letterSpacing: 1.0,
+                        letterSpacing: 0.5,
                       ),
                     ),
                   ],
@@ -158,16 +159,16 @@ class _AuthProfileButton extends StatelessWidget {
         padding: const EdgeInsets.all(8),
         decoration: ShapeDecoration(
           color: GameColors.backgroundMedium,
-          shape: BeveledRectangleBorder(
-            borderRadius: BorderRadius.circular(10),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(16),
             side: BorderSide(
-              color: color.withValues(alpha: isAuth ? 0.4 : 0.15),
-              width: 1.0,
+              color: color.withValues(alpha: isAuth ? 0.3 : 0.1),
+              width: 1.2,
             ),
           ),
           shadows: [
             BoxShadow(
-              color: color.withValues(alpha: isAuth ? 0.15 : 0.05),
+              color: color.withValues(alpha: isAuth ? 0.08 : 0.02),
               blurRadius: isAuth ? 8.0 : 4.0,
               spreadRadius: 0.0,
             ),
@@ -201,16 +202,16 @@ class _RankingButton extends StatelessWidget {
         padding: const EdgeInsets.all(8),
         decoration: ShapeDecoration(
           color: GameColors.backgroundMedium,
-          shape: BeveledRectangleBorder(
-            borderRadius: BorderRadius.circular(10),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(16),
             side: BorderSide(
-              color: color.withValues(alpha: isAuthenticated ? 0.4 : 0.15),
-              width: 1.0,
+              color: color.withValues(alpha: isAuthenticated ? 0.3 : 0.1),
+              width: 1.2,
             ),
           ),
           shadows: [
             BoxShadow(
-              color: color.withValues(alpha: isAuthenticated ? 0.15 : 0.05),
+              color: color.withValues(alpha: isAuthenticated ? 0.08 : 0.02),
               blurRadius: isAuthenticated ? 8.0 : 4.0,
               spreadRadius: 0.0,
             ),
@@ -265,26 +266,26 @@ class _StartStopCaptureButtonState extends State<_StartStopCaptureButton> {
               begin: Alignment.topCenter,
               end: Alignment.bottomCenter,
               colors: isRunning
-                  ? [const Color(0xFFFF5252), const Color(0xFF900000)]
-                  : [const Color(0xFF00FFD1), const Color(0xFF006859)],
+                  ? [const Color(0xFFE57373), const Color(0xFFC62828)]
+                  : [const Color(0xFF90CAF9), const Color(0xFF1E88E5)],
             ),
             border: Border.all(
-              color: Colors.white.withValues(alpha: 0.25),
+              color: Colors.white.withValues(alpha: 0.35),
               width: 1.5,
             ),
             boxShadow: [
               // 네온 글로우 효과
               BoxShadow(
                 color: (isRunning ? GameColors.error : GameColors.accentNeon)
-                    .withValues(alpha: _isPressed ? 0.2 : 0.45),
+                    .withValues(alpha: _isPressed ? 0.15 : 0.35),
                 blurRadius: _isPressed ? 8.0 : 16.0,
                 spreadRadius: 1.0,
               ),
               // 하단 3D 어둠 그림자
               BoxShadow(
-                color: Colors.black.withValues(alpha: 0.6),
-                offset: _isPressed ? const Offset(0, 2) : const Offset(0, 6),
-                blurRadius: _isPressed ? 4.0 : 12.0,
+                color: Colors.black.withValues(alpha: 0.3),
+                offset: _isPressed ? const Offset(0, 2) : const Offset(0, 5),
+                blurRadius: _isPressed ? 4.0 : 10.0,
               ),
             ],
           ),
@@ -305,7 +306,7 @@ class _StartStopCaptureButtonState extends State<_StartStopCaptureButton> {
                       begin: Alignment.topCenter,
                       end: Alignment.bottomCenter,
                       colors: [
-                        Colors.white.withValues(alpha: 0.45),
+                        Colors.white.withValues(alpha: 0.5),
                         Colors.white.withValues(alpha: 0.0),
                       ],
                     ),
@@ -319,7 +320,7 @@ class _StartStopCaptureButtonState extends State<_StartStopCaptureButton> {
                   children: [
                     Icon(
                       isRunning ? Icons.stop_rounded : Icons.play_arrow_rounded,
-                      color: const Color(0xFF0A1616),
+                      color: Colors.white,
                       size: 36,
                     ),
                     const SizedBox(height: 1),
@@ -327,11 +328,11 @@ class _StartStopCaptureButtonState extends State<_StartStopCaptureButton> {
                       isRunning
                           ? GameStrings.stopCaptureMode
                           : GameStrings.startCaptureMode,
-                      style: const TextStyle(
-                        color: Color(0xFF0A1616),
-                        fontSize: 12.5,
-                        fontWeight: FontWeight.w900,
-                        letterSpacing: 0.2,
+                      style: GoogleFonts.fredoka(
+                        color: Colors.white,
+                        fontSize: 12.0,
+                        fontWeight: FontWeight.bold,
+                        letterSpacing: 0.1,
                       ),
                     ),
                   ],
@@ -581,8 +582,8 @@ class _SatelliteCaptureActionButtonState
     String buttonText = '';
     IconData buttonIcon = Icons.play_arrow_rounded;
     List<Color> gradientColors = [
-      const Color(0xFF00FFD1),
-      const Color(0xFF006859),
+      const Color(0xFF90CAF9),
+      const Color(0xFF1E88E5),
     ];
     Color shadowColor = GameColors.accentNeon;
     VoidCallback? onPressed;
@@ -593,7 +594,7 @@ class _SatelliteCaptureActionButtonState
       showButton = true;
       buttonText = GameStrings.cancel; // '취소'
       buttonIcon = Icons.stop_rounded;
-      gradientColors = [const Color(0xFFFF5252), const Color(0xFF900000)];
+      gradientColors = [const Color(0xFFE57373), const Color(0xFFC62828)];
       shadowColor = GameColors.error;
       onPressed = () => game.cancelSatelliteCapture();
     } else if (selectedId != null) {
@@ -626,7 +627,7 @@ class _SatelliteCaptureActionButtonState
             showButton = true;
             buttonText = '점령 실행'; // 96x96 원형 버튼 규격에 최적화된 4자 구성
             buttonIcon = Icons.satellite_alt_rounded;
-            gradientColors = [const Color(0xFF00FFD1), const Color(0xFF006859)];
+            gradientColors = [const Color(0xFF90CAF9), const Color(0xFF1E88E5)];
             shadowColor = GameColors.accentNeon;
             onPressed = () => game.executeSatelliteCapture(selectedId);
           }
@@ -667,21 +668,21 @@ class _SatelliteCaptureActionButtonState
               colors: gradientColors,
             ),
             border: Border.all(
-              color: Colors.white.withValues(alpha: 0.25),
+              color: Colors.white.withValues(alpha: 0.35),
               width: 1.5,
             ),
             boxShadow: [
               // 네온 글로우 효과
               BoxShadow(
-                color: shadowColor.withValues(alpha: _isPressed ? 0.2 : 0.45),
+                color: shadowColor.withValues(alpha: _isPressed ? 0.15 : 0.35),
                 blurRadius: _isPressed ? 8.0 : 16.0,
                 spreadRadius: 1.0,
               ),
               // 하단 3D 어둠 그림자
               BoxShadow(
-                color: Colors.black.withValues(alpha: 0.6),
-                offset: _isPressed ? const Offset(0, 2) : const Offset(0, 6),
-                blurRadius: _isPressed ? 4.0 : 12.0,
+                color: Colors.black.withValues(alpha: 0.3),
+                offset: _isPressed ? const Offset(0, 2) : const Offset(0, 5),
+                blurRadius: _isPressed ? 4.0 : 10.0,
               ),
             ],
           ),
@@ -702,7 +703,7 @@ class _SatelliteCaptureActionButtonState
                       begin: Alignment.topCenter,
                       end: Alignment.bottomCenter,
                       colors: [
-                        Colors.white.withValues(alpha: 0.45),
+                        Colors.white.withValues(alpha: 0.5),
                         Colors.white.withValues(alpha: 0.0),
                       ],
                     ),
@@ -714,15 +715,15 @@ class _SatelliteCaptureActionButtonState
                 child: Column(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
-                    Icon(buttonIcon, color: const Color(0xFF0A1616), size: 36),
+                    Icon(buttonIcon, color: Colors.white, size: 36),
                     const SizedBox(height: 1),
                     Text(
                       buttonText,
-                      style: const TextStyle(
-                        color: Color(0xFF0A1616),
-                        fontSize: 12.5,
-                        fontWeight: FontWeight.w900,
-                        letterSpacing: 0.2,
+                      style: GoogleFonts.fredoka(
+                        color: Colors.white,
+                        fontSize: 12.0,
+                        fontWeight: FontWeight.bold,
+                        letterSpacing: 0.1,
                       ),
                     ),
                   ],
@@ -751,19 +752,19 @@ class _OperationGoldHud extends StatelessWidget {
 
     return ClipPath(
       clipper: ShapeBorderClipper(
-        shape: BeveledRectangleBorder(borderRadius: BorderRadius.circular(4)),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
       ),
       child: BackdropFilter(
         filter: ImageFilter.blur(sigmaX: 5, sigmaY: 5),
         child: Container(
-          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
           decoration: ShapeDecoration(
-            color: GameColors.backgroundMedium.withValues(alpha: 0.7),
-            shape: BeveledRectangleBorder(
-              borderRadius: BorderRadius.circular(4),
+            color: GameColors.backgroundMedium.withValues(alpha: 0.8),
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(12),
               side: BorderSide(
                 color: GameColors.accentNeon.withValues(alpha: 0.35),
-                width: 1.0,
+                width: 1.2,
               ),
             ),
           ),
@@ -774,21 +775,19 @@ class _OperationGoldHud extends StatelessWidget {
             children: [
               Text(
                 '${gold.toStringAsFixed(0)} GP',
-                style: TextStyle(
-                  color: GameColors.accentNeon,
+                style: GoogleFonts.fredoka(
+                  color: GameColors.textPrimary,
                   fontSize: 12,
                   fontWeight: FontWeight.bold,
-                  fontFamily: 'monospace',
                 ),
               ),
-              const SizedBox(width: 4),
+              const SizedBox(width: 5),
               Text(
                 '(+${ratePerHour.toStringAsFixed(1)}/h)',
-                style: TextStyle(
-                  color: GameColors.textPrimary.withValues(alpha: 0.6),
+                style: GoogleFonts.quicksand(
+                  color: GameColors.textMuted,
                   fontSize: 9,
-                  fontWeight: FontWeight.w600,
-                  fontFamily: 'monospace',
+                  fontWeight: FontWeight.w800,
                 ),
               ),
             ],
@@ -984,7 +983,7 @@ class _BubbleBody extends StatelessWidget {
   Widget build(BuildContext context) {
     return ClipPath(
       clipper: ShapeBorderClipper(
-        shape: BeveledRectangleBorder(borderRadius: BorderRadius.circular(8)),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
       ),
       child: BackdropFilter(
         filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
@@ -992,8 +991,8 @@ class _BubbleBody extends StatelessWidget {
           padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
           decoration: ShapeDecoration(
             color: GameColors.backgroundMedium.withValues(alpha: 0.9),
-            shape: BeveledRectangleBorder(
-              borderRadius: BorderRadius.circular(8),
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(16),
               side: BorderSide(
                 color: themeColor.withValues(alpha: 0.6),
                 width: 1.5,
@@ -1020,12 +1019,12 @@ class _BubbleBody extends StatelessWidget {
                   Flexible(
                     child: Text(
                       detailsText,
-                      style: TextStyle(
+                      style: GoogleFonts.fredoka(
                         color: isError
                             ? GameColors.error
                             : GameColors.textPrimary,
                         fontSize: 11.5,
-                        fontWeight: FontWeight.w700,
+                        fontWeight: FontWeight.bold,
                         letterSpacing: 0.4,
                       ),
                     ),
@@ -1069,7 +1068,7 @@ class _BubbleBody extends StatelessWidget {
       padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
       decoration: BoxDecoration(
         color: color.withValues(alpha: 0.10),
-        borderRadius: BorderRadius.circular(3),
+        borderRadius: BorderRadius.circular(6),
         border: Border.all(color: color.withValues(alpha: 0.30), width: 0.8),
       ),
       child: Row(
@@ -1077,20 +1076,18 @@ class _BubbleBody extends StatelessWidget {
         children: [
           Text(
             '$label: ',
-            style: TextStyle(
+            style: GoogleFonts.quicksand(
               color: GameColors.textSecondary,
               fontSize: 9,
               fontWeight: FontWeight.w800,
-              fontFamily: 'Courier',
             ),
           ),
           Text(
             value,
-            style: TextStyle(
+            style: GoogleFonts.quicksand(
               color: color,
               fontSize: 9.5,
               fontWeight: FontWeight.w900,
-              fontFamily: 'Courier',
             ),
           ),
         ],
