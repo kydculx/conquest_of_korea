@@ -1,12 +1,13 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:google_fonts/google_fonts.dart';
 import '../../core/constants/colors.dart';
 import '../../core/constants/strings.dart';
 import '../../providers/game_provider.dart';
 import 'game_screen.dart';
 
-/// 군더더기 없는 미니멀 테크니컬 컨셉의 스플래시 화면 (제목 중심 플랫 디자인)
+/// 군더더기 없는 미니멀 테크니컬 컨셉의 스플래시 화면 (Orbitron 및 Share Tech Mono 구글 폰트 적용)
 class SplashScreen extends StatefulWidget {
   /// 스플래시 화면을 생성하는 기본 생성자
   const SplashScreen({super.key});
@@ -117,33 +118,33 @@ class _SplashScreenState extends State<SplashScreen>
                   child: Column(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
-                      // 전술 네온 블루 섀도우가 깔린 메인 타이틀
+                      // 전술 네온 블루 섀도우가 깔린 메인 타이틀 (구글 Orbitron SF 폰트)
                       Text(
                         GameStrings.appName.toUpperCase(),
                         textAlign: TextAlign.center,
-                        style: TextStyle(
+                        style: GoogleFonts.orbitron(
                           color: GameColors.textPrimary,
-                          fontSize: 34,
+                          fontSize: 32,
                           fontWeight: FontWeight.w900,
-                          letterSpacing: 6.0,
+                          letterSpacing: 4.0,
                           shadows: [
                             Shadow(
-                              color: GameColors.info.withValues(alpha: 0.5),
+                              color: GameColors.info.withValues(alpha: 0.6),
                               blurRadius: 15,
                             ),
                           ],
                         ),
                       ),
-                      const SizedBox(height: 10),
-                      // 미니멀 서브 헤더
+                      const SizedBox(height: 12),
+                      // 미니멀 서브 헤더 (구글 Share Tech Mono 콘솔 폰트)
                       Text(
                         'REAL-TIME GEOGRAPHIC CONQUEST',
                         textAlign: TextAlign.center,
-                        style: TextStyle(
+                        style: GoogleFonts.shareTechMono(
                           color: GameColors.textMuted,
                           fontSize: 10,
                           fontWeight: FontWeight.bold,
-                          letterSpacing: 3.0,
+                          letterSpacing: 2.0,
                         ),
                       ),
                     ],
@@ -177,9 +178,10 @@ class _SplashScreenState extends State<SplashScreen>
                         ),
                       ),
                       const SizedBox(width: 12),
+                      // 구글 Share Tech Mono 콘솔 폰트
                       Text(
                         'CONNECTING TO SATELLITE SYSTEM...',
-                        style: TextStyle(
+                        style: GoogleFonts.shareTechMono(
                           color: GameColors.textMuted,
                           fontSize: 10,
                           fontWeight: FontWeight.w800,
