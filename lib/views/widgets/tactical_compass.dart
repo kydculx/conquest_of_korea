@@ -8,7 +8,8 @@ import '../../providers/location_provider.dart';
 /// 전술 나침반(Tactical Compass) UI 위젯
 /// - LocationProvider의 heading 및 GPS 정확도를 실시간 반영하여 회전 및 네온 링 컬러를 표현합니다.
 class TacticalCompass extends StatefulWidget {
-  const TacticalCompass({super.key});
+  final double size;
+  const TacticalCompass({super.key, this.size = 44.0});
 
   @override
   State<TacticalCompass> createState() => _TacticalCompassState();
@@ -49,8 +50,8 @@ class _TacticalCompassState extends State<TacticalCompass>
       animation: _pulseController,
       builder: (context, child) {
         return Container(
-          width: 60,
-          height: 60,
+          width: widget.size,
+          height: widget.size,
           decoration: const BoxDecoration(shape: BoxShape.circle),
           child: CustomPaint(
             painter: _TacticalCompassPainter(

@@ -1,7 +1,5 @@
 import 'dart:ui';
 import 'package:flame/game.dart';
-import 'package:flame/components.dart';
-import 'package:flame/text.dart';
 import 'package:latlong2/latlong.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'components/player_component.dart';
@@ -26,9 +24,6 @@ class ConquestGame extends FlameGame {
 
   /// 렌더링에 사용 중인 Flame 컴포넌트 맵 (Key: 타일 ID, Value: 헥사곤 컴포넌트)
   final Map<String, HexTileComponent> _tileMap = {};
-
-  /// 실시간 렌더링 주기를 계측하여 화면에 그리는 FPS 컴포넌트
-  FpsTextComponent? _fpsComponent;
 
   /// 본부 기지(HQ) 아이콘 및 링 반경 연출을 시각화하는 마커 컴포넌트
   HQBaseMarker? _hqMarker;
@@ -106,31 +101,7 @@ class ConquestGame extends FlameGame {
     player.isVisible = !_isScanMode;
     add(player);
 
-    // FPS 실시간 카운터 추가 (상단 중앙 배치 - 시각적 인지 부하 감소를 위해 크기 축소 및 투명화)
-    _fpsComponent = FpsTextComponent(
-      anchor: Anchor.topCenter,
-      position: Vector2(size.x / 2, 60),
-      priority: 100,
-      textRenderer: TextPaint(
-        style: const TextStyle(
-          color: Color(0x88CBD5E1), // 반투명 소프트 실버
-          fontSize: 10,
-          fontWeight: FontWeight.normal,
-          letterSpacing: 0.5,
-        ),
-      ),
-    );
-    add(_fpsComponent!);
-
     if (_mapController != null) _updateAllPositions();
-  }
-
-  @override
-  void onGameResize(Vector2 size) {
-    super.onGameResize(size);
-    if (_fpsComponent != null && isLoaded) {
-      _fpsComponent!.position = Vector2(size.x / 2, 60);
-    }
   }
 
   /// 프레임 갱신 주기를 제어하기 위해 누적 보관하는 델타 타임 합산 값

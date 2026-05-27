@@ -146,7 +146,6 @@
   "mapStyleCyber": "Cyber",
   "mapStyleDark": "Dark",
   "mapStyleSatellite": "Satellite",
-  "mapStyleOutline": "Outline",
   "baseSetupCompleteAlert": "✓ Main base construction has been completed.",
   "baseSetupSearchingSignal": "Searching for satellite security coordinates...",
   "baseSetupInstruction": "The main base can only be established based on your actual current location.\nPlease move to a safe outdoor area until GPS signals are received.",

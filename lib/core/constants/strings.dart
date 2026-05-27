@@ -473,9 +473,6 @@ class GameStrings {
   /// 위성 사진 맵 스타일 명칭
   static String get mapStyleSatellite => 'mapStyleSatellite'.tr();
 
-  /// 등고선/아웃라인 맵 스타일 명칭
-  static String get mapStyleOutline => 'mapStyleOutline'.tr();
-
   // --- 메인 기지 및 위성 점령 추가 다국어 ---
   /// 본진 설정 완료 안내 팝업 문구
   static String get baseSetupCompleteAlert => 'baseSetupCompleteAlert'.tr();
