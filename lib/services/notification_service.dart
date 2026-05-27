@@ -7,6 +7,9 @@ import 'package:app_badge_plus/app_badge_plus.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../core/constants/strings.dart';
 
+/// 포그라운드 FCM 메시지 수신 시 인게임 알림 UI로 라우팅 처리하기 위한 커스텀 콜백 핸들러 타입
+typedef ForegroundMessageCallback = void Function(String title, String body, String type);
+
 /// Firebase Cloud Messaging(FCM) 및 로컬 푸시 알림(FlutterLocalNotifications)을 총괄하여 처리하는 알림 관리 서비스 클래스
 class NotificationService {
   static final NotificationService _instance = NotificationService._internal();
@@ -15,6 +18,9 @@ class NotificationService {
   factory NotificationService() => _instance;
 
   NotificationService._internal();
+
+  /// 포그라운드 알림 수신 시 인게임 UI 연동을 위한 외부 콜백 홀더
+  ForegroundMessageCallback? onForegroundMessageReceived;
 
   FirebaseMessaging? _fcm;
   final FlutterLocalNotificationsPlugin _localNotifications =
@@ -50,11 +56,11 @@ class NotificationService {
         debugPrint('푸시 알림 권한 승인됨');
       }
 
-      // iOS/macOS 포그라운드 알림 수신 시 상단 배너/사운드 노출 보장 옵션 활성화
+      // iOS/macOS 포그라운드 상태에서는 시스템 OS 알림 팝업 배너 노출 차단 (인게임 전술 UI 위젯으로 우회 노출)
       await _fcm?.setForegroundNotificationPresentationOptions(
-        alert: true,
+        alert: false,
         badge: true,
-        sound: true,
+        sound: false,
       );
 
       await _localNotifications
@@ -126,10 +132,11 @@ class NotificationService {
 
           RemoteNotification? notification = message.notification;
           if (notification != null && !kIsWeb) {
-            showLocalNotification(
-              id: notification.hashCode,
-              title: notification.title ?? '',
-              body: notification.body ?? '',
+            // 포그라운드 상태에서는 OS 단말기 시스템 상단 알림 배너를 띄우지 않고, 인게임 전술 UI 알림 팝업으로 라우팅
+            onForegroundMessageReceived?.call(
+              notification.title ?? '',
+              notification.body ?? '',
+              type ?? 'system_notice',
             );
           }
         } catch (e) {

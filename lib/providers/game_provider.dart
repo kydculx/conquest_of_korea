@@ -335,9 +335,17 @@ class GameProvider extends ChangeNotifier with WidgetsBindingObserver {
         syncGoldWithServer();
         notifyListeners();
       },
-      onPreCapture: _persistGoldToServer,
       onStateChanged: notifyListeners,
     );
+    // [추가] FCM 포그라운드 수신 시 인게임 알림(3초 자동 페이드아웃) 위젯으로 라우팅 등록
+    NotificationService().onForegroundMessageReceived = (title, body, type) {
+      final alertType = switch (type) {
+        'territory_attack' => AlertType.error,
+        'satellite_complete' => AlertType.success,
+        _ => AlertType.info,
+      };
+      addAlert('[$title] $body', alertType);
+    };
     _init();
   }
 
