@@ -447,6 +447,15 @@ class GameProvider extends ChangeNotifier with WidgetsBindingObserver {
       _goldTimer?.cancel();
       _goldTimer = null;
       _currentGold = 0.0;
+
+      // 로그아웃 시 위성 모드 및 위성 점령 상태 전격 해제
+      _isScanMode = false;
+      _selectedScanTileId = null;
+      _selectedScanTileLatLng = null;
+      cancelSatelliteCapture();
+
+      // 로그아웃 시 진행 중이던 물리 점령 작전 강제 중단
+      _captureController.cancelCapture();
     }
     notifyListeners();
   }
