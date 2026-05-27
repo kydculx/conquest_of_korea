@@ -10,6 +10,7 @@ import '../../providers/game_provider.dart';
 import '../../providers/location_provider.dart';
 import '../../services/hex_service.dart';
 import '../../core/constants/strings.dart';
+import 'tactical_dialog.dart';
 
 /// 지도(FlutterMap) + Flame 엔진 레이어를 결합한 위젯
 class GameMapWidget extends StatefulWidget {
@@ -426,27 +427,10 @@ class _GameMapWidgetState extends State<GameMapWidget>
       context: context,
       barrierDismissible: true,
       builder: (context) {
-        return AlertDialog(
-          backgroundColor: GameColors.tacticalBlack.withValues(alpha: 0.95),
-          shape: BeveledRectangleBorder(
-            side: BorderSide(color: GameColors.error, width: 1.5),
-            borderRadius: BorderRadius.circular(8),
-          ),
-          title: Row(
-            children: [
-              Icon(Icons.warning_amber_rounded, color: GameColors.error, size: 24),
-              const SizedBox(width: 8),
-              Text(
-                GameStrings.satelliteAbortTitle,
-                style: TextStyle(
-                  color: GameColors.error,
-                  fontSize: 16,
-                  fontWeight: FontWeight.bold,
-                  letterSpacing: 1.0,
-                ),
-              ),
-            ],
-          ),
+        return TacticalDialog(
+          title: GameStrings.satelliteAbortTitle,
+          icon: Icons.warning_amber_rounded,
+          accentColor: GameColors.error,
           content: Text(
             GameStrings.satelliteAbortConfirm,
             style: const TextStyle(

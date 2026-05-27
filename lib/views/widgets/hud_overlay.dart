@@ -7,7 +7,6 @@ import '../../core/constants/colors.dart';
 import '../../core/constants/strings.dart';
 import '../../providers/game_provider.dart';
 import '../../providers/auth_provider.dart';
-import '../../providers/location_provider.dart';
 import '../../services/hex_service.dart';
 import 'tactical_compass.dart';
 
@@ -48,8 +47,6 @@ class HudOverlay extends StatelessWidget {
               const TacticalCompass(),
               const SizedBox(height: 10),
               if (auth.isAuthenticated) ...[
-                const _OperationDistanceHud(),
-                const SizedBox(height: 8),
                 const _OperationGoldHud(),
               ],
             ],
@@ -733,53 +730,7 @@ class _SatelliteCaptureActionButtonState
   }
 }
 
-/// 요원의 금일 누적 작전 이동 거리를 m/km 단위로 실시간 시각화하는 HUD 위젯
-class _OperationDistanceHud extends StatelessWidget {
-  /// [_OperationDistanceHud] 생성자
-  const _OperationDistanceHud();
 
-  @override
-  Widget build(BuildContext context) {
-    final loc = context.watch<LocationProvider>();
-    final double dist = loc.dailyDistance;
-
-    // 미터 혹은 킬로미터 포맷팅
-    final String formattedDist = dist < 1000.0
-        ? '${dist.toStringAsFixed(0)} m'
-        : '${(dist / 1000.0).toStringAsFixed(2)} km';
-
-    return ClipPath(
-      clipper: ShapeBorderClipper(
-        shape: BeveledRectangleBorder(borderRadius: BorderRadius.circular(4)),
-      ),
-      child: BackdropFilter(
-        filter: ImageFilter.blur(sigmaX: 5, sigmaY: 5),
-        child: Container(
-          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-          decoration: ShapeDecoration(
-            color: GameColors.backgroundMedium.withValues(alpha: 0.7),
-            shape: BeveledRectangleBorder(
-              borderRadius: BorderRadius.circular(4),
-              side: BorderSide(
-                color: GameColors.accentNeon.withValues(alpha: 0.35),
-                width: 1.0,
-              ),
-            ),
-          ),
-          child: Text(
-            formattedDist,
-            style: TextStyle(
-              color: GameColors.accentNeon,
-              fontSize: 12,
-              fontWeight: FontWeight.bold,
-              fontFamily: 'monospace',
-            ),
-          ),
-        ),
-      ),
-    );
-  }
-}
 
 /// 요원의 현재 GP 재화 잔액 및 초당 GP 생산율을 표시하는 자금 관리 HUD 위젯
 class _OperationGoldHud extends StatelessWidget {

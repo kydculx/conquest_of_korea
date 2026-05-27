@@ -171,10 +171,10 @@ class GameStrings {
   static String get capturedTiles => 'capturedTiles'.tr();
   /// 작전 설정 메뉴 타이틀
   static String get operationSettings => 'operationSettings'.tr();
-  /// 팀 전술 컬러 변경 버튼 라벨
-  static String get changeTeamColor => 'changeTeamColor'.tr();
-  /// 팀 전술 컬러 변경 안내 문구
-  static String get changeTeamColorSub => 'changeTeamColorSub'.tr();
+  /// 전술 컬러 변경 버튼 라벨
+  static String get changeTacticalColor => 'changeTacticalColor'.tr();
+  /// 전술 컬러 변경 안내 문구
+  static String get changeTacticalColorSub => 'changeTacticalColorSub'.tr();
   /// 푸시 알림 수신 설정 버튼 라벨
   static String get pushNotifications => 'pushNotifications'.tr();
   /// 푸시 알림 수신 설정 안내 문구
@@ -189,12 +189,51 @@ class GameStrings {
   static String get terminateOperation => 'terminateOperation'.tr();
   /// 로그아웃 확인 팝업 안내 메시지
   static String get logoutConfirmMessage => 'logoutConfirmMessage'.tr();
-  /// 커스텀 팀 컬러 라벨
-  static String get customTeamColor => 'customTeamColor'.tr();
-  /// 팀 컬러 변경 완료 안내 메시지
-  static String get teamColorChanged => 'teamColorChanged'.tr();
+  /// 커스텀 전술 컬러 라벨
+  static String get customTacticalColor => 'customTacticalColor'.tr();
+  /// 전술 컬러 변경 완료 안내 메시지
+  static String get tacticalColorChanged => 'tacticalColorChanged'.tr();
+  /// 로그아웃 확인 팝업 타이틀
+  static String get logoutConfirmTitle => 'logoutConfirmTitle'.tr();
+  /// 전술 색상 설정 팝업 타이틀
+  static String get tacticalColorSetupTitle => 'tacticalColorSetupTitle'.tr();
+  /// 신호 스펙트럼 믹서 부제
+  static String get signalSpectrumMixer => 'signalSpectrumMixer'.tr();
+  /// 영토 침공 알림 타이틀
+  static String get notifTerritoryAttackTitle => 'notifTerritoryAttackTitle'.tr();
+  /// 영토 침공 알림 부제
+  static String get notifTerritoryAttackSub => 'notifTerritoryAttackSub'.tr();
+  /// 위성 점령 완료 알림 타이틀
+  static String get notifSatelliteCompleteTitle => 'notifSatelliteCompleteTitle'.tr();
+  /// 위성 점령 완료 알림 부제
+  static String get notifSatelliteCompleteSub => 'notifSatelliteCompleteSub'.tr();
+  /// 시스템 긴급 전술 지령 타이틀
+  static String get notifSystemNoticeTitle => 'notifSystemNoticeTitle'.tr();
+  /// 시스템 긴급 전술 지령 부제
+  static String get notifSystemNoticeSub => 'notifSystemNoticeSub'.tr();
   /// 적용하기 버튼 라벨
   static String get apply => 'apply'.tr();
+  /// 전술 상황 랭킹판 타이틀
+  static String get tacticalRankingBoard => 'tacticalRankingBoard'.tr();
+  /// 점령 영토 탭 레이블
+  static String get capturedTerritory => 'capturedTerritory'.tr();
+  /// 랭킹 데이터 부재 안내 문구
+  static String get noRankingData => 'noRankingData'.tr();
+  /// 요원(나) 표시
+  static String get agentMe => 'agentMe'.tr();
+  /// 닉네임과 (나) 매핑 함수
+  static String nicknameWithMe(String nickname) =>
+      'nicknameWithMe'.tr(namedArgs: {'nickname': nickname});
+  /// 구역 개수 단위 매핑 함수
+  static String territoryUnit(int count) =>
+      'territoryUnit'.tr(namedArgs: {'count': count.toString()});
+  /// 순위 단위 매핑 함수
+  static String rankUnit(int rank) =>
+      'rankUnit'.tr(namedArgs: {'rank': rank.toString()});
+  /// 순위 미정 상태 라벨
+  static String get rankUnranked => 'rankUnranked'.tr();
+  /// 상위 100위 통계 정보
+  static String get top100Stats => 'top100Stats'.tr();
 
   // --- 게임 화면 및 오버레이 UI 텍스트 ---
   /// 위성 전술 동기화 진행 상태 문구
@@ -389,14 +428,6 @@ class GameStrings {
   /// 작전 중단 철회 버튼 라벨
   static String get satelliteCancelOperation => 'satelliteCancelOperation'.tr();
 
-  /// 작전 수행 누적 거리 라벨
-  static String get operationMileage => 'operationMileage'.tr();
-  /// 일일 이동 거리 라벨
-  static String get dailyDistance => 'dailyDistance'.tr();
-  /// 누적 이동 거리 라벨
-  static String get totalDistance => 'totalDistance'.tr();
-  /// 오늘 기록된 GPS 이동 거리 안내 문구
-  static String get gpsDistToday => 'gpsDistToday'.tr();
   /// HUD 골드 수치 표시 라벨
   static String get hudGold => 'hudGold'.tr();
 
@@ -459,4 +490,26 @@ class GameStrings {
   static String get agreeLocationDetail => 'agreeLocationDetail'.tr();
   /// 마케팅 정보 수신동의 상세 본문 문구
   static String get agreeMarketingDetail => 'agreeMarketingDetail'.tr();
+
+  /// 백그라운드 위치 권한 설정 팝업 타이틀
+  static String get bgLocationSetupTitle => 'bgLocationSetupTitle'.tr();
+  /// 백그라운드 위치 권한 설정 팝업 메시지
+  static String get bgLocationSetupMessage => 'bgLocationSetupMessage'.tr();
+  /// 나중에 버튼 라벨
+  static String get later => 'later'.tr();
+  /// 설정하기 버튼 라벨
+  static String get setupNow => 'setupNow'.tr();
+  /// 백그라운드 통신 보장 설정 팝업 타이틀
+  static String get bgNetworkSetupTitle => 'bgNetworkSetupTitle'.tr();
+  /// 백그라운드 통신 보장 설정 팝업 메시지
+  static String get bgNetworkSetupMessage => 'bgNetworkSetupMessage'.tr();
+
+  /// 계정 삭제 버튼 라벨
+  static String get deleteAccount => 'deleteAccount'.tr();
+  /// 계정 삭제 경고 타이틀
+  static String get deleteAccountConfirmTitle => 'deleteAccountConfirmTitle'.tr();
+  /// 계정 삭제 안내 상세 경고 문구
+  static String get deleteAccountConfirmMessage => 'deleteAccountConfirmMessage'.tr();
+  /// 계정 삭제 완료 알림 문구
+  static String get deleteAccountSuccess => 'deleteAccountSuccess'.tr();
 }

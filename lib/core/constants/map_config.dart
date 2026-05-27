@@ -33,12 +33,12 @@ class MapConfig {
     MapStyle(
       name: 'mapStyleDark',
       url:
-          'https://{s}.basemaps.cartocdn.com/light_nolabels/{z}/{x}/{y}{r}.png',
+          'https://{s}.basemaps.cartocdn.com/dark_nolabels/{z}/{x}/{y}{r}.png',
       icon: 'dark_mode',
       colorMatrix: <double>[
-        0.45, 0.0, 0.0, 0, 0, // Red (정직한 무채색을 위한 동일 배율)
-        0.0, 0.45, 0.0, 0, 0, // Green (정직한 무채색을 위한 동일 배율)
-        0.0, 0.0, 0.45, 0, 0, // Blue (푸른색 느낌을 완전히 걷어낸 동일 배율)
+        2.2, 0.0, 0.0, 0, -0.15, // Red (도로 대조 대폭 상승 및 배경 딥블랙 유지)
+        0.0, 2.2, 0.0, 0, -0.15, // Green
+        0.0, 0.0, 2.8, 0, -0.10, // Blue (하이테크 전술 감청색 도로망 하이라이팅)
         0, 0, 0, 1, 0, // Alpha
       ],
     ),

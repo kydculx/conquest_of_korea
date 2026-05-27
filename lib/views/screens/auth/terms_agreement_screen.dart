@@ -1,12 +1,19 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
+import '../../../providers/auth_provider.dart';
 import '../../../core/constants/colors.dart';
 import '../../../core/constants/strings.dart';
+import 'social_profile_setup_screen.dart';
+import '../../widgets/tactical_app_bar.dart';
 
 /// 신규 가입 프로세스 개시 전, 서비스 이용약관, 개인정보 보호정책,
 /// 위치정보 활용 동의 등의 법적 필수 정책 사항을 검토하고 동의를 수집하는 약관 동의 화면 클래스입니다.
 class TermsAgreementScreen extends StatefulWidget {
+  /// 소셜 로그인 최초 가입 프로세스로부터 리다이렉트되어 진입했는지 여부
+  final bool isSocial;
+
   /// 약관 동의 화면의 생성자입니다.
-  const TermsAgreementScreen({super.key});
+  const TermsAgreementScreen({super.key, this.isSocial = false});
 
   @override
   State<TermsAgreementScreen> createState() => _TermsAgreementScreenState();
@@ -115,28 +122,61 @@ class _TermsAgreementScreenState extends State<TermsAgreementScreen> {
     if (!_isAllRequiredAgreed) return;
 
     final now = DateTime.now();
-    Navigator.pushNamed(
-      context,
-      '/signup',
-      arguments: {
-        'termsAgreedAt': now,
-        'privacyAgreedAt': now,
-        'locationAgreedAt': now,
-        'marketingAgreedAt': _agreeMarketing ? now : null,
-      },
-    );
+    if (widget.isSocial) {
+      // 소셜 가입일 경우, 닉네임 및 전술색 설정 화면으로 라우팅 (약관 동의 화면으로 이전 pop이 가능하게 push 처리)
+      Navigator.push(
+        context,
+        MaterialPageRoute(
+          builder: (context) => const SocialProfileSetupScreen(),
+          settings: RouteSettings(
+            arguments: {
+              'termsAgreedAt': now,
+              'privacyAgreedAt': now,
+              'locationAgreedAt': now,
+              'marketingAgreedAt': _agreeMarketing ? now : null,
+            },
+          ),
+        ),
+      );
+    } else {
+      // 이메일 가입일 경우, 기존 이메일 정보 입력 화면으로 라우팅
+      Navigator.pushNamed(
+        context,
+        '/signup',
+        arguments: {
+          'termsAgreedAt': now,
+          'privacyAgreedAt': now,
+          'locationAgreedAt': now,
+          'marketingAgreedAt': _agreeMarketing ? now : null,
+        },
+      );
+    }
+  }
+
+  /// SNS 가입 프로세스 도중 이탈을 시도할 때 활성 임시 세션을 강제 파괴(로그아웃)하고 로그인 화면으로 리다이렉트합니다.
+  Future<void> _handleCancelSocialSignup() async {
+    final authProvider = context.read<AuthProvider>();
+    // unmounted 에러 및 Navigator 스킵 방지를 위해 화면 전환을 선제적으로 실행합니다.
+    if (mounted) {
+      Navigator.of(context).pushReplacementNamed('/login');
+    }
+    // 그 후 백그라운드에서 임시 SNS 세션을 안전하게 해제합니다.
+    await authProvider.signOut();
   }
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        title: Text(
-          GameStrings.termsAgreement,
-          style: const TextStyle(letterSpacing: 2, fontSize: 16),
-        ),
-        backgroundColor: GameColors.transparent,
-        elevation: 0,
+    final Widget mainContent = Scaffold(
+      appBar: TacticalAppBar(
+        titleText: GameStrings.termsAgreement,
+        showBackButton: true,
+        leadingOnPressed: () async {
+          if (widget.isSocial) {
+            await _handleCancelSocialSignup();
+          } else {
+            Navigator.of(context).pop();
+          }
+        },
       ),
       extendBodyBehindAppBar: true,
       body: Container(
@@ -288,6 +328,17 @@ class _TermsAgreementScreenState extends State<TermsAgreementScreen> {
           ),
         ),
       ),
+    );
+
+    return PopScope(
+      canPop: !widget.isSocial,
+      onPopInvokedWithResult: (didPop, result) async {
+        if (didPop) return;
+        if (widget.isSocial) {
+          await _handleCancelSocialSignup();
+        }
+      },
+      child: mainContent,
     );
   }
 

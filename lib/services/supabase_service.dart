@@ -45,7 +45,9 @@ class SupabaseService {
     return _client
         .from('captured_tiles')
         .stream(primaryKey: ['id'])
-        .map((list) => list.map(HexTile.fromJson).toList());
+        .map((list) => list
+            .map((e) => HexTile.fromJson(Map<String, dynamic>.from(e)))
+            .toList());
   }
 
   Future<bool> captureTile(HexTile tile) async {
@@ -89,7 +91,8 @@ class SupabaseService {
 
       if (response == null) return TileStatus.empty;
 
-      final String? ownerId = response['user_id'];
+      final data = Map<String, dynamic>.from(response);
+      final String? ownerId = data['user_id'];
       if (ownerId == currentUserId) return TileStatus.mine;
 
       return TileStatus.enemy;
@@ -109,7 +112,7 @@ class SupabaseService {
           .maybeSingle();
 
       if (response == null) return null;
-      return HexTile.fromJson(response);
+      return HexTile.fromJson(Map<String, dynamic>.from(response));
     } catch (e) {
       debugPrint('❌ 단일 타일 서버 조회 실패: $e');
       return null;

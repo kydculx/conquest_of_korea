@@ -1,9 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../../core/constants/colors.dart';
+import '../../core/constants/strings.dart';
 import '../../providers/auth_provider.dart';
 import '../../providers/ranking_provider.dart';
 import '../../models/user_profile.dart';
+import '../widgets/tactical_app_bar.dart';
 
 /// 요원들의 전술적 활약상과 지배력을 시각화하고 대조 분석할 수 있는 메인 전술 랭킹 화면 클래스
 class RankingScreen extends StatefulWidget {
@@ -31,23 +33,10 @@ class _RankingScreenState extends State<RankingScreen> {
 
     return Scaffold(
       backgroundColor: GameColors.tacticalBlack,
-      appBar: AppBar(
+      appBar: TacticalAppBar(
+        titleText: GameStrings.tacticalRankingBoard,
+        showBackButton: true,
         backgroundColor: GameColors.tacticalBlack,
-        elevation: 0,
-        centerTitle: true,
-        leading: IconButton(
-          icon: Icon(Icons.arrow_back_ios_new_rounded, color: GameColors.accentNeon, size: 20),
-          onPressed: () => Navigator.pop(context),
-        ),
-        title: Text(
-          '전술 상황 랭킹판',
-          style: TextStyle(
-            color: GameColors.textPrimary,
-            fontSize: 18,
-            fontWeight: FontWeight.w900,
-            letterSpacing: 1.5,
-          ),
-        ),
         bottom: PreferredSize(
           preferredSize: const Size.fromHeight(60),
           child: _RankingCategoryTabs(ranking: ranking),
@@ -59,7 +48,9 @@ class _RankingScreenState extends State<RankingScreen> {
           Positioned.fill(
             child: ranking.isLoading && ranking.topRankings.isEmpty
                 ? Center(
-                    child: CircularProgressIndicator(color: GameColors.accentNeon),
+                    child: CircularProgressIndicator(
+                      color: GameColors.accentNeon,
+                    ),
                   )
                 : _RankingListView(
                     ranking: ranking,
@@ -104,19 +95,9 @@ class _RankingCategoryTabs extends StatelessWidget {
       child: Row(
         children: [
           _TabItem(
-            label: '점령 영토',
+            label: GameStrings.capturedTerritory,
             isActive: ranking.currentType == RankingType.capturedTiles,
             onTap: () => ranking.loadRankings(type: RankingType.capturedTiles),
-          ),
-          _TabItem(
-            label: '누적 이동',
-            isActive: ranking.currentType == RankingType.totalDistance,
-            onTap: () => ranking.loadRankings(type: RankingType.totalDistance),
-          ),
-          _TabItem(
-            label: '당일 보행',
-            isActive: ranking.currentType == RankingType.dailyDistance,
-            onTap: () => ranking.loadRankings(type: RankingType.dailyDistance),
           ),
         ],
       ),
@@ -152,7 +133,7 @@ class _TabItem extends StatelessWidget {
                       color: GameColors.accentNeon.withValues(alpha: 0.35),
                       blurRadius: 8,
                       spreadRadius: 0.5,
-                    )
+                    ),
                   ]
                 : null,
           ),
@@ -160,7 +141,9 @@ class _TabItem extends StatelessWidget {
             child: Text(
               label,
               style: TextStyle(
-                color: isActive ? GameColors.tacticalBlack : GameColors.textSecondary,
+                color: isActive
+                    ? GameColors.tacticalBlack
+                    : GameColors.textSecondary,
                 fontSize: 13,
                 fontWeight: isActive ? FontWeight.w900 : FontWeight.bold,
               ),
@@ -177,10 +160,7 @@ class _RankingListView extends StatelessWidget {
   final RankingProvider ranking;
   final String? currentUserId;
 
-  const _RankingListView({
-    required this.ranking,
-    required this.currentUserId,
-  });
+  const _RankingListView({required this.ranking, required this.currentUserId});
 
   @override
   Widget build(BuildContext context) {
@@ -188,7 +168,7 @@ class _RankingListView extends StatelessWidget {
     if (list.isEmpty) {
       return Center(
         child: Text(
-          '랭킹 데이터가 존재하지 않습니다.',
+          GameStrings.noRankingData,
           style: TextStyle(color: GameColors.textMuted, fontSize: 13),
         ),
       );
@@ -199,7 +179,8 @@ class _RankingListView extends StatelessWidget {
         left: 16,
         right: 16,
         top: 8,
-        bottom: 120 + MediaQuery.of(context).padding.bottom, // 하단 플로팅 배너 간섭 방지 패딩
+        bottom:
+            120 + MediaQuery.of(context).padding.bottom, // 하단 플로팅 배너 간섭 방지 패딩
       ),
       itemCount: list.length,
       itemBuilder: (context, index) {
@@ -257,13 +238,13 @@ class _RankingListTile extends StatelessWidget {
     return Container(
       margin: const EdgeInsets.only(bottom: 10),
       decoration: ShapeDecoration(
-        color: isMe 
+        color: isMe
             ? GameColors.accentNeon.withValues(alpha: 0.12)
             : GameColors.tacticalGray.withValues(alpha: 0.25),
         shape: BeveledRectangleBorder(
           borderRadius: BorderRadius.circular(8),
           side: BorderSide(
-            color: isMe 
+            color: isMe
                 ? GameColors.accentNeon.withValues(alpha: 0.7)
                 : GameColors.dividerColor,
             width: isMe ? 1.5 : 1.0,
@@ -301,7 +282,7 @@ class _RankingListTile extends StatelessWidget {
                       color: agentColor.withValues(alpha: 0.8),
                       blurRadius: 4.0,
                       spreadRadius: 1.0,
-                    )
+                    ),
                   ],
                 ),
               ),
@@ -324,19 +305,14 @@ class _RankingListTile extends StatelessWidget {
             if (isMe)
               Container(
                 margin: const EdgeInsets.only(left: 6),
-                padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 1.5),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 5,
+                  vertical: 1.5,
+                ),
                 decoration: ShapeDecoration(
                   color: GameColors.accentNeon,
                   shape: BeveledRectangleBorder(
                     borderRadius: BorderRadius.circular(3),
-                  ),
-                ),
-                child: Text(
-                  '요원(나)',
-                  style: TextStyle(
-                    color: GameColors.tacticalBlack,
-                    fontSize: 8.5,
-                    fontWeight: FontWeight.w900,
                   ),
                 ),
               ),
@@ -357,19 +333,7 @@ class _RankingListTile extends StatelessWidget {
 
   /// 랭킹 타입에 맞추어 유저 데이터를 가독성 높게 포맷팅
   String _formatRankingValue(String type, UserProfile profile) {
-    if (type == RankingType.capturedTiles) {
-      return '${profile.capturedTilesCount} 구역';
-    } else {
-      final double distance = type == RankingType.totalDistance 
-          ? profile.totalDistance 
-          : profile.dailyDistance;
-
-      if (distance >= 1000.0) {
-        return '${(distance / 1000.0).toStringAsFixed(2)} km';
-      } else {
-        return '${distance.toStringAsFixed(0)} m';
-      }
-    }
+    return GameStrings.territoryUnit(profile.capturedTilesCount);
   }
 }
 
@@ -399,7 +363,10 @@ class _MyRankingFloatingBanner extends StatelessWidget {
         color: GameColors.backgroundMedium,
         shape: BeveledRectangleBorder(
           borderRadius: BorderRadius.circular(12),
-          side: BorderSide(color: GameColors.accentNeon.withValues(alpha: 0.4), width: 1.5),
+          side: BorderSide(
+            color: GameColors.accentNeon.withValues(alpha: 0.4),
+            width: 1.5,
+          ),
         ),
         shadows: [
           BoxShadow(
@@ -407,7 +374,7 @@ class _MyRankingFloatingBanner extends StatelessWidget {
             blurRadius: 15.0,
             spreadRadius: 2.0,
             offset: const Offset(0, -3),
-          )
+          ),
         ],
       ),
       child: Row(
@@ -422,7 +389,7 @@ class _MyRankingFloatingBanner extends StatelessWidget {
               ),
             ),
             child: Text(
-              rank > 0 ? '$rank위' : '순위 미정',
+              rank > 0 ? GameStrings.rankUnit(rank) : GameStrings.rankUnranked,
               style: TextStyle(
                 color: GameColors.tacticalBlack,
                 fontSize: 14,
@@ -450,14 +417,14 @@ class _MyRankingFloatingBanner extends StatelessWidget {
                             color: agentColor.withValues(alpha: 0.8),
                             blurRadius: 3,
                             spreadRadius: 0.5,
-                          )
+                          ),
                         ],
                       ),
                     ),
                     const SizedBox(width: 6),
                     Expanded(
                       child: Text(
-                        '${myProfile.nickname} (나)',
+                        GameStrings.nicknameWithMe(myProfile.nickname),
                         style: TextStyle(
                           color: GameColors.textPrimary,
                           fontSize: 13.5,
@@ -470,11 +437,8 @@ class _MyRankingFloatingBanner extends StatelessWidget {
                 ),
                 const SizedBox(height: 2),
                 Text(
-                  '상위 100위 랭킹 통계 정보',
-                  style: TextStyle(
-                    color: GameColors.textMuted,
-                    fontSize: 10,
-                  ),
+                  GameStrings.top100Stats,
+                  style: TextStyle(color: GameColors.textMuted, fontSize: 10),
                 ),
               ],
             ),
@@ -496,18 +460,6 @@ class _MyRankingFloatingBanner extends StatelessWidget {
 
   /// 랭킹 타입에 대칭되는 내 프로필 데이터 가독화 출력
   String _formatMyValue(String type) {
-    if (type == RankingType.capturedTiles) {
-      return '${myProfile.capturedTilesCount} 구역';
-    } else {
-      final double distance = type == RankingType.totalDistance 
-          ? myProfile.totalDistance 
-          : myProfile.dailyDistance;
-
-      if (distance >= 1000.0) {
-        return '${(distance / 1000.0).toStringAsFixed(2)} km';
-      } else {
-        return '${distance.toStringAsFixed(0)} m';
-      }
-    }
+    return GameStrings.territoryUnit(myProfile.capturedTilesCount);
   }
 }

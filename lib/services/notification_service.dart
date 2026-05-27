@@ -4,6 +4,7 @@ import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:app_badge_plus/app_badge_plus.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import '../core/constants/strings.dart';
 
 /// Firebase Cloud Messaging(FCM) 및 로컬 푸시 알림(FlutterLocalNotifications)을 총괄하여 처리하는 알림 관리 서비스 클래스
@@ -82,15 +83,50 @@ class NotificationService {
         },
       );
 
-      FirebaseMessaging.onMessage.listen((RemoteMessage message) {
-        RemoteNotification? notification = message.notification;
+      FirebaseMessaging.onMessage.listen((RemoteMessage message) async {
+        try {
+          final prefs = await SharedPreferences.getInstance();
+          final isNotificationEnabled = prefs.getBool('conquest_notifications_enabled') ?? true;
 
-        if (notification != null && !kIsWeb) {
-          showLocalNotification(
-            id: notification.hashCode,
-            title: notification.title ?? '',
-            body: notification.body ?? '',
-          );
+          if (!isNotificationEnabled) {
+            debugPrint('🔔 [알림 차단] 마스터 알림이 비활성화 상태이므로 포그라운드 노출 스킵.');
+            return;
+          }
+
+          // 개별 알림 항목별 수신 동의 여부 필터링
+          final String? type = message.data['type'] as String?;
+          if (type != null) {
+            if (type == 'territory_attack') {
+              final isTerritoryEnabled = prefs.getBool('conquest_notif_territory_attack') ?? true;
+              if (!isTerritoryEnabled) {
+                debugPrint('🔔 [알림 차단] 영토 침공 알림이 비활성화 상태이므로 노출 스킵.');
+                return;
+              }
+            } else if (type == 'satellite_complete') {
+              final isSatelliteEnabled = prefs.getBool('conquest_notif_satellite_complete') ?? true;
+              if (!isSatelliteEnabled) {
+                debugPrint('🔔 [알림 차단] 위성 점령 완료 알림이 비활성화 상태이므로 노출 스킵.');
+                return;
+              }
+            } else if (type == 'system_notice') {
+              final isNoticeEnabled = prefs.getBool('conquest_notif_system_notice') ?? true;
+              if (!isNoticeEnabled) {
+                debugPrint('🔔 [알림 차단] 시스템 공지 알림이 비활성화 상태이므로 노출 스킵.');
+                return;
+              }
+            }
+          }
+
+          RemoteNotification? notification = message.notification;
+          if (notification != null && !kIsWeb) {
+            showLocalNotification(
+              id: notification.hashCode,
+              title: notification.title ?? '',
+              body: notification.body ?? '',
+            );
+          }
+        } catch (e) {
+          debugPrint('⚠️ 포그라운드 푸시 필터링 중 오류: $e');
         }
       });
 
@@ -112,6 +148,15 @@ class NotificationService {
     required String title,
     required String body,
   }) async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final isNotificationEnabled = prefs.getBool('conquest_notifications_enabled') ?? true;
+      if (!isNotificationEnabled) {
+        debugPrint('🔔 [알림 차단] 마스터 알림이 비활성화 상태이므로 로컬 알림 노출 스킵.');
+        return;
+      }
+    } catch (_) {}
+
     await _localNotifications.show(
       id: id,
       title: title,

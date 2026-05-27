@@ -104,8 +104,6 @@ class UserProfile {
       // 'team_id': teamId, // DB에 컬럼이 추가될 때까지 주석 처리
       'created_at': createdAt.toIso8601String(),
       'main_base_tile_id': mainBaseTileId,
-      'total_distance': totalDistance,
-      'daily_distance': dailyDistance,
       'gold': gold,
       'captured_tiles_count': capturedTilesCount,
       'last_gold_updated_at': lastGoldUpdatedAt?.toIso8601String(),
@@ -125,8 +123,6 @@ class UserProfile {
       'color_hex': colorHex,
       'created_at': createdAt.toIso8601String(),
       'main_base_tile_id': mainBaseTileId,
-      'total_distance': totalDistance,
-      'daily_distance': dailyDistance,
       'terms_agreed_at': termsAgreedAt?.toIso8601String(),
       'privacy_agreed_at': privacyAgreedAt?.toIso8601String(),
       'location_agreed_at': locationAgreedAt?.toIso8601String(),

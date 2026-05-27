@@ -1,10 +1,14 @@
-import 'dart:math';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../../../core/constants/colors.dart';
 import '../../../core/constants/strings.dart';
 import '../../../core/utils/error_translator.dart';
 import '../../../providers/auth_provider.dart';
+import '../../../providers/location_provider.dart';
+import '../../../services/hex_service.dart';
+import '../../../core/constants/map_config.dart';
+import '../../widgets/tactical_dialog.dart';
+import '../../widgets/tactical_app_bar.dart';
 
 /// 이메일과 비밀번호 기반의 자체 회원 계정을 생성하고, 서비스 내 고유 닉네임 및
 /// 전술 색상을 최초로 연동하여 신규 가입을 처리하는 회원가입 화면 클래스입니다.
@@ -27,8 +31,8 @@ class _SignupScreenState extends State<SignupScreen> {
   /// 입력받은 닉네임을 처리하는 텍스트 컨트롤러입니다.
   final _nicknameController = TextEditingController();
 
-  /// 요원의 전술 영역 구분을 위한 고유 매핑 색상입니다.
-  Color _selectedColor = GameColors.accentNeon;
+  /// 요원의 전술 영역 구분을 위한 고유 매핑 색상입니다. (기본 파란색 고정)
+  final Color _selectedColor = GameColors.info;
 
   /// 비밀번호 입력란의 마스킹(숨김) 활성화 여부 플래그입니다.
   bool _isObscure = true;
@@ -54,7 +58,6 @@ class _SignupScreenState extends State<SignupScreen> {
   @override
   void initState() {
     super.initState();
-    _generateRandomColor();
     _nicknameController.addListener(() {
       if (_isNicknameChecked) {
         setState(() {
@@ -71,18 +74,7 @@ class _SignupScreenState extends State<SignupScreen> {
     });
   }
 
-  /// 요원의 전술 영역 구분을 위한 밝고 채도 높은 무작위 색상을 HSL 좌표계를 활용하여 생성합니다.
-  void _generateRandomColor() {
-    final random = Random();
-    // 세련된 네온 계열 색상 추출을 위해 HSL 사용
-    final double h = random.nextDouble() * 360;
-    final double s = 0.8 + (random.nextDouble() * 0.2); // 80-100% 채도
-    final double l = 0.5 + (random.nextDouble() * 0.2); // 50-70% 밝기
 
-    setState(() {
-      _selectedColor = HSLColor.fromAHSL(1.0, h, s, l).toColor();
-    });
-  }
 
   @override
   void dispose() {
@@ -214,6 +206,20 @@ class _SignupScreenState extends State<SignupScreen> {
     final colorHex =
         '#${_selectedColor.toARGB32().toRadixString(16).padLeft(8, '0').substring(2).toUpperCase()}';
 
+    // 현재 GPS 기준 현재타일을 구하여 내 기지로 지정
+    final loc = context.read<LocationProvider>();
+    final currentLocation = loc.currentLocation;
+    
+    String? mainBaseTileId;
+    if (currentLocation != null) {
+      final hex = HexService.latLngToHex(currentLocation);
+      mainBaseTileId = 'hex_${hex['q']}_${hex['r']}';
+    } else {
+      // GPS 정보 미수신 시 안전 장치로 기본 맵 기준 좌표 적용
+      final hex = HexService.latLngToHex(MapConfig.defaultPosition);
+      mainBaseTileId = 'hex_${hex['q']}_${hex['r']}';
+    }
+
     try {
       await authProvider.signUp(
         email: _emailController.text.trim(),
@@ -225,21 +231,20 @@ class _SignupScreenState extends State<SignupScreen> {
         locationAgreedAt: locationAgreedAt,
         marketingAgreedAt: marketingAgreedAt,
         teamId: 'none',
+        mainBaseTileId: mainBaseTileId,
       );
       if (mounted) {
         // 이메일 인증 안내 팝업 표시
         showDialog(
           context: context,
           barrierDismissible: false,
-          builder: (context) => AlertDialog(
-            backgroundColor: GameColors.tacticalGray,
-            title: Text(
-              GameStrings.signupPending,
-              style: TextStyle(color: GameColors.accentNeon),
-            ),
+          builder: (context) => TacticalDialog(
+            title: GameStrings.signupPending,
+            icon: Icons.mark_email_unread_rounded,
+            accentColor: GameColors.accentNeon,
             content: Text(
               GameStrings.signupCompleteMessage,
-              style: TextStyle(color: GameColors.textSecondary),
+              style: TextStyle(color: GameColors.textSecondary, fontSize: 13),
             ),
             actions: [
               TextButton(
@@ -249,7 +254,7 @@ class _SignupScreenState extends State<SignupScreen> {
                 },
                 child: Text(
                   GameStrings.confirm,
-                  style: TextStyle(color: GameColors.accentNeon),
+                  style: TextStyle(color: GameColors.accentNeon, fontWeight: FontWeight.bold),
                 ),
               ),
             ],
@@ -268,13 +273,9 @@ class _SignupScreenState extends State<SignupScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: Text(
-          GameStrings.signup,
-          style: const TextStyle(letterSpacing: 2, fontSize: 16),
-        ),
-        backgroundColor: GameColors.transparent,
-        elevation: 0,
+      appBar: TacticalAppBar(
+        titleText: GameStrings.signup,
+        showBackButton: true,
       ),
       extendBodyBehindAppBar: true,
       body: Container(
@@ -451,64 +452,7 @@ class _SignupScreenState extends State<SignupScreen> {
                     style: TextStyle(color: GameColors.textMuted, fontSize: 10),
                   ),
                 ),
-                const SizedBox(height: 30),
-
-                // Color Selection Section
-                Text(
-                  GameStrings.selectTacticalColor,
-                  style: TextStyle(
-                    color: GameColors.textMuted,
-                    fontSize: 12,
-                    letterSpacing: 1,
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
-                const SizedBox(height: 15),
-                Row(
-                  children: [
-                    Container(
-                      width: 60,
-                      height: 60,
-                      decoration: BoxDecoration(
-                        color: _selectedColor,
-                        borderRadius: BorderRadius.circular(10),
-                        boxShadow: [
-                          BoxShadow(
-                            color: _selectedColor.withValues(alpha: 0.5),
-                            blurRadius: 10,
-                            spreadRadius: 1,
-                          ),
-                        ],
-                      ),
-                    ),
-                    const SizedBox(width: 20),
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            '#${_selectedColor.toARGB32().toRadixString(16).padLeft(8, '0').substring(2).toUpperCase()}',
-                            style: TextStyle(
-                              color: GameColors.textPrimary,
-                              fontWeight: FontWeight.bold,
-                            ),
-                          ),
-                          const SizedBox(height: 5),
-                          OutlinedButton.icon(
-                            onPressed: _generateRandomColor,
-                            icon: const Icon(Icons.refresh, size: 16),
-                            label: Text(GameStrings.changeColor),
-                            style: OutlinedButton.styleFrom(
-                              foregroundColor: GameColors.textSecondary,
-                              side: BorderSide(color: GameColors.dividerColor),
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 50),
+                const SizedBox(height: 40),
 
                 // Signup Button
                 Consumer<AuthProvider>(

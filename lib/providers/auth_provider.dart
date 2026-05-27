@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
-import 'package:kakao_flutter_sdk_user/kakao_flutter_sdk_user.dart' show KakaoSdk;
+import 'package:kakao_flutter_sdk_user/kakao_flutter_sdk_user.dart'
+    show KakaoSdk;
 import '../core/utils/error_translator.dart';
 import '../services/auth_service.dart';
 import '../services/notification_service.dart';
@@ -10,26 +11,34 @@ import '../models/user_profile.dart';
 class AuthProvider extends ChangeNotifier {
   /// 인증 업무 처리를 담당하는 내부 인증 서비스
   final AuthService _authService = AuthService();
+
   /// 푸시 알림 Topic 구독 관리를 담당하는 내부 알림 서비스
   final NotificationService _notificationService = NotificationService();
-  
+
   /// Supabase Auth 세션의 현재 사용자 정보
   User? _user;
+
   /// 사용자 정보 테이블(user_profiles)의 프로필 상세 모델
   UserProfile? _profile;
+
   /// API 통신 및 데이터 처리 중 여부를 나타내는 로딩 상태값
   bool _isLoading = false;
+
   /// 최근 발생한 에러 메시지
   String? _error;
 
   /// 현재 로그인된 Supabase User 객체를 반환합니다.
   User? get user => _user;
+
   /// 현재 사용자의 요원 프로필 상세 정보를 반환합니다.
   UserProfile? get profile => _profile;
+
   /// 현재 작업이 진행 중(로딩)인지 여부를 반환합니다.
   bool get isLoading => _isLoading;
+
   /// 가장 최근에 발생한 인증 관련 에러 메시지를 반환합니다.
   String? get error => _error;
+
   /// 사용자가 로그인되어 세션이 활성화된 상태인지 여부를 반환합니다.
   bool get isAuthenticated => _user != null;
 
@@ -42,7 +51,7 @@ class AuthProvider extends ChangeNotifier {
   void _init() {
     _user = _authService.currentUser;
     if (_user != null) {
-      _loadProfile(_user!.id);
+      _loadProfile(_user!.id, isAppStart: true);
     }
 
     _authService.authStateChanges.listen((data) {
@@ -50,7 +59,7 @@ class AuthProvider extends ChangeNotifier {
       final Session? session = data.session;
 
       _user = session?.user;
-      
+
       if (event == AuthChangeEvent.signedIn && _user != null) {
         _loadProfile(_user!.id);
         _notificationService.subscribeToTopic('user_${_user!.id}');
@@ -60,29 +69,36 @@ class AuthProvider extends ChangeNotifier {
         }
         _profile = null;
       }
-      
+
       notifyListeners();
     });
   }
 
   /// 특정 사용자 ID를 기반으로 DB 프로필 정보를 로드하고 FCM 알림 토픽에 등록합니다.
-  Future<void> _loadProfile(String userId) async {
+  Future<void> _loadProfile(String userId, {bool isAppStart = false}) async {
     _setLoading(true);
     try {
       _profile = await _authService.getUserProfile(userId);
-      
+
       // 프로필 로드 시 개인 토픽 구독 (중복 구독은 FCM 내부적으로 처리됨)
       _notificationService.subscribeToTopic('user_$userId');
-      
+
       // 만약 프로필이 없다면 (가입 시 권한 문제로 저장이 안 된 경우 등)
       if (_profile == null && _user != null) {
         final metadata = _user!.userMetadata;
         if (metadata != null && metadata.containsKey('nickname')) {
           debugPrint('ℹ️ 누락된 프로필 자동 생성 중...');
+          final now = DateTime.now();
           await createProfile(
             nickname: metadata['nickname'] as String,
             colorHex: (metadata['color_hex'] as String?) ?? '#FFFFFF',
+            termsAgreedAt: now,
+            privacyAgreedAt: now,
+            locationAgreedAt: now,
           );
+        } else if (isAppStart) {
+          debugPrint('⚠️ 불완전한 소셜 가입 세션 감지 (앱 기동 단계): 로그아웃 처리합니다.');
+          await signOut();
         }
       }
     } finally {
@@ -102,6 +118,7 @@ class AuthProvider extends ChangeNotifier {
     required DateTime locationAgreedAt,
     DateTime? marketingAgreedAt,
     String teamId = 'none',
+    String? mainBaseTileId,
   }) async {
     _setLoading(true);
     try {
@@ -115,6 +132,7 @@ class AuthProvider extends ChangeNotifier {
         locationAgreedAt: locationAgreedAt,
         marketingAgreedAt: marketingAgreedAt,
         teamId: teamId,
+        mainBaseTileId: mainBaseTileId,
       );
     } finally {
       _setLoading(false);
@@ -122,10 +140,7 @@ class AuthProvider extends ChangeNotifier {
   }
 
   /// 로그인
-  Future<void> signIn({
-    required String email,
-    required String password,
-  }) async {
+  Future<void> signIn({required String email, required String password}) async {
     _setLoading(true);
     try {
       await _authService.signIn(email: email, password: password);
@@ -174,12 +189,12 @@ class AuthProvider extends ChangeNotifier {
   Future<void> signInWithKakao() async {
     _setLoading(true);
     _error = null;
-    
+
     try {
       // 실제 앱에서 사용하는 키 해시 로그 출력 (디버깅용)
       final keyHash = await KakaoSdk.origin;
       debugPrint('🔑 실제 카카오 키 해시: $keyHash');
-      
+
       final response = await _authService.signInWithKakao();
       if (response.user != null) {
         _user = response.user;
@@ -197,10 +212,15 @@ class AuthProvider extends ChangeNotifier {
   Future<void> createProfile({
     required String nickname,
     required String colorHex,
+    required DateTime termsAgreedAt,
+    required DateTime privacyAgreedAt,
+    required DateTime locationAgreedAt,
+    DateTime? marketingAgreedAt,
     String teamId = 'none',
+    String? mainBaseTileId,
   }) async {
     if (_user == null) return;
-    
+
     _setLoading(true);
     try {
       final newProfile = UserProfile(
@@ -208,6 +228,11 @@ class AuthProvider extends ChangeNotifier {
         nickname: nickname,
         colorHex: colorHex,
         teamId: teamId,
+        mainBaseTileId: mainBaseTileId,
+        termsAgreedAt: termsAgreedAt,
+        privacyAgreedAt: privacyAgreedAt,
+        locationAgreedAt: locationAgreedAt,
+        marketingAgreedAt: marketingAgreedAt,
         createdAt: DateTime.now(),
       );
       await _authService.updateProfile(newProfile);
@@ -221,7 +246,7 @@ class AuthProvider extends ChangeNotifier {
   /// 프로필 색상 업데이트
   Future<void> updateProfileColor(String newColorHex) async {
     if (_profile == null) return;
-    
+
     _setLoading(true);
     try {
       final updatedProfile = _profile!.copyWith(colorHex: newColorHex);
@@ -236,7 +261,7 @@ class AuthProvider extends ChangeNotifier {
   /// 메인 기지 설정/재설정
   Future<void> updateMainBase(String tileId) async {
     if (_profile == null) return;
-    
+
     _setLoading(true);
     try {
       final updatedProfile = _profile!.copyWith(mainBaseTileId: tileId);
@@ -245,25 +270,6 @@ class AuthProvider extends ChangeNotifier {
       notifyListeners();
     } finally {
       _setLoading(false);
-    }
-  }
-
-  /// 프로필 거리 정보 업데이트 및 로컬 상태 동기화
-  Future<void> updateProfileDistance(double totalDistance, double dailyDistance) async {
-    if (_profile == null) return;
-    try {
-      await _authService.updateProfileDistance(
-        _profile!.id,
-        totalDistance,
-        dailyDistance,
-      );
-      _profile = _profile!.copyWith(
-        totalDistance: totalDistance,
-        dailyDistance: dailyDistance,
-      );
-      notifyListeners();
-    } catch (e) {
-      debugPrint('❌ 프로필 거리 서버 동기화 실패: $e');
     }
   }
 
@@ -288,5 +294,24 @@ class AuthProvider extends ChangeNotifier {
   void _setLoading(bool value) {
     _isLoading = value;
     notifyListeners();
+  }
+
+  /// 계정 영구 삭제 (회원 탈퇴) 프로세스를 총괄 조율합니다.
+  Future<void> deleteAccount() async {
+    if (_user == null) return;
+    _setLoading(true);
+    try {
+      // 1. FCM 토픽 구독 해제
+      await _notificationService.unsubscribeFromTopic('user_${_user!.id}');
+      // 2. 백엔드 회원 정보 영구 삭제 호출
+      await _authService.deleteAccount();
+      // 3. 로컬 로그아웃 및 상태 전면 초기화
+      await _authService.signOut();
+      _user = null;
+      _profile = null;
+      notifyListeners();
+    } finally {
+      _setLoading(false);
+    }
   }
 }

@@ -8,8 +8,10 @@ import '../../providers/game_provider.dart';
 import '../../providers/location_provider.dart';
 import '../../services/hex_service.dart';
 import '../../core/utils/error_translator.dart';
+import '../widgets/tactical_app_bar.dart';
+import '../widgets/tactical_dialog.dart';
 
-/// 로그인한 요원의 상세 프로필 상태(소속 전술 색상, 점령한 총 영토 수, 당일/누적 주행 마일리지)를
+/// 로그인한 요원의 상세 프로필 상태(소속 전술 색상, 점령한 총 영토 수)를
 /// 검토하고, 전술 색상 수정 및 본진 이전(Rebase), 로그아웃 등 작전 설정을 관리하는 프로필 화면 클래스입니다.
 class ProfileScreen extends StatelessWidget {
   /// 프로필 화면의 생성자입니다.
@@ -25,28 +27,7 @@ class ProfileScreen extends StatelessWidget {
     if (!auth.isAuthenticated || profile == null) {
       return Scaffold(
         backgroundColor: GameColors.tacticalBlack,
-        body: Center(
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              Icon(Icons.lock_person, size: 64, color: GameColors.dividerColor),
-              const SizedBox(height: 20),
-              Text(
-                GameStrings.loginRequiredPage,
-                style: TextStyle(color: GameColors.textSecondary, fontSize: 16),
-              ),
-              const SizedBox(height: 30),
-              ElevatedButton(
-                onPressed: () => Navigator.pop(context),
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: GameColors.accentNeon,
-                  foregroundColor: GameColors.tacticalBlack,
-                ),
-                child: Text(GameStrings.goBack),
-              ),
-            ],
-          ),
-        ),
+        body: const SizedBox.shrink(),
       );
     }
 
@@ -54,18 +35,9 @@ class ProfileScreen extends StatelessWidget {
 
     return Scaffold(
       backgroundColor: GameColors.tacticalBlack,
-      appBar: AppBar(
-        backgroundColor: GameColors.transparent,
-        elevation: 0,
-        title: Text(
-          GameStrings.agentProfile,
-          style: const TextStyle(fontWeight: FontWeight.bold, letterSpacing: 1.2),
-        ),
-        centerTitle: true,
-        leading: IconButton(
-          icon: const Icon(Icons.arrow_back_ios_new, size: 20),
-          onPressed: () => Navigator.pop(context),
-        ),
+      appBar: TacticalAppBar(
+        titleText: GameStrings.agentProfile,
+        showBackButton: true,
       ),
       body: SingleChildScrollView(
         child: Padding(
@@ -139,31 +111,6 @@ class ProfileScreen extends StatelessWidget {
                     Row(
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
-                        InkWell(
-                          onTap: () => _showColorPicker(context, auth),
-                          customBorder: BeveledRectangleBorder(
-                            borderRadius: BorderRadius.circular(4),
-                          ),
-                          child: Padding(
-                            padding: const EdgeInsets.symmetric(
-                              horizontal: 12,
-                              vertical: 4,
-                            ),
-                            child: _buildStatItem(
-                              GameStrings.myTeam,
-                              profile.colorHex.toUpperCase(),
-                              teamColor,
-                            ),
-                          ),
-                        ),
-                        Container(
-                          width: 1,
-                          height: 30,
-                          color: GameColors.dividerColor.withValues(
-                            alpha: 80 / 255,
-                          ),
-                          margin: const EdgeInsets.symmetric(horizontal: 12),
-                        ),
                         _buildStatItem(
                           GameStrings.capturedTiles,
                           '${game.myCapturedCount}${GameStrings.countUnit}',
@@ -175,8 +122,7 @@ class ProfileScreen extends StatelessWidget {
                 ),
               ),
 
-              const SizedBox(height: 16),
-              _buildMileageCard(context),
+
 
               const SizedBox(height: 24),
               Text(
@@ -193,8 +139,8 @@ class ProfileScreen extends StatelessWidget {
               _buildMenuCard([
                 _buildMenuItem(
                   icon: Icons.palette,
-                  title: GameStrings.changeTeamColor,
-                  subtitle: GameStrings.changeTeamColorSub,
+                  title: GameStrings.changeTacticalColor,
+                  subtitle: GameStrings.changeTacticalColorSub,
                   onTap: () => _showColorPicker(context, auth),
                 ),
                 _buildDivider(),
@@ -218,22 +164,22 @@ class ProfileScreen extends StatelessWidget {
                           child: Column(
                             children: [
                               _buildSubMenuItem(
-                                title: '영토 침공 및 작전 알림',
-                                subtitle: '내 구역이 적 요원에 의해 침공/함락될 때 수신',
+                                title: GameStrings.notifTerritoryAttackTitle,
+                                subtitle: GameStrings.notifTerritoryAttackSub,
                                 value: game.isNotifTerritoryAttack,
                                 onChanged: (val) => game.toggleNotifTerritoryAttack(),
                               ),
                               _buildSubDivider(),
                               _buildSubMenuItem(
-                                title: '위성 점령 안착 완료 알림',
-                                subtitle: '위성 빔 비행 정지 및 원격 점령 완료 시 수신',
+                                title: GameStrings.notifSatelliteCompleteTitle,
+                                subtitle: GameStrings.notifSatelliteCompleteSub,
                                 value: game.isNotifSatelliteComplete,
                                 onChanged: (val) => game.toggleNotifSatelliteComplete(),
                               ),
                               _buildSubDivider(),
                               _buildSubMenuItem(
-                                title: '시스템 긴급 전술 지령',
-                                subtitle: '주요 패치 브리핑 및 실시간 작전 공지 수신',
+                                title: GameStrings.notifSystemNoticeTitle,
+                                subtitle: GameStrings.notifSystemNoticeSub,
                                 value: game.isNotifSystemNotice,
                                 onChanged: (val) => game.toggleNotifSystemNotice(),
                               ),
@@ -277,8 +223,25 @@ class ProfileScreen extends StatelessWidget {
                   onTap: () async {
                     final confirm = await _showLogoutConfirm(context);
                     if (confirm == true) {
-                      await auth.signOut();
                       if (context.mounted) Navigator.pop(context);
+                      await auth.signOut();
+                    }
+                  },
+                ),
+                _buildMenuItem(
+                  icon: Icons.delete_forever,
+                  title: GameStrings.deleteAccount,
+                  titleColor: GameColors.error,
+                  onTap: () async {
+                    final confirm = await _showDeleteAccountConfirm(context);
+                    if (confirm == true) {
+                      if (context.mounted) Navigator.pop(context);
+                      await auth.deleteAccount();
+                      if (context.mounted) {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          SnackBar(content: Text(GameStrings.deleteAccountSuccess)),
+                        );
+                      }
                     }
                   },
                 ),
@@ -301,122 +264,7 @@ class ProfileScreen extends StatelessWidget {
     );
   }
 
-  /// 요원의 위치 추적 로그를 기반으로 금일 주행 거리 및 누적 주행 거리를 계측하여
-  /// 가시성 있는 모니터링 레이아웃으로 렌더링하는 전술 주행 기록 카드 위젯입니다.
-  Widget _buildMileageCard(BuildContext context) {
-    final loc = context.watch<LocationProvider>();
-    final daily = loc.dailyDistance;
-    final total = loc.totalDistance;
 
-    final String dailyText = daily < 1000.0
-        ? '${daily.toStringAsFixed(0)} m'
-        : '${(daily / 1000.0).toStringAsFixed(2)} km';
-
-    final String totalText = total < 1000.0
-        ? '${total.toStringAsFixed(0)} m'
-        : '${(total / 1000.0).toStringAsFixed(2)} km';
-
-    return Container(
-      width: double.infinity,
-      padding: const EdgeInsets.all(20),
-      decoration: ShapeDecoration(
-        color: GameColors.backgroundMedium.withValues(alpha: 0.65),
-        shape: BeveledRectangleBorder(
-          borderRadius: const BorderRadius.only(
-            topLeft: Radius.circular(12),
-            bottomRight: Radius.circular(12),
-          ),
-          side: BorderSide(
-            color: GameColors.dividerColor.withValues(alpha: 0.2),
-            width: 1.0,
-          ),
-        ),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            children: [
-              Icon(
-                Icons.directions_run_rounded,
-                size: 16,
-                color: GameColors.accentNeon,
-              ),
-              const SizedBox(width: 6),
-              Text(
-                '[ ${GameStrings.operationMileage.toUpperCase()} ]',
-                style: TextStyle(
-                  color: GameColors.textPrimary,
-                  fontSize: 12,
-                  fontWeight: FontWeight.bold,
-                  letterSpacing: 1.0,
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 16),
-          Row(
-            children: [
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      GameStrings.dailyDistance,
-                      style: TextStyle(
-                        color: GameColors.textMuted,
-                        fontSize: 11,
-                      ),
-                    ),
-                    const SizedBox(height: 4),
-                    Text(
-                      dailyText,
-                      style: TextStyle(
-                        color: GameColors.accentNeon,
-                        fontSize: 18,
-                        fontWeight: FontWeight.bold,
-                        fontFamily: 'monospace',
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-              Container(
-                width: 1,
-                height: 35,
-                color: GameColors.dividerColor.withValues(alpha: 0.15),
-              ),
-              const SizedBox(width: 20),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      GameStrings.totalDistance,
-                      style: TextStyle(
-                        color: GameColors.textMuted,
-                        fontSize: 11,
-                      ),
-                    ),
-                    const SizedBox(height: 4),
-                    Text(
-                      totalText,
-                      style: TextStyle(
-                        color: GameColors.textPrimary,
-                        fontSize: 18,
-                        fontWeight: FontWeight.bold,
-                        fontFamily: 'monospace',
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            ],
-          ),
-        ],
-      ),
-    );
-  }
 
   /// 프로필 상단 카드에 표기될 핵심 통계 수치 항목을 빌드하는 도우미 위젯입니다.
   /// 
@@ -580,34 +428,10 @@ class ProfileScreen extends StatelessWidget {
   Future<bool?> _showLogoutConfirm(BuildContext context) {
     return showDialog<bool>(
       context: context,
-      builder: (context) => AlertDialog(
-        backgroundColor: GameColors.backgroundMedium,
-        shape: BeveledRectangleBorder(
-          borderRadius: BorderRadius.circular(10),
-          side: BorderSide(
-            color: GameColors.error.withValues(alpha: 0.5),
-            width: 1.2,
-          ),
-        ),
-        title: Row(
-          children: [
-            Icon(
-              Icons.warning_amber_rounded,
-              color: GameColors.error,
-              size: 20,
-            ),
-            const SizedBox(width: 8),
-            Text(
-              '[ SYSTEM // TERMINATE ]',
-              style: TextStyle(
-                color: GameColors.textPrimary,
-                fontSize: 14,
-                fontWeight: FontWeight.bold,
-                letterSpacing: 1.2,
-              ),
-            ),
-          ],
-        ),
+      builder: (context) => TacticalDialog(
+        title: GameStrings.logoutConfirmTitle,
+        icon: Icons.warning_amber_rounded,
+        accentColor: GameColors.error,
         content: Text(
           GameStrings.logoutConfirmMessage,
           style: TextStyle(color: GameColors.textSecondary, fontSize: 13),
@@ -637,6 +461,47 @@ class ProfileScreen extends StatelessWidget {
     );
   }
 
+  /// 계정 영구 삭제 처리를 하기 전 사용자에게 확인 의사를 재차 검증하는 경고 팝업 창을 띄웁니다.
+  Future<bool?> _showDeleteAccountConfirm(BuildContext context) {
+    return showDialog<bool>(
+      context: context,
+      builder: (context) => TacticalDialog(
+        title: GameStrings.deleteAccountConfirmTitle,
+        icon: Icons.dangerous_rounded,
+        accentColor: GameColors.error,
+        content: Text(
+          GameStrings.deleteAccountConfirmMessage,
+          style: TextStyle(
+            color: GameColors.textSecondary,
+            fontSize: 13,
+            height: 1.5,
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context, false),
+            style: TextButton.styleFrom(foregroundColor: GameColors.textMuted),
+            child: Text(GameStrings.cancel),
+          ),
+          ElevatedButton(
+            onPressed: () => Navigator.pop(context, true),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: GameColors.error,
+              foregroundColor: GameColors.tacticalWhite,
+              shape: BeveledRectangleBorder(
+                borderRadius: BorderRadius.circular(4),
+              ),
+            ),
+            child: Text(
+              GameStrings.deleteAccount,
+              style: const TextStyle(fontWeight: FontWeight.bold),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
   /// 사용자가 원하는 고유 전술 색상을 RGB 슬라이더 조작을 통해 직접 믹싱하고 
   /// 서버 데이터에 영구 보존할 수 있도록 지원하는 컬러 피커 다이얼로그 팝업입니다.
   void _showColorPicker(BuildContext context, AuthProvider auth) {
@@ -646,7 +511,7 @@ class ProfileScreen extends StatelessWidget {
     int r = (currentColor.r * 255.0).round().clamp(0, 255);
     int g = (currentColor.g * 255.0).round().clamp(0, 255);
     int b = (currentColor.b * 255.0).round().clamp(0, 255);
- 
+
     showDialog(
       context: context,
       builder: (context) => StatefulBuilder(
@@ -656,87 +521,86 @@ class ProfileScreen extends StatelessWidget {
               '#${r.toRadixString(16).padLeft(2, '0')}${g.toRadixString(16).padLeft(2, '0')}${b.toRadixString(16).padLeft(2, '0')}'
                   .toUpperCase();
  
-          return AlertDialog(
-            backgroundColor: GameColors.backgroundMedium,
-            shape: BeveledRectangleBorder(
-              borderRadius: BorderRadius.circular(12),
-              side: BorderSide(
-                color: GameColors.accentNeon.withValues(alpha: 0.3),
-                width: 1.2,
-              ),
-            ),
-            title: Text(
-              '[ SYSTEM // TEAM COLOR ]',
-              style: TextStyle(
-                color: GameColors.textPrimary,
-                fontSize: 14,
-                fontWeight: FontWeight.bold,
-                letterSpacing: 1.2,
-              ),
-            ),
+          return TacticalDialog(
+            title: GameStrings.tacticalColorSetupTitle,
+            icon: Icons.tune_rounded,
+            accentColor: GameColors.accentNeon,
             content: Column(
               mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
-                // 색상 미리보기 (팔각 텍티컬 프레임)
-                Container(
-                  width: 80,
-                  height: 80,
-                  decoration: ShapeDecoration(
-                    color: previewColor.withValues(alpha: 0.15),
-                    shape: BeveledRectangleBorder(
-                      borderRadius: BorderRadius.circular(16),
-                      side: BorderSide(color: previewColor, width: 2.5),
+                // 색상 미리보기 (팔각 텍티컬 프레임 + 웅장한 네온 글로우)
+                Center(
+                  child: Container(
+                    width: 96,
+                    height: 96,
+                    decoration: ShapeDecoration(
+                      color: previewColor.withValues(alpha: 0.15),
+                      shape: BeveledRectangleBorder(
+                        borderRadius: BorderRadius.circular(20),
+                        side: BorderSide(color: previewColor, width: 2.5),
+                      ),
+                      shadows: [
+                        BoxShadow(
+                          color: previewColor.withValues(alpha: 0.55),
+                          blurRadius: 20,
+                          spreadRadius: 4,
+                        ),
+                      ],
                     ),
-                    shadows: [
-                      BoxShadow(
-                        color: previewColor.withValues(alpha: 0.2),
-                        blurRadius: 15,
-                        spreadRadius: 2,
+                    child: Icon(Icons.radar_rounded, color: previewColor, size: 48),
+                  ),
+                ),
+                const SizedBox(height: 30),
+ 
+                // RGB 슬라이더 카드형 배경
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 16),
+                  decoration: BoxDecoration(
+                    color: GameColors.tacticalWhite.withValues(alpha: 0.03),
+                    borderRadius: BorderRadius.circular(10),
+                    border: Border.all(
+                      color: GameColors.dividerColor.withValues(alpha: 0.25),
+                      width: 0.8,
+                    ),
+                  ),
+                  child: Column(
+                    children: [
+                      _buildRGBSlider(
+                        'RED',
+                        r,
+                        GameColors.error,
+                        (val) => setState(() => r = val.toInt()),
+                      ),
+                      const SizedBox(height: 12),
+                      _buildRGBSlider(
+                        'GREEN',
+                        g,
+                        GameColors.success,
+                        (val) => setState(() => g = val.toInt()),
+                      ),
+                      const SizedBox(height: 12),
+                      _buildRGBSlider(
+                        'BLUE',
+                        b,
+                        GameColors.info,
+                        (val) => setState(() => b = val.toInt()),
                       ),
                     ],
                   ),
-                  child: Icon(Icons.person, color: previewColor, size: 40),
-                ),
-                const SizedBox(height: 12),
-                Text(
-                  hexString,
-                  style: TextStyle(
-                    color: previewColor,
-                    fontFamily: 'monospace',
-                    fontWeight: FontWeight.bold,
-                    fontSize: 16,
-                    letterSpacing: 1.0,
-                  ),
-                ),
-                const SizedBox(height: 24),
- 
-                // RGB 슬라이더
-                _buildRGBSlider(
-                  'R',
-                  r,
-                  GameColors.error,
-                  (val) => setState(() => r = val.toInt()),
-                ),
-                _buildRGBSlider(
-                  'G',
-                  g,
-                  GameColors.success,
-                  (val) => setState(() => g = val.toInt()),
-                ),
-                _buildRGBSlider(
-                  'B',
-                  b,
-                  GameColors.info,
-                  (val) => setState(() => b = val.toInt()),
                 ),
               ],
             ),
             actions: [
               TextButton(
                 onPressed: () => Navigator.pop(context),
+                style: TextButton.styleFrom(
+                  foregroundColor: GameColors.textMuted,
+                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                ),
                 child: Text(
                   GameStrings.cancel,
-                  style: TextStyle(color: GameColors.textMuted),
+                  style: const TextStyle(fontWeight: FontWeight.bold, letterSpacing: 0.5),
                 ),
               ),
               ElevatedButton(
@@ -756,7 +620,7 @@ class ProfileScreen extends StatelessWidget {
                             ),
                             const SizedBox(width: 8),
                             Text(
-                              GameStrings.teamColorChanged,
+                              GameStrings.tacticalColorChanged,
                               style: TextStyle(
                                 color: GameColors.textPrimary,
                                 fontWeight: FontWeight.bold,
@@ -780,13 +644,16 @@ class ProfileScreen extends StatelessWidget {
                   foregroundColor: (r + g + b) > 400
                       ? GameColors.tacticalBlack
                       : GameColors.tacticalWhite,
+                  elevation: 8,
+                  shadowColor: previewColor.withValues(alpha: 0.6),
+                  padding: const EdgeInsets.symmetric(horizontal: 22, vertical: 12),
                   shape: BeveledRectangleBorder(
-                    borderRadius: BorderRadius.circular(6),
+                    borderRadius: BorderRadius.circular(8),
                   ),
                 ),
                 child: Text(
                   GameStrings.apply,
-                  style: const TextStyle(fontWeight: FontWeight.bold),
+                  style: const TextStyle(fontWeight: FontWeight.bold, letterSpacing: 1.0),
                 ),
               ),
             ],
@@ -795,7 +662,7 @@ class ProfileScreen extends StatelessWidget {
       ),
     );
   }
- 
+
   /// RGB 개별 색상 채널의 가중치를 미세 제어하기 위한 커스텀 슬라이더 위젯입니다.
   Widget _buildRGBSlider(
     String label,
@@ -803,60 +670,81 @@ class ProfileScreen extends StatelessWidget {
     Color activeColor,
     ValueChanged<double> onChanged,
   ) {
-    return Padding(
-      padding: const EdgeInsets.only(bottom: 12.0),
-      child: Row(
-        children: [
-          Spacer(), // 기존 구조 및 간격을 해치지 않는 범위의 내부 정렬용 Spacer
-          SizedBox(
-            width: 20,
-            child: Text(
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            Text(
               label,
               style: TextStyle(
                 color: activeColor,
                 fontWeight: FontWeight.bold,
-                fontSize: 16,
+                fontSize: 11,
+                letterSpacing: 0.8,
               ),
             ),
-          ),
-          Expanded(
-            child: SliderTheme(
-              data: SliderThemeData(
-                activeTrackColor: activeColor,
-                inactiveTrackColor: GameColors.dividerColor.withValues(
-                  alpha: 50 / 255,
-                ),
-                thumbColor: GameColors.tacticalWhite,
-                overlayColor: activeColor.withValues(alpha: 50 / 255),
-                valueIndicatorColor: activeColor,
-                valueIndicatorTextStyle: TextStyle(
-                  color: GameColors.tacticalBlack,
-                  fontWeight: FontWeight.bold,
-                ),
-              ),
-              child: Slider(
-                value: value.toDouble(),
-                min: 0,
-                max: 255,
-                divisions: 255,
-                label: value.toString(),
-                onChanged: onChanged,
-              ),
-            ),
-          ),
-          SizedBox(
-            width: 35,
-            child: Text(
-              value.toString().padLeft(3, ' '),
+            Text(
+              value.toString(),
               style: TextStyle(
-                color: GameColors.textMuted.withValues(alpha: 150 / 255),
+                color: GameColors.textPrimary,
                 fontFamily: 'monospace',
+                fontWeight: FontWeight.bold,
                 fontSize: 12,
               ),
             ),
-          ),
-        ],
-      ),
+          ],
+        ),
+        const SizedBox(height: 4),
+        Row(
+          children: [
+            Text(
+              '0',
+              style: TextStyle(
+                color: GameColors.textMuted.withValues(alpha: 0.5),
+                fontSize: 10,
+                fontFamily: 'monospace',
+              ),
+            ),
+            Expanded(
+              child: SliderTheme(
+                data: SliderThemeData(
+                  trackHeight: 3.0,
+                  activeTrackColor: activeColor,
+                  inactiveTrackColor: GameColors.dividerColor.withValues(
+                    alpha: 40 / 255,
+                  ),
+                  thumbColor: GameColors.tacticalWhite,
+                  thumbShape: const RoundSliderThumbShape(enabledThumbRadius: 6.0),
+                  overlayColor: activeColor.withValues(alpha: 40 / 255),
+                  overlayShape: const RoundSliderOverlayShape(overlayRadius: 14.0),
+                  valueIndicatorColor: activeColor,
+                  valueIndicatorTextStyle: TextStyle(
+                    color: GameColors.tacticalBlack,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+                child: Slider(
+                  value: value.toDouble(),
+                  min: 0,
+                  max: 255,
+                  divisions: 255,
+                  onChanged: onChanged,
+                ),
+              ),
+            ),
+            Text(
+              '255',
+              style: TextStyle(
+                color: GameColors.textMuted.withValues(alpha: 0.5),
+                fontSize: 10,
+                fontFamily: 'monospace',
+              ),
+            ),
+          ],
+        ),
+      ],
     );
   }
  
@@ -881,34 +769,10 @@ class ProfileScreen extends StatelessWidget {
  
     final confirm = await showDialog<bool>(
       context: context,
-      builder: (context) => AlertDialog(
-        backgroundColor: GameColors.backgroundMedium,
-        shape: BeveledRectangleBorder(
-          borderRadius: BorderRadius.circular(10),
-          side: BorderSide(
-            color: GameColors.accentNeon.withValues(alpha: 0.5),
-            width: 1.2,
-          ),
-        ),
-        title: Row(
-          children: [
-            Icon(
-              Icons.my_location_rounded,
-              color: GameColors.accentNeon,
-              size: 20,
-            ),
-            const SizedBox(width: 8),
-            Text(
-              GameStrings.rebaseConfirmTitle,
-              style: TextStyle(
-                color: GameColors.textPrimary,
-                fontSize: 14,
-                fontWeight: FontWeight.bold,
-                letterSpacing: 1.2,
-              ),
-            ),
-          ],
-        ),
+      builder: (context) => TacticalDialog(
+        title: GameStrings.rebaseConfirmTitle,
+        icon: Icons.my_location_rounded,
+        accentColor: GameColors.accentNeon,
         content: Text(
           GameStrings.rebaseConfirmContent(tileId),
           style: TextStyle(color: GameColors.textSecondary, fontSize: 13),
@@ -963,3 +827,4 @@ class ProfileScreen extends StatelessWidget {
     }
   }
 }
+

@@ -122,8 +122,41 @@ class GameProvider extends ChangeNotifier with WidgetsBindingObserver {
 
   // --- Getters ---
   /// 실시간 점령된 타일 정보를 담은 불변 Map을 반환합니다.
+  /// 내 메인 기지는 가상으로 내 땅으로 강제 주입(빈 타일이 아닌 내 땅으로 확실히 렌더링)하여 반환합니다.
   Map<String, HexTile> get capturedTiles {
-    return Map.unmodifiable(_capturedTiles);
+    final Map<String, HexTile> copy = Map<String, HexTile>.from(_capturedTiles);
+
+    final myMainBaseId = _authProvider?.profile?.mainBaseTileId;
+    final myId = _authProvider?.user?.id;
+    final myColor = _authProvider?.profile?.colorHex;
+
+    // 내 메인 기지는 내 맵 상에서 가상으로 내 땅으로 강제 주입 (빈 타일이 아닌 내 땅으로 확실히 렌더링)
+    if (myMainBaseId != null && myMainBaseId.isNotEmpty && myId != null && myColor != null) {
+      try {
+        final parts = myMainBaseId.split('_');
+        if (parts.length == 3) {
+          final q = int.tryParse(parts[1]) ?? 0;
+          final r = int.tryParse(parts[2]) ?? 0;
+          final corners = HexService.getHexCorners(q, r);
+          final boundsList = corners.map((latLng) => [latLng.latitude, latLng.longitude]).toList();
+
+          copy[myMainBaseId] = HexTile(
+            id: myMainBaseId,
+            q: q,
+            r: r,
+            userId: myId,
+            colorHex: myColor,
+            bounds: boundsList,
+            capturedAt: DateTime.now().toUtc(),
+            captureCount: 1,
+          );
+        }
+      } catch (e) {
+        debugPrint('⚠️ 내 메인기지 가상 타일 주입 오류: $e');
+      }
+    }
+
+    return Map.unmodifiable(copy);
   }
 
   /// 현재 보유 중인 골드 재화 수량
@@ -419,17 +452,17 @@ class GameProvider extends ChangeNotifier with WidgetsBindingObserver {
 
     bool changed = false;
     bool invasionDetected = false;
-    bool hqInvasionDetected = false;
+
+    final myMainBaseId = auth!.profile?.mainBaseTileId;
 
     for (final tile in tiles) {
       // 1. 침공 감지: 기존에 내 땅이었는데 주인이 바뀐 경우
-      final oldTile = _capturedTiles[tile.id];
-      if (oldTile != null &&
-          oldTile.userId == auth!.user!.id &&
-          tile.userId != auth.user!.id) {
-        if (auth.profile?.mainBaseTileId == tile.id) {
-          hqInvasionDetected = true;
-        } else {
+      // 단, 내 메인기지 타일(mainBaseTileId)인 경우는 언제나 내 영토이므로 침공 판정에서 제외합니다.
+      if (tile.id != myMainBaseId) {
+        final oldTile = _capturedTiles[tile.id];
+        if (oldTile != null &&
+            oldTile.userId == auth.user!.id &&
+            tile.userId != auth.user!.id) {
           invasionDetected = true;
         }
       }
@@ -438,15 +471,7 @@ class GameProvider extends ChangeNotifier with WidgetsBindingObserver {
       changed = true;
     }
 
-    if (hqInvasionDetected) {
-      // 메인 기지 침공 알림 발송
-      NotificationService().showLocalNotification(
-        id: 9999,
-        title: GameStrings.hqInvasionNotifTitle,
-        body: GameStrings.hqInvasionNotifBody,
-      );
-      addAlert(GameStrings.hqInvasionAlert, AlertType.error);
-    } else if (invasionDetected) {
+    if (invasionDetected) {
       // 침공 알림 발송
       NotificationService().showLocalNotification(
         id: 999,

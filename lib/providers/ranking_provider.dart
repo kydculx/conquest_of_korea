@@ -3,14 +3,10 @@ import '../models/user_profile.dart';
 import '../services/supabase_service.dart';
 import 'auth_provider.dart';
 
-/// 랭킹 3대 카테고리 지표 타입을 관리하기 위한 상수 정의 클래스
+/// 랭킹 카테고리 지표 타입을 관리하기 위한 상수 정의 클래스
 class RankingType {
   /// 점령 영토 수 기준 랭킹 키
   static const String capturedTiles = 'captured_tiles_count';
-  /// 누적 이동 거리 기준 랭킹 키
-  static const String totalDistance = 'total_distance';
-  /// 당일 이동 거리 기준 랭킹 키
-  static const String dailyDistance = 'daily_distance';
 }
 
 /// 요원들의 전술적 랭킹 상태 및 내 순위를 로딩하고 관리하는 상태 관리 프로바이더 클래스
@@ -67,15 +63,7 @@ class RankingProvider extends ChangeNotifier {
       final userId = _authProvider?.user?.id;
 
       if (profile != null && userId != null) {
-        double myValue = 0.0;
-        if (_currentType == RankingType.capturedTiles) {
-          myValue = profile.capturedTilesCount.toDouble();
-        } else if (_currentType == RankingType.totalDistance) {
-          myValue = profile.totalDistance;
-        } else if (_currentType == RankingType.dailyDistance) {
-          myValue = profile.dailyDistance;
-        }
-
+        final double myValue = profile.capturedTilesCount.toDouble();
         myRankingFuture = _supabase.fetchMyRanking(userId, _currentType, myValue);
       }
 

@@ -6,6 +6,7 @@ import 'package:kakao_flutter_sdk_user/kakao_flutter_sdk_user.dart' as kakao;
 import 'package:supabase_flutter/supabase_flutter.dart';
 import '../models/user_profile.dart';
 import '../core/constants/strings.dart';
+import '../core/app_config.dart';
 
 /// Supabase Auth 서비스와 소셜 로그인(구글, 애플, 카카오) 연동을 총괄하는 인증 관리 서비스 클래스
 class AuthService {
@@ -29,6 +30,7 @@ class AuthService {
     required DateTime locationAgreedAt,
     DateTime? marketingAgreedAt,
     String teamId = 'none',
+    String? mainBaseTileId,
   }) async {
     final response = await _client.auth.signUp(
       email: email,
@@ -45,10 +47,7 @@ class AuthService {
     if (response.user != null &&
         response.user!.identities != null &&
         response.user!.identities!.isEmpty) {
-      throw AuthException(
-        GameStrings.emailAlreadyInUse,
-        statusCode: '400',
-      );
+      throw AuthException(GameStrings.emailAlreadyInUse, statusCode: '400');
     }
 
     if (response.user != null) {
@@ -58,9 +57,8 @@ class AuthService {
           'nickname': nickname,
           'color_hex': colorHex,
           // 'team_id': teamId, // DB 컬럼 부재로 임시 주석 처리
+          'main_base_tile_id': mainBaseTileId,
           'created_at': DateTime.now().toIso8601String(),
-          'total_distance': 0.0,
-          'daily_distance': 0.0,
           'terms_agreed_at': termsAgreedAt.toIso8601String(),
           'privacy_agreed_at': privacyAgreedAt.toIso8601String(),
           'location_agreed_at': locationAgreedAt.toIso8601String(),
@@ -90,13 +88,10 @@ class AuthService {
     try {
       debugPrint('🚀 Native Google Sign In Start...');
 
-      const webClientId =
-          '99438286233-e5fpvqd6ngo56e7230vej7aj5efhjg31.apps.googleusercontent.com';
+      final webClientId = AppConfig.googleWebClientId;
 
       final GoogleSignIn googleSignIn = GoogleSignIn(
-        clientId: Platform.isIOS
-            ? '99438286233-62t2u5rmkpvtvhulta47ntk4dnnianqn.apps.googleusercontent.com'
-            : null,
+        clientId: Platform.isIOS ? AppConfig.googleIosClientId : null,
         serverClientId: webClientId,
       );
 
@@ -252,15 +247,20 @@ class AuthService {
     }
   }
 
-  /// 누적 이동 거리 및 당일 이동 거리를 프로필 정보에 비동기 반영합니다.
-  Future<void> updateProfileDistance(
-    String userId,
-    double totalDistance,
-    double dailyDistance,
-  ) async {
-    await _client.from('profiles').update({
-      'total_distance': totalDistance,
-      'daily_distance': dailyDistance,
-    }).eq('id', userId);
+  /// 현재 로그인된 사용자의 요원 프로필과 계정을 영구 삭제(회원 탈퇴)합니다.
+  Future<void> deleteAccount() async {
+    final user = currentUser;
+    if (user == null) return;
+
+    // 1. DB profiles 테이블에서 본인 데이터 삭제 시도
+    // (보통 profiles 테이블에 ON DELETE CASCADE 트리거가 설정되어 auth.users까지 연동 소멸되도록 구성됩니다.)
+    await _client.from('profiles').delete().eq('id', user.id);
+
+    // 2. 만약을 위해 delete_user_account RPC가 있을 수 있으므로 연계 호출 (에러는 안전하게 무시)
+    try {
+      await _client.rpc('delete_user_account');
+    } catch (e) {
+      debugPrint('⚠️ delete_user_account RPC 호출 실패 (대체 트리거 가동 감지): $e');
+    }
   }
 }

@@ -1,9 +1,13 @@
+import 'dart:io';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../../../core/constants/colors.dart';
 import '../../../core/constants/strings.dart';
 import '../../../core/utils/error_translator.dart';
 import '../../../providers/auth_provider.dart';
+import '../game_screen.dart';
+import '../../widgets/tactical_app_bar.dart';
 
 /// 이메일/패스워드 기반 로그인 및 다양한 외부 소셜 계정 연동 로그인을 제공하는
 /// 사용자 인증 및 진입 화면 클래스입니다.
@@ -51,17 +55,26 @@ class _LoginScreenState extends State<LoginScreen> {
     }
   }
 
+  /// 뒤로 가기(pop)를 시도할 때, 스택 뒤에 아무것도 없는 경우를 방지하여
+  /// 안전하게 게임 화면(GameScreen)으로 복귀하는 헬퍼 메서드입니다.
+  void _handleBackToGame() {
+    final navigator = Navigator.of(context);
+    if (navigator.canPop()) {
+      navigator.pop();
+    } else {
+      navigator.pushReplacement(
+        MaterialPageRoute(builder: (context) => const GameScreen()),
+      );
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
+    final Widget mainContent = Scaffold(
       extendBodyBehindAppBar: true,
-      appBar: AppBar(
-        backgroundColor: GameColors.transparent,
-        elevation: 0,
-        leading: IconButton(
-          icon: Icon(Icons.close, color: GameColors.textPrimary),
-          onPressed: () => Navigator.of(context).pop(),
-        ),
+      appBar: TacticalAppBar(
+        showCloseButton: true,
+        leadingOnPressed: _handleBackToGame,
       ),
       body: Container(
         decoration: BoxDecoration(
@@ -226,62 +239,38 @@ class _LoginScreenState extends State<LoginScreen> {
                       ),
                     ),
                     // Apple
-                    _buildSocialCircleButton(
-                      onPressed: () async {
-                        final authProvider = context.read<AuthProvider>();
-                        final navigator = Navigator.of(context);
-                        final scaffoldMessenger = ScaffoldMessenger.of(context);
-                        try {
-                          await authProvider.signInWithApple();
-                          navigator.pop();
-                        } catch (e) {
-                          scaffoldMessenger.showSnackBar(
-                            SnackBar(
-                              content: Text(ErrorTranslator.translate(e)),
-                            ),
-                          );
-                        }
-                      },
-                      color: GameColors.tacticalWhite,
-                      child: Icon(
-                        Icons.apple,
-                        color: GameColors.tacticalBlack,
-                        size: 30,
+                    if (!kIsWeb && Platform.isIOS)
+                      _buildSocialCircleButton(
+                        onPressed: () async {
+                          final authProvider = context.read<AuthProvider>();
+                          final navigator = Navigator.of(context);
+                          final scaffoldMessenger = ScaffoldMessenger.of(context);
+                          try {
+                            await authProvider.signInWithApple();
+                            navigator.pop();
+                          } catch (e) {
+                            scaffoldMessenger.showSnackBar(
+                              SnackBar(
+                                content: Text(ErrorTranslator.translate(e)),
+                              ),
+                            );
+                          }
+                        },
+                        color: GameColors.tacticalWhite,
+                        child: Icon(
+                          Icons.apple,
+                          color: GameColors.tacticalBlack,
+                          size: 30,
+                        ),
                       ),
-                    ),
-                    // Kakao
-                    _buildSocialCircleButton(
-                      onPressed: () async {
-                        final authProvider = context.read<AuthProvider>();
-                        final navigator = Navigator.of(context);
-                        final scaffoldMessenger = ScaffoldMessenger.of(context);
-                        try {
-                          await authProvider.signInWithKakao();
-                          navigator.pop();
-                        } catch (e) {
-                          scaffoldMessenger.showSnackBar(
-                            SnackBar(
-                              content: Text(ErrorTranslator.translate(e)),
-                            ),
-                          );
-                        }
-                      },
-                      color: GameColors.kakaoYellow,
-                      child: Icon(
-                        Icons.chat_bubble,
-                        color: GameColors.kakaoText,
-                        size: 22,
-                      ),
-                    ),
+
                   ],
                 ),
                 const SizedBox(height: 30),
 
-                // Sign up Link
+                // Register Link
                 TextButton(
-                  onPressed: () {
-                    Navigator.of(context).pushNamed('/terms-agreement');
-                  },
+                  onPressed: () => Navigator.pushNamed(context, '/terms-agreement'),
                   child: Text(
                     GameStrings.createAccount,
                     style: TextStyle(
@@ -296,6 +285,16 @@ class _LoginScreenState extends State<LoginScreen> {
           ),
         ),
       ),
+    );
+
+    // 시스템 백버튼 가로채기를 통해 뒤로 갈 때 무조건 게임 맵 화면으로 안전 회귀 보장
+    return PopScope(
+      canPop: false,
+      onPopInvokedWithResult: (didPop, result) async {
+        if (didPop) return;
+        _handleBackToGame();
+      },
+      child: mainContent,
     );
   }
 
