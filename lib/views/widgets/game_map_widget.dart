@@ -327,14 +327,6 @@ class _GameMapWidgetState extends State<GameMapWidget>
               child: Column(
                 children: [
                   _buildMapAction(
-                    icon: Icons.satellite_alt_rounded,
-                    onPressed: () {
-                      gameProvider.toggleScanMode();
-                    },
-                    isActive: gameProvider.isScanMode,
-                  ),
-                  const SizedBox(height: 8),
-                  _buildMapAction(
                     icon: !_isFollowing
                         ? Icons.location_searching
                         : (gameProvider.isMapRotationMode

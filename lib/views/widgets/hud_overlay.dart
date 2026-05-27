@@ -232,15 +232,84 @@ class _CozyControlDeck extends StatelessWidget {
     required this.bottomPadding,
   });
 
+  Widget _buildInfoCapsule() {
+    Color statusColor = GameColors.textMuted;
+    String statusTitle = '점령 대기 상태';
+    String statusDesc = '점령 모드를 개시해 주세요';
+    
+    if (game.isCapturing && !game.isScanMode) {
+      statusColor = GameColors.success;
+      statusTitle = '영역 점령 진행 중';
+      statusDesc = GameStrings.capturingZone;
+    } else if (game.isScanMode) {
+      statusColor = GameColors.accentNeon;
+      statusTitle = '위성 스캔 모드';
+      statusDesc = game.selectedScanTileId != null ? '선택 타일 점령 분석 중...' : '타일을 눌러 스캔하세요';
+    }
+
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
+      decoration: BoxDecoration(
+        color: Colors.white.withValues(alpha: 0.05),
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(
+          color: statusColor.withValues(alpha: 0.2),
+          width: 1.0,
+        ),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Container(
+            width: 6,
+            height: 6,
+            decoration: BoxDecoration(
+              color: statusColor,
+              shape: BoxShape.circle,
+            ),
+          ),
+          const SizedBox(width: 8),
+          Text(
+            statusTitle,
+            style: GoogleFonts.fredoka(
+              color: statusColor,
+              fontSize: 10,
+              fontWeight: FontWeight.bold,
+            ),
+          ),
+          const SizedBox(width: 8),
+          Container(
+            width: 1,
+            height: 10,
+            color: GameColors.dividerColor.withValues(alpha: 0.3),
+          ),
+          const SizedBox(width: 8),
+          Flexible(
+            child: Text(
+              statusDesc,
+              style: GoogleFonts.quicksand(
+                color: GameColors.textSecondary,
+                fontSize: 10,
+                fontWeight: FontWeight.w700,
+              ),
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return Container(
       margin: const EdgeInsets.symmetric(horizontal: 16),
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+      padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 14),
       decoration: ShapeDecoration(
         color: GameColors.backgroundMedium.withValues(alpha: 0.95),
         shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(24),
+          borderRadius: BorderRadius.circular(32),
           side: BorderSide(
             color: GameColors.accentNeon.withValues(alpha: 0.2),
             width: 1.2,
@@ -248,134 +317,128 @@ class _CozyControlDeck extends StatelessWidget {
         ),
         shadows: [
           BoxShadow(
-            color: Colors.black.withValues(alpha: 0.05),
-            blurRadius: 16,
-            offset: const Offset(0, 6),
+            color: Colors.black.withValues(alpha: 0.08),
+            blurRadius: 20,
+            offset: const Offset(0, 8),
           ),
         ],
       ),
-      child: Row(
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
         children: [
-          // 1. 좌측: 나침반 컴포넌트 탑재
-          const TacticalCompass(),
-          const SizedBox(width: 14),
-          // 2. 중앙: 실시간 상태 메타 정보 텍스트
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                if (game.isCapturing && !game.isScanMode) ...[
-                  Row(
-                    children: [
-                      Container(
-                        width: 6,
-                        height: 6,
-                        decoration: BoxDecoration(
-                          color: GameColors.success,
-                          shape: BoxShape.circle,
-                        ),
-                      ),
-                      const SizedBox(width: 6),
-                      Text(
-                        '영역 점령 진행 중',
-                        style: GoogleFonts.fredoka(
-                          color: GameColors.success,
-                          fontSize: 10.5,
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 2),
-                  Text(
-                    GameStrings.capturingZone,
-                    style: GoogleFonts.quicksand(
-                      color: GameColors.textSecondary,
-                      fontSize: 11,
-                      fontWeight: FontWeight.w700,
-                    ),
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                  ),
-                ] else if (game.isScanMode) ...[
-                  Row(
-                    children: [
-                      Container(
-                        width: 6,
-                        height: 6,
-                        decoration: BoxDecoration(
-                          color: GameColors.accentNeon,
-                          shape: BoxShape.circle,
-                        ),
-                      ),
-                      const SizedBox(width: 6),
-                      Text(
-                        '위성 스캔 모드',
-                        style: GoogleFonts.fredoka(
-                          color: GameColors.accentNeon,
-                          fontSize: 10.5,
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 2),
-                  Text(
-                    game.selectedScanTileId != null
-                        ? '선택 타일 점령 분석 중...'
-                        : '타일을 눌러 스캔하세요',
-                    style: GoogleFonts.quicksand(
-                      color: GameColors.textSecondary,
-                      fontSize: 11,
-                      fontWeight: FontWeight.w700,
-                    ),
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                  ),
-                ] else ...[
-                  Row(
-                    children: [
-                      Container(
-                        width: 6,
-                        height: 6,
-                        decoration: BoxDecoration(
-                          color: GameColors.textMuted,
-                          shape: BoxShape.circle,
-                        ),
-                      ),
-                      const SizedBox(width: 6),
-                      Text(
-                        '점령 대기 상태',
-                        style: GoogleFonts.fredoka(
-                          color: GameColors.textMuted,
-                          fontSize: 10.5,
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 2),
-                  Text(
-                    '점령 모드를 개시해 주세요',
-                    style: GoogleFonts.quicksand(
-                      color: GameColors.textSecondary,
-                      fontSize: 11,
-                      fontWeight: FontWeight.w700,
-                    ),
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                  ),
-                ],
-              ],
-            ),
+          // 1. 상단: 뽀얀 캡슐 모양 상태 가이드 뱃지
+          _buildInfoCapsule(),
+          const SizedBox(height: 14),
+          // 2. 하단: 입체 삼각 편대 조작계 (나침반 - 점령버튼 - 스캔버튼)
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              // 좌측: 나침반 앵커 (가로세로 60 규격 최적화)
+              const SizedBox(
+                width: 60,
+                height: 60,
+                child: Center(child: TacticalCompass()),
+              ),
+              // 중앙: 대형 원형 점령 버튼
+              game.isScanMode
+                  ? _SatelliteCaptureActionButton(game: game)
+                  : _StartStopCaptureButton(game: game),
+              // 우측: 위성 스캔 토글 젤리 버튼
+              SizedBox(
+                width: 60,
+                height: 60,
+                child: Center(child: _ScanToggleActionButton(game: game)),
+              ),
+            ],
           ),
-          const SizedBox(width: 10),
-          // 3. 우측: 수동 점령 및 위성 점령 실행 젤리 버튼
-          game.isScanMode
-              ? _SatelliteCaptureActionButton(game: game)
-              : _StartStopCaptureButton(game: game),
         ],
+      ),
+    );
+  }
+}
+
+/// [신규] 하단 조작계에 탑재되는 둥글고 귀여운 위성 스캔 토글 젤리 버튼
+class _ScanToggleActionButton extends StatefulWidget {
+  final GameProvider game;
+  const _ScanToggleActionButton({required this.game});
+
+  @override
+  State<_ScanToggleActionButton> createState() => _ScanToggleActionButtonState();
+}
+
+class _ScanToggleActionButtonState extends State<_ScanToggleActionButton> {
+  bool _isPressed = false;
+
+  @override
+  Widget build(BuildContext context) {
+    final isScanMode = widget.game.isScanMode;
+    return GestureDetector(
+      onTapDown: (_) => setState(() => _isPressed = true),
+      onTapCancel: () => setState(() => _isPressed = false),
+      onTapUp: (_) {
+        setState(() => _isPressed = false);
+        widget.game.toggleScanMode();
+      },
+      child: AnimatedScale(
+        scale: _isPressed ? 0.9 : 1.0,
+        duration: const Duration(milliseconds: 100),
+        child: AnimatedContainer(
+          duration: const Duration(milliseconds: 150),
+          width: 56,
+          height: 56,
+          decoration: BoxDecoration(
+            shape: BoxShape.circle,
+            gradient: LinearGradient(
+              begin: Alignment.topCenter,
+              end: Alignment.bottomCenter,
+              colors: isScanMode
+                  ? [const Color(0xFFFFB74D), const Color(0xFFF57C00)] // 솜사탕 오렌지/옐로우 글로우
+                  : [const Color(0xFFE0E0E0), const Color(0xFF9E9E9E)], // 비활성 실버 그레이
+            ),
+            border: Border.all(
+              color: Colors.white.withValues(alpha: 0.4),
+              width: 1.5,
+            ),
+            boxShadow: [
+              BoxShadow(
+                color: (isScanMode ? const Color(0xFFFFB74D) : Colors.black)
+                    .withValues(alpha: isScanMode ? 0.4 : 0.15),
+                blurRadius: isScanMode ? 12 : 6,
+                offset: const Offset(0, 3),
+              )
+            ],
+          ),
+          child: Stack(
+            children: [
+              Positioned(
+                top: 2,
+                left: 6,
+                right: 6,
+                height: 22,
+                child: Container(
+                  decoration: BoxDecoration(
+                    borderRadius: const BorderRadius.vertical(top: Radius.circular(22)),
+                    gradient: LinearGradient(
+                      begin: Alignment.topCenter,
+                      end: Alignment.bottomCenter,
+                      colors: [
+                        Colors.white.withValues(alpha: 0.4),
+                        Colors.white.withValues(alpha: 0.0),
+                      ],
+                    ),
+                  ),
+                ),
+              ),
+              Center(
+                child: Icon(
+                  Icons.radar_rounded,
+                  color: Colors.white,
+                  size: 24,
+                ),
+              ),
+            ],
+          ),
+        ),
       ),
     );
   }

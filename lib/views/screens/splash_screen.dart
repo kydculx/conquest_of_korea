@@ -34,7 +34,7 @@ class _SplashScreenState extends State<SplashScreen>
     )..repeat();
 
     // 1.2초의 쾌적한 최소 연출 대기 시간 구성
-    Timer(const Duration(milliseconds: 12000), () {
+    Timer(const Duration(milliseconds: 3000), () {
       if (mounted) {
         setState(() {
           _minTimeElapsed = true;
