@@ -64,14 +64,16 @@ class _GameMapWidgetState extends State<GameMapWidget>
     if (!mounted || _locProvider == null) return;
 
     final loc = _locProvider!;
-    if (loc.currentLocation == null) return;
-
     final gameProvider = Provider.of<GameProvider>(context, listen: false);
 
     // 1. 위치 이동은 내 위치 추적 활성화 상태이고 사용자가 지도를 조작 중(터치/핀치)이 아니며, 이동 애니메이션이 진행 중이지 않을 때만 수행
     final isAnimating =
         _animationController != null && _animationController!.isAnimating;
-    if (gameProvider.isFollowingUser && !_isPinching && _pointerCount == 0 && !isAnimating) {
+    if (loc.currentLocation != null &&
+        gameProvider.isFollowingUser &&
+        !_isPinching &&
+        _pointerCount == 0 &&
+        !isAnimating) {
       _mapController.move(loc.currentLocation!, _currentZoom);
     }
 
@@ -88,7 +90,11 @@ class _GameMapWidgetState extends State<GameMapWidget>
     widget.game.updateProjection(_mapController);
 
     // 3. Flame 엔진에 실시간 플레이어 위치 및 헤딩 동기화
-    widget.game.updatePlayerLocation(loc.currentLocation!);
+    if (loc.currentLocation != null) {
+      widget.game.updatePlayerLocation(loc.currentLocation!);
+    }
+
+    // 헤딩은 위치 좌표 획득 여부와 무관하게 무조건 동기화하여 화살표 및 나침반 방향 전환 즉각 반응 보장
     widget.game.updatePlayerHeading(
       gameProvider.isMapRotationMode ? 0.0 : loc.heading,
     );

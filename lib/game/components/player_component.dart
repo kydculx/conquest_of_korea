@@ -20,13 +20,6 @@ class PlayerComponent extends PositionComponent {
   /// 플레이어 커서 컴포넌트의 가시성(화면 렌더링) 여부
   bool isVisible = true;
 
-  // 가독성 개선을 위한 애니메이션 변수
-  /// 펄스 애니메이션 계산용 시간 스케일 누적 값
-  double _pulseTime = 0;
-
-  /// 주기적으로 가감되는 크기(Scale) 비율 변수
-  double _pulseScale = 1.0;
-
   /// PlayerComponent 생성자로 앵커를 중앙으로 고정합니다.
   PlayerComponent() : super(anchor: Anchor.center);
 
@@ -35,14 +28,6 @@ class PlayerComponent extends PositionComponent {
     // 크기는 기존대로 유지 (40x40)
     size = Vector2(40, 40);
     anchor = Anchor.center;
-  }
-
-  @override
-  void update(double dt) {
-    super.update(dt);
-    // 펄스 애니메이션: 커서가 미세하게 커졌다 작아지며 시선을 끎
-    _pulseTime += dt * 3;
-    _pulseScale = 1.0 + (math.sin(_pulseTime) * 0.08);
   }
 
   /// 요원의 지리적 위치(LatLng)를 동기화합니다.
@@ -66,70 +51,95 @@ class PlayerComponent extends PositionComponent {
     if (!isVisible) return;
     final center = Offset(size.x / 2, size.y / 2);
     final baseRadius = size.x * 0.35;
-    final radius = baseRadius * _pulseScale;
+    final radius = baseRadius; // 정적 스케일 적용 (산만한 펄싱 애니메이션 완벽 소거)
 
-    // 회전 및 스케일 변환 적용
+    // 1. 하이테크 통합 나침반 방위 링 (디바이스 나침반 각도의 역방향으로 회전시켜 진짜 북극을 향하도록 정밀 기동)
     canvas.save();
     canvas.translate(center.dx, center.dy);
-    canvas.rotate(_heading);
+    canvas.rotate(-_heading); // 역회전 적용하여 링 자체가 실시간으로 회전
     canvas.translate(-center.dx, -center.dy);
 
-    // 1. 하이테크 레이더 스캔 서클 및 펄싱 웨이브 (배경)
-    final radarPaint = Paint()
+    final compassPaint = Paint()
       ..style = PaintingStyle.stroke
-      ..strokeWidth = 1.0;
+      ..strokeWidth = 1.2 // 선명한 분리감을 위해 굵기 상향 보정
+      ..color = GameColors.accentNeon.withValues(alpha: 0.32); // 투명도를 0.32로 높여 맵 위에서 선명하게 분리
 
-    // 정적 전술 타겟 원
-    radarPaint.color = GameColors.accentNeon.withValues(alpha: 0.15);
-    canvas.drawCircle(center, baseRadius * 1.4, radarPaint);
+    final compassRadius = baseRadius * 2.7; // 약 38.0 반경
+    canvas.drawCircle(center, compassRadius, compassPaint);
 
-    // 밖으로 퍼져나가는 스캔 웨이브 효과 (두 개의 엇갈리는 주기)
-    final wave1 = (_pulseTime * 0.5) % 1.0;
-    final wave2 = ((_pulseTime * 0.5) + 0.5) % 1.0;
-
-    radarPaint.color = GameColors.accentNeon.withValues(
-      alpha: (1.0 - wave1) * 0.3,
-    );
-    canvas.drawCircle(center, baseRadius * (0.8 + wave1 * 1.0), radarPaint);
-
-    radarPaint.color = GameColors.accentNeon.withValues(
-      alpha: (1.0 - wave2) * 0.3,
-    );
-    canvas.drawCircle(center, baseRadius * (0.8 + wave2 * 1.0), radarPaint);
-
-    // 2. 전방 전술 레이저 조준 라인 (Dashed Laser Guide)
-    final laserPaint = Paint()
-      ..shader = ui.Gradient.linear(
-        Offset(center.dx, center.dy - radius * 1.2),
-        Offset(center.dx, center.dy - radius * 4.5),
-        [
-          GameColors.accentNeon.withValues(alpha: 0.95),
-          GameColors.accentNeon.withValues(alpha: 0.0),
-        ],
-      )
+    // 1-1. 전술 나침반 정밀 조준 눈금선 (Ticks) - 4방위에 짧은 돌출선 렌더
+    final tickPaint = Paint()
       ..style = PaintingStyle.stroke
-      ..strokeWidth = 1.5;
+      ..strokeWidth = 1.2
+      ..color = GameColors.accentNeon.withValues(alpha: 0.40);
 
-    // 전방으로 연장되는 점선 그리기
-    const int dashCount = 6;
-    final double dashStart = -radius * 1.4;
-    final double dashLength = radius * 0.35;
-    final double dashSpace = radius * 0.18;
-    for (int i = 0; i < dashCount; i++) {
-      final double yStart =
-          center.dy + dashStart - (i * (dashLength + dashSpace));
-      final double yEnd = yStart - dashLength;
-      canvas.drawLine(
-        Offset(center.dx, yStart),
-        Offset(center.dx, yEnd),
-        laserPaint,
-      );
-    }
+    // 북, 동, 남, 서 4곳의 링 안쪽에 4dp 길이의 눈금선 이식
+    canvas.drawLine(
+      Offset(center.dx, center.dy - compassRadius),
+      Offset(center.dx, center.dy - compassRadius + 4.0),
+      tickPaint,
+    );
+    canvas.drawLine(
+      Offset(center.dx + compassRadius, center.dy),
+      Offset(center.dx + compassRadius - 4.0, center.dy),
+      tickPaint,
+    );
+    canvas.drawLine(
+      Offset(center.dx, center.dy + compassRadius),
+      Offset(center.dx, center.dy + compassRadius - 4.0),
+      tickPaint,
+    );
+    canvas.drawLine(
+      Offset(center.dx - compassRadius, center.dy),
+      Offset(center.dx - compassRadius + 4.0, center.dy),
+      tickPaint,
+    );
 
-    // 3. 프리미엄 스텔스기 스타일의 입체 화살표 패스 정의
+    // 4방위 극미니멀 텍스트 레이블 (글자 크기를 11.0으로 대폭 확대하고 불투명도 0.85로 상향하여 가독성 혁신)
+    final double textDist = compassRadius + 7.5; // 링 바깥쪽 마진
+    _drawMiniDirText(
+      canvas,
+      center,
+      'N',
+      Offset(0, -textDist),
+      const Color(0xFFFF5252),
+    ); // 북쪽은 강렬한 네온 레드
+    _drawMiniDirText(
+      canvas,
+      center,
+      'E',
+      Offset(textDist, 0),
+      Colors.white.withValues(alpha: 0.85),
+    );
+    _drawMiniDirText(
+      canvas,
+      center,
+      'S',
+      Offset(0, textDist),
+      Colors.white.withValues(alpha: 0.85),
+    );
+    _drawMiniDirText(
+      canvas,
+      center,
+      'W',
+      Offset(-textDist, 0),
+      Colors.white.withValues(alpha: 0.85),
+    );
+
+    canvas.restore();
+
+    // 2. 프리미엄 스텔스기 스타일의 입체 화살표 (맵 고정일 때는 헤딩만큼 정방향 회전하여 방향 표시, 맵 회전 모드일 때는 0.0이 들어오므로 12시 고정됨)
+    canvas.save();
+    canvas.translate(center.dx, center.dy);
+    canvas.rotate(_heading); // 맵 고정일 때는 기기 주시 각도로 회전 가동!
+    canvas.translate(-center.dx, -center.dy);
+
     final arrowPath = ui.Path()
       ..moveTo(center.dx, center.dy - radius * 1.25) // 전면 앞코
-      ..lineTo(center.dx - radius * 0.95, center.dy + radius * 0.9) // 좌측 하단 날개끝
+      ..lineTo(
+        center.dx - radius * 0.95,
+        center.dy + radius * 0.9,
+      ) // 좌측 하단 날개끝
       ..lineTo(
         center.dx - radius * 0.25,
         center.dy + radius * 0.35,
@@ -139,10 +149,13 @@ class PlayerComponent extends PositionComponent {
         center.dx + radius * 0.25,
         center.dy + radius * 0.35,
       ) // 우측 안쪽 꺾임선
-      ..lineTo(center.dx + radius * 0.95, center.dy + radius * 0.9) // 우측 하단 날개끝
+      ..lineTo(
+        center.dx + radius * 0.95,
+        center.dy + radius * 0.9,
+      ) // 우측 하단 날개끝
       ..close();
 
-    // 3-1. 강한 분리감용 그림자 드롭
+    // 2-1. 강한 분리감용 그림자 드롭
     canvas.drawPath(
       arrowPath,
       Paint()
@@ -150,7 +163,7 @@ class PlayerComponent extends PositionComponent {
         ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 6),
     );
 
-    // 3-2. 테두리 네온 야간 글로우 효과
+    // 2-2. 테두리 네온 야간 글로우 효과
     canvas.drawPath(
       arrowPath,
       Paint()
@@ -158,7 +171,7 @@ class PlayerComponent extends PositionComponent {
         ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 10),
     );
 
-    // 3-3. 입체 명암 연출을 위한 좌우 절반 패스 분리
+    // 2-3. 입체 명암 연출을 위한 좌우 절반 패스 분리
     final leftHalf = ui.Path()
       ..moveTo(center.dx, center.dy - radius * 1.25)
       ..lineTo(center.dx - radius * 0.95, center.dy + radius * 0.9)
@@ -200,7 +213,7 @@ class PlayerComponent extends PositionComponent {
         ..style = PaintingStyle.fill,
     );
 
-    // 3-4. 하이라이트 외곽 테두리선
+    // 2-4. 하이라이트 외곽 테두리선
     canvas.drawPath(
       arrowPath,
       Paint()
@@ -210,7 +223,7 @@ class PlayerComponent extends PositionComponent {
         ..strokeJoin = StrokeJoin.round,
     );
 
-    // 3-5. 중앙 축 척추선 드로잉
+    // 2-5. 중앙 축 척추선 드로잉
     canvas.drawLine(
       Offset(center.dx, center.dy - radius * 0.7),
       Offset(center.dx, center.dy + radius * 0.5),
@@ -221,5 +234,43 @@ class PlayerComponent extends PositionComponent {
     );
 
     canvas.restore();
+  }
+
+  /// 4방위 지시 문자를 극극미니멀한 전술 폰트 스타일로 렌더링하는 헬퍼 메서드
+  void _drawMiniDirText(
+    Canvas canvas,
+    Offset center,
+    String text,
+    Offset offset,
+    Color color,
+  ) {
+    final textPainter = TextPainter(
+      text: TextSpan(
+        text: text,
+        style: TextStyle(
+          color: color,
+          fontSize: 11.0, // 글자 크기 11.0으로 가독성 확장
+          fontWeight: FontWeight.bold,
+          fontFamily: 'Fredoka',
+          shadows: [
+            // 밝은 배경 맵 타일 위에서도 또렷이 분리되는 전술 다크 섀도 드롭
+            Shadow(
+              color: const Color(0xFF121212).withValues(alpha: 0.85),
+              offset: const Offset(0.5, 0.5),
+              blurRadius: 2.0,
+            ),
+          ],
+        ),
+      ),
+      textDirection: TextDirection.ltr,
+    );
+    textPainter.layout();
+    textPainter.paint(
+      canvas,
+      Offset(
+        center.dx + offset.dx - textPainter.width / 2,
+        center.dy + offset.dy - textPainter.height / 2,
+      ),
+    );
   }
 }
