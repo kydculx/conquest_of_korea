@@ -150,10 +150,10 @@ class HexTileComponent extends PositionComponent
       }
       _tileRadius = radSum / corners.length;
 
-      // 아기자기한 둥글기 수준 (반지름의 크기에 따라 자연스럽게 동적 적용)
-      final double cornerRadius = math.min(6.5, _tileRadius * 0.22);
-      // 타일 간의 귀여운 갭(Padding) 생성
-      const double padding = 1.2;
+      // 아기자기한 캐주얼 헥사칩 둥글기 수준 (육각형 본래 대칭각과 둥글기의 균형 조율)
+      final double cornerRadius = math.min(8.0, _tileRadius * 0.26);
+      // 타일 간의 아기자기한 보드게임형 갭(Padding) 생성
+      const double padding = 2.2;
 
       // 1) 패딩이 적용된 수축 꼭짓점 산출
       final List<Offset> insetCorners = [];
@@ -223,7 +223,7 @@ class HexTileComponent extends PositionComponent
 
       // 2) 아기자기함을 더할 부드러운 소프트 테두리 스트로크 추가
       final Paint borderPaint = Paint()
-        ..color = baseColor.withValues(alpha: 0.35)
+        ..color = baseColor.withValues(alpha: 0.45)
         ..style = PaintingStyle.stroke
         ..strokeWidth = 1.0;
       canvas.drawPath(_cachedPath!, borderPaint);

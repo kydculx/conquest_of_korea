@@ -240,7 +240,7 @@ class _GameMapWidgetState extends State<GameMapWidget>
 
                     if (gameProvider.isSatelliteCapturing &&
                         gameProvider.satelliteCapturingTileId == tileId) {
-                      _showSatelliteCancelDialog(context, gameProvider);
+                      _showRemoteCancelDialog(context, gameProvider);
                     } else if (gameProvider.isScanMode) {
                       gameProvider.selectScanTile(tileId);
                     }
@@ -352,7 +352,7 @@ class _GameMapWidgetState extends State<GameMapWidget>
     );
   }
 
-  void _showSatelliteCancelDialog(BuildContext context, GameProvider provider) {
+  void _showRemoteCancelDialog(BuildContext context, GameProvider provider) {
     showDialog(
       context: context,
       barrierDismissible: true,

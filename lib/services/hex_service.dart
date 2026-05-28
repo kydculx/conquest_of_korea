@@ -92,9 +92,9 @@ class HexService {
     double hexSize = GameConfig.tileSize,
   }) {
     final LatLng center = hexToLatLng(q, r, hexSize: hexSize);
-    final double latRad = originLat * math.pi / 180;
+    final double latRad = originLat * math.pi / 180; // 일관되게 기준 위도(originLat)의 cos 사용
     final double latScale = hexSize / 111320;
-    final double lngScale = hexSize / (111320 * math.cos(latRad));
+    final double lngScale = hexSize / (111320 * math.cos(latRad)); // 이웃 타일 간의 가로 너비가 균일하게 맞물림
     final List<LatLng> corners = [];
 
     for (int i = 0; i < 6; i++) {

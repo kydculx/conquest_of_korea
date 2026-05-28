@@ -187,14 +187,7 @@ class _TermsAgreementScreenState extends State<TermsAgreementScreen> {
       extendBodyBehindAppBar: true,
       body: Container(
         decoration: const BoxDecoration(
-          gradient: LinearGradient(
-            begin: Alignment.topCenter,
-            end: Alignment.bottomCenter,
-            colors: [
-              Color(0xFFE3F2FD),
-              Color(0xFFFFF9C4),
-            ],
-          ),
+          gradient: GameColors.cozyDarkGradient,
         ),
         child: SafeArea(
           child: Padding(
@@ -208,7 +201,7 @@ class _TermsAgreementScreenState extends State<TermsAgreementScreen> {
                   style: GoogleFonts.fredoka(
                     fontSize: 12,
                     fontWeight: FontWeight.bold,
-                    color: const Color(0xFFE57373),
+                    color: GameColors.accentNeon,
                     letterSpacing: 0.5,
                   ),
                 ),
@@ -227,7 +220,7 @@ class _TermsAgreementScreenState extends State<TermsAgreementScreen> {
                 // 전체 동의 타일
                 Container(
                   decoration: BoxDecoration(
-                    color: Colors.white.withValues(alpha: 0.6),
+                    color: GameColors.tacticalGray.withValues(alpha: 0.65),
                     borderRadius: BorderRadius.circular(16),
                     border: Border.all(
                       color: _isAllAgreed
@@ -382,7 +375,7 @@ class _TermsAgreementScreenState extends State<TermsAgreementScreen> {
     return Container(
       margin: const EdgeInsets.only(bottom: 12),
       decoration: BoxDecoration(
-        color: Colors.white.withValues(alpha: 0.4),
+        color: GameColors.tacticalGray.withValues(alpha: 0.4),
         borderRadius: BorderRadius.circular(12),
         border: Border.all(
           color: value

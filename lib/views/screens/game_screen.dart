@@ -2,6 +2,7 @@ import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:provider/provider.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import '../../core/constants/colors.dart';
 import '../../core/constants/map_config.dart';
 import '../../core/constants/strings.dart';
@@ -40,11 +41,15 @@ class _GameScreenState extends State<GameScreen> {
         if (ok) {
           await geo.startTracking();
 
-          // 안드로이드 환경이고 권한이 '앱 사용 중에만 허용(whileInUse)'인 경우 '항상 허용' 유도
+          // 안드로이드 환경이고 권한이 '앱 사용 중에만 허용(whileInUse)'인 경우 '항상 허용' 유도 (사용자가 명시적으로 거절한 적이 없을 때만)
           if (Platform.isAndroid) {
             final permission = await Geolocator.checkPermission();
             if (permission == LocationPermission.whileInUse && mounted) {
-              _showBackgroundLocationDialog();
+              final prefs = await SharedPreferences.getInstance();
+              final isDismissed = prefs.getBool('bg_location_prompt_dismissed') ?? false;
+              if (!isDismissed && mounted) {
+                _showBackgroundLocationDialog();
+              }
             }
           }
 
@@ -75,7 +80,11 @@ class _GameScreenState extends State<GameScreen> {
           ),
           actions: [
             TextButton(
-              onPressed: () => Navigator.pop(context),
+              onPressed: () async {
+                Navigator.pop(context);
+                final prefs = await SharedPreferences.getInstance();
+                await prefs.setBool('bg_location_prompt_dismissed', true);
+              },
               style: TextButton.styleFrom(
                 padding: const EdgeInsets.symmetric(
                   horizontal: 20,
@@ -126,11 +135,15 @@ class _GameScreenState extends State<GameScreen> {
   }
 
   /// OS가 임의로 백그라운드 서비스 동작 및 위치 권한 추적을 정지시키는 것을 방지하기 위해
-  /// 배터리 최적화 무시 설정 대상인지 점검하고 필요시 가이드 팝업을 연계합니다.
+  /// 배터리 최적화 무시 설정 대상인지 점검하고 필요시 가이드 팝업을 연계합니다. (거절한 플래그가 저장되어 있지 않은 경우에만)
   Future<void> _checkAndPromptBatteryOptimization(GeoService geo) async {
     final bool isIgnoring = await geo.isIgnoringBatteryOptimizations();
     if (!isIgnoring && mounted) {
-      _showBatteryOptimizationDialog(geo);
+      final prefs = await SharedPreferences.getInstance();
+      final isDismissed = prefs.getBool('bg_battery_prompt_dismissed') ?? false;
+      if (!isDismissed && mounted) {
+        _showBatteryOptimizationDialog(geo);
+      }
     }
   }
 
@@ -155,7 +168,11 @@ class _GameScreenState extends State<GameScreen> {
           ),
           actions: [
             TextButton(
-              onPressed: () => Navigator.pop(context),
+              onPressed: () async {
+                Navigator.pop(context);
+                final prefs = await SharedPreferences.getInstance();
+                await prefs.setBool('bg_battery_prompt_dismissed', true);
+              },
               style: TextButton.styleFrom(
                 padding: const EdgeInsets.symmetric(
                   horizontal: 20,

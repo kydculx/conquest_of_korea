@@ -181,20 +181,12 @@ class _SocialProfileSetupScreenState extends State<SocialProfileSetupScreen> {
       extendBodyBehindAppBar: true,
       body: Stack(
         children: [
-          // 1. 하이테크 전술 배경 그리드 & 그라데이션
+          // 1. 아기자기한 다크 밤하늘 배경 그라데이션
           Container(
             decoration: const BoxDecoration(
-              gradient: LinearGradient(
-                begin: Alignment.topCenter,
-                end: Alignment.bottomCenter,
-                colors: [
-                  Color(0xFFE3F2FD),
-                  Color(0xFFFFF9C4),
-                ],
-              ),
+              gradient: GameColors.cozyDarkGradient,
             ),
           ),
-          Positioned.fill(child: CustomPaint(painter: _TacticalGridPainter())),
 
           // 2. 메인 스크롤 콘텐츠
           SafeArea(
@@ -210,7 +202,7 @@ class _SocialProfileSetupScreenState extends State<SocialProfileSetupScreen> {
                     child: Icon(
                       Icons.radar_outlined,
                       size: 76,
-                      color: const Color(0xFFE57373),
+                      color: GameColors.accentNeon,
                     ),
                   ),
                   const SizedBox(height: 24),
@@ -230,7 +222,7 @@ class _SocialProfileSetupScreenState extends State<SocialProfileSetupScreen> {
                     textAlign: TextAlign.center,
                     style: GoogleFonts.quicksand(
                       fontSize: 12,
-                      color: const Color(0xFFE57373),
+                      color: GameColors.accentNeon,
                       letterSpacing: 0.5,
                       fontWeight: FontWeight.bold,
                     ),
@@ -258,7 +250,7 @@ class _SocialProfileSetupScreenState extends State<SocialProfileSetupScreen> {
                                   ? (_isNicknameAvailable
                                         ? GameColors.success
                                         : GameColors.error)
-                                  : const Color(0xFFE57373),
+                                  : GameColors.accentNeon,
                               size: 20,
                             ),
                             border: OutlineInputBorder(
@@ -274,7 +266,7 @@ class _SocialProfileSetupScreenState extends State<SocialProfileSetupScreen> {
                               borderSide: BorderSide(color: GameColors.accentNeon.withValues(alpha: 0.5), width: 1.5),
                             ),
                             filled: true,
-                            fillColor: Colors.white.withValues(alpha: 0.6),
+                            fillColor: GameColors.tacticalGray.withValues(alpha: 0.5),
                           ),
                         ),
                       ),
@@ -403,29 +395,4 @@ class _SocialProfileSetupScreenState extends State<SocialProfileSetupScreen> {
       child: mainContent,
     );
   }
-}
-
-/// 전술 격자 배경을 그려주는 커스텀 페인터
-class _TacticalGridPainter extends CustomPainter {
-  @override
-  void paint(Canvas canvas, Size size) {
-    final paint = Paint()
-      ..color = GameColors.dividerColor.withValues(alpha: 0.08)
-      ..strokeWidth = 0.5;
-
-    const double step = 30.0;
-
-    // 세로선 그리기
-    for (double x = 0; x < size.width; x += step) {
-      canvas.drawLine(Offset(x, 0), Offset(x, size.height), paint);
-    }
-
-    // 가로선 그리기
-    for (double y = 0; y < size.height; y += step) {
-      canvas.drawLine(Offset(0, y), Offset(size.width, y), paint);
-    }
-  }
-
-  @override
-  bool shouldRepaint(covariant CustomPainter oldDelegate) => false;
 }

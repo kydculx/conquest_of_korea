@@ -20,25 +20,14 @@ class MapConfig {
   /// 앱에서 지원하는 지도 스타일 리스트
   static const List<MapStyle> mapStyles = [
     MapStyle(
-      name: 'mapStyleCyber',
-      url: 'https://{s}.basemaps.cartocdn.com/dark_nolabels/{z}/{x}/{y}{r}.png',
-      icon: 'grid_view',
-      colorMatrix: <double>[
-        0.1, 0.3, 0.1, 0, 0, // Red
-        0.0, 1.6, 0.0, 0, 0, // Green (네온 그린 증폭)
-        0.1, 0.3, 0.5, 0, 0, // Blue
-        0, 0, 0, 1, 0, // Alpha
-      ],
-    ),
-    MapStyle(
       name: 'mapStyleDark',
       url: 'https://{s}.basemaps.cartocdn.com/dark_nolabels/{z}/{x}/{y}{r}.png',
       icon: 'dark_mode',
       colorMatrix: <double>[
-        1.1, 0.2, 0.5, 0, -0.05, // Red (은은한 라벤더 핑크 파스텔 톤 가미)
-        0.1, 0.8, 0.3, 0, -0.10, // Green (초록색 차분하게 가라앉힘)
-        0.4, 0.2, 1.8, 0, -0.02, // Blue (몽환적인 밤하늘 딥 인디고)
-        0, 0, 0, 1, 0, // Alpha
+        1.15, 0.15, 0.50, 0, -0.02, // Red (라벤더 핑크 빛깔 강화)
+        0.05, 0.90, 0.25, 0, -0.05, // Green (네온 민트 조화)
+        0.30, 0.15, 1.95, 0, 0.02,  // Blue (깊고 신비로운 솜사탕 밤하늘 밤빛)
+        0, 0, 0, 1, 0,               // Alpha
       ],
     ),
     MapStyle(

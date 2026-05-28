@@ -79,14 +79,7 @@ class _LoginScreenState extends State<LoginScreen> {
       ),
       body: Container(
         decoration: const BoxDecoration(
-          gradient: LinearGradient(
-            begin: Alignment.topCenter,
-            end: Alignment.bottomCenter,
-            colors: [
-              Color(0xFFE3F2FD),
-              Color(0xFFFFF9C4),
-            ],
-          ),
+          gradient: GameColors.cozyDarkGradient,
         ),
         child: SafeArea(
           child: Padding(
@@ -96,7 +89,7 @@ class _LoginScreenState extends State<LoginScreen> {
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
                 // Logo or Title
-                const Icon(Icons.security, size: 80, color: Color(0xFFE57373)),
+                Icon(Icons.security, size: 80, color: GameColors.accentNeon),
                 const SizedBox(height: 20),
                 Text(
                   GameStrings.appName.toUpperCase(),
@@ -114,7 +107,7 @@ class _LoginScreenState extends State<LoginScreen> {
                   textAlign: TextAlign.center,
                   style: GoogleFonts.quicksand(
                     fontSize: 14,
-                    color: const Color(0xFFE57373),
+                    color: GameColors.accentNeon,
                     letterSpacing: 0.5,
                     fontWeight: FontWeight.bold,
                   ),
@@ -362,7 +355,7 @@ class _LoginScreenState extends State<LoginScreen> {
           fontSize: 12,
           fontWeight: FontWeight.bold,
         ),
-        prefixIcon: Icon(icon, color: const Color(0xFFE57373), size: 20),
+        prefixIcon: Icon(icon, color: GameColors.accentNeon, size: 20),
         suffixIcon: suffixIcon,
         border: OutlineInputBorder(
           borderRadius: BorderRadius.circular(16),
@@ -377,7 +370,7 @@ class _LoginScreenState extends State<LoginScreen> {
           borderSide: BorderSide(color: GameColors.accentNeon.withValues(alpha: 0.5), width: 1.5),
         ),
         filled: true,
-        fillColor: Colors.white.withValues(alpha: 0.6),
+        fillColor: GameColors.tacticalGray.withValues(alpha: 0.5),
       ),
     );
   }

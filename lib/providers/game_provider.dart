@@ -539,8 +539,20 @@ class GameProvider extends ChangeNotifier with WidgetsBindingObserver {
 
     final myMainBaseId = auth!.profile?.mainBaseTileId;
 
+    // 1. 서버에서 수신된 최신 활성 타일 ID 집합 구성
+    final incomingIds = tiles.map((t) => t.id).toSet();
+
+    // 2. 현재 로컬 캐시에는 존재하나 서버 스트림 목록에 없는 (즉, 삭제된) 타일 소거
+    final localIds = _capturedTiles.keys.toSet();
+    final removedIds = localIds.difference(incomingIds);
+    for (final id in removedIds) {
+      _capturedTiles.remove(id);
+      changed = true;
+    }
+
+    // 3. 신규 및 업데이트 타일 반영
     for (final tile in tiles) {
-      // 1. 침공 감지: 기존에 내 땅이었는데 주인이 바뀐 경우
+      // 침공 감지: 기존에 내 땅이었는데 주인이 바뀐 경우
       // 단, 내 메인기지 타일(mainBaseTileId)인 경우는 언제나 내 영토이므로 침공 판정에서 제외합니다.
       if (tile.id != myMainBaseId) {
         final oldTile = _capturedTiles[tile.id];
@@ -551,8 +563,15 @@ class GameProvider extends ChangeNotifier with WidgetsBindingObserver {
         }
       }
 
-      _capturedTiles[tile.id] = tile;
-      changed = true;
+      // 실제 데이터가 변경되었을 때만 주입 및 변경 플래그 활성화 (성능 누수 및 무차별 리빌드 방지)
+      final oldTile = _capturedTiles[tile.id];
+      if (oldTile == null ||
+          oldTile.userId != tile.userId ||
+          oldTile.colorHex != tile.colorHex ||
+          oldTile.captureCount != tile.captureCount) {
+        _capturedTiles[tile.id] = tile;
+        changed = true;
+      }
     }
 
     if (invasionDetected) {

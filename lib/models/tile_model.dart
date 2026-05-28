@@ -55,10 +55,27 @@ class HexTile {
 
   /// Map 구조의 JSON 데이터로부터 HexTile 인스턴스를 생성하는 팩토리 메서드
   factory HexTile.fromJson(Map<String, dynamic> json) {
+    final String id = json['id'] as String;
+    int q = json['q'] as int;
+    int r = json['r'] as int;
+
+    // ID 기반 좌표 무결성 강제 검증 및 자동 교정 (Self-Healing)
+    final parts = id.split('_');
+    if (parts.length == 3 && parts[0] == 'hex') {
+      final parsedQ = int.tryParse(parts[1]);
+      final parsedR = int.tryParse(parts[2]);
+      if (parsedQ != null && parsedR != null) {
+        if (parsedQ != q || parsedR != r) {
+          q = parsedQ;
+          r = parsedR;
+        }
+      }
+    }
+
     return HexTile(
-      id: json['id'] as String,
-      q: json['q'] as int,
-      r: json['r'] as int,
+      id: id,
+      q: q,
+      r: r,
       userId: json['user_id'] as String?,
       colorHex: json['color_hex'] as String?,
       capturedAt: json['captured_at'] != null

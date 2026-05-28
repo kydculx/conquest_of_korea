@@ -31,7 +31,7 @@ class SupabaseService {
 
   /// 데이터베이스에 저장된 모든 점령 완료 타일 목록을 비동기 조회하여 반환합니다.
   Future<List<HexTile>> fetchAllCapturedTiles() async {
-    debugPrint('🛰️ 점령 타일 데이터 요청 중...');
+    debugPrint('🔍 점령 타일 데이터 요청 중...');
     final response = await _client.from('captured_tiles').select('*');
     final tiles = (response as List)
         .map((e) => HexTile.fromJson(e as Map<String, dynamic>))

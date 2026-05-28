@@ -2,6 +2,24 @@ import 'package:flutter/material.dart';
 
 /// 게임 전반에서 사용되는 공용 전술 컬러 클래스 (외부 제어 및 동적 갱신 가능)
 class GameColors {
+  /// 내 영토(타일)용 캐주얼 파스텔 초록색
+  static const Color myTileColor = Color(0xFF81C784);
+  static const String myTileColorHex = '#81C784';
+
+  /// 상대 영토(타일)용 캐주얼 파스텔 회색
+  static const Color enemyTileColor = Color(0xFF90A4AE);
+  static const String enemyTileColorHex = '#90A4AE';
+
+  /// 앱 전반의 아기자기한 다크 테마용 배경 그라데이션
+  static const Gradient cozyDarkGradient = LinearGradient(
+    begin: Alignment.topCenter,
+    end: Alignment.bottomCenter,
+    colors: [
+      Color(0xFF121824), // tacticalBlack
+      Color(0xFF1C2434), // 약간 더 깊고 풍부한 다크 딥인디고
+    ],
+  );
+
   /// 핵심 솜사탕 블루 액센트 컬러 -> 비비드 솜사탕 네온 시안
   static Color accentNeon = const Color(0xFF00E5FF);
 

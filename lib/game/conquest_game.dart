@@ -188,14 +188,19 @@ class ConquestGame extends FlameGame {
     // 신규/업데이트 타일 처리
     capturedTiles.forEach((id, data) {
       final screenCorners = _calcScreenCorners(data.q, data.r);
+      // 내 타일은 자신이 선택한 고유 색상(data.colorHex), 상대 타일은 전역 고정 회색으로 처리
+      final targetTileColorHex = (data.userId == _currentUserId)
+          ? (data.colorHex ?? '#00E5FF')
+          : GameColors.enemyTileColorHex;
+
       if (_tileMap.containsKey(id)) {
         _tileMap[id]!.updateData(
-          colorHex: data.colorHex,
+          colorHex: targetTileColorHex,
           corners: screenCorners,
         );
       } else {
         final tile = HexTileComponent(
-          colorHex: data.colorHex,
+          colorHex: targetTileColorHex,
           corners: screenCorners,
         )..priority = 0;
         _tileMap[id] = tile;

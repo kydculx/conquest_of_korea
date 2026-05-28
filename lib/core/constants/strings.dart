@@ -293,11 +293,11 @@ class GameStrings {
   /// 영토 침공 알림 부제
   static String get notifTerritoryAttackSub => 'notifTerritoryAttackSub'.tr();
 
-  /// 위성 점령 완료 알림 타이틀
+  /// 원격 모드 완료 알림 타이틀
   static String get notifSatelliteCompleteTitle =>
       'notifSatelliteCompleteTitle'.tr();
 
-  /// 위성 점령 완료 알림 부제
+  /// 원격 모드 완료 알림 부제
   static String get notifSatelliteCompleteSub =>
       'notifSatelliteCompleteSub'.tr();
 
@@ -341,7 +341,7 @@ class GameStrings {
   static String get top100Stats => 'top100Stats'.tr();
 
   // --- 게임 화면 및 오버레이 UI 텍스트 ---
-  /// 위성 전술 동기화 진행 상태 문구
+  /// 원격 모드 신호 조율 진행 상태 문구
   static String get tacticalSatelliteSync => 'tacticalSatelliteSync'.tr();
 
   /// 작전 구역 점령 시도 안내 문구
@@ -473,7 +473,7 @@ class GameStrings {
   /// 위성 사진 맵 스타일 명칭
   static String get mapStyleSatellite => 'mapStyleSatellite'.tr();
 
-  // --- 메인 기지 및 위성 점령 추가 다국어 ---
+  // --- 메인 기지 및 원격 모드 점령 추가 다국어 ---
   /// 본진 설정 완료 안내 팝업 문구
   static String get baseSetupCompleteAlert => 'baseSetupCompleteAlert'.tr();
 
@@ -486,7 +486,7 @@ class GameStrings {
   /// GPS 기능 비활성화 경고 문구
   static String get gpsDisabled => 'gpsDisabled'.tr();
 
-  /// 위성 신호 연결 확인 완료 라벨
+  /// 원격 모드 신호 연결 확인 완료 라벨
   static String get satellitePositionOk => 'satellitePositionOk'.tr();
 
   /// 현재 위도 및 경도 수치 포맷팅 함수
@@ -526,43 +526,43 @@ class GameStrings {
   static String rebaseSuccessAlert(String tileId) =>
       'rebaseSuccessAlert'.tr(namedArgs: {'tileId': tileId});
 
-  /// 위성 점령 시 잔여 시간 표시 포맷팅 함수
+  /// 원격 모드 점령 시 잔여 시간 표시 포맷팅 함수
   static String satelliteCapturingWithTime(String tileId, String seconds) =>
       'satelliteCapturingWithTime'.tr(
         namedArgs: {'tileId': tileId, 'seconds': seconds},
       );
 
-  /// 위성 타겟 타일 선택 대기 안내 문구
+  /// 원격 모드 타겟 타일 선택 대기 안내 문구
   static String get satelliteSelectTile => 'satelliteSelectTile'.tr();
 
-  /// 위성 타겟 고정(락온) 상태 라벨
+  /// 원격 모드 타겟 고정(조준) 상태 라벨
   static String get targetLockOn => 'targetLockOn'.tr();
 
-  /// 위성 쿨타임 대기 안내 문구 포맷팅 함수
+  /// 원격 모드 대기 안내 문구 포맷팅 함수
   static String satCooltimeWaiting(String time) =>
       'satCooltimeWaiting'.tr(namedArgs: {'time': time});
 
-  /// 위성 연결 유실 상태 라벨
+  /// 원격 모드 연결 유실 상태 라벨
   static String get satDisconnected => 'satDisconnected'.tr();
 
-  /// 위성 점령 소요 시간 포맷팅 함수
+  /// 원격 모드 점령 소요 시간 포맷팅 함수
   static String satDurationTime(String seconds) =>
       'satDurationTime'.tr(namedArgs: {'seconds': seconds});
 
-  /// 이미 아군이 위성으로 점령한 타일 안내 문구
+  /// 이미 아군이 원격으로 점령한 타일 안내 문구
   static String get satAlreadyCaptured => 'satAlreadyCaptured'.tr();
 
-  /// 위성 지정 타일 락온 포맷팅 함수
+  /// 원격 모드 지정 타일 조준 포맷팅 함수
   static String satLockOnTile(String tileId) =>
       'satLockOnTile'.tr(namedArgs: {'tileId': tileId});
 
-  /// 위성 점령 작전 타이틀
+  /// 원격 모드 점령 작전 타이틀
   static String get satCaptureTitle => 'satCaptureTitle'.tr();
 
   /// 대문자 형태 점령 지시어
   static String get captureUpper => 'captureUpper'.tr();
 
-  /// 위성 통신 활성화 상태 라벨
+  /// 원격 모드 통신 활성화 상태 라벨
   static String get satelliteLinkActive => 'satelliteLinkActive'.tr();
 
   /// 본진 침공 위험 알림 타이틀
@@ -574,40 +574,40 @@ class GameStrings {
   /// 본진 침공 실시간 인게임 알림 문구
   static String get hqInvasionAlert => 'hqInvasionAlert'.tr();
 
-  /// 위성 쿨다운 미경과 경고 문구
+  /// 원격 모드 대기 미경과 경고 문구
   static String get satelliteCooltimeAlert => 'satelliteCooltimeAlert'.tr();
 
-  /// 이미 아군이 점령한 영토 경고 문구
+  /// 이미 아군이 점령한 영토 원격 점령 불가 경고 문구
   static String get satelliteAlreadyCapturedAlert =>
       'satelliteAlreadyCapturedAlert'.tr();
 
-  /// 위성 통신 연결 유실 경고 문구
+  /// 원격 모드 통신 연결 유실 경고 문구
   static String get satelliteDisconnectedAlert =>
       'satelliteDisconnectedAlert'.tr();
 
-  /// 본진 미설정으로 인한 위성 점령 불가 경고 문구
+  /// 본진 미설정으로 인한 원격 점령 불가 경고 문구
   static String get satelliteNoHQAlert => 'satelliteNoHQAlert'.tr();
 
-  /// 위성 타겟 좌표 확인 오류 경고 문구
+  /// 원격 모드 타겟 좌표 확인 오류 경고 문구
   static String get satelliteCoordError => 'satelliteCoordError'.tr();
 
-  /// 위성 점령 작전 개시 포맷팅 함수
+  /// 원격 모드 점령 작전 개시 포맷팅 함수
   static String satelliteCaptureStart(String seconds) =>
       'satelliteCaptureStart'.tr(namedArgs: {'seconds': seconds});
 
   /// 유효하지 않은 요원 정보 경고 문구
   static String get satelliteUserInvalid => 'satelliteUserInvalid'.tr();
 
-  /// 위성 점령 성공 완료 안내 문구
+  /// 원격 모드 점령 성공 완료 안내 문구
   static String get satelliteCaptureSuccess => 'satelliteCaptureSuccess'.tr();
 
-  /// 위성 점령 실패 경고 문구
+  /// 원격 모드 점령 실패 경고 문구
   static String get satelliteCaptureFail => 'satelliteCaptureFail'.tr();
 
-  /// 위성 작전 강제 중단 타이틀
+  /// 원격 모드 작전 강제 중단 타이틀
   static String get satelliteAbortTitle => 'satelliteAbortTitle'.tr();
 
-  /// 위성 작전 취소 확인 질문 문구
+  /// 원격 모드 작전 취소 확인 질문 문구
   static String get satelliteAbortConfirm => 'satelliteAbortConfirm'.tr();
 
   /// 작전 계속 수행 버튼 라벨
@@ -619,19 +619,19 @@ class GameStrings {
   /// HUD 골드 수치 표시 라벨
   static String get hudGold => 'hudGold'.tr();
 
-  /// 위성 정밀 스캔 활성화 상태 라벨
+  /// 원격 모드 정밀 조준 활성화 상태 라벨
   static String get satScanActive => 'satScanActive'.tr();
 
-  /// 위성 조준점 점령 시도 상태 라벨
+  /// 원격 모드 조준점 점령 시도 상태 라벨
   static String get satCapturingAttempt => 'satCapturingAttempt'.tr();
 
-  /// 위성 쿨다운 작동 중 라벨
+  /// 원격 모드 대기 작동 중 라벨
   static String get satCooltimeWaitingLabel => 'satCooltimeWaitingLabel'.tr();
 
-  /// 위성 통신 차단 라벨
+  /// 원격 모드 통신 차단 라벨
   static String get satDisconnectedLabel => 'satDisconnectedLabel'.tr();
 
-  /// 위성 락온 조준 준비 완료 라벨
+  /// 원격 모드 조준 준비 완료 라벨
   static String get satLockOnReady => 'satLockOnReady'.tr();
 
   /// 이미 아군 점령 구역 라벨
@@ -640,16 +640,16 @@ class GameStrings {
   /// 점령 즉시 실행 버튼 라벨
   static String get captureExecute => 'captureExecute'.tr();
 
-  /// 위성 점령 시 필요 소모 GP 재화 명칭
+  /// 원격 모드 점령 시 필요 소모 GP 재화 명칭
   static String get satRequiredGold => 'satRequiredGold'.tr();
 
-  /// 위성 점령 시 소요시간 명칭
+  /// 원격 모드 점령 시 소요시간 명칭
   static String get satRequiredTime => 'satRequiredTime'.tr();
 
-  /// 위성 점령 쿨다운 대기 단축 라벨
+  /// 원격 모드 점령 대기 단축 라벨
   static String get satCooltimeWaitingText => 'satCooltimeWaitingText'.tr();
 
-  /// 위성 점령 시 보유 재화 부족 상태 메시지
+  /// 원격 모드 점령 시 보유 재화 부족 상태 메시지
   static String get satGoldShortage => 'satGoldShortage'.tr();
 
   // --- 정책 동의 관련 ---
@@ -739,4 +739,22 @@ class GameStrings {
 
   /// 계정 삭제 완료 알림 문구
   static String get deleteAccountSuccess => 'deleteAccountSuccess'.tr();
+
+  /// 작전 지령 변경 팝업 타이틀
+  static String get modeChangeDialogTitle => 'modeChangeDialogTitle'.tr();
+
+  /// 이동 모드 설명 타이틀
+  static String get modeMoveTitle => 'modeMoveTitle'.tr();
+
+  /// 이동 모드 상세 설명 본문
+  static String get modeMoveDesc => 'modeMoveDesc'.tr();
+
+  /// 원격 모드 설명 타이틀
+  static String get modeRemoteTitle => 'modeRemoteTitle'.tr();
+
+  /// 원격 모드 상세 설명 본문
+  static String get modeRemoteDesc => 'modeRemoteDesc'.tr();
+
+  /// 모드 기동 확인 버튼 라벨
+  static String get modeConfirm => 'modeConfirm'.tr();
 }

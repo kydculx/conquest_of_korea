@@ -10,6 +10,7 @@ import '../../core/constants/strings.dart';
 import '../../providers/game_provider.dart';
 import '../../providers/auth_provider.dart';
 import '../../services/hex_service.dart';
+import 'tactical_dialog.dart';
 
 /// 인게임 HUD 오버레이 (점수판, 점령 버튼, 유틸리티 버튼, 위성 스캔 연동)
 class HudOverlay extends StatelessWidget {
@@ -794,11 +795,9 @@ class _ScanToggleActionButtonState extends State<_ScanToggleActionButton> {
     final isScanMode = widget.game.isScanMode;
     final double glowRadius = widget.size * 0.38;
 
-    final gradientColors = isScanMode
-        ? [const Color(0xFF00E5FF), const Color(0xFF00838F)] // 활성화: 사이버 네온 시안 젤리
-        : [const Color(0xFF37474F), const Color(0xFF212121)]; // 비활성: 시크한 스페이스 다크 네이비 실버
+    final gradientColors = [const Color(0xFF00E5FF), const Color(0xFF00838F)]; // 다른 전술 버튼들처럼 상시 눈부신 네온 시안 젤리 톤 적용
 
-    final glowColor = isScanMode ? const Color(0xFF00E5FF) : Colors.black;
+    const glowColor = Color(0xFF00E5FF);
 
     return GestureDetector(
       onTapDown: (_) => setState(() => _isPressed = true),
@@ -806,11 +805,74 @@ class _ScanToggleActionButtonState extends State<_ScanToggleActionButton> {
       onTapUp: (_) {
         setState(() => _isPressed = false);
         final auth = context.read<AuthProvider>();
-        if (auth.isAuthenticated) {
-          widget.game.toggleScanMode();
-        } else {
+        if (!auth.isAuthenticated) {
           Navigator.pushNamed(context, '/login');
+          return;
         }
+
+        final bool willBeScanMode = !isScanMode;
+
+        showDialog(
+          context: context,
+          barrierDismissible: true,
+          builder: (context) {
+            return TacticalDialog(
+              title: GameStrings.modeChangeDialogTitle,
+              icon: willBeScanMode ? Icons.search_rounded : Icons.directions_walk_rounded,
+              accentColor: GameColors.accentNeon,
+              content: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  Text(
+                    willBeScanMode ? GameStrings.modeRemoteTitle : GameStrings.modeMoveTitle,
+                    style: GoogleFonts.fredoka(
+                      color: GameColors.accentNeon,
+                      fontSize: 14,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                  const SizedBox(height: 10),
+                  Text(
+                    willBeScanMode ? GameStrings.modeRemoteDesc : GameStrings.modeMoveDesc,
+                    style: TextStyle(
+                      color: Colors.white.withValues(alpha: 0.75),
+                      fontSize: 12.0,
+                      height: 1.5,
+                    ),
+                  ),
+                ],
+              ),
+              actions: [
+                OutlinedButton(
+                  style: OutlinedButton.styleFrom(
+                    foregroundColor: Colors.white70,
+                    side: const BorderSide(color: Colors.white30, width: 1.0),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(16),
+                    ),
+                  ),
+                  onPressed: () => Navigator.pop(context),
+                  child: Text(GameStrings.cancel),
+                ),
+                OutlinedButton(
+                  style: OutlinedButton.styleFrom(
+                    foregroundColor: GameColors.accentNeon,
+                    side: BorderSide(color: GameColors.accentNeon, width: 1.0),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(16),
+                    ),
+                  ),
+                  onPressed: () {
+                    widget.game.toggleScanMode();
+                    Navigator.pop(context);
+                  },
+                  child: Text(GameStrings.modeConfirm),
+                ),
+              ],
+            );
+          },
+        );
       },
       child: AnimatedScale(
         scale: _isPressed ? 0.88 : 1.0,
@@ -827,16 +889,14 @@ class _ScanToggleActionButtonState extends State<_ScanToggleActionButton> {
               colors: gradientColors,
             ),
             border: Border.all(
-              color: isScanMode
-                  ? Colors.white.withValues(alpha: 0.6)
-                  : Colors.white.withValues(alpha: 0.25),
+              color: Colors.white.withValues(alpha: 0.45),
               width: 1.2,
             ),
             boxShadow: [
               BoxShadow(
-                color: glowColor.withValues(alpha: isScanMode ? 0.45 : 0.15),
-                blurRadius: isScanMode ? 10 : 4,
-                offset: const Offset(0, 2),
+                color: glowColor.withValues(alpha: 0.35),
+                blurRadius: 8,
+                offset: const Offset(0, 2.5),
               )
             ],
           ),
@@ -864,8 +924,8 @@ class _ScanToggleActionButtonState extends State<_ScanToggleActionButton> {
               ),
               Center(
                 child: Icon(
-                  Icons.satellite_alt_rounded, // 최첨단 입체 위성 아이콘으로 교체
-                  color: isScanMode ? Colors.white : Colors.white.withValues(alpha: 0.55),
+                  isScanMode ? Icons.search_rounded : Icons.directions_walk_rounded, // 이동: 발걸음 vs 원격: 돋보기 완벽 교차 스위칭
+                  color: Colors.white,
                   size: widget.iconSize,
                 ),
               ),
@@ -1280,7 +1340,7 @@ class _SatelliteCaptureActionButtonState
           if (currentGold >= distance) {
             showButton = true;
             buttonText = '점령 실행'; // 96x96 원형 버튼 규격에 최적화된 4자 구성
-            buttonIcon = Icons.satellite_alt_rounded;
+            buttonIcon = Icons.location_searching_rounded;
             gradientColors = [const Color(0xFF00E5FF), const Color(0xFF00838F)];
             shadowColor = const Color(0xFF00E5FF);
             onPressed = () => game.executeSatelliteCapture(selectedId);

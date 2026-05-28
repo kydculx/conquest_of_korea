@@ -3,6 +3,7 @@ import 'dart:math' as math;
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:google_fonts/google_fonts.dart';
+import '../../core/constants/colors.dart';
 import '../../providers/game_provider.dart';
 import 'game_screen.dart';
 
@@ -92,26 +93,20 @@ class _SplashScreenState extends State<SplashScreen>
   Widget build(BuildContext context) {
     final double bottomPadding = MediaQuery.of(context).padding.bottom;
 
-    // 화사한 파스텔 파란색 및 소프트 민트 테마 컬러 정의
-    const Color pastelBgStart = Color(0xFFE3F2FD); // 베이비 스카이 블루
-    const Color pastelBgEnd = Color(0xFFE8F5E9); // 밀크 민트 크림
-    const Color softNavyText = Color(0xFF37474F); // 부드럽고 가독성 높은 차콜 네이비
-    const Color softMutedText = Color(0xFF78909C); // 차분한 파스텔 세컨더리 그레이
-    const Color pastelPink = Color(0xFFF8BBD0); // 솜사탕 핑크 액센트
-    const Color pastelBlue = Color(0xFF90CAF9); // 소프트 블루 액센트
+    // 다크 테마 일관 적용을 위한 컬러 맵핑
+    final Color softNavyText = GameColors.textPrimary;
+    final Color softMutedText = GameColors.textSecondary;
+    final Color pastelPink = GameColors.accentNeon;
+    final Color pastelBlue = GameColors.accentNeon;
 
     return Scaffold(
       body: Stack(
         children: [
-          // 1. 화사하고 산뜻한 파스텔 그라디언트 배경
+          // 1. Cozy Midnight 다크 그라데이션 배경
           Positioned.fill(
             child: Container(
               decoration: const BoxDecoration(
-                gradient: LinearGradient(
-                  begin: Alignment.topCenter,
-                  end: Alignment.bottomCenter,
-                  colors: [pastelBgStart, pastelBgEnd],
-                ),
+                gradient: GameColors.cozyDarkGradient,
               ),
             ),
           ),
@@ -141,7 +136,7 @@ class _SplashScreenState extends State<SplashScreen>
                       Container(
                         padding: const EdgeInsets.all(16),
                         decoration: BoxDecoration(
-                          color: Colors.white.withValues(alpha: 0.9),
+                          color: GameColors.tacticalGray.withValues(alpha: 0.8),
                           shape: BoxShape.circle,
                           boxShadow: [
                             BoxShadow(
@@ -151,7 +146,7 @@ class _SplashScreenState extends State<SplashScreen>
                             ),
                           ],
                         ),
-                        child: const Icon(
+                        child: Icon(
                           Icons.cloud_queue_rounded,
                           color: pastelBlue,
                           size: 48,
@@ -169,9 +164,9 @@ class _SplashScreenState extends State<SplashScreen>
                           letterSpacing: 0.5,
                           shadows: [
                             Shadow(
-                              color: Colors.white.withValues(alpha: 0.8),
+                              color: Colors.black.withValues(alpha: 0.4),
                               offset: const Offset(0, 2),
-                              blurRadius: 2,
+                              blurRadius: 4,
                             ),
                           ],
                         ),
@@ -214,7 +209,7 @@ class _SplashScreenState extends State<SplashScreen>
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
                       // 동글동글 아기자기한 커스텀 테마 로더
-                      const SizedBox(
+                      SizedBox(
                         width: 14,
                         height: 14,
                         child: CircularProgressIndicator(

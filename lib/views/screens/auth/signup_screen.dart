@@ -285,14 +285,7 @@ class _SignupScreenState extends State<SignupScreen> {
       extendBodyBehindAppBar: true,
       body: Container(
         decoration: const BoxDecoration(
-          gradient: LinearGradient(
-            begin: Alignment.topCenter,
-            end: Alignment.bottomCenter,
-            colors: [
-              Color(0xFFE3F2FD),
-              Color(0xFFFFF9C4),
-            ],
-          ),
+          gradient: GameColors.cozyDarkGradient,
         ),
         child: SafeArea(
           child: SingleChildScrollView(
@@ -537,7 +530,7 @@ class _SignupScreenState extends State<SignupScreen> {
           fontSize: 12,
           fontWeight: FontWeight.bold,
         ),
-        prefixIcon: Icon(icon, color: const Color(0xFFE57373), size: 20),
+        prefixIcon: Icon(icon, color: GameColors.accentNeon, size: 20),
         suffixIcon: suffixIcon,
         border: OutlineInputBorder(
           borderRadius: BorderRadius.circular(16),
@@ -552,7 +545,7 @@ class _SignupScreenState extends State<SignupScreen> {
           borderSide: BorderSide(color: GameColors.accentNeon.withValues(alpha: 0.5), width: 1.5),
         ),
         filled: true,
-        fillColor: Colors.white.withValues(alpha: 0.6),
+        fillColor: GameColors.tacticalGray.withValues(alpha: 0.5),
       ),
     );
   }
