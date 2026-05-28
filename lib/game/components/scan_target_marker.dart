@@ -78,21 +78,72 @@ class ScanTargetMarker extends PositionComponent
 
     final themeColor = GameColors.accentNeon;
 
-    // 1. 헥사곤 경로 및 중심 계산
-    final path = Path();
+    // 1. 헥사곤 경로 및 중심 계산 (아기자기한 둥근 헥사곤 패스 생성)
     double cx = 0, cy = 0;
-    for (int i = 0; i < _screenCorners.length; i++) {
-      cx += _screenCorners[i].dx;
-      cy += _screenCorners[i].dy;
-      if (i == 0) {
-        path.moveTo(_screenCorners[i].dx, _screenCorners[i].dy);
-      } else {
-        path.lineTo(_screenCorners[i].dx, _screenCorners[i].dy);
-      }
+    for (final c in _screenCorners) {
+      cx += c.dx;
+      cy += c.dy;
     }
-    path.close();
     cx /= _screenCorners.length;
     cy /= _screenCorners.length;
+
+    // 헥사곤 반지름 계산
+    double radSum = 0;
+    for (final c in _screenCorners) {
+      final dx = c.dx - cx;
+      final dy = c.dy - cy;
+      radSum += math.sqrt(dx * dx + dy * dy);
+    }
+    final double radius = radSum / _screenCorners.length;
+
+    // 아기자기한 둥글기 수준 및 타일 간 갭 생성
+    final double cornerRadius = math.min(6.5, radius * 0.22);
+    const double padding = 1.2;
+
+    // 1) 패딩이 적용된 수축 꼭짓점 산출
+    final List<Offset> insetCorners = [];
+    for (int i = 0; i < _screenCorners.length; i++) {
+      final c = _screenCorners[i];
+      final dx = cx - c.dx;
+      final dy = cy - c.dy;
+      final dist = math.sqrt(dx * dx + dy * dy);
+
+      final double insetX = dist > padding ? c.dx + (dx / dist) * padding : c.dx;
+      final double insetY = dist > padding ? c.dy + (dy / dist) * padding : c.dy;
+      insetCorners.add(Offset(insetX, insetY));
+    }
+
+    // 2) 베지에 곡선 기반 둥근 육각형 그리기 패스 생성
+    final path = Path();
+    for (int i = 0; i < insetCorners.length; i++) {
+      final current = insetCorners[i];
+      final prev = insetCorners[(i - 1 + insetCorners.length) % insetCorners.length];
+      final next = insetCorners[(i + 1) % insetCorners.length];
+
+      final vPrevX = prev.dx - current.dx;
+      final vPrevY = prev.dy - current.dy;
+      final lenPrev = math.sqrt(vPrevX * vPrevX + vPrevY * vPrevY);
+
+      final vNextX = next.dx - current.dx;
+      final vNextY = next.dy - current.dy;
+      final lenNext = math.sqrt(vNextX * vNextX + vNextY * vNextY);
+
+      final double r = math.min(cornerRadius, math.min(lenPrev / 2, lenNext / 2));
+
+      final startX = current.dx + (vPrevX / lenPrev) * r;
+      final startY = current.dy + (vPrevY / lenPrev) * r;
+
+      final endX = current.dx + (vNextX / lenNext) * r;
+      final endY = current.dy + (vNextY / lenNext) * r;
+
+      if (i == 0) {
+        path.moveTo(startX, startY);
+      } else {
+        path.lineTo(startX, startY);
+      }
+      path.quadraticBezierTo(current.dx, current.dy, endX, endY);
+    }
+    path.close();
 
     // 2. 목적지 타일 애니메이션 그리기 (화면에 보일 때만 드로잉)
     if (isTargetVisible) {
@@ -449,54 +500,67 @@ class ScanTargetMarker extends PositionComponent
     canvas.restore();
   }
 
-  /// 스캔 모드 상의 선택 타일의 정중앙 좌표에 회전 십자 헤어라인과 펄싱 타겟 락온 도트 이미지를 드로잉합니다.
+  /// 스캔 모드 상의 선택 타일의 정중앙 좌표에 부드럽고 둥글둥글한 젤리 타겟 락온 커서를 드로잉합니다.
   void _drawCrosshair(Canvas canvas, double cx, double cy, Color color) {
+    // 둥글고 두툼한 십자선 스타일
     final linePaint = Paint()
-      ..color = color.withValues(alpha: 0.9)
+      ..color = color.withValues(alpha: 0.95)
       ..style = PaintingStyle.stroke
-      ..strokeWidth = 2.0;
+      ..strokeCap = StrokeCap.round // 끝부분을 둥글둥글하게 처리
+      ..strokeWidth = 3.0; // 아기자기하고 통통하게 두께 상향
 
+    // 부드러운 안쪽 동심원
     final circlePaint = Paint()
-      ..color = color.withValues(alpha: 0.4)
+      ..color = color.withValues(alpha: 0.35)
       ..style = PaintingStyle.stroke
-      ..strokeWidth = 1.0;
+      ..strokeWidth = 1.8;
 
-    final double scale = 1.0 + 0.1 * math.sin(_timer * 4);
-    final double r1 = 12.0 * scale;
-    final double r2 = 18.0 * scale;
-    final double crossLen = 6.0;
+    final double scale = 1.0 + 0.08 * math.sin(_timer * 3.5); // 맥동을 조금 더 부드러운 호흡으로 제어
+    final double r1 = 11.0 * scale;
+    final double r2 = 19.0 * scale;
+    final double crossLen = 5.0; // 귀여운 느낌을 위한 십자선 길이 단축
 
     canvas.drawCircle(Offset(cx, cy), r1, circlePaint);
     canvas.drawCircle(Offset(cx, cy), r2, circlePaint);
 
+    // 십자선 그리기 (둥글둥글한 캡 적용)
     canvas.drawLine(
       Offset(cx, cy - r2 - crossLen),
-      Offset(cx, cy - r1),
+      Offset(cx, cy - r1 - 1.5),
       linePaint,
     );
     canvas.drawLine(
-      Offset(cx, cy + r1),
+      Offset(cx, cy + r1 + 1.5),
       Offset(cx, cy + r2 + crossLen),
       linePaint,
     );
     canvas.drawLine(
       Offset(cx - r2 - crossLen, cy),
-      Offset(cx - r1, cy),
+      Offset(cx - r1 - 1.5, cy),
       linePaint,
     );
     canvas.drawLine(
-      Offset(cx + r1, cy),
+      Offset(cx + r1 + 1.5, cy),
       Offset(cx + r2 + crossLen, cy),
       linePaint,
     );
 
+    // 정중앙의 통통하고 둥글둥글한 젤리 비콘 코어
     final dotPaint = Paint()
       ..color = color
       ..style = PaintingStyle.fill;
-    final double dotPulse = 0.3 + 0.7 * (0.5 + 0.5 * math.sin(_timer * 8));
+    final double dotPulse = 0.4 + 0.6 * (0.5 + 0.5 * math.sin(_timer * 7.0));
+    
+    // 외곽 소프트 번짐 원형 효과 추가
+    final glowPaint = Paint()
+      ..color = color.withValues(alpha: 0.25 * dotPulse)
+      ..style = PaintingStyle.fill
+      ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 2.0);
+    canvas.drawCircle(Offset(cx, cy), 5.5, glowPaint);
+    
     canvas.drawCircle(
       Offset(cx, cy),
-      2.5,
+      3.2, // 비콘 도트 통통하게 조정
       dotPaint..color = color.withValues(alpha: dotPulse),
     );
   }
