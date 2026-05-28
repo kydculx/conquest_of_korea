@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:math' as math;
 import 'dart:ui';
 import 'dart:ui' as ui;
 import 'package:flutter/material.dart';
@@ -678,10 +679,9 @@ class _MapFollowRotationButtonState extends State<_MapFollowRotationButton> {
     final isFollowing = game.isFollowingUser;
     final isRotation = game.isMapRotationMode;
 
-    IconData icon = Icons.near_me_outlined;
-    if (isFollowing) {
-      icon = isRotation ? Icons.navigation : Icons.near_me;
-    }
+    // 2단 모드 기반의 바람개비 아이콘 비주얼 상태 매핑
+    final IconData iconData = isFollowing ? Icons.near_me : Icons.near_me_outlined;
+    final double angle = isRotation ? -math.pi / 4 : 0.0;
 
     final gradientColors = isFollowing
         ? [const Color(0xFF00E5FF), const Color(0xFF00838F)] // 활성: 사이버 네온 시안 젤리
@@ -697,14 +697,10 @@ class _MapFollowRotationButtonState extends State<_MapFollowRotationButton> {
       onTapUp: (_) async {
         setState(() => _isPressed = false);
         if (!isFollowing) {
+          // 비추적 상태일 때는 현재 활성화된 모드 설정을 유지하면서 추적만 다시 복원
           game.setFollowingUser(true);
-          if (isRotation) {
-            await game.toggleMapRotationMode();
-          }
-        } else if (!isRotation) {
-          await game.toggleMapRotationMode();
         } else {
-          game.setFollowingUser(false);
+          // 추적 상태일 때는 [추적만] ↔ [추적+회전] 두 모드 간 상호 교차 토글
           await game.toggleMapRotationMode();
         }
       },
@@ -757,10 +753,13 @@ class _MapFollowRotationButtonState extends State<_MapFollowRotationButton> {
                 ),
               ),
               Center(
-                child: Icon(
-                  icon,
-                  color: isFollowing ? Colors.white : const Color(0xFF1565C0).withValues(alpha: 0.7),
-                  size: widget.iconSize,
+                child: Transform.rotate(
+                  angle: angle,
+                  child: Icon(
+                    iconData,
+                    color: isFollowing ? Colors.white : const Color(0xFF1565C0).withValues(alpha: 0.7),
+                    size: widget.iconSize,
+                  ),
                 ),
               ),
             ],
