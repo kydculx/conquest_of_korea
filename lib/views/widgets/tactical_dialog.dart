@@ -75,12 +75,6 @@ class TacticalDialog extends StatelessWidget {
           ),
           child: Stack(
             children: [
-              Positioned.fill(
-                child: Opacity(
-                  opacity: 0.4,
-                  child: CustomPaint(painter: TacticalDialogGridPainter()),
-                ),
-              ),
               Padding(
                 padding: const EdgeInsets.all(24.0),
                 child: Column(
