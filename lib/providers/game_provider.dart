@@ -179,14 +179,15 @@ class GameProvider extends ChangeNotifier with WidgetsBindingObserver {
         if (parts.length == 3) {
           final q = int.tryParse(parts[1]) ?? 0;
           final r = int.tryParse(parts[2]) ?? 0;
+           final existing = _capturedTiles[myMainBaseId];
           copy[myMainBaseId] = HexTile(
             id: myMainBaseId,
             q: q,
             r: r,
             userId: myId,
             colorHex: myColor,
-            capturedAt: DateTime.now().toUtc(),
-            captureCount: 1,
+            capturedAt: existing?.capturedAt ?? DateTime.now().toUtc(),
+            captureCount: existing?.captureCount ?? 1,
           );
         }
       } catch (e) {
@@ -316,11 +317,20 @@ class GameProvider extends ChangeNotifier with WidgetsBindingObserver {
   bool get showMap => currentMapStyle.url.isNotEmpty;
 
   /// 본인 요원(계정)이 획득한 영토(타일)의 총 개수
-  int get myCapturedCount => _authProvider?.user?.id == null
-      ? 0
-      : _capturedTiles.values
-            .where((t) => t.userId == _authProvider!.user!.id)
-            .length;
+  int get myCapturedCount {
+    if (_authProvider?.user?.id == null) return 0;
+    final myId = _authProvider!.user!.id;
+    final baseCount = _capturedTiles.values
+        .where((t) => t.userId == myId)
+        .length;
+
+    // 본진(mainBaseTileId)이 설정되어 있다면 무조건 영토 개수는 1개 이상이 되도록 보장
+    final myMainBaseId = _authProvider?.profile?.mainBaseTileId;
+    if (myMainBaseId != null && myMainBaseId.isNotEmpty) {
+      return baseCount < 1 ? 1 : baseCount;
+    }
+    return baseCount;
+  }
 
   /// 현재 물리 GPS 점령을 시도 중인 타일 ID
   String? get capturingTileId => _captureController.capturingTileId;
@@ -352,6 +362,14 @@ class GameProvider extends ChangeNotifier with WidgetsBindingObserver {
       return false;
     }
 
+    // 내 본진 타일은 점령할 필요가 없는 상시 내 영토이므로 점령 개시 불가로 철저히 차단
+    final myMainBaseId = auth.profile?.mainBaseTileId;
+    final hex = HexService.latLngToHex(loc.currentLocation!);
+    final currentTileId = 'hex_${hex['q']}_${hex['r']}';
+    if (myMainBaseId != null && myMainBaseId.isNotEmpty && currentTileId == myMainBaseId) {
+      return false;
+    }
+
     // 이미 본인이 점령한 타일이면 점령 불가
     if (isAlreadyCapturedByMe) {
       return false;
@@ -373,7 +391,7 @@ class GameProvider extends ChangeNotifier with WidgetsBindingObserver {
 
     final hex = HexService.latLngToHex(loc!.currentLocation!);
     final tileId = 'hex_${hex['q']}_${hex['r']}';
-    return _capturedTiles[tileId];
+    return capturedTiles[tileId];
   }
 
   /// 현재 위치한 타일이 이미 자신이 지배 중인 타일인지 여부
@@ -447,6 +465,9 @@ class GameProvider extends ChangeNotifier with WidgetsBindingObserver {
       _goldTimer?.cancel();
       _goldTimer = null;
       _currentGold = 0.0;
+
+      // 로그아웃 시 자동 점령 모드 강제 정지(비활성화)
+      _isAutoCapture = false;
 
       // 로그아웃 시 위성 모드 및 위성 점령 상태 전격 해제
       _isScanMode = false;
@@ -639,6 +660,15 @@ class GameProvider extends ChangeNotifier with WidgetsBindingObserver {
       return;
     }
 
+    // 내 본진 타일은 점령할 필요가 없는 상시 내 영토이므로 점령 개시 불가로 철저히 차단
+    final myMainBaseId = auth.profile?.mainBaseTileId;
+    if (myMainBaseId != null && myMainBaseId.isNotEmpty && tileId == myMainBaseId) {
+      if (_captureController.capturingTileId == tileId) {
+        _captureController.cancelCapture();
+      }
+      return;
+    }
+
     // mine: 내 타일 → 점령 중단
     // empty/enemy: 점령 대상이므로 진행
     if (status == TileStatus.empty || status == TileStatus.enemy) {
@@ -721,6 +751,12 @@ class GameProvider extends ChangeNotifier with WidgetsBindingObserver {
     final hex = HexService.latLngToHex(loc!.currentLocation!);
     final tileId = 'hex_${hex['q']}_${hex['r']}';
 
+    // 내 본진 타일은 점령할 필요가 없는 상시 내 영토이므로 수동 점령 개시 즉시 무시 차단
+    final myMainBaseId = auth?.profile?.mainBaseTileId;
+    if (myMainBaseId != null && myMainBaseId.isNotEmpty && tileId == myMainBaseId) {
+      return;
+    }
+
     // 점령 시작 직전, DB 서버에서 해당 타일의 실시간 최신 정보 강제 패치
     try {
       final serverTile = await _supabase.fetchTile(tileId);
@@ -800,6 +836,17 @@ class GameProvider extends ChangeNotifier with WidgetsBindingObserver {
         notifyListeners();
         debugPrint(
           '🎨 [상대방 구역 갱신] 타일($tileId)을 상대방 점령색(${serverTile.colorHex})으로 실시간 갱신 완료.',
+        );
+      }
+    }
+    // 내 구역(mine)이어도 최신 타일 정보로 즉시 동기화 갱신
+    else if (status == TileStatus.mine) {
+      final serverTile = await _supabase.fetchTile(tileId);
+      if (serverTile != null) {
+        _capturedTiles[tileId] = serverTile;
+        notifyListeners();
+        debugPrint(
+          '🎨 [내 구역 갱신] 타일($tileId)의 최신 상태를 실시간 동기화 완료.',
         );
       }
     }
@@ -1003,8 +1050,13 @@ class GameProvider extends ChangeNotifier with WidgetsBindingObserver {
   /// 본인 타일이거나 중립(점령자 없음) 타일인 경우 항상 상시 노출(true)됩니다.
   /// 상대 타일인 경우, 해제 일시로부터 10분(GameConfig.tileRevealDurationSeconds)이 지나지 않았는지 판별합니다.
   bool isTileInfoRevealed(String tileId) {
+    final myMainBaseId = _authProvider?.profile?.mainBaseTileId;
+    if (myMainBaseId != null && myMainBaseId.isNotEmpty && tileId == myMainBaseId) {
+      return true; // 내 본진 타일은 상시 보안 해제 상태로 모든 정보 노출
+    }
+
     final myId = _authProvider?.user?.id;
-    final tile = _capturedTiles[tileId];
+    final tile = capturedTiles[tileId]; // 게터 호출로 안전하게 가상 주입본 사용
     final isOwnTile = tile != null && tile.userId == myId;
     final isNeutral = tile == null || tile.userId == null || tile.userId == 'none';
 
@@ -1045,35 +1097,39 @@ class GameProvider extends ChangeNotifier with WidgetsBindingObserver {
       return false;
     }
 
-    try {
-      // 1. 실시간 가용 골드 즉각 차감
-      _currentGold = (_currentGold - distance).clamp(0.0, double.infinity);
+    // [낙관적 업데이트] 골드 즉각 차감 및 해제 시간 즉시 등록
+    final double previousGold = _currentGold;
+    final DateTime nowUtc = DateTime.now().toUtc();
 
-      // 2. 백엔드 DB 서버 프로필 골드 최신화 영속화
-      final myId = _authProvider?.user?.id;
-      if (myId != null) {
-        await _supabase.client
-            .from('profiles')
-            .update({
-              'gold': _currentGold,
-              'last_gold_updated_at': DateTime.now().toUtc().toIso8601String(),
-            })
-            .eq('id', myId);
+    _currentGold = (_currentGold - distance).clamp(0.0, double.infinity);
+    _revealedTileTimes[tileId] = nowUtc;
+    notifyListeners(); // 즉각적인 UI 갱신 유도
 
-        // 로컬 인증 프로필 정보 갱신 동기화
-        await _authProvider?.refreshProfile();
-      }
-
-      // 3. 잠금 해제 시간 등록 (UTC 기준)
-      _revealedTileTimes[tileId] = DateTime.now().toUtc();
-      addAlert('상대 타일 보안 판독 완료', AlertType.success);
-      notifyListeners();
-      return true;
-    } catch (e) {
-      debugPrint('⚠️ 상대 타일 정보 해제 중 오류 발생: $e');
-      addAlert('보안 해제에 실패했습니다.', AlertType.error);
-      return false;
+    final myId = _authProvider?.user?.id;
+    if (myId != null) {
+      // 백엔드 API 요청은 await 하지 않고 백그라운드 비동기 처리하여 화면 멈춤(랙) 현상 완벽 방지
+      _supabase.client
+          .from('profiles')
+          .update({
+            'gold': _currentGold,
+            'last_gold_updated_at': nowUtc.toIso8601String(),
+          })
+          .eq('id', myId)
+          .then((_) {
+            _authProvider?.refreshProfile();
+          })
+          .catchError((e) {
+            debugPrint('⚠️ 상대 타일 정보 백엔드 저장 실패: $e');
+            // 네트워크 오류 등으로 실패 시 로컬 데이터 롤백 처리
+            _currentGold = previousGold;
+            _revealedTileTimes.remove(tileId);
+            notifyListeners();
+            addAlert('보안 해제에 실패했습니다.', AlertType.error);
+          });
     }
+
+    addAlert('상대 타일 보안 판독 완료', AlertType.success);
+    return true;
   }
 
   @override
@@ -1122,6 +1178,7 @@ class GameProvider extends ChangeNotifier with WidgetsBindingObserver {
     if (_selectedScanTileId == tileId) {
       _selectedScanTileId = null;
       _selectedScanTileLatLng = null;
+      notifyListeners();
     } else {
       _selectedScanTileId = tileId;
       // tileId 형식: 'hex_q_r'
@@ -1133,8 +1190,22 @@ class GameProvider extends ChangeNotifier with WidgetsBindingObserver {
           _selectedScanTileLatLng = HexService.hexToLatLng(q, r);
         }
       }
+      notifyListeners();
+
+      // [신규] 조준 즉시 서버 DB에서 이 타일의 실시간 최신 정보 강제 패치하여 동기화
+      _supabase.fetchTile(tileId).then((serverTile) {
+        if (_selectedScanTileId == tileId) {
+          if (serverTile != null) {
+            _capturedTiles[tileId] = serverTile;
+          } else {
+            _capturedTiles.remove(tileId);
+          }
+          notifyListeners();
+        }
+      }).catchError((e) {
+        debugPrint('⚠️ 조준 타일 최신 정보 실시간 패치 실패: $e');
+      });
     }
-    notifyListeners();
   }
 
   /// 본진 기지를 시발점으로 하여 요원이 지배 중인 타일 그리드를 거쳐 대상 영토까지 끊어짐 없이 헥사 결합되어 연결되는지 BFS(너비 우선 탐색)로 무결성을 검증합니다.
@@ -1397,6 +1468,9 @@ class GameProvider extends ChangeNotifier with WidgetsBindingObserver {
     final q = int.tryParse(parts[1]) ?? 0;
     final r = int.tryParse(parts[2]) ?? 0;
 
+    final existing = _capturedTiles[tileId];
+    final targetCaptureCount = (existing?.captureCount ?? 0) + 1;
+
     final tile = HexTile(
       id: tileId,
       q: q,
@@ -1404,27 +1478,25 @@ class GameProvider extends ChangeNotifier with WidgetsBindingObserver {
       userId: myId,
       colorHex: myColor,
       capturedAt: DateTime.now().toUtc(),
-      captureCount: 1, // 위성 점령은 점령 카운트 1로 초기화 (또는 고정)
+      captureCount: targetCaptureCount, // 누적 가산된 목표 점령 횟수 주입
     );
 
-    // [신규] DB에 위성 점령 레코드를 쓰기 전에 현재까지 모은 실시간 로컬 골드를 DB에 선제 정산하여 증발 리셋 방지
-    await _persistGoldToServer();
-
+    // [최적화] 중복 선제 골드 서버 영속화 API 제거 및 곧바로 캡처 진행
     final success = await _supabase.captureTile(tile);
     if (success) {
       _lastSatelliteCaptureTime = DateTime.now();
 
-      try {
-        final prefs = await SharedPreferences.getInstance();
-        await prefs.setString(
+      // 쿨타임 저장은 백그라운드 비동기로 처리
+      SharedPreferences.getInstance().then((prefs) {
+        prefs.setString(
           'hq_last_satellite_capture_time',
           _lastSatelliteCaptureTime!.toIso8601String(),
         );
-      } catch (e) {
+      }).catchError((e) {
         debugPrint('SharedPreferences 쿨타임 저장 실패: $e');
-      }
+      });
 
-      // 위성 점령에 소모된 거리 비례 골드 차감 및 last_gold_updated_at 동기화
+      // 위성 점령에 소모된 거리 비례 골드 차감 및 last_gold_updated_at 최적화 동기화
       try {
         final profile = _authProvider?.profile;
         if (profile != null) {
@@ -1434,9 +1506,12 @@ class GameProvider extends ChangeNotifier with WidgetsBindingObserver {
             final bq = int.tryParse(partsBase[1]) ?? 0;
             final br = int.tryParse(partsBase[2]) ?? 0;
             final dist = HexService.hexDistance(bq, br, q, r);
-            // [중요] 백엔드의 구형 profile.gold가 아닌 온전히 실시간 축적분이 담긴 최신 _currentGold 기준으로 거리 차감 진행
+            
+            // 실시간 축적분이 담긴 최신 _currentGold 기준으로 거리 차감 진행
             final newGold = (_currentGold - dist).clamp(0.0, double.infinity);
+            _currentGold = newGold; // 로컬 최신화
 
+            // [최적화] 단 한 번의 쿼리로 차감된 골드 정보 백엔드 저장
             await _supabase.client
                 .from('profiles')
                 .update({
@@ -1459,7 +1534,8 @@ class GameProvider extends ChangeNotifier with WidgetsBindingObserver {
       _selectedScanTileId = null;
       _selectedScanTileLatLng = null;
 
-      await syncGoldWithServer();
+      // [최적화] 무겁고 7번 중복 API 타는 syncGoldWithServer 대신 가벼운 refreshProfile 호출로 단축하여 병목 제거
+      _authProvider?.refreshProfile();
     } else {
       final errMsg = _supabase.lastError != null
           ? ': ${_supabase.lastError}'
@@ -1533,9 +1609,18 @@ class GameProvider extends ChangeNotifier with WidgetsBindingObserver {
       final diffSeconds = now.difference(lastUpdated).inSeconds;
       final elapsed = diffSeconds > 0 ? diffSeconds : 0;
 
+      // 본진(mainBaseTileId)이 있는 경우 최소 1개 영역 인정 보정
+      final myMainBaseId = profile.mainBaseTileId;
+      int effectiveTilesCount = profile.capturedTilesCount;
+      if (myMainBaseId != null && myMainBaseId.isNotEmpty) {
+        if (effectiveTilesCount < 1) {
+          effectiveTilesCount = 1;
+        }
+      }
+
       // 시간당 1 GP를 3600초로 나누어 매초 정밀하게 소수점 단위 가산
       final double earnedGold =
-          elapsed * profile.capturedTilesCount * (_goldRate / 3600.0);
+          elapsed * effectiveTilesCount * (_goldRate / 3600.0);
       _currentGold = profile.gold + earnedGold;
       notifyListeners();
 
@@ -1565,9 +1650,18 @@ class GameProvider extends ChangeNotifier with WidgetsBindingObserver {
         final diffSeconds = now.difference(lastUpdated).inSeconds;
         final elapsed = diffSeconds > 0 ? diffSeconds : 0;
 
+        // 본진(mainBaseTileId)이 있는 경우 최소 1개 영역 인정 보정
+        final myMainBaseId = profile.mainBaseTileId;
+        int effectiveTilesCount = profile.capturedTilesCount;
+        if (myMainBaseId != null && myMainBaseId.isNotEmpty) {
+          if (effectiveTilesCount < 1) {
+            effectiveTilesCount = 1;
+          }
+        }
+
         // 오프라인 동안 쌓인 골드를 정밀하게 소수점 단위로 가산
         final double offlineGold =
-            elapsed * profile.capturedTilesCount * (_goldRate / 3600.0);
+            elapsed * effectiveTilesCount * (_goldRate / 3600.0);
 
         if (offlineGold > 0.0) {
           final newGold = profile.gold + offlineGold;

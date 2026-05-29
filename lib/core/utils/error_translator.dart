@@ -74,9 +74,7 @@ class ErrorTranslator {
         lowerMsg.contains('canceled')) {
       return GameStrings.errorLoginCanceled;
     }
-    if (lowerMsg.contains('unacceptable audience')) {
-      return GameStrings.errorKakaoConfig;
-    }
+
     if (lowerMsg.contains('nickname_already_exists') ||
         lowerMsg.contains('nickname already exists') ||
         lowerMsg.contains('23505')) {

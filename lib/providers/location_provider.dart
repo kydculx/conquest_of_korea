@@ -28,6 +28,12 @@ class LocationProvider extends ChangeNotifier with WidgetsBindingObserver {
   /// 디바이스가 바라보는 북쪽 기준의 회전 각도 (0.0 ~ 360.0 도)
   double _heading = 0.0;
 
+  /// [최적화] 이전 갱신하여 전파한 나침반 각도값 캐시
+  double _lastNotifiedHeading = -999.0;
+
+  /// [최적화] 이전 갱신하여 전파한 나침반 갱신 타임스탬프
+  DateTime _lastCompassUpdatedTime = DateTime.fromMillisecondsSinceEpoch(0);
+
   /// GPS 신호 수신이 실시간으로 원활하게 활성화되어 있는지 여부
   bool _isGpsActive = false;
 
@@ -85,11 +91,27 @@ class LocationProvider extends ChangeNotifier with WidgetsBindingObserver {
   }
 
   /// 나침반 센서 업데이트 수신을 시작하고 실시간으로 회전 각도(방향) 상태를 전파합니다.
+  /// [최적화] 미세 진동(Jittering) 노이즈 필터링 및 100ms 시간 스로틀링(Throttling)을 도입하여,
+  /// 초당 수십 회씩 발생하던 불필요한 notifyListeners() 및 맵/나침반 재연산 랙을 원천 차단합니다.
   void _startCompass() {
     _compassSubscription?.cancel();
     _compassSubscription = FlutterCompass.events?.listen((event) {
       if (event.heading != null) {
-        _heading = event.heading!;
+        final double currentHeading = event.heading!;
+        final now = DateTime.now();
+
+        // 1. 시간 기반 스로틀링 (최소 20ms 주기 갭을 두어 초당 최대 50회 부드럽게 갱신 허용)
+        final elapsedMs = now.difference(_lastCompassUpdatedTime).inMilliseconds;
+        if (elapsedMs < 20) return;
+
+        // 2. Dead Zone (각도 필터): 초정밀 0.3도 단위로 갱신하여 랙 체감 현상 소멸 및 노이즈 미동만 억제
+        final double diff = (currentHeading - _lastNotifiedHeading).abs();
+        final double normalizedDiff = diff > 180 ? 360 - diff : diff;
+        if (_lastNotifiedHeading != -999.0 && normalizedDiff < 0.3) return;
+
+        _heading = currentHeading;
+        _lastNotifiedHeading = currentHeading;
+        _lastCompassUpdatedTime = now;
         notifyListeners();
       }
     });

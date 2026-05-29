@@ -38,7 +38,7 @@ create table public.captured_tiles (
   id text primary key, -- 헥사곤 ID
   q int not null,
   r int not null,
-  user_id uuid references auth.users(id),
+  user_id uuid references auth.users(id) on delete cascade,
   color_hex text,
   captured_at timestamptz default now(),
   capture_status text default 'captured',
@@ -59,6 +59,10 @@ create policy "Authenticated users can capture tiles."
 create policy "Authenticated users can update captured tiles."
   on captured_tiles for update
   using ( auth.role() = 'authenticated' );
+
+create policy "Authenticated users can delete their own captured tiles."
+  on captured_tiles for delete
+  using ( auth.uid() = user_id );
 
 -- [신규] 구버전 충돌 방지를 위한 안전한 DROP 구문 선언
 DROP FUNCTION IF EXISTS public.safe_capture_tile(text, int, int, text, text, jsonb, int, int);

@@ -18,6 +18,7 @@ import '../widgets/hud_overlay.dart';
 import '../widgets/loading_overlay.dart';
 import '../widgets/tactical_dialog.dart';
 import '../../models/tile_model.dart';
+import '../../models/alert_model.dart';
 
 /// 메인 게임 화면
 /// 실시간 헥사곤 전술 지도와 요원의 실시간 GPS 위치를 화면 상에 시각화하고,
@@ -32,6 +33,11 @@ class GameScreen extends StatefulWidget {
 
 /// [GameScreen]의 생명주기와 위치 추적 권한 및 배터리 절전 예외 처리를 관장하는 상태 클래스입니다.
 class _GameScreenState extends State<GameScreen> {
+  GameProvider? _gameProvider;
+  AuthProvider? _authProvider;
+  LocationProvider? _locationProvider;
+  ConquestGame? _flameGame;
+
   @override
   void initState() {
     super.initState();
@@ -57,6 +63,89 @@ class _GameScreenState extends State<GameScreen> {
         }
       });
     });
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    
+    // 1. 필요한 프로바이더 참조 획득 (listen: false 로 획득하여 watch로 인한 리빌드 차단)
+    final newGameProvider = Provider.of<GameProvider>(context, listen: false);
+    final newAuthProvider = Provider.of<AuthProvider>(context, listen: false);
+    final newLocationProvider = Provider.of<LocationProvider>(context, listen: false);
+    final newFlameGame = Provider.of<ConquestGame>(context, listen: false);
+
+    // 2. 참조가 변경되었을 때만 기존 리스너 해제 및 신규 등록
+    if (_gameProvider != newGameProvider ||
+        _authProvider != newAuthProvider ||
+        _locationProvider != newLocationProvider ||
+        _flameGame != newFlameGame) {
+      
+      _gameProvider?.removeListener(_onStateChanged);
+      _authProvider?.removeListener(_onStateChanged);
+      _locationProvider?.removeListener(_onStateChanged);
+
+      _gameProvider = newGameProvider;
+      _authProvider = newAuthProvider;
+      _locationProvider = newLocationProvider;
+      _flameGame = newFlameGame;
+
+      _gameProvider?.addListener(_onStateChanged);
+      _authProvider?.addListener(_onStateChanged);
+      _locationProvider?.addListener(_onStateChanged);
+
+      // 최초 수동 동기화 트리거
+      _onStateChanged();
+    }
+  }
+
+  /// 프로바이더 내부 상태 변화 감지 시, UI 리빌드(Scaffold 빌드) 없이 Flame 게임 엔진의 데이터만 직접 동기화
+  void _onStateChanged() {
+    if (!mounted ||
+        _gameProvider == null ||
+        _authProvider == null ||
+        _locationProvider == null ||
+        _flameGame == null) {
+      return;
+    }
+
+    final currentTiles = Map<String, HexTile>.from(_gameProvider!.capturedTiles);
+    final profile = _authProvider!.profile;
+    final userId = _authProvider!.user?.id;
+
+    if (profile != null) {
+      currentTiles.updateAll((id, tile) {
+        if (tile.userId == userId) {
+          return tile.copyWith(colorHex: profile.colorHex);
+        }
+        return tile;
+      });
+    }
+
+    _flameGame!.updateCapturedTiles(
+      capturedTiles: currentTiles,
+      capturingTileId: _gameProvider!.capturingTileId,
+      captureProgress: _gameProvider!.captureProgress,
+      capturingColorHex: profile?.colorHex,
+      currentLocation: _locationProvider!.currentLocation,
+      mainBaseTileId: profile?.mainBaseTileId,
+      selectedScanTileId: _gameProvider!.selectedScanTileId,
+      isScanMode: _gameProvider!.isScanMode,
+      currentUserId: userId,
+      isSatelliteCapturing: _gameProvider!.isSatelliteCapturing,
+      satelliteCapturePhase: _gameProvider!.satelliteCapturePhase,
+      satelliteTravelProgress: _gameProvider!.satelliteTravelProgress,
+      satelliteCaptureProgress: _gameProvider!.satelliteCaptureProgress,
+      satelliteCapturingTileId: _gameProvider!.satelliteCapturingTileId,
+    );
+  }
+
+  @override
+  void dispose() {
+    _gameProvider?.removeListener(_onStateChanged);
+    _authProvider?.removeListener(_onStateChanged);
+    _locationProvider?.removeListener(_onStateChanged);
+    super.dispose();
   }
 
   /// 안드로이드 OS에서 백그라운드 환경에서도 중단 없는 위치 갱신과 점령 작전을 수행하기 위해
@@ -224,76 +313,59 @@ class _GameScreenState extends State<GameScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final game = context.watch<GameProvider>();
-    final auth = context.watch<AuthProvider>();
-    final flameGame = context.read<ConquestGame>();
-    final loc = context.read<LocationProvider>();
-
     final double topPadding = MediaQuery.of(context).padding.top;
     final double topOffset = topPadding > 0 ? topPadding + 12.0 : 24.0;
 
-    // 인증은 되었으나 프로필 정보가 없는 경우 (SNS 최초 로그인 등) 약관 동의 화면으로 리다이렉트
-    if (auth.isAuthenticated && auth.profile == null && !auth.isLoading) {
+    // 1. SNS 최초 로그인 등 약관 동의 리다이렉트만 최상단에서 감시
+    final isRedirectNeeded = context.select<AuthProvider, bool>((auth) =>
+        auth.isAuthenticated && auth.profile == null && !auth.isLoading);
+
+    if (isRedirectNeeded) {
       return const TermsAgreementScreen(isSocial: true);
     }
 
-    // 현재 사용자의 최신 색상을 자신의 타일에 즉시 반영 (데이터베이스 동기화 전에도 즉각 응답)
-    final currentTiles = Map<String, HexTile>.from(game.capturedTiles);
-    if (auth.profile != null) {
-      currentTiles.updateAll((id, tile) {
-        if (tile.userId == auth.user?.id) {
-          return tile.copyWith(colorHex: auth.profile!.colorHex);
-        }
-        return tile;
-      });
-    }
-
-    flameGame.updateCapturedTiles(
-      capturedTiles: currentTiles,
-      capturingTileId: game.capturingTileId,
-      captureProgress: game.captureProgress,
-      capturingColorHex: auth.profile?.colorHex,
-      currentLocation: loc.currentLocation,
-      mainBaseTileId: auth.profile?.mainBaseTileId,
-      selectedScanTileId: game.selectedScanTileId,
-      isScanMode: game.isScanMode,
-      currentUserId: auth.user?.id,
-      isSatelliteCapturing: game.isSatelliteCapturing,
-      satelliteCapturePhase: game.satelliteCapturePhase,
-      satelliteTravelProgress: game.satelliteTravelProgress,
-      satelliteCaptureProgress: game.satelliteCaptureProgress,
-      satelliteCapturingTileId: game.satelliteCapturingTileId,
-    );
-
-    final currentLocation = loc.currentLocation ?? MapConfig.defaultPosition;
+    // 2. 초기 맵 렌더링에 사용할 위치 획득 (최초 1회만 참조하고, 리스너가 지도 내부 제어를 직접 처리하므로 watch 차단)
+    final locProvider = Provider.of<LocationProvider>(context, listen: false);
+    final initialLocation = locProvider.currentLocation ?? MapConfig.defaultPosition;
+    final flameGame = Provider.of<ConquestGame>(context, listen: false);
 
     return Scaffold(
       backgroundColor: GameColors.tacticalBlack,
       body: Stack(
         children: [
           // 지도 + Flame 레이어
-          GameMapWidget(initialLocation: currentLocation, game: flameGame),
+          GameMapWidget(initialLocation: initialLocation, game: flameGame),
 
-          // HUD 레이어
+          // HUD 레이어 (내부에 Selector 처리를 장착하여 독립 렌더링)
           const HudOverlay(),
 
-          // 전술 알림 레이어 (개별 카드 애니메이션 리스트 탑재)
+          // 전술 알림 레이어 (알림 리스트 변동 시에만 국한 리빌드)
           Positioned(
             top: topOffset + 90.0,
             left: 20,
             right: 20,
-            child: TacticalAlertList(alerts: game.alerts),
+            child: Selector<GameProvider, List<GameAlert>>(
+              selector: (_, provider) => provider.alerts,
+              builder: (context, alerts, child) {
+                return TacticalAlertList(alerts: alerts);
+              },
+            ),
           ),
 
-          // 로딩 오버레이 (상태 플래그 기반)
-          AnimatedSwitcher(
-            duration: const Duration(milliseconds: 800),
-            transitionBuilder: (child, animation) {
-              return FadeTransition(opacity: animation, child: child);
+          // 로딩 오버레이 (초기화 완료 시점에만 가볍게 리빌드)
+          Selector<GameProvider, bool>(
+            selector: (_, provider) => provider.isInitialized,
+            builder: (context, isInitialized, child) {
+              return AnimatedSwitcher(
+                duration: const Duration(milliseconds: 800),
+                transitionBuilder: (child, animation) {
+                  return FadeTransition(opacity: animation, child: child);
+                },
+                child: isInitialized
+                    ? const SizedBox.shrink()
+                    : LoadingOverlay(message: GameStrings.tacticalSatelliteSync),
+              );
             },
-            child: game.isInitialized
-                ? const SizedBox.shrink()
-                : LoadingOverlay(message: GameStrings.tacticalSatelliteSync),
           ),
         ],
       ),

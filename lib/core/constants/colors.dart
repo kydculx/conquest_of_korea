@@ -43,13 +43,6 @@ class GameColors {
 
   /// 반투명 우유빛 오버레이 배경 컬러 -> 80% 반투명 다크 딥 인디고 젤리
   static Color backgroundTranslucent = const Color(0xCC1A2232);
-
-  /// 카카오 브랜드 옐로우 컬러
-  static Color kakaoYellow = const Color(0xFFFEE500);
-
-  /// 카카오 브랜드 텍스트 컬러
-  static Color kakaoText = const Color(0xFF191919);
-
   /// 가독성을 대폭 높인 메인 텍스트용 차콜 네이비 컬러 -> 맑고 뽀얀 파스텔 민트 화이트
   static Color textPrimary = const Color(0xFFECEFF1);
 
@@ -101,8 +94,6 @@ class GameColors {
     String? tacWhite,
     String? bgMedium,
     String? bgTranslucent,
-    String? kakaoBg,
-    String? kakaoTxt,
   }) {
     if (accent != null) {
       final parsed = _parseHexColor(accent);
@@ -170,14 +161,6 @@ class GameColors {
     if (bgTranslucent != null) {
       final parsed = _parseHexColor(bgTranslucent);
       if (parsed != null) backgroundTranslucent = parsed;
-    }
-    if (kakaoBg != null) {
-      final parsed = _parseHexColor(kakaoBg);
-      if (parsed != null) kakaoYellow = parsed;
-    }
-    if (kakaoTxt != null) {
-      final parsed = _parseHexColor(kakaoTxt);
-      if (parsed != null) kakaoText = parsed;
     }
   }
 

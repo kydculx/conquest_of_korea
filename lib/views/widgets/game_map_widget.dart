@@ -9,8 +9,7 @@ import '../../core/constants/map_config.dart';
 import '../../providers/game_provider.dart';
 import '../../providers/location_provider.dart';
 import '../../services/hex_service.dart';
-import '../../core/constants/strings.dart';
-import 'tactical_dialog.dart';
+
 
 /// 지도(FlutterMap) + Flame 엔진 레이어를 결합한 위젯
 class GameMapWidget extends StatefulWidget {
@@ -35,6 +34,7 @@ class _GameMapWidgetState extends State<GameMapWidget>
   int _pointerCount = 0; // 추가: 화면에 터치 중인 활성 포인터(손가락) 개수
   double _currentZoom = MapConfig.focusZoom;
   LocationProvider? _locProvider; // 추가: LocationProvider 참조 보관
+  GameProvider? _gameProvider; // 추가: GameProvider 참조 보관
   AnimationController? _animationController; // 추가: 내 위치 애니메이션 컨트롤러
 
   @override
@@ -51,13 +51,46 @@ class _GameMapWidgetState extends State<GameMapWidget>
       _locProvider = newLoc;
       _locProvider?.addListener(_onLocationProviderChanged);
     }
+
+    final newGameProvider = Provider.of<GameProvider>(context, listen: false);
+    if (_gameProvider != newGameProvider) {
+      _gameProvider?.removeListener(_onGameProviderChanged);
+      _gameProvider = newGameProvider;
+      _gameProvider?.addListener(_onGameProviderChanged);
+    }
   }
 
   @override
   void dispose() {
     _locProvider?.removeListener(_onLocationProviderChanged);
+    _gameProvider?.removeListener(_onGameProviderChanged);
     _stopAnimation();
     super.dispose();
+  }
+
+  void _onGameProviderChanged() {
+    if (!mounted || _gameProvider == null) return;
+    final gameProvider = _gameProvider!;
+
+    // 전역 추적 상태 전이 감지 및 내 위치 애니메이션 복귀
+    if (gameProvider.isFollowingUser && !_lastIsFollowing) {
+      _lastIsFollowing = true;
+      final loc = _locProvider;
+      if (loc != null && loc.currentLocation != null) {
+        final double targetRotation =
+            gameProvider.isMapRotationMode ? -loc.heading : 0.0;
+        _animatedMapMove(
+          loc.currentLocation!,
+          MapConfig.focusZoom,
+          targetRotation,
+        );
+      }
+    } else if (!gameProvider.isFollowingUser && _lastIsFollowing) {
+      _lastIsFollowing = false;
+    }
+
+    // [최적화] 맵 회전 모드 또는 내 위치 추적 상태 변경 시, 지도의 회전 및 투영 상태를 즉각 동기화 반영
+    _onLocationProviderChanged();
   }
 
   void _onLocationProviderChanged() {
@@ -181,196 +214,121 @@ class _GameMapWidgetState extends State<GameMapWidget>
 
   @override
   Widget build(BuildContext context) {
-    return Consumer<GameProvider>(
-      builder: (context, gameProvider, child) {
-        // 전역 추적 상태 전이 감지 및 내 위치 애니메이션 복귀
-        if (gameProvider.isFollowingUser && !_lastIsFollowing) {
-          _lastIsFollowing = true;
-          final loc = _locProvider;
-          if (loc != null && loc.currentLocation != null) {
-            final double targetRotation =
-                gameProvider.isMapRotationMode ? -loc.heading : 0.0;
-            WidgetsBinding.instance.addPostFrameCallback((_) {
-              _animatedMapMove(
-                loc.currentLocation!,
-                MapConfig.focusZoom,
-                targetRotation,
-              );
-            });
-          }
-        } else if (!gameProvider.isFollowingUser && _lastIsFollowing) {
-          _lastIsFollowing = false;
-        }
+    final gameProvider = Provider.of<GameProvider>(context, listen: false);
 
-        return Stack(
-          children: [
-            // 베이스 맵 레이어
-            Listener(
-              onPointerDown: (event) {
-                _pointerCount++;
-                _stopAnimation();
+    return Stack(
+      children: [
+        // 베이스 맵 레이어
+        Listener(
+          onPointerDown: (event) {
+            _pointerCount++;
+            _stopAnimation();
+          },
+          onPointerUp: (event) {
+            _pointerCount = (_pointerCount - 1).clamp(0, 10);
+          },
+          onPointerCancel: (event) {
+            _pointerCount = (_pointerCount - 1).clamp(0, 10);
+          },
+          child: FlutterMap(
+            mapController: _mapController,
+            options: MapOptions(
+              initialCenter: widget.initialLocation,
+              initialZoom: MapConfig.focusZoom,
+              minZoom: MapConfig.minZoom,
+              maxZoom: MapConfig.maxZoom,
+              cameraConstraint: const CameraConstraint.unconstrained(),
+              // 맵 회전(Rotation) 제스처 비활성화
+              interactionOptions: const InteractionOptions(
+                flags: InteractiveFlag.all & ~InteractiveFlag.rotate,
+              ),
+              backgroundColor: GameColors.transparent,
+              onMapReady: () {
+                widget.game.updateProjection(_mapController);
               },
-              onPointerUp: (event) {
-                _pointerCount = (_pointerCount - 1).clamp(0, 10);
+              onTap: (tapPosition, point) {
+                final hex = HexService.latLngToHex(point);
+                final tileId = 'hex_${hex['q']}_${hex['r']}';
+                gameProvider.selectScanTile(tileId);
               },
-              onPointerCancel: (event) {
-                _pointerCount = (_pointerCount - 1).clamp(0, 10);
-              },
-              child: FlutterMap(
-                mapController: _mapController,
-                options: MapOptions(
-                  initialCenter: widget.initialLocation,
-                  initialZoom: MapConfig.focusZoom,
-                  minZoom: MapConfig.minZoom,
-                  maxZoom: MapConfig.maxZoom,
-                  // 남한 영토 기준 + 여유 공간(Margin)을 두어 러프하게 바운더리 제한 (MapConfig 외부 변수 참조)
-                  // contain 대신 containCenter를 사용하여 줌 아웃 시 화면이 바운더리보다 커져서 크래시나는 현상 방지
-                  cameraConstraint: const CameraConstraint.unconstrained(),
-                  // 맵 회전(Rotation) 제스처 비활성화
-                  interactionOptions: const InteractionOptions(
-                    flags: InteractiveFlag.all & ~InteractiveFlag.rotate,
-                  ),
-                  backgroundColor: GameColors.transparent,
-                  onMapReady: () {
-                    widget.game.updateProjection(_mapController);
-                  },
-                  onTap: (tapPosition, point) {
-                    final hex = HexService.latLngToHex(point);
-                    final tileId = 'hex_${hex['q']}_${hex['r']}';
-
-                    if (gameProvider.isSatelliteCapturing &&
-                        gameProvider.satelliteCapturingTileId == tileId) {
-                      _showRemoteCancelDialog(context, gameProvider);
-                    } else {
-                      gameProvider.selectScanTile(tileId);
+              onMapEvent: (event) {
+                if (event.source ==
+                    MapEventSource.multiFingerGestureStart) {
+                  WidgetsBinding.instance.addPostFrameCallback((_) {
+                    if (mounted) setState(() => _isPinching = true);
+                  });
+                } else if (event.source == MapEventSource.multiFingerEnd) {
+                  WidgetsBinding.instance.addPostFrameCallback((_) {
+                    if (mounted) {
+                      setState(() => _isPinching = false);
+                      _onLocationProviderChanged();
                     }
-                  },
-                  onMapEvent: (event) {
-                    if (event.source ==
-                        MapEventSource.multiFingerGestureStart) {
-                      WidgetsBinding.instance.addPostFrameCallback((_) {
-                        if (mounted) setState(() => _isPinching = true);
-                      });
-                    } else if (event.source == MapEventSource.multiFingerEnd) {
-                      WidgetsBinding.instance.addPostFrameCallback((_) {
-                        if (mounted) {
-                          setState(() => _isPinching = false);
-                          _onLocationProviderChanged();
-                        }
-                      });
-                    }
+                  });
+                }
 
-                    if (event.source == MapEventSource.dragStart ||
-                        event.source == MapEventSource.onDrag ||
-                        event.source ==
-                            MapEventSource.flingAnimationController) {
-                      // 활성 포인터가 정확히 1개이고 핀치 줌 중이 아닐 때만 트래킹을 해제
-                      if (_pointerCount == 1 && !_isPinching && gameProvider.isFollowingUser) {
-                        WidgetsBinding.instance.addPostFrameCallback((_) {
-                          if (mounted) {
-                            gameProvider.setFollowingUser(false);
-                          }
-                        });
+                if (event.source == MapEventSource.dragStart ||
+                    event.source == MapEventSource.onDrag ||
+                    event.source ==
+                        MapEventSource.flingAnimationController) {
+                  // 활성 포인터가 정확히 1개이고 핀치 줌 중이 아닐 때만 트래킹을 해제
+                  if (_pointerCount == 1 && !_isPinching && gameProvider.isFollowingUser) {
+                    WidgetsBinding.instance.addPostFrameCallback((_) {
+                      if (mounted) {
+                        gameProvider.setFollowingUser(false);
                       }
-                      _stopAnimation();
-                    }
-                    widget.game.updateProjection(_mapController);
-                  },
-                  onPositionChanged: (position, hasGesture) {
-                    if (position.zoom != _currentZoom) {
-                      WidgetsBinding.instance.addPostFrameCallback((_) {
-                        if (mounted) {
-                          setState(() => _currentZoom = position.zoom);
-                        }
-                      });
-                    }
-                  },
-                ),
-                children: [
-                  // 배경 지도 타일
-                  if (gameProvider.showMap &&
-                      gameProvider.currentMapStyle.url.isNotEmpty)
-                    Builder(
-                      builder: (context) {
-                        final style = gameProvider.currentMapStyle;
-                        final tileLayer = TileLayer(
-                          urlTemplate: style.url,
-                          subdomains: const ['a', 'b', 'c', 'd'],
-                          userAgentPackageName:
-                              'com.watercherry.conquestofkorea',
-                        );
-
-
-
-                        if (style.colorMatrix != null) {
-                          return ColorFiltered(
-                            colorFilter: ColorFilter.matrix(style.colorMatrix!),
-                            child: tileLayer,
-                          );
-                        }
-                        return tileLayer;
-                      },
-                    ),
-                ],
-              ),
-            ),
-
-            // Flame 게임 레이어 (터치 통과)
-            Positioned.fill(
-              child: IgnorePointer(child: GameWidget(game: widget.game)),
-            ),
-          ],
-        );
-      },
-    );
-  }
-
-  void _showRemoteCancelDialog(BuildContext context, GameProvider provider) {
-    showDialog(
-      context: context,
-      barrierDismissible: true,
-      builder: (context) {
-        return TacticalDialog(
-          title: GameStrings.satelliteAbortTitle,
-          icon: Icons.warning_amber_rounded,
-          accentColor: GameColors.error,
-          content: Text(
-            GameStrings.satelliteAbortConfirm,
-            style: const TextStyle(
-              color: Colors.white,
-              fontSize: 13,
-              height: 1.5,
-            ),
-          ),
-          actions: [
-            OutlinedButton(
-              style: OutlinedButton.styleFrom(
-                foregroundColor: Colors.white70,
-                side: const BorderSide(color: Colors.white30, width: 1.0),
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(16),
-                ),
-              ),
-              onPressed: () => Navigator.pop(context),
-              child: Text(GameStrings.satelliteKeepOperation),
-            ),
-            OutlinedButton(
-              style: OutlinedButton.styleFrom(
-                foregroundColor: GameColors.error,
-                side: BorderSide(color: GameColors.error, width: 1.0),
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(16),
-                ),
-              ),
-              onPressed: () {
-                provider.cancelSatelliteCapture();
-                Navigator.pop(context);
+                    });
+                  }
+                  _stopAnimation();
+                }
+                widget.game.updateProjection(_mapController);
               },
-              child: Text(GameStrings.satelliteCancelOperation),
+              onPositionChanged: (position, hasGesture) {
+                if (position.zoom != _currentZoom) {
+                  WidgetsBinding.instance.addPostFrameCallback((_) {
+                    if (mounted) {
+                      setState(() => _currentZoom = position.zoom);
+                    }
+                  });
+                }
+              },
             ),
-          ],
-        );
-      },
+            children: [
+              // 배경 지도 타일 (Selector로 감싸 스타일 변경 시에만 리빌드 격리)
+              Selector<GameProvider, (bool, MapStyle)>(
+                selector: (_, provider) => (provider.showMap, provider.currentMapStyle),
+                builder: (context, state, child) {
+                  final showMap = state.$1;
+                  final style = state.$2;
+
+                  if (!showMap || style.url.isEmpty) {
+                    return const SizedBox.shrink();
+                  }
+
+                  final tileLayer = TileLayer(
+                    urlTemplate: style.url,
+                    subdomains: const ['a', 'b', 'c', 'd'],
+                    userAgentPackageName:
+                        'com.watercherry.conquestofkorea',
+                  );
+
+                  if (style.colorMatrix != null) {
+                    return ColorFiltered(
+                      colorFilter: ColorFilter.matrix(style.colorMatrix!),
+                      child: tileLayer,
+                    );
+                  }
+                  return tileLayer;
+                },
+              ),
+            ],
+          ),
+        ),
+
+        // Flame 게임 레이어 (터치 통과)
+        Positioned.fill(
+          child: IgnorePointer(child: GameWidget(game: widget.game)),
+        ),
+      ],
     );
   }
 }

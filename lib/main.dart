@@ -1,7 +1,6 @@
 import 'package:conquest_mobile/views/screens/splash_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:kakao_flutter_sdk_user/kakao_flutter_sdk_user.dart';
 import 'package:provider/provider.dart';
 import 'package:wakelock_plus/wakelock_plus.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
@@ -32,12 +31,6 @@ void main() async {
 
   // 환경 변수 로드
   await dotenv.load(fileName: ".env");
-
-  // Kakao SDK 초기화
-  final kakaoNativeKey = dotenv.env['KAKAO_NATIVE_APP_KEY'];
-  if (kakaoNativeKey != null) {
-    KakaoSdk.init(nativeAppKey: kakaoNativeKey);
-  }
 
   // 화면 자동 꺼짐 방지
   WakelockPlus.enable();

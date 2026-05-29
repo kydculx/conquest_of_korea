@@ -135,24 +135,24 @@ class PlayerComponent extends PositionComponent {
     canvas.translate(-center.dx, -center.dy);
 
     final arrowPath = ui.Path()
-      ..moveTo(center.dx, center.dy - radius * 1.25) // 전면 앞코
+      ..moveTo(center.dx, center.dy - radius * 1.1) // 전면 앞코 (정중앙 Y축 밸런스 정렬 보정)
       ..lineTo(
         center.dx - radius * 0.95,
-        center.dy + radius * 0.9,
-      ) // 좌측 하단 날개끝
+        center.dy + radius * 1.1,
+      ) // 좌측 하단 날개끝 (정중앙 Y축 밸런스 정렬 보정)
       ..lineTo(
         center.dx - radius * 0.25,
-        center.dy + radius * 0.35,
-      ) // 좌측 안쪽 꺾임선
+        center.dy + radius * 0.3,
+      ) // 좌측 안쪽 꺾임선 (정중앙 Y축 밸런스 정렬 보정)
       ..lineTo(center.dx, center.dy + radius * 0.6) // 중앙 후방 홈
       ..lineTo(
         center.dx + radius * 0.25,
-        center.dy + radius * 0.35,
-      ) // 우측 안쪽 꺾임선
+        center.dy + radius * 0.3,
+      ) // 우측 안쪽 꺾임선 (정중앙 Y축 밸런스 정렬 보정)
       ..lineTo(
         center.dx + radius * 0.95,
-        center.dy + radius * 0.9,
-      ) // 우측 하단 날개끝
+        center.dy + radius * 1.1,
+      ) // 우측 하단 날개끝 (정중앙 Y축 밸런스 정렬 보정)
       ..close();
 
     // 2-1. 강한 분리감용 그림자 드롭
@@ -173,16 +173,16 @@ class PlayerComponent extends PositionComponent {
 
     // 2-3. 입체 명암 연출을 위한 좌우 절반 패스 분리
     final leftHalf = ui.Path()
-      ..moveTo(center.dx, center.dy - radius * 1.25)
-      ..lineTo(center.dx - radius * 0.95, center.dy + radius * 0.9)
-      ..lineTo(center.dx - radius * 0.25, center.dy + radius * 0.35)
+      ..moveTo(center.dx, center.dy - radius * 1.1)
+      ..lineTo(center.dx - radius * 0.95, center.dy + radius * 1.1)
+      ..lineTo(center.dx - radius * 0.25, center.dy + radius * 0.3)
       ..lineTo(center.dx, center.dy + radius * 0.6)
       ..close();
 
     final rightHalf = ui.Path()
-      ..moveTo(center.dx, center.dy - radius * 1.25)
-      ..lineTo(center.dx + radius * 0.95, center.dy + radius * 0.9)
-      ..lineTo(center.dx + radius * 0.25, center.dy + radius * 0.35)
+      ..moveTo(center.dx, center.dy - radius * 1.1)
+      ..lineTo(center.dx + radius * 0.95, center.dy + radius * 1.1)
+      ..lineTo(center.dx + radius * 0.25, center.dy + radius * 0.3)
       ..lineTo(center.dx, center.dy + radius * 0.6)
       ..close();
 

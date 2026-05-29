@@ -41,7 +41,7 @@ dependencies:
   google_sign_in: ^6.2.1
   crypto: ^3.0.6
   sign_in_with_apple: ^6.1.1
-  kakao_flutter_sdk_user: ^1.9.1
+
   geolocator: ^14.0.2
   provider: ^6.1.5+1
   vibration: ^2.0.1

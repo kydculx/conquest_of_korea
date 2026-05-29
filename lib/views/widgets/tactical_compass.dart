@@ -6,7 +6,8 @@ import '../../core/constants/game_config.dart';
 import '../../providers/location_provider.dart';
 
 /// 전술 나침반(Tactical Compass) UI 위젯
-/// - LocationProvider의 heading 및 GPS 정확도를 실시간 반영하여 회전 및 네온 링 컬러를 표현합니다.
+/// - [디자인 리뉴얼] 투박한 군사용 계기판 디자인을 걷어내고, 모던하고 심플한 글래스모피즘 네온 다이아몬드 핀 지침으로 전면 개편했습니다.
+/// - [성능 최적화] watch를 Selector로 전면 전환하여, 1초에 50번씩 회전할 때 상위 HUD나 UI 전체가 불필요하게 갱신되는 병목을 원천 격리했습니다.
 class TacticalCompass extends StatefulWidget {
   final double size;
   const TacticalCompass({super.key, this.size = 44.0});
@@ -22,7 +23,7 @@ class _TacticalCompassState extends State<TacticalCompass>
   @override
   void initState() {
     super.initState();
-    // GPS 신호 유실/경고 시 맥박(Pulse) 애니메이션을 위한 컨트롤러
+    // GPS 신호 유실 시 부드러운 글로우 펄스 애니메이션 구동
     _pulseController = AnimationController(
       vsync: this,
       duration: const Duration(seconds: 2),
@@ -37,42 +38,46 @@ class _TacticalCompassState extends State<TacticalCompass>
 
   @override
   Widget build(BuildContext context) {
-    final loc = context.watch<LocationProvider>();
-    final heading = loc.heading;
-    final isGpsActive = loc.isGpsActive;
-    final accuracy = loc.currentAccuracy;
+    // 1. GPS 신호 수신 품질만 정밀 모니터링 (변화 시에만 빌드)
+    final bool isSignalGood = context.select<LocationProvider, bool>((loc) {
+      final isGpsActive = loc.isGpsActive;
+      final accuracy = loc.currentAccuracy;
+      return isGpsActive && accuracy <= GameConfig.captureAccuracyThreshold;
+    });
 
-    // GPS 신호 품질 판별 (15m 이하: 양호, 15m 초과 또는 비활성: 경고)
-    final bool isSignalGood =
-        isGpsActive && accuracy <= GameConfig.captureAccuracyThreshold;
-
-    return AnimatedBuilder(
-      animation: _pulseController,
-      builder: (context, child) {
-        return Container(
-          width: widget.size,
-          height: widget.size,
-          decoration: const BoxDecoration(shape: BoxShape.circle),
-          child: CustomPaint(
-            painter: _TacticalCompassPainter(
-              heading: heading,
-              isSignalGood: isSignalGood,
-              pulseValue: _pulseController.value,
-            ),
-          ),
+    // 2. 나침반 방위각(heading)만 정밀하게 Selector로 구독하여 UI 리빌드 병목 완벽 차단
+    return Selector<LocationProvider, double>(
+      selector: (_, loc) => loc.heading,
+      builder: (context, heading, child) {
+        return AnimatedBuilder(
+          animation: _pulseController,
+          builder: (context, child) {
+            return Container(
+              width: widget.size,
+              height: widget.size,
+              decoration: const BoxDecoration(shape: BoxShape.circle),
+              child: CustomPaint(
+                painter: _ModernCompassPainter(
+                  heading: heading,
+                  isSignalGood: isSignalGood,
+                  pulseValue: _pulseController.value,
+                ),
+              ),
+            );
+          },
         );
       },
     );
   }
 }
 
-/// 전술 나침반 렌더링을 위한 CustomPainter
-class _TacticalCompassPainter extends CustomPainter {
+/// 모던하고 세련된 네온 글래스 나침반을 그리는 CustomPainter
+class _ModernCompassPainter extends CustomPainter {
   final double heading;
   final bool isSignalGood;
   final double pulseValue;
 
-  _TacticalCompassPainter({
+  _ModernCompassPainter({
     required this.heading,
     required this.isSignalGood,
     required this.pulseValue,
@@ -83,145 +88,109 @@ class _TacticalCompassPainter extends CustomPainter {
     final center = Offset(size.width / 2, size.height / 2);
     final radius = size.width / 2;
 
-    // GPS 신호 강도에 따라 테두리 네온 색 결정 (정상: 파스텔블루, 경고: 파스텔솜사탕핑크)
-    final Color neonColor = isSignalGood
+    final Color accentColor = isSignalGood
         ? GameColors.accentNeon
         : GameColors.error;
 
-    // 1. 반투명 하이테크 배경 디스크 (Cozy 크림 화이트)
+    // 1. 심플 글래스모피즘 아우터 섀도우 & 네온 테두리
+    final borderPaint = Paint()
+      ..color = accentColor.withValues(alpha: isSignalGood ? 0.7 : (0.2 + (pulseValue * 0.45)))
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = 2.0;
+    canvas.drawCircle(center, radius - 2, borderPaint);
+
+    // 반투명 다크 크리스탈 원형 배경
     final bgPaint = Paint()
-      ..color = GameColors.backgroundMedium.withValues(alpha: 0.9)
+      ..color = GameColors.backgroundMedium.withValues(alpha: 0.88)
       ..style = PaintingStyle.fill;
     canvas.drawCircle(center, radius - 2, bgPaint);
 
-    // 2. 바깥쪽 테두리 글로우 링 (맥박 효과 적용)
-    final glowAlpha = isSignalGood ? 0.7 : (0.3 + (pulseValue * 0.4));
-    final borderPaint = Paint()
-      ..color = neonColor.withValues(alpha: glowAlpha)
-      ..style = PaintingStyle.stroke
-      ..strokeWidth = 2.5; // 약간 도톰하게 젤리 느낌 부여
-
-    canvas.drawCircle(center, radius - 2, borderPaint);
-
-    // 3. 기기 방위각에 동기화되어 회전하는 컴퍼스 링 및 눈금
+    // 2. 정북 방향을 가리키는 초슬림 입체 네온 솜사탕 다이아몬드 지침
     canvas.save();
     canvas.translate(center.dx, center.dy);
-    // 방위각(도) -> 라디안 변환 (나침반이 북쪽을 유지하도록 반대 방향 회전)
+    // 방위각 라디안 변환 (나침반 지침이 북쪽 고정 지시용 반대 회전)
     final double headingRad = -heading * (math.pi / 180.0);
     canvas.rotate(headingRad);
 
-    // 30도 간격으로 나침반 둥글둥글 도트 눈금 그리기
-    for (int angle = 0; angle < 360; angle += 30) {
-      // 0도(N)가 캔버스 12시 방향을 향하도록 -90도 영점 보정
-      final double angleRad = (angle - 90) * (math.pi / 180.0);
-      final double cosVal = math.cos(angleRad);
-      final double sinVal = math.sin(angleRad);
+    final double pinLength = radius - 8;
+    final double pinWidth = 5.0;
 
-      final bool isMajor = angle % 90 == 0;
-
-      if (!isMajor) {
-        // 주요 방위가 아닐 때는 귀여운 미니 파스텔 도트를 그림
-        final dotPaint = Paint()
-          ..color = GameColors.textMuted.withValues(alpha: 0.35)
-          ..style = PaintingStyle.fill;
-        final double dotDist = radius - 6.0;
-        canvas.drawCircle(Offset(cosVal * dotDist, sinVal * dotDist), 1.5, dotPaint);
-      } else {
-        // 주요 90도 방위일 때는 조금 더 뚜렷한 파스텔 도트를 그림
-        final dotPaint = Paint()
-          ..color = angle == 0
-              ? const Color(0xFFE57373)
-              : GameColors.textSecondary.withValues(alpha: 0.6);
-          dotPaint.style = PaintingStyle.fill;
-        final double dotDist = radius - 7.0;
-        canvas.drawCircle(Offset(cosVal * dotDist, sinVal * dotDist), 2.5, dotPaint);
-      }
-
-      // 주요 방위 텍스트(N, E, S, W) 표기
-      if (isMajor) {
-        String dirText = '';
-        Color txtColor = GameColors.textPrimary;
-        switch (angle) {
-          case 0:
-            dirText = 'N';
-            txtColor = const Color(0xFFE57373); // 정북은 파스텔 솜사탕 핑크 레드
-            break;
-          case 90:
-            dirText = 'E';
-            break;
-          case 180:
-            dirText = 'S';
-            break;
-          case 270:
-            dirText = 'W';
-            break;
-        }
-
-        final textPainter = TextPainter(
-          text: TextSpan(
-            text: dirText,
-            style: TextStyle(
-              color: txtColor,
-              fontSize: 9.5,
-              fontWeight: FontWeight.bold,
-              fontFamily: 'Fredoka',
-            ),
-          ),
-          textDirection: TextDirection.ltr,
-        );
-        textPainter.layout();
-
-        // 텍스트가 바깥쪽을 향하도록 정렬 및 캔버스 상 회전 보정
-        canvas.save();
-        // 텍스트 배치 중심으로 이동
-        final double textDist = radius - 15.0;
-        canvas.translate(cosVal * textDist, sinVal * textDist);
-        // N, E, S, W 글자가 읽기 편하도록 안쪽 각도로 회전
-        canvas.rotate(angleRad + math.pi / 2);
-        textPainter.paint(
-          canvas,
-          Offset(-textPainter.width / 2, -textPainter.height / 2),
-        );
-        canvas.restore();
-      }
-    }
-
-    // 북쪽 가리키는 미세 삼각 지시선 -> 귀엽고 둥글둥글한 젤리 핀 지침
-    final northArrowPaint = Paint()
-      ..color = const Color(0xFFE57373)
-      ..style = PaintingStyle.fill;
-
-    // 둥글둥글한 눈물방울 혹은 버블 모양의 핀
-    canvas.drawCircle(Offset(0, -(radius - 12)), 4.0, northArrowPaint);
-    final path = Path()
-      ..moveTo(0, -(radius - 6))
-      ..lineTo(-3, -(radius - 12))
-      ..lineTo(3, -(radius - 12))
+    // 북쪽 가리키는 핀 (그라데이션 네온 레드 솜사탕)
+    final Path northPath = Path()
+      ..moveTo(0, -pinLength)
+      ..lineTo(pinWidth, 0)
+      ..lineTo(0, -2) // 입체감을 위한 미세 오프셋
       ..close();
-    canvas.drawPath(path, northArrowPaint);
+
+    final northPaint = Paint()
+      ..shader = LinearGradient(
+        begin: Alignment.topCenter,
+        end: Alignment.bottomCenter,
+        colors: [
+          const Color(0xFFFF5252),
+          const Color(0xFFFF8A80),
+        ],
+      ).createShader(Rect.fromLTRB(-pinWidth, -pinLength, pinWidth, 0))
+      ..style = PaintingStyle.fill;
+    canvas.drawPath(northPath, northPaint);
+
+    final Path northShadowPath = Path()
+      ..moveTo(0, -pinLength)
+      ..lineTo(-pinWidth, 0)
+      ..lineTo(0, -2)
+      ..close();
+
+    final northShadowPaint = Paint()
+      ..color = const Color(0xFFC62828).withValues(alpha: 0.85)
+      ..style = PaintingStyle.fill;
+    canvas.drawPath(northShadowPath, northShadowPaint);
+
+    // 남쪽 가리키는 핀 (세련된 다크 메탈릭 실버)
+    final Path southPath = Path()
+      ..moveTo(0, pinLength)
+      ..lineTo(pinWidth, 0)
+      ..lineTo(0, 2)
+      ..close();
+
+    final southPaint = Paint()
+      ..color = Colors.white.withValues(alpha: 0.7)
+      ..style = PaintingStyle.fill;
+    canvas.drawPath(southPath, southPaint);
+
+    final Path southShadowPath = Path()
+      ..moveTo(0, pinLength)
+      ..lineTo(-pinWidth, 0)
+      ..lineTo(0, 2)
+      ..close();
+
+    final southShadowPaint = Paint()
+      ..color = Colors.white.withValues(alpha: 0.4)
+      ..style = PaintingStyle.fill;
+    canvas.drawPath(southShadowPath, southShadowPaint);
+
+    // 정북 방향 미세 하이테크 N 마커 도트
+    final nMarkerPaint = Paint()
+      ..color = const Color(0xFFFF5252)
+      ..style = PaintingStyle.fill;
+    canvas.drawCircle(Offset(0, -pinLength + 3), 1.5, nMarkerPaint);
 
     canvas.restore(); // 회전 복구
 
-    // 4. 화면 수직 윗부분(사용자가 폰을 쥐고 있는 진행 방향)을 지시하는 고정 인덱스 눈금선 -> 앙증맞은 솜사탕 핑크 미니 도트로 교체
-    final indexPaint = Paint()
-      ..color = GameColors.accentNeon.withValues(alpha: 0.95)
+    // 3. 중심 회전 축 레티클 코어
+    final centerCorePaint = Paint()
+      ..color = Colors.white.withValues(alpha: 0.95)
       ..style = PaintingStyle.fill;
+    canvas.drawCircle(center, 2.5, centerCorePaint);
 
-    canvas.drawCircle(
-      Offset(center.dx, center.dy - radius + 5),
-      3.0,
-      indexPaint,
-    );
-
-    // 5. 중심 조진 레티클 도트
-    final dotPaint = Paint()
-      ..color = neonColor.withValues(alpha: 0.8)
-      ..style = PaintingStyle.fill;
-    canvas.drawCircle(center, 3.0, dotPaint);
+    final centerOuterPaint = Paint()
+      ..color = accentColor.withValues(alpha: 0.8)
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = 1.0;
+    canvas.drawCircle(center, 4.5, centerOuterPaint);
   }
 
   @override
-  bool shouldRepaint(covariant _TacticalCompassPainter oldDelegate) {
+  bool shouldRepaint(covariant _ModernCompassPainter oldDelegate) {
     return oldDelegate.heading != heading ||
         oldDelegate.isSignalGood != isSignalGood ||
         oldDelegate.pulseValue != pulseValue;

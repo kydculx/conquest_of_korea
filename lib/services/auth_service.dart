@@ -2,13 +2,12 @@ import 'dart:io';
 import 'package:flutter/foundation.dart';
 import 'package:google_sign_in/google_sign_in.dart';
 import 'package:sign_in_with_apple/sign_in_with_apple.dart';
-import 'package:kakao_flutter_sdk_user/kakao_flutter_sdk_user.dart' as kakao;
 import 'package:supabase_flutter/supabase_flutter.dart';
 import '../models/user_profile.dart';
 import '../core/constants/strings.dart';
 import '../core/app_config.dart';
 
-/// Supabase Auth 서비스와 소셜 로그인(구글, 애플, 카카오) 연동을 총괄하는 인증 관리 서비스 클래스
+/// Supabase Auth 서비스와 소셜 로그인(구글, 애플) 연동을 총괄하는 인증 관리 서비스 클래스
 class AuthService {
   /// Supabase SDK 클라이언트 객체
   final SupabaseClient _client = Supabase.instance.client;
@@ -147,46 +146,6 @@ class AuthService {
     }
   }
 
-  /// 카카오 SDK를 사용하여 카카오톡 네이티브 혹은 카카오 계정 인증으로 OIDC ID Token을 발급받아 로그인을 실행합니다.
-  Future<AuthResponse> signInWithKakao() async {
-    bool isInstalled = await kakao.isKakaoTalkInstalled();
-    kakao.OAuthToken token;
-
-    if (isInstalled) {
-      token = await kakao.UserApi.instance.loginWithKakaoTalk();
-    } else {
-      token = await kakao.UserApi.instance.loginWithKakaoAccount();
-    }
-
-    final idToken = token.idToken;
-    if (idToken == null) {
-      debugPrint(
-        '❌ Kakao ID Token is null. Ensure OIDC is enabled in Kakao Console.',
-      );
-      throw GameStrings.kakaoOidcRequired;
-    }
-
-    debugPrint(
-      '🔑 Kakao ID Token found. Audience: ${token.scopes?.contains('openid')}',
-    );
-
-    try {
-      return await _client.auth.signInWithIdToken(
-        provider: OAuthProvider.kakao,
-        idToken: idToken,
-        accessToken: token.accessToken,
-      );
-    } catch (e) {
-      debugPrint('❌ Supabase Kakao Sign-In Error: $e');
-      if (e.toString().contains('audience')) {
-        debugPrint(
-          '💡 TIP: Check if the Native App Key is registered as Client ID in Supabase Kakao Provider settings.',
-        );
-      }
-      rethrow;
-    }
-  }
-
   /// 현재 활성화된 세션을 로그아웃 처리하여 종료합니다.
   Future<void> signOut() async {
     await _client.auth.signOut();
@@ -252,11 +211,19 @@ class AuthService {
     final user = currentUser;
     if (user == null) return;
 
-    // 1. DB profiles 테이블에서 본인 데이터 삭제 시도
+    // 1. 해당 사용자가 점령한 타일 데이터(captured_tiles) 영구 삭제
+    try {
+      await _client.from('captured_tiles').delete().eq('user_id', user.id);
+      debugPrint('🗺️ 탈퇴 회원의 점령 타일 데이터가 정상 삭제되었습니다.');
+    } catch (e) {
+      debugPrint('⚠️ 점령 타일 삭제 중 오류 발생: $e');
+    }
+
+    // 2. DB profiles 테이블에서 본인 데이터 삭제 시도
     // (보통 profiles 테이블에 ON DELETE CASCADE 트리거가 설정되어 auth.users까지 연동 소멸되도록 구성됩니다.)
     await _client.from('profiles').delete().eq('id', user.id);
 
-    // 2. 만약을 위해 delete_user_account RPC가 있을 수 있으므로 연계 호출 (에러는 안전하게 무시)
+    // 3. 만약을 위해 delete_user_account RPC가 있을 수 있으므로 연계 호출 (에러는 안전하게 무시)
     try {
       await _client.rpc('delete_user_account');
     } catch (e) {

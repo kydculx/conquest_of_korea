@@ -71,9 +71,6 @@ class GameStrings {
   /// 구글 로그인 시작 버튼 라벨
   static String get startWithGoogle => 'startWithGoogle'.tr();
 
-  /// 카카오 로그인 시작 버튼 라벨
-  static String get startWithKakao => 'startWithKakao'.tr();
-
   /// 애플 로그인 시작 버튼 라벨
   static String get startWithApple => 'startWithApple'.tr();
 
@@ -157,9 +154,6 @@ class GameStrings {
 
   /// 로그인 취소 안내 메시지
   static String get errorLoginCanceled => 'errorLoginCanceled'.tr();
-
-  /// 카카오 설정 오류 메시지
-  static String get errorKakaoConfig => 'errorKakaoConfig'.tr();
 
   /// 닉네임 중복 오류 메시지
   static String get errorNicknameExists => 'errorNicknameExists'.tr();
@@ -422,9 +416,6 @@ class GameStrings {
 
   /// 인증 ID 토큰 획득 실패 오류 메시지
   static String get idTokenFetchFailed => 'idTokenFetchFailed'.tr();
-
-  /// 카카오 OpenID Connect 활성화 필요 오류 메시지
-  static String get kakaoOidcRequired => 'kakaoOidcRequired'.tr();
 
   // --- 로컬 알림 관련 메시지 ---
   /// 중립 영토 점령 시도 알림 타이틀

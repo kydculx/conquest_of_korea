@@ -1,8 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
-import 'package:kakao_flutter_sdk_user/kakao_flutter_sdk_user.dart'
-    show KakaoSdk;
-import '../core/utils/error_translator.dart';
 import '../services/auth_service.dart';
 import '../services/notification_service.dart';
 import '../models/user_profile.dart';
@@ -180,29 +177,6 @@ class AuthProvider extends ChangeNotifier {
     } catch (e) {
       debugPrint('❌ Apple Login Error: $e');
       rethrow;
-    } finally {
-      _setLoading(false);
-    }
-  }
-
-  /// 카카오 로그인
-  Future<void> signInWithKakao() async {
-    _setLoading(true);
-    _error = null;
-
-    try {
-      // 실제 앱에서 사용하는 키 해시 로그 출력 (디버깅용)
-      final keyHash = await KakaoSdk.origin;
-      debugPrint('🔑 실제 카카오 키 해시: $keyHash');
-
-      final response = await _authService.signInWithKakao();
-      if (response.user != null) {
-        _user = response.user;
-        await _loadProfile(_user!.id);
-      }
-    } catch (e) {
-      _error = ErrorTranslator.translate(e);
-      debugPrint('❌ 카카오 로그인 에러 상세: $e');
     } finally {
       _setLoading(false);
     }
