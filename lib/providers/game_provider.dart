@@ -203,8 +203,8 @@ class GameProvider extends ChangeNotifier with WidgetsBindingObserver {
   /// 초당 골드 획득율 배율
   double get goldRate => _goldRate;
 
-  /// 위성 정밀 조준 스캔 모드 활성화 여부
-  bool get isScanMode => _isScanMode;
+  /// 현재 전술 조준경(정보 카드) 활성화 여부 (조준된 타일이 있거나 원격 확보 작전이 진행 중일 때 참)
+  bool get isScanMode => _selectedScanTileId != null || isSatelliteCapturing;
 
   /// 위성 조준 스캔 상에서 선택된 타일 ID
   String? get selectedScanTileId => _selectedScanTileId;
@@ -941,6 +941,141 @@ class GameProvider extends ChangeNotifier with WidgetsBindingObserver {
     notifyListeners();
   }
 
+  /// 유저 고유 ID를 닉네임으로 캐싱하는 메모리 버퍼
+  final Map<String, String> _agentNicknames = {};
+
+  /// 유저 고유 ID에 해당하는 닉네임을 반환합니다.
+  /// 만약 로그인된 본인의 ID라면 캐시/DB 조회 없이 즉시 본인 프로필의 닉네임을 반환합니다.
+  /// 캐시에 없으면 Supabase에서 즉시 조회 후 캐싱하여 반환합니다.
+  Future<String> getAgentNickname(String userId) async {
+    final myId = _authProvider?.user?.id;
+    final myNick = _authProvider?.profile?.nickname;
+
+    if (myId == userId && myNick != null && myNick.isNotEmpty) {
+      return myNick;
+    }
+
+    if (_agentNicknames.containsKey(userId)) {
+      return _agentNicknames[userId]!;
+    }
+
+    try {
+      final res = await _supabase.client
+          .from('profiles')
+          .select('nickname')
+          .eq('id', userId)
+          .maybeSingle();
+      if (res != null && res['nickname'] != null) {
+        final nick = res['nickname'] as String;
+        _agentNicknames[userId] = nick;
+        notifyListeners();
+        return nick;
+      }
+    } catch (e) {
+      debugPrint('⚠️ 닉네임 조회 실패: $e');
+    }
+
+    // 실패 시 마스킹된 ID 반환
+    final masked = userId.length > 8 ? '${userId.substring(0, 6)}...' : userId;
+    return masked;
+  }
+
+  /// 정보가 보안 해제(Reveal)된 타일 ID와 해제 일시 맵
+  final Map<String, DateTime> _revealedTileTimes = {};
+
+  /// 대상 타일과 유저의 본진 타일 간의 헥사 거리를 계산하여 반환합니다.
+  int getTileDistance(String targetTileId) {
+    final mainBaseId = _authProvider?.profile?.mainBaseTileId;
+    if (mainBaseId == null || mainBaseId.isEmpty) return 0;
+
+    final partsBase = mainBaseId.split('_');
+    final bq = int.tryParse(partsBase[1]) ?? 0;
+    final br = int.tryParse(partsBase[2]) ?? 0;
+
+    final partsTarget = targetTileId.split('_');
+    final tq = int.tryParse(partsTarget[1]) ?? 0;
+    final tr = int.tryParse(partsTarget[2]) ?? 0;
+
+    return HexService.hexDistance(bq, br, tq, tr);
+  }
+
+  /// 타일 정보가 열람(보안 해제) 가능한 상태인지 여부를 판별합니다.
+  /// 본인 타일이거나 중립(점령자 없음) 타일인 경우 항상 상시 노출(true)됩니다.
+  /// 상대 타일인 경우, 해제 일시로부터 10분(GameConfig.tileRevealDurationSeconds)이 지나지 않았는지 판별합니다.
+  bool isTileInfoRevealed(String tileId) {
+    final myId = _authProvider?.user?.id;
+    final tile = _capturedTiles[tileId];
+    final isOwnTile = tile != null && tile.userId == myId;
+    final isNeutral = tile == null || tile.userId == null || tile.userId == 'none';
+
+    if (isOwnTile || isNeutral) {
+      return true;
+    }
+
+    final revealedAt = _revealedTileTimes[tileId];
+    if (revealedAt == null) return false;
+
+    // 만료 여부 검증 (10분)
+    final expiration = revealedAt.add(const Duration(seconds: GameConfig.tileRevealDurationSeconds));
+    final isValid = DateTime.now().toUtc().isBefore(expiration);
+
+    if (!isValid) {
+      _revealedTileTimes.remove(tileId);
+      notifyListeners();
+    }
+
+    return isValid;
+  }
+
+  /// 보안 해제된 타일의 남은 만료 시각(DateTime)을 반환합니다.
+  /// 해제되지 않았거나 이미 만료된 경우 null을 반환합니다.
+  DateTime? getTileRevealExpiration(String tileId) {
+    final revealedAt = _revealedTileTimes[tileId];
+    if (revealedAt == null) return null;
+    return revealedAt.add(const Duration(seconds: GameConfig.tileRevealDurationSeconds));
+  }
+
+  /// 상대 타일 상세 정보 열람을 위해 본진으로부터의 거리(GP)만큼 골드를 지불하고 정보를 해제합니다.
+  Future<bool> revealTileInfo(String tileId) async {
+    if (isTileInfoRevealed(tileId)) return true;
+
+    final distance = getTileDistance(tileId);
+    if (_currentGold < distance) {
+      addAlert(GameStrings.satGoldShortage, AlertType.error);
+      return false;
+    }
+
+    try {
+      // 1. 실시간 가용 골드 즉각 차감
+      _currentGold = (_currentGold - distance).clamp(0.0, double.infinity);
+
+      // 2. 백엔드 DB 서버 프로필 골드 최신화 영속화
+      final myId = _authProvider?.user?.id;
+      if (myId != null) {
+        await _supabase.client
+            .from('profiles')
+            .update({
+              'gold': _currentGold,
+              'last_gold_updated_at': DateTime.now().toUtc().toIso8601String(),
+            })
+            .eq('id', myId);
+
+        // 로컬 인증 프로필 정보 갱신 동기화
+        await _authProvider?.refreshProfile();
+      }
+
+      // 3. 잠금 해제 시간 등록 (UTC 기준)
+      _revealedTileTimes[tileId] = DateTime.now().toUtc();
+      addAlert('상대 타일 보안 판독 완료', AlertType.success);
+      notifyListeners();
+      return true;
+    } catch (e) {
+      debugPrint('⚠️ 상대 타일 정보 해제 중 오류 발생: $e');
+      addAlert('보안 해제에 실패했습니다.', AlertType.error);
+      return false;
+    }
+  }
+
   @override
   void dispose() {
     WidgetsBinding.instance.removeObserver(this);
@@ -984,7 +1119,6 @@ class GameProvider extends ChangeNotifier with WidgetsBindingObserver {
   /// 위성 스캔 화면 상에서 조준점으로 지정할 대상 헥사곤 타일을 선택 조준합니다.
   /// 이미 선택된 타일을 다시 선택하는 경우 조준을 해제합니다.
   void selectScanTile(String tileId) {
-    if (!_isScanMode) return;
     if (_selectedScanTileId == tileId) {
       _selectedScanTileId = null;
       _selectedScanTileLatLng = null;

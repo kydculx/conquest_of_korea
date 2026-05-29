@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import '../../models/alert_model.dart';
 import '../../core/constants/colors.dart';
+import '../../core/constants/strings.dart';
 
 /// 전술 알림 아이템 위젯
 class AlertWidget extends StatelessWidget {
@@ -26,10 +27,10 @@ class AlertWidget extends StatelessWidget {
     };
 
     final typeLabel = switch (alert.type) {
-      AlertType.success => 'SUCCESS',
-      AlertType.warn => 'WARNING',
-      AlertType.error => 'CRITICAL',
-      AlertType.info => 'SYSTEM',
+      AlertType.success => GameStrings.alertSuccess,
+      AlertType.warn => GameStrings.alertWarn,
+      AlertType.error => GameStrings.alertError,
+      AlertType.info => GameStrings.alertInfo,
     };
 
     return Container(
@@ -78,7 +79,7 @@ class AlertWidget extends StatelessWidget {
                   mainAxisSize: MainAxisSize.min,
                   children: [
                     Text(
-                      '[ STATUS // $typeLabel ]',
+                      '[ $typeLabel ]',
                       style: GoogleFonts.fredoka(
                         color: color.withValues(alpha: 0.8),
                         fontSize: 9,

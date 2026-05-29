@@ -98,7 +98,7 @@ class ConquestGame extends FlameGame {
   @override
   Future<void> onLoad() async {
     player = PlayerComponent()..priority = 20;
-    player.isVisible = !_isScanMode;
+    player.isVisible = true;
     add(player);
 
     if (_mapController != null) _updateAllPositions();
@@ -170,7 +170,7 @@ class ConquestGame extends FlameGame {
     _satelliteCaptureProgress = satelliteCaptureProgress;
     _satelliteCapturingTileId = satelliteCapturingTileId;
     if (isLoaded) {
-      player.isVisible = !isScanMode;
+      player.isVisible = true;
     }
     _updateHQMarker(mainBaseTileId, capturingColorHex);
     _updateScanTargetMarker(selectedScanTileId, isScanMode);
@@ -320,7 +320,7 @@ class ConquestGame extends FlameGame {
 
     // 플레이어 위치 갱신
     if (isLoaded) {
-      player.isVisible = !_isScanMode;
+      player.isVisible = true;
       _updatePlayerScreenPosition();
     }
   }

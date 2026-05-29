@@ -1,3 +1,4 @@
+import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:google_fonts/google_fonts.dart';
@@ -45,6 +46,15 @@ class _RankingScreenState extends State<RankingScreen> {
       ),
       body: Stack(
         children: [
+          // 배경 은은한 전술 격자 라인 데코레이션 (Premium Tactical aesthetic)
+          Positioned.fill(
+            child: IgnorePointer(
+              child: CustomPaint(
+                painter: _TacticalGridPainter(),
+              ),
+            ),
+          ),
+
           // 랭킹 리스트 영역
           Positioned.fill(
             child: ranking.isLoading && ranking.topRankings.isEmpty
@@ -78,6 +88,27 @@ class _RankingScreenState extends State<RankingScreen> {
   }
 }
 
+/// 랭킹 화면 전용 프리미엄 은은한 가로세로 격자 백그라운드 페인터
+class _TacticalGridPainter extends CustomPainter {
+  @override
+  void paint(Canvas canvas, Size size) {
+    final paint = Paint()
+      ..color = const Color(0xFF00E5FF).withValues(alpha: 0.02)
+      ..strokeWidth = 0.5;
+
+    const double step = 40.0;
+    for (double x = 0; x < size.width; x += step) {
+      canvas.drawLine(Offset(x, 0), Offset(x, size.height), paint);
+    }
+    for (double y = 0; y < size.height; y += step) {
+      canvas.drawLine(Offset(0, y), Offset(size.width, y), paint);
+    }
+  }
+
+  @override
+  bool shouldRepaint(covariant CustomPainter oldDelegate) => false;
+}
+
 /// 점령수 / 누적 이동 / 당일 이동 3대 카테고리 전환 탭 세그먼트 위젯
 class _RankingCategoryTabs extends StatelessWidget {
   final RankingProvider ranking;
@@ -89,9 +120,12 @@ class _RankingCategoryTabs extends StatelessWidget {
       margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
       padding: const EdgeInsets.all(4),
       decoration: BoxDecoration(
-        color: GameColors.tacticalGray.withValues(alpha: 0.5),
-        borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: GameColors.dividerColor, width: 1.2),
+        color: GameColors.backgroundMedium.withValues(alpha: 0.6),
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(
+          color: const Color(0xFF00E5FF).withValues(alpha: 0.15),
+          width: 1.2,
+        ),
       ),
       child: Row(
         children: [
@@ -123,17 +157,23 @@ class _TabItem extends StatelessWidget {
       child: GestureDetector(
         onTap: onTap,
         child: AnimatedContainer(
-          duration: const Duration(milliseconds: 200),
-          padding: const EdgeInsets.symmetric(vertical: 10),
+          duration: const Duration(milliseconds: 220),
+          padding: const EdgeInsets.symmetric(vertical: 8),
           decoration: BoxDecoration(
-            color: isActive ? GameColors.accentNeon.withValues(alpha: 0.85) : Colors.transparent,
-            borderRadius: BorderRadius.circular(16),
+            borderRadius: BorderRadius.circular(12),
+            gradient: isActive
+                ? const LinearGradient(
+                    begin: Alignment.topCenter,
+                    end: Alignment.bottomCenter,
+                    colors: [Color(0xFF00E5FF), Color(0xFF00838F)],
+                  )
+                : null,
             boxShadow: isActive
                 ? [
                     BoxShadow(
-                      color: GameColors.accentNeon.withValues(alpha: 0.15),
+                      color: const Color(0xFF00E5FF).withValues(alpha: 0.25),
                       blurRadius: 8,
-                      spreadRadius: 0.5,
+                      offset: const Offset(0, 2),
                     ),
                   ]
                 : null,
@@ -142,11 +182,10 @@ class _TabItem extends StatelessWidget {
             child: Text(
               label,
               style: GoogleFonts.fredoka(
-                color: isActive
-                    ? Colors.white
-                    : GameColors.textSecondary,
-                fontSize: 13,
+                color: isActive ? Colors.white : GameColors.textSecondary,
+                fontSize: 12.5,
                 fontWeight: FontWeight.bold,
+                letterSpacing: 0.3,
               ),
             ),
           ),
@@ -180,8 +219,7 @@ class _RankingListView extends StatelessWidget {
         left: 16,
         right: 16,
         top: 8,
-        bottom:
-            120 + MediaQuery.of(context).padding.bottom, // 하단 플로팅 배너 간섭 방지 패딩
+        bottom: 120 + MediaQuery.of(context).padding.bottom, // 하단 플로팅 배너 간섭 방지 패딩
       ),
       itemCount: list.length,
       itemBuilder: (context, index) {
@@ -215,116 +253,157 @@ class _RankingListTile extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    // 1위, 2위, 3위 특별 금/은/동 네온 칼라 테두리 배정
-    Color rankColor = GameColors.textSecondary;
-    IconData? medalIcon;
-    if (rank == 1) {
-      rankColor = const Color(0xFFFFB74D); // Gold (솜사탕 옐로우)
-      medalIcon = Icons.emoji_events_rounded;
-    } else if (rank == 2) {
-      rankColor = const Color(0xFFB0BEC5); // Silver (파스텔 실버)
-      medalIcon = Icons.emoji_events_rounded;
-    } else if (rank == 3) {
-      rankColor = const Color(0xFFFFAB91); // Bronze (파스텔 오렌지)
-      medalIcon = Icons.emoji_events_rounded;
-    }
+    // 1위, 2위, 3위 특별 미래지향적 메달 그라데이션 테마
+    List<Color>? medalGradient;
+    Color rankTextColor = Colors.white;
 
-    // 전술 색상 파싱
-    Color agentColor = GameColors.accentNeon;
-    try {
-      final hex = profile.colorHex.replaceFirst('#', '');
-      agentColor = Color(int.parse('FF$hex', radix: 16));
-    } catch (_) {}
+    if (rank == 1) {
+      medalGradient = [const Color(0xFFFFD700), const Color(0xFFFFA500)]; // Gold
+      rankTextColor = const Color(0xFF5D4037);
+    } else if (rank == 2) {
+      medalGradient = [const Color(0xFFE0E0E0), const Color(0xFF9E9E9E)]; // Silver
+      rankTextColor = const Color(0xFF37474F);
+    } else if (rank == 3) {
+      medalGradient = [const Color(0xFFFF8A65), const Color(0xFFD84315)]; // Bronze
+      rankTextColor = Colors.white;
+    }
 
     return Container(
       margin: const EdgeInsets.only(bottom: 10),
-      decoration: ShapeDecoration(
-        color: isMe
-            ? GameColors.accentNeon.withValues(alpha: 0.08)
-            : GameColors.tacticalGray.withValues(alpha: 0.15),
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(16),
-          side: BorderSide(
-            color: isMe
-                ? GameColors.accentNeon.withValues(alpha: 0.5)
-                : GameColors.dividerColor.withValues(alpha: 0.3),
-            width: isMe ? 1.5 : 1.0,
-          ),
-        ),
-      ),
-      child: ListTile(
-        contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
-        leading: SizedBox(
-          width: 50,
-          child: Row(
-            children: [
-              // 순위 숫자 또는 메달
-              if (medalIcon != null)
-                Icon(medalIcon, color: rankColor, size: 18)
-              else
-                Text(
-                  '$rank',
-                  style: GoogleFonts.fredoka(
-                    color: rankColor,
-                    fontSize: 14,
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
-              const Spacer(),
-              // 요원 고유 컬러 글로우 도트
-              Container(
-                width: 8,
-                height: 8,
-                decoration: BoxDecoration(
-                  color: agentColor,
-                  shape: BoxShape.circle,
-                  boxShadow: [
-                    BoxShadow(
-                      color: agentColor.withValues(alpha: 0.4),
-                      blurRadius: 4.0,
-                      spreadRadius: 0.5,
-                    ),
-                  ],
+      child: ClipRRect(
+        borderRadius: BorderRadius.circular(16),
+        child: BackdropFilter(
+          filter: ImageFilter.blur(sigmaX: 5, sigmaY: 5),
+          child: Container(
+            decoration: BoxDecoration(
+              color: isMe
+                  ? const Color(0xFF00E5FF).withValues(alpha: 0.08)
+                  : GameColors.backgroundMedium.withValues(alpha: 0.45),
+              borderRadius: BorderRadius.circular(16),
+              border: Border.all(
+                color: isMe
+                    ? const Color(0xFF00E5FF).withValues(alpha: 0.4)
+                    : const Color(0xFF00E5FF).withValues(alpha: 0.08),
+                width: isMe ? 1.5 : 1.0,
+              ),
+              boxShadow: isMe
+                  ? [
+                      BoxShadow(
+                        color: const Color(0xFF00E5FF).withValues(alpha: 0.06),
+                        blurRadius: 10,
+                        spreadRadius: 0.5,
+                      ),
+                    ]
+                  : null,
+            ),
+            child: ListTile(
+              contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
+              leading: SizedBox(
+                width: 42,
+                height: 42,
+                child: Center(
+                  child: medalGradient != null
+                      ? Container(
+                          width: 32,
+                          height: 32,
+                          decoration: BoxDecoration(
+                            shape: BoxShape.circle,
+                            gradient: LinearGradient(
+                              begin: Alignment.topLeft,
+                              end: Alignment.bottomRight,
+                              colors: medalGradient,
+                            ),
+                            border: Border.all(
+                              color: Colors.white.withValues(alpha: 0.4),
+                              width: 1.0,
+                            ),
+                            boxShadow: [
+                              BoxShadow(
+                                color: medalGradient.first.withValues(alpha: 0.3),
+                                blurRadius: 6,
+                                spreadRadius: 0.5,
+                                offset: const Offset(0, 1.5),
+                              ),
+                            ],
+                          ),
+                          child: Center(
+                            child: Icon(
+                              Icons.emoji_events_rounded,
+                              color: rankTextColor,
+                              size: 16,
+                            ),
+                          ),
+                        )
+                      : Container(
+                          width: 28,
+                          height: 28,
+                          decoration: BoxDecoration(
+                            shape: BoxShape.circle,
+                            color: GameColors.tacticalGray.withValues(alpha: 0.3),
+                            border: Border.all(
+                              color: const Color(0xFF00E5FF).withValues(alpha: 0.15),
+                              width: 0.8,
+                            ),
+                          ),
+                          child: Center(
+                            child: Text(
+                              '$rank',
+                              style: GoogleFonts.quicksand(
+                                color: GameColors.textSecondary,
+                                fontSize: 12.5,
+                                fontWeight: FontWeight.w800,
+                              ),
+                            ),
+                          ),
+                        ),
                 ),
               ),
-            ],
-          ),
-        ),
-        title: Row(
-          children: [
-            Expanded(
-              child: Text(
-                profile.nickname,
-                style: GoogleFonts.fredoka(
-                  color: isMe ? GameColors.accentNeon : GameColors.textPrimary,
-                  fontSize: 14,
+              title: Row(
+                children: [
+                  Expanded(
+                    child: Text(
+                      profile.nickname,
+                      style: GoogleFonts.fredoka(
+                        color: isMe ? const Color(0xFF00E5FF) : GameColors.textPrimary,
+                        fontSize: 14.5,
+                        fontWeight: FontWeight.bold,
+                      ),
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                  ),
+                  if (isMe)
+                    Container(
+                      margin: const EdgeInsets.only(left: 8),
+                      padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 2.5),
+                      decoration: BoxDecoration(
+                        borderRadius: BorderRadius.circular(6),
+                        color: const Color(0xFF00E5FF).withValues(alpha: 0.15),
+                        border: Border.all(
+                          color: const Color(0xFF00E5FF).withValues(alpha: 0.3),
+                          width: 0.8,
+                        ),
+                      ),
+                      child: Text(
+                        'MY',
+                        style: GoogleFonts.fredoka(
+                          color: const Color(0xFF00E5FF),
+                          fontSize: 9,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                    ),
+                ],
+              ),
+              trailing: Text(
+                _formatRankingValue(rankingType, profile),
+                style: GoogleFonts.quicksand(
+                  color: isMe ? const Color(0xFF00E5FF) : GameColors.textSecondary,
+                  fontSize: 13.5,
                   fontWeight: FontWeight.bold,
+                  letterSpacing: 0.2,
                 ),
-                overflow: TextOverflow.ellipsis,
               ),
             ),
-            if (isMe)
-              Container(
-                margin: const EdgeInsets.only(left: 6),
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 6,
-                  vertical: 2,
-                ),
-                decoration: ShapeDecoration(
-                  color: GameColors.accentNeon,
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(8),
-                  ),
-                ),
-              ),
-          ],
-        ),
-        trailing: Text(
-          _formatRankingValue(rankingType, profile),
-          style: GoogleFonts.quicksand(
-            color: isMe ? GameColors.accentNeon : GameColors.textSecondary,
-            fontSize: 13,
-            fontWeight: FontWeight.bold,
           ),
         ),
       ),
@@ -350,109 +429,84 @@ class _MyRankingFloatingBanner extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final int rank = ranking.myRanking;
-    final String myColor = myProfile.colorHex;
-    Color agentColor = GameColors.accentNeon;
-    try {
-      final hex = myColor.replaceFirst('#', '');
-      agentColor = Color(int.parse('FF$hex', radix: 16));
-    } catch (_) {}
 
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
-      decoration: ShapeDecoration(
-        color: GameColors.backgroundMedium,
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(20),
-          side: BorderSide(
-            color: GameColors.accentNeon.withValues(alpha: 0.25),
-            width: 1.5,
-          ),
-        ),
-        shadows: [
-          BoxShadow(
-            color: Colors.black.withValues(alpha: 0.04),
-            blurRadius: 12.0,
-            spreadRadius: 1.0,
-            offset: const Offset(0, -4),
-          ),
-        ],
-      ),
-      child: Row(
-        children: [
-          // 내 순위 요약 배지
-          Container(
-            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-            decoration: ShapeDecoration(
-              color: GameColors.accentNeon,
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(10),
-              ),
+    return ClipRRect(
+      borderRadius: BorderRadius.circular(20),
+      child: BackdropFilter(
+        filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
+        child: Container(
+          padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
+          decoration: BoxDecoration(
+            color: GameColors.backgroundMedium.withValues(alpha: 0.92),
+            borderRadius: BorderRadius.circular(20),
+            border: Border.all(
+              color: const Color(0xFF00E5FF).withValues(alpha: 0.35),
+              width: 1.5,
             ),
-            child: Text(
-              rank > 0 ? GameStrings.rankUnit(rank) : GameStrings.rankUnranked,
-              style: GoogleFonts.fredoka(
-                color: Colors.white,
-                fontSize: 14,
-                fontWeight: FontWeight.bold,
+            boxShadow: [
+              BoxShadow(
+                color: const Color(0xFF00E5FF).withValues(alpha: 0.05),
+                blurRadius: 16.0,
+                spreadRadius: 1.0,
+                offset: const Offset(0, -4),
               ),
-            ),
+            ],
           ),
-          const SizedBox(width: 14),
-          // 내 에이전트 아이디 및 프로필 컬러 글로우 도트
-          Expanded(
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Row(
-                  children: [
-                    Container(
-                      width: 7,
-                      height: 7,
-                      decoration: BoxDecoration(
-                        color: agentColor,
-                        shape: BoxShape.circle,
-                        boxShadow: [
-                          BoxShadow(
-                            color: agentColor.withValues(alpha: 0.4),
-                            blurRadius: 3,
-                            spreadRadius: 0.5,
-                          ),
-                        ],
-                      ),
-                    ),
-                    const SizedBox(width: 6),
-                    Expanded(
-                      child: Text(
-                        GameStrings.nicknameWithMe(myProfile.nickname),
-                        style: GoogleFonts.fredoka(
-                          color: GameColors.textPrimary,
-                          fontSize: 13.5,
-                          fontWeight: FontWeight.bold,
-                        ),
-                        overflow: TextOverflow.ellipsis,
-                      ),
+          child: Row(
+            children: [
+              // 내 순위 요약 배지
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                decoration: BoxDecoration(
+                  borderRadius: BorderRadius.circular(10),
+                  gradient: const LinearGradient(
+                    begin: Alignment.topCenter,
+                    end: Alignment.bottomCenter,
+                    colors: [Color(0xFF00E5FF), Color(0xFF00838F)],
+                  ),
+                  boxShadow: [
+                    BoxShadow(
+                      color: const Color(0xFF00E5FF).withValues(alpha: 0.2),
+                      blurRadius: 6,
+                      offset: const Offset(0, 1.5),
                     ),
                   ],
                 ),
-                const SizedBox(height: 2),
-                Text(
-                  GameStrings.top100Stats,
-                  style: GoogleFonts.quicksand(color: GameColors.textMuted, fontSize: 10, fontWeight: FontWeight.bold),
+                child: Text(
+                  rank > 0 ? GameStrings.rankUnit(rank) : GameStrings.rankUnranked,
+                  style: GoogleFonts.fredoka(
+                    color: Colors.white,
+                    fontSize: 13.5,
+                    fontWeight: FontWeight.bold,
+                  ),
                 ),
-              ],
-            ),
+              ),
+              const SizedBox(width: 14),
+              // 내 에이전트 아이디 (top100stats 문구 제거)
+              Expanded(
+                child: Text(
+                  GameStrings.nicknameWithMe(myProfile.nickname),
+                  style: GoogleFonts.fredoka(
+                    color: GameColors.textPrimary,
+                    fontSize: 14,
+                    fontWeight: FontWeight.bold,
+                  ),
+                  overflow: TextOverflow.ellipsis,
+                ),
+              ),
+              // 내 기록 가독화 출력
+              Text(
+                _formatMyValue(ranking.currentType),
+                style: GoogleFonts.quicksand(
+                  color: const Color(0xFF00E5FF),
+                  fontSize: 15.5,
+                  fontWeight: FontWeight.w900,
+                  letterSpacing: 0.2,
+                ),
+              ),
+            ],
           ),
-          // 내 기록 가독화 출력
-          Text(
-            _formatMyValue(ranking.currentType),
-            style: GoogleFonts.quicksand(
-              color: GameColors.accentNeon,
-              fontSize: 15,
-              fontWeight: FontWeight.bold,
-            ),
-          ),
-        ],
+        ),
       ),
     );
   }

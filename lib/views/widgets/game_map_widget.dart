@@ -241,7 +241,7 @@ class _GameMapWidgetState extends State<GameMapWidget>
                     if (gameProvider.isSatelliteCapturing &&
                         gameProvider.satelliteCapturingTileId == tileId) {
                       _showRemoteCancelDialog(context, gameProvider);
-                    } else if (gameProvider.isScanMode) {
+                    } else {
                       gameProvider.selectScanTile(tileId);
                     }
                   },
@@ -300,34 +300,7 @@ class _GameMapWidgetState extends State<GameMapWidget>
                               'com.watercherry.conquestofkorea',
                         );
 
-                        // 위성 스캔 모드일 때는 군용 위성 카메라 감성의 흑백(Grayscale) 모노 틴트 강제 주입
-                        if (gameProvider.isScanMode) {
-                          return ColorFiltered(
-                            colorFilter: const ColorFilter.matrix(<double>[
-                              0.2126 * 0.9,
-                              0.7152 * 0.9,
-                              0.0722 * 0.9,
-                              0,
-                              15,
-                              0.2126 * 0.8,
-                              0.7152 * 0.8,
-                              0.0722 * 0.8,
-                              0,
-                              10,
-                              0.2126 * 0.7,
-                              0.7152 * 0.7,
-                              0.0722 * 0.7,
-                              0,
-                              5,
-                              0,
-                              0,
-                              0,
-                              1,
-                              0,
-                            ]),
-                            child: tileLayer,
-                          );
-                        }
+
 
                         if (style.colorMatrix != null) {
                           return ColorFiltered(

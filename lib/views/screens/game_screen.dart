@@ -12,7 +12,7 @@ import '../../providers/auth_provider.dart';
 import '../../providers/location_provider.dart';
 import '../../services/geo_service.dart';
 import '../screens/auth/terms_agreement_screen.dart';
-import '../widgets/alert_widget.dart';
+import '../widgets/tactical_alert_list.dart';
 import '../widgets/game_map_widget.dart';
 import '../widgets/hud_overlay.dart';
 import '../widgets/loading_overlay.dart';
@@ -277,18 +277,13 @@ class _GameScreenState extends State<GameScreen> {
           // HUD 레이어
           const HudOverlay(),
 
-          // 전술 알림 레이어
-          if (game.alerts.isNotEmpty)
-            Positioned(
-              top: topOffset + 90.0,
-              left: 20,
-              right: 20,
-              child: Column(
-                children: game.alerts
-                    .map((a) => AlertWidget(alert: a))
-                    .toList(),
-              ),
-            ),
+          // 전술 알림 레이어 (개별 카드 애니메이션 리스트 탑재)
+          Positioned(
+            top: topOffset + 90.0,
+            left: 20,
+            right: 20,
+            child: TacticalAlertList(alerts: game.alerts),
+          ),
 
           // 로딩 오버레이 (상태 플래그 기반)
           AnimatedSwitcher(

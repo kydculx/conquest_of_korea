@@ -50,4 +50,7 @@ class GameConfig {
 
   /// 작전 개시 시 최초 점령에 소요되는 기준 시간 (초 단위)
   static const int initialCaptureDurationSeconds = 1;
+
+  /// 상대 타일 정보 보안 해제(Reveal) 유효 지속 시간 (초 단위 - 10분)
+  static const int tileRevealDurationSeconds = 600;
 }

@@ -757,4 +757,55 @@ class GameStrings {
 
   /// 모드 기동 확인 버튼 라벨
   static String get modeConfirm => 'modeConfirm'.tr();
+
+  /// 알림 성공 타이틀
+  static String get alertSuccess => 'alertSuccess'.tr();
+
+  /// 알림 경고 타이틀
+  static String get alertWarn => 'alertWarn'.tr();
+
+  /// 알림 오류 타이틀
+  static String get alertError => 'alertError'.tr();
+
+  /// 알림 안내 타이틀
+  static String get alertInfo => 'alertInfo'.tr();
+
+  // --- 위성/All-in-One 정보 팝업 관련 추가 번역 ---
+  /// 이미 내 영토가 된 구역 안내 (동적 닉네임 전달)
+  static String satAlreadyCapturedByMe(String nickname) =>
+      'satAlreadyCapturedByMe'.tr(namedArgs: {'nickname': nickname});
+
+  /// 다른 유저의 동네 안내
+  static String get satOtherPlayerTerritory => 'satOtherPlayerTerritory'.tr();
+
+  /// 재화 소모 정보 보기 라벨 (동적 거리 전달)
+  static String satRevealVillageWithGp(String distance) =>
+      'satRevealVillageWithGp'.tr(namedArgs: {'distance': distance});
+
+  /// 원격점령하기 액션 라벨
+  static String get satCaptureAction => 'satCaptureAction'.tr();
+
+  /// 비밀 구역 안내 라벨
+  static String get satSecretArea => 'satSecretArea'.tr();
+
+  /// 비밀 은폐 안내 라벨
+  static String get satSecretHidden => 'satSecretHidden'.tr();
+
+  /// 땅주인 라벨
+  static String get satVillageOwner => 'satVillageOwner'.tr();
+
+  /// 땅주인 비밀 안내 라벨
+  static String get satItsSecret => 'satItsSecret'.tr();
+
+  /// 보호막 만료 시간 표시 (동적 시간 전달)
+  static String satShieldWithTime(String time) =>
+      'satShieldWithTime'.tr(namedArgs: {'time': time});
+
+  /// 엿보기 구경 만료 시간 표시 (동적 시간 전달)
+  static String satPeekTimeWithTime(String time) =>
+      'satPeekTimeWithTime'.tr(namedArgs: {'time': time});
+
+  /// 점령 빈도 횟수 표시 (동적 횟수 전달)
+  static String satCaptureCount(String count) =>
+      'satCaptureCount'.tr(namedArgs: {'count': count});
 }
