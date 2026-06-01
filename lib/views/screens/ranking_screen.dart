@@ -384,7 +384,7 @@ class _RankingListTile extends StatelessWidget {
                         ),
                       ),
                       child: Text(
-                        'MY',
+                        GameStrings.rankingMyLabel,
                         style: GoogleFonts.fredoka(
                           color: const Color(0xFF00E5FF),
                           fontSize: 9,

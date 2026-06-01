@@ -6,6 +6,7 @@ import 'package:google_fonts/google_fonts.dart';
 import '../../../core/constants/colors.dart';
 import '../../../core/constants/strings.dart';
 import '../../../core/utils/error_translator.dart';
+import '../../../core/utils/toast_helper.dart';
 import '../../../providers/auth_provider.dart';
 import '../game_screen.dart';
 import '../../widgets/tactical_app_bar.dart';
@@ -49,9 +50,11 @@ class _LoginScreenState extends State<LoginScreen> {
       if (mounted) Navigator.of(context).pop();
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(
-          context,
-        ).showSnackBar(SnackBar(content: Text(ErrorTranslator.translate(e))));
+        ToastHelper.show(
+          context: context,
+          message: ErrorTranslator.translate(e),
+          isSuccess: false,
+        );
       }
     }
   }
@@ -303,16 +306,17 @@ class _LoginScreenState extends State<LoginScreen> {
                           onPressed: () async {
                             final authProvider = context.read<AuthProvider>();
                             final navigator = Navigator.of(context);
-                            final scaffoldMessenger = ScaffoldMessenger.of(context);
                             try {
                               await authProvider.signInWithGoogle();
                               navigator.pop();
                             } catch (e) {
-                              scaffoldMessenger.showSnackBar(
-                                SnackBar(
-                                  content: Text(ErrorTranslator.translate(e)),
-                                ),
-                              );
+                              if (context.mounted) {
+                                ToastHelper.show(
+                                  context: context,
+                                  message: ErrorTranslator.translate(e),
+                                  isSuccess: false,
+                                );
+                              }
                             }
                           },
                           color: Colors.white,
@@ -334,16 +338,17 @@ class _LoginScreenState extends State<LoginScreen> {
                             onPressed: () async {
                               final authProvider = context.read<AuthProvider>();
                               final navigator = Navigator.of(context);
-                              final scaffoldMessenger = ScaffoldMessenger.of(context);
                               try {
                                 await authProvider.signInWithApple();
                                 navigator.pop();
                               } catch (e) {
-                                scaffoldMessenger.showSnackBar(
-                                  SnackBar(
-                                    content: Text(ErrorTranslator.translate(e)),
-                                  ),
-                                );
+                                if (context.mounted) {
+                                  ToastHelper.show(
+                                    context: context,
+                                    message: ErrorTranslator.translate(e),
+                                    isSuccess: false,
+                                  );
+                                }
                               }
                             },
                             color: Colors.white,

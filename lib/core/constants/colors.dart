@@ -2,13 +2,13 @@ import 'package:flutter/material.dart';
 
 /// 게임 전반에서 사용되는 공용 전술 컬러 클래스 (외부 제어 및 동적 갱신 가능)
 class GameColors {
-  /// 내 영토(타일)용 캐주얼 파스텔 초록색
-  static const Color myTileColor = Color(0xFF81C784);
-  static const String myTileColorHex = '#81C784';
+  /// 내 영토(타일)용 캐주얼 파스텔 파란색 (동적 변경 가능한 변수로 전환)
+  static Color myTileColor = const Color(0xFF64B5F6);
+  static String myTileColorHex = '#64B5F6';
 
-  /// 상대 영토(타일)용 캐주얼 파스텔 회색
-  static const Color enemyTileColor = Color(0xFF90A4AE);
-  static const String enemyTileColorHex = '#90A4AE';
+  /// 상대 영토(타일)용 캐주얼 파스텔 회색 (동적 변경 가능한 변수로 전환)
+  static Color enemyTileColor = const Color(0xFF90A4AE);
+  static String enemyTileColorHex = '#90A4AE';
 
   /// 앱 전반의 아기자기한 다크 테마용 배경 그라데이션
   static const Gradient cozyDarkGradient = LinearGradient(
@@ -78,6 +78,8 @@ class GameColors {
 
   /// 외부(API, DB, 파일 등)에서 넘어온 헥사 코드로 공용 컬러들을 동적 제어하는 메서드
   static void updateCommonColors({
+    String? myColor,
+    String? enemyColor,
     String? accent,
     String? gray,
     String? black,
@@ -95,6 +97,20 @@ class GameColors {
     String? bgMedium,
     String? bgTranslucent,
   }) {
+    if (myColor != null) {
+      final parsed = _parseHexColor(myColor);
+      if (parsed != null) {
+        myTileColor = parsed;
+        myTileColorHex = myColor;
+      }
+    }
+    if (enemyColor != null) {
+      final parsed = _parseHexColor(enemyColor);
+      if (parsed != null) {
+        enemyTileColor = parsed;
+        enemyTileColorHex = enemyColor;
+      }
+    }
     if (accent != null) {
       final parsed = _parseHexColor(accent);
       if (parsed != null) {

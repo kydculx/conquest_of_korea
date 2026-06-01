@@ -1,9 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:package_info_plus/package_info_plus.dart';
 import '../../core/constants/colors.dart';
 import '../../core/constants/strings.dart';
-import '../../core/theme.dart';
+import '../../core/utils/toast_helper.dart';
 import '../../providers/auth_provider.dart';
 import '../../providers/game_provider.dart';
 import '../../providers/location_provider.dart';
@@ -11,6 +12,8 @@ import '../../services/hex_service.dart';
 import '../../core/utils/error_translator.dart';
 import '../widgets/tactical_app_bar.dart';
 import '../widgets/tactical_dialog.dart';
+import 'language_settings_screen.dart';
+import 'security_policy_screen.dart';
 
 /// 로그인한 요원의 상세 프로필 상태(소속 전술 색상, 점령한 총 영토 수)를
 /// 검토하고, 전술 색상 수정 및 본진 이전(Rebase), 로그아웃 등 작전 설정을 관리하는 프로필 화면 클래스입니다.
@@ -32,7 +35,7 @@ class ProfileScreen extends StatelessWidget {
       );
     }
 
-    final teamColor = TacticalTheme.parseColor(profile.colorHex);
+    final teamColor = GameColors.myTileColor;
 
     return Scaffold(
       backgroundColor: GameColors.tacticalBlack,
@@ -134,13 +137,6 @@ class ProfileScreen extends StatelessWidget {
               // 설정 메뉴 리스트
               _buildMenuCard([
                 _buildMenuItem(
-                  icon: Icons.palette,
-                  title: GameStrings.changeTacticalColor,
-                  subtitle: GameStrings.changeTacticalColorSub,
-                  onTap: () => _showColorPicker(context, auth),
-                ),
-                _buildDivider(),
-                _buildMenuItem(
                   icon: Icons.notifications_active,
                   title: GameStrings.pushNotifications,
                   subtitle: GameStrings.pushNotificationsSub,
@@ -203,10 +199,27 @@ class ProfileScreen extends StatelessWidget {
                 ),
                 _buildDivider(),
                 _buildMenuItem(
+                  icon: Icons.translate_rounded,
+                  title: GameStrings.languageSettings,
+                  subtitle: GameStrings.languageSettingsSub,
+                  onTap: () => Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) => const LanguageSettingsScreen(),
+                    ),
+                  ),
+                ),
+                _buildDivider(),
+                _buildMenuItem(
                   icon: Icons.security,
                   title: GameStrings.securityPolicy,
                   subtitle: GameStrings.securityPolicySub,
-                  onTap: () {},
+                  onTap: () => Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) => const SecurityPolicyScreen(),
+                    ),
+                  ),
                 ),
               ]),
 
@@ -256,14 +269,22 @@ class ProfileScreen extends StatelessWidget {
               ]),
 
               const SizedBox(height: 40),
-              Center(
-                child: Text(
-                  'Conquest of Korea v1.0.0',
-                  style: TextStyle(
-                    color: GameColors.textMuted.withValues(alpha: 100 / 255),
-                    fontSize: 12,
-                  ),
-                ),
+              FutureBuilder<PackageInfo>(
+                future: PackageInfo.fromPlatform(),
+                builder: (context, snapshot) {
+                  final versionText = snapshot.hasData
+                      ? 'v${snapshot.data!.version} (${snapshot.data!.buildNumber})'
+                      : 'v1.0.0';
+                  return Center(
+                    child: Text(
+                      '${GameStrings.appName} $versionText',
+                      style: TextStyle(
+                        color: GameColors.textMuted.withValues(alpha: 100 / 255),
+                        fontSize: 12,
+                      ),
+                    ),
+                  );
+                },
               ),
             ],
           ),
@@ -506,287 +527,19 @@ class ProfileScreen extends StatelessWidget {
     );
   }
 
-  /// 사용자가 원하는 고유 전술 색상을 RGB 슬라이더 조작을 통해 직접 믹싱하고
-  /// 서버 데이터에 영구 보존할 수 있도록 지원하는 컬러 피커 다이얼로그 팝업입니다.
-  void _showColorPicker(BuildContext context, AuthProvider auth) {
-    Color currentColor = TacticalTheme.parseColor(
-      auth.profile?.colorHex ?? '#FFFFFF',
-    );
-    int r = (currentColor.r * 255.0).round().clamp(0, 255);
-    int g = (currentColor.g * 255.0).round().clamp(0, 255);
-    int b = (currentColor.b * 255.0).round().clamp(0, 255);
 
-    showDialog(
-      context: context,
-      builder: (context) => StatefulBuilder(
-        builder: (context, setState) {
-          final previewColor = Color.fromARGB(255, r, g, b);
-          final hexString =
-              '#${r.toRadixString(16).padLeft(2, '0')}${g.toRadixString(16).padLeft(2, '0')}${b.toRadixString(16).padLeft(2, '0')}'
-                  .toUpperCase();
-
-          return TacticalDialog(
-            title: GameStrings.tacticalColorSetupTitle,
-            icon: Icons.tune_rounded,
-            accentColor: GameColors.accentNeon,
-            content: Column(
-              mainAxisSize: MainAxisSize.min,
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              children: [
-                // 색상 미리보기 (팔각 텍티컬 프레임 + 웅장한 네온 글로우)
-                Center(
-                  child: Container(
-                    width: 96,
-                    height: 96,
-                    decoration: ShapeDecoration(
-                      color: previewColor.withValues(alpha: 0.15),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(24),
-                        side: BorderSide(color: previewColor, width: 2.5),
-                      ),
-                      shadows: [
-                        BoxShadow(
-                          color: previewColor.withValues(alpha: 0.55),
-                          blurRadius: 20,
-                          spreadRadius: 4,
-                        ),
-                      ],
-                    ),
-                    child: Icon(
-                      Icons.radar_rounded,
-                      color: previewColor,
-                      size: 48,
-                    ),
-                  ),
-                ),
-                const SizedBox(height: 30),
-
-                // RGB 슬라이더 카드형 배경
-                Container(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 10,
-                    vertical: 16,
-                  ),
-                  decoration: BoxDecoration(
-                    color: GameColors.tacticalWhite.withValues(alpha: 0.03),
-                    borderRadius: BorderRadius.circular(10),
-                    border: Border.all(
-                      color: GameColors.dividerColor.withValues(alpha: 0.25),
-                      width: 0.8,
-                    ),
-                  ),
-                  child: Column(
-                    children: [
-                      _buildRGBSlider(
-                        'RED',
-                        r,
-                        GameColors.error,
-                        (val) => setState(() => r = val.toInt()),
-                      ),
-                      const SizedBox(height: 12),
-                      _buildRGBSlider(
-                        'GREEN',
-                        g,
-                        GameColors.success,
-                        (val) => setState(() => g = val.toInt()),
-                      ),
-                      const SizedBox(height: 12),
-                      _buildRGBSlider(
-                        'BLUE',
-                        b,
-                        GameColors.info,
-                        (val) => setState(() => b = val.toInt()),
-                      ),
-                    ],
-                  ),
-                ),
-              ],
-            ),
-            actions: [
-              TextButton(
-                onPressed: () => Navigator.pop(context),
-                style: TextButton.styleFrom(
-                  foregroundColor: GameColors.textMuted,
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 16,
-                    vertical: 12,
-                  ),
-                ),
-                child: Text(
-                  GameStrings.cancel,
-                  style: const TextStyle(
-                    fontWeight: FontWeight.bold,
-                    letterSpacing: 0.5,
-                  ),
-                ),
-              ),
-              ElevatedButton(
-                onPressed: () async {
-                  await auth.updateProfileColor(hexString);
-                  if (context.mounted) Navigator.pop(context);
-                  if (context.mounted) {
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      SnackBar(
-                        backgroundColor: GameColors.backgroundMedium,
-                        content: Row(
-                          children: [
-                            Icon(
-                              Icons.check_circle_outline_rounded,
-                              color: GameColors.success,
-                              size: 18,
-                            ),
-                            const SizedBox(width: 8),
-                            Text(
-                              GameStrings.tacticalColorChanged,
-                              style: TextStyle(
-                                color: GameColors.textPrimary,
-                                fontWeight: FontWeight.bold,
-                              ),
-                            ),
-                          ],
-                        ),
-                        behavior: SnackBarBehavior.floating,
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(16),
-                          side: BorderSide(
-                            color: GameColors.success.withValues(alpha: 0.4),
-                          ),
-                        ),
-                      ),
-                    );
-                  }
-                },
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: previewColor,
-                  foregroundColor: (r + g + b) > 400
-                      ? GameColors.tacticalBlack
-                      : GameColors.tacticalWhite,
-                  elevation: 8,
-                  shadowColor: previewColor.withValues(alpha: 0.6),
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 22,
-                    vertical: 12,
-                  ),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(16),
-                  ),
-                ),
-                child: Text(
-                  GameStrings.apply,
-                  style: const TextStyle(
-                    fontWeight: FontWeight.bold,
-                    letterSpacing: 1.0,
-                  ),
-                ),
-              ),
-            ],
-          );
-        },
-      ),
-    );
-  }
-
-  /// RGB 개별 색상 채널의 가중치를 미세 제어하기 위한 커스텀 슬라이더 위젯입니다.
-  Widget _buildRGBSlider(
-    String label,
-    int value,
-    Color activeColor,
-    ValueChanged<double> onChanged,
-  ) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Row(
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-          children: [
-            Text(
-              label,
-              style: TextStyle(
-                color: activeColor,
-                fontWeight: FontWeight.bold,
-                fontSize: 11,
-                letterSpacing: 0.8,
-              ),
-            ),
-            Text(
-              value.toString(),
-              style: TextStyle(
-                color: GameColors.textPrimary,
-                fontFamily: 'monospace',
-                fontWeight: FontWeight.bold,
-                fontSize: 12,
-              ),
-            ),
-          ],
-        ),
-        const SizedBox(height: 4),
-        Row(
-          children: [
-            Text(
-              '0',
-              style: TextStyle(
-                color: GameColors.textMuted.withValues(alpha: 0.5),
-                fontSize: 10,
-                fontFamily: 'monospace',
-              ),
-            ),
-            Expanded(
-              child: SliderTheme(
-                data: SliderThemeData(
-                  trackHeight: 3.0,
-                  activeTrackColor: activeColor,
-                  inactiveTrackColor: GameColors.dividerColor.withValues(
-                    alpha: 40 / 255,
-                  ),
-                  thumbColor: GameColors.tacticalWhite,
-                  thumbShape: const RoundSliderThumbShape(
-                    enabledThumbRadius: 6.0,
-                  ),
-                  overlayColor: activeColor.withValues(alpha: 40 / 255),
-                  overlayShape: const RoundSliderOverlayShape(
-                    overlayRadius: 14.0,
-                  ),
-                  valueIndicatorColor: activeColor,
-                  valueIndicatorTextStyle: TextStyle(
-                    color: GameColors.tacticalBlack,
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
-                child: Slider(
-                  value: value.toDouble(),
-                  min: 0,
-                  max: 255,
-                  divisions: 255,
-                  onChanged: onChanged,
-                ),
-              ),
-            ),
-            Text(
-              '255',
-              style: TextStyle(
-                color: GameColors.textMuted.withValues(alpha: 0.5),
-                fontSize: 10,
-                fontFamily: 'monospace',
-              ),
-            ),
-          ],
-        ),
-      ],
-    );
-  }
 
   /// 요원의 현 GPS 물리 위치를 기점으로 삼아 메인 본부 기지(HQ) 헥사곤 좌표를 재설정(이전)하도록 통제하는 비동기 메서드입니다.
   Future<void> _handleRebase(BuildContext context, AuthProvider auth) async {
     final loc = context.read<LocationProvider>();
+    final game = context.read<GameProvider>();
     final currentLocation = loc.currentLocation;
 
     if (currentLocation == null) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(GameStrings.gpsSignalError),
-          backgroundColor: GameColors.error,
-          behavior: SnackBarBehavior.floating,
-        ),
+      ToastHelper.show(
+        context: context,
+        message: GameStrings.gpsSignalError,
+        isSuccess: false,
       );
       return;
     }
@@ -794,6 +547,80 @@ class ProfileScreen extends StatelessWidget {
     final hex = HexService.latLngToHex(currentLocation);
     final tileId = 'hex_${hex['q']}_${hex['r']}';
 
+    // 1. 동일 위치 검증 및 에러 팝업
+    final mainBaseId = auth.profile?.mainBaseTileId;
+    if (mainBaseId == tileId) {
+      await showDialog(
+        context: context,
+        builder: (context) => TacticalDialog(
+          title: '[ 본진 재설정 오류 ]',
+          icon: Icons.error_outline_rounded,
+          accentColor: GameColors.error,
+          content: Text(
+            GameStrings.rebaseSameLocationMessage,
+            style: TextStyle(color: GameColors.textSecondary, fontSize: 13),
+          ),
+          actions: [
+            ElevatedButton(
+              onPressed: () => Navigator.pop(context),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: GameColors.error,
+                foregroundColor: GameColors.tacticalWhite,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(16),
+                ),
+              ),
+              child: Text(
+                GameStrings.confirm,
+                style: const TextStyle(fontWeight: FontWeight.bold),
+              ),
+            ),
+          ],
+        ),
+      );
+      return;
+    }
+
+    // 2. 소요 재화 산정 및 검증
+    final distance = game.getTileDistance(tileId);
+    final requiredGold = distance * 10.0;
+
+    if (requiredGold > game.currentGold) {
+      await showDialog(
+        context: context,
+        builder: (context) => TacticalDialog(
+          title: '[ 재화 부족 ]',
+          icon: Icons.warning_amber_rounded,
+          accentColor: GameColors.error,
+          content: Text(
+            GameStrings.rebaseGoldShortageMessage(
+              requiredGold.toInt().toString(),
+              game.currentGold.toInt().toString(),
+            ),
+            style: TextStyle(color: GameColors.textSecondary, fontSize: 13, height: 1.4),
+          ),
+          actions: [
+            ElevatedButton(
+              onPressed: () => Navigator.pop(context),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: GameColors.error,
+                foregroundColor: GameColors.tacticalWhite,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(16),
+                ),
+              ),
+              child: Text(
+                GameStrings.confirm,
+                style: const TextStyle(fontWeight: FontWeight.bold),
+              ),
+            ),
+          ],
+        ),
+      );
+      return;
+    }
+
+    // 3. 재설정 동의 다이얼로그 호출
     final confirm = await showDialog<bool>(
       context: context,
       builder: (context) => TacticalDialog(
@@ -801,8 +628,12 @@ class ProfileScreen extends StatelessWidget {
         icon: Icons.my_location_rounded,
         accentColor: GameColors.accentNeon,
         content: Text(
-          GameStrings.rebaseConfirmContent(tileId),
-          style: TextStyle(color: GameColors.textSecondary, fontSize: 13),
+          GameStrings.rebaseConfirmContent(
+            tileId: tileId,
+            cost: requiredGold.toInt().toString(),
+            currentGold: game.currentGold.toInt().toString(),
+          ),
+          style: TextStyle(color: GameColors.textSecondary, fontSize: 13, height: 1.4),
         ),
         actions: [
           TextButton(
@@ -830,24 +661,26 @@ class ProfileScreen extends StatelessWidget {
 
     if (confirm == true && context.mounted) {
       try {
-        await auth.updateMainBase(tileId);
-        if (context.mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Text(GameStrings.rebaseSuccessAlert(tileId)),
-              backgroundColor: GameColors.success,
-              behavior: SnackBarBehavior.floating,
-            ),
+        final success = await game.rebaseMainBase(tileId, requiredGold);
+        if (success && context.mounted) {
+          ToastHelper.show(
+            context: context,
+            message: GameStrings.rebaseSuccessAlert(tileId),
+            isSuccess: true,
+          );
+        } else if (context.mounted) {
+          ToastHelper.show(
+            context: context,
+            message: GameStrings.errorUnknown,
+            isSuccess: false,
           );
         }
       } catch (e) {
         if (context.mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Text(ErrorTranslator.translate(e)),
-              backgroundColor: GameColors.error,
-              behavior: SnackBarBehavior.floating,
-            ),
+          ToastHelper.show(
+            context: context,
+            message: ErrorTranslator.translate(e),
+            isSuccess: false,
           );
         }
       }

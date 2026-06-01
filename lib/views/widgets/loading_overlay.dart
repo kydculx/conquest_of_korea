@@ -73,7 +73,7 @@ class _LoadingOverlayState extends State<LoadingOverlay>
                       ),
                       const SizedBox(height: 8),
                       Text(
-                        'strategically connecting base...',
+                        GameStrings.loadingBaseConnection,
                         style: GoogleFonts.quicksand(
                           color: GameColors.textMuted,
                           fontSize: 11,

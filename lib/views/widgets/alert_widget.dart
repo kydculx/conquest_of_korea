@@ -90,6 +90,8 @@ class AlertWidget extends StatelessWidget {
                     const SizedBox(height: 3),
                     Text(
                       alert.message,
+                      softWrap: true,
+                      overflow: TextOverflow.visible,
                       style: GoogleFonts.quicksand(
                         color: GameColors.textPrimary,
                         fontSize: 12,

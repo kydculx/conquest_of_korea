@@ -1,7 +1,7 @@
 /// 인게임 비즈니스 로직 및 전술 시스템의 수치 상수를 관리하는 설정 클래스
 class GameConfig {
   /// 애플리케이션 시스템 공식 명칭
-  static const String appName = '한국정복 (Conquest)';
+  static const String appName = '찜! 대모험 (Dibs Adventure)';
 
   /// 초당 1개 타일당 획득 가능한 기본 골드 배율
   static const double defaultGoldRate = 1.0;
@@ -53,4 +53,9 @@ class GameConfig {
 
   /// 상대 타일 정보 보안 해제(Reveal) 유효 지속 시간 (초 단위 - 10분)
   static const int tileRevealDurationSeconds = 600;
+
+  /// 스플래시 화면 최소 유지 시간
+  static const Duration splashDuration = Duration(seconds: 3);
 }
+
+

@@ -4,6 +4,7 @@ import 'package:google_fonts/google_fonts.dart';
 import '../../../core/constants/colors.dart';
 import '../../../core/constants/strings.dart';
 import '../../../core/utils/error_translator.dart';
+import '../../../core/utils/toast_helper.dart';
 import '../../../providers/auth_provider.dart';
 import '../../../providers/location_provider.dart';
 import '../../../services/hex_service.dart';
@@ -26,8 +27,7 @@ class _SocialProfileSetupScreenState extends State<SocialProfileSetupScreen> {
   /// 요원의 고유 닉네임 입력을 처리하는 텍스트 컨트롤러입니다.
   final _nicknameController = TextEditingController();
 
-  /// 요원의 지도 렌더링에 매핑되는 고유 전술 색상입니다. (기본 파란색 고정)
-  final Color _selectedColor = GameColors.info;
+
 
   /// 사용자가 닉네임 중복 체크를 완료했는지 여부를 나타내는 플래그입니다.
   bool _isNicknameChecked = false;
@@ -60,9 +60,11 @@ class _SocialProfileSetupScreenState extends State<SocialProfileSetupScreen> {
   Future<void> _checkNickname() async {
     final nickname = _nicknameController.text.trim();
     if (nickname.isEmpty) {
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(SnackBar(content: Text(GameStrings.enterNickname)));
+      ToastHelper.show(
+        context: context,
+        message: GameStrings.enterNickname,
+        isSuccess: false,
+      );
       return;
     }
 
@@ -78,22 +80,21 @@ class _SocialProfileSetupScreenState extends State<SocialProfileSetupScreen> {
       });
 
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(
-              available
-                  ? GameStrings.nicknameAvailable
-                  : GameStrings.errorNicknameExists,
-            ),
-            backgroundColor: available ? GameColors.success : GameColors.error,
-          ),
+        ToastHelper.show(
+          context: context,
+          message: available
+              ? GameStrings.nicknameAvailable
+              : GameStrings.errorNicknameExists,
+          isSuccess: available,
         );
       }
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(
-          context,
-        ).showSnackBar(SnackBar(content: Text(ErrorTranslator.translate(e))));
+        ToastHelper.show(
+          context: context,
+          message: ErrorTranslator.translate(e),
+          isSuccess: false,
+        );
       }
     } finally {
       setState(() => _isChecking = false);
@@ -104,15 +105,19 @@ class _SocialProfileSetupScreenState extends State<SocialProfileSetupScreen> {
   Future<void> _handleSave() async {
     final nickname = _nicknameController.text.trim();
     if (nickname.isEmpty) {
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(SnackBar(content: Text(GameStrings.enterNickname)));
+      ToastHelper.show(
+        context: context,
+        message: GameStrings.enterNickname,
+        isSuccess: false,
+      );
       return;
     }
 
     if (!_isNicknameChecked || !_isNicknameAvailable) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(GameStrings.errorNicknameCheckRequired)),
+      ToastHelper.show(
+        context: context,
+        message: GameStrings.errorNicknameCheckRequired,
+        isSuccess: false,
       );
       return;
     }
@@ -128,15 +133,16 @@ class _SocialProfileSetupScreenState extends State<SocialProfileSetupScreen> {
     if (termsAgreedAt == null ||
         privacyAgreedAt == null ||
         locationAgreedAt == null) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('약관 동의 기록이 존재하지 않습니다. 다시 시도해 주세요.')),
+      ToastHelper.show(
+        context: context,
+        message: GameStrings.termsAgreementRecordNotFound,
+        isSuccess: false,
       );
       return;
     }
 
     final authProvider = context.read<AuthProvider>();
-    final colorHex =
-        '#${_selectedColor.toARGB32().toRadixString(16).padLeft(8, '0').substring(2).toUpperCase()}';
+    final colorHex = GameColors.myTileColorHex;
 
     // 현재 GPS 기준 현재타일을 구하여 내 기지로 지정
     final loc = context.read<LocationProvider>();
@@ -167,9 +173,11 @@ class _SocialProfileSetupScreenState extends State<SocialProfileSetupScreen> {
       }
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(
-          context,
-        ).showSnackBar(SnackBar(content: Text(ErrorTranslator.translate(e))));
+        ToastHelper.show(
+          context: context,
+          message: ErrorTranslator.translate(e),
+          isSuccess: false,
+        );
       }
     }
   }

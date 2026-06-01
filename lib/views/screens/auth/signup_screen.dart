@@ -4,6 +4,7 @@ import 'package:google_fonts/google_fonts.dart';
 import '../../../core/constants/colors.dart';
 import '../../../core/constants/strings.dart';
 import '../../../core/utils/error_translator.dart';
+import '../../../core/utils/toast_helper.dart';
 import '../../../providers/auth_provider.dart';
 import '../../../providers/location_provider.dart';
 import '../../../services/hex_service.dart';
@@ -32,8 +33,7 @@ class _SignupScreenState extends State<SignupScreen> {
   /// 입력받은 닉네임을 처리하는 텍스트 컨트롤러입니다.
   final _nicknameController = TextEditingController();
 
-  /// 요원의 전술 영역 구분을 위한 고유 매핑 색상입니다. (기본 파란색 고정)
-  final Color _selectedColor = GameColors.info;
+
 
   /// 비밀번호 입력란의 마스킹(숨김) 활성화 여부 플래그입니다.
   bool _isObscure = true;
@@ -87,9 +87,11 @@ class _SignupScreenState extends State<SignupScreen> {
   Future<void> _checkEmail() async {
     final email = _emailController.text.trim();
     if (email.isEmpty) {
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(SnackBar(content: Text(GameStrings.enterEmail)));
+      ToastHelper.show(
+        context: context,
+        message: GameStrings.enterEmail,
+        isSuccess: false,
+      );
       return;
     }
 
@@ -137,9 +139,11 @@ class _SignupScreenState extends State<SignupScreen> {
   Future<void> _checkNickname() async {
     final nickname = _nicknameController.text.trim();
     if (nickname.isEmpty) {
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(SnackBar(content: Text(GameStrings.enterNickname)));
+      ToastHelper.show(
+        context: context,
+        message: GameStrings.enterNickname,
+        isSuccess: false,
+      );
       return;
     }
 
@@ -155,9 +159,11 @@ class _SignupScreenState extends State<SignupScreen> {
       });
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(
-          context,
-        ).showSnackBar(SnackBar(content: Text(ErrorTranslator.translate(e))));
+        ToastHelper.show(
+          context: context,
+          message: ErrorTranslator.translate(e),
+          isSuccess: false,
+        );
       }
     } finally {
       setState(() => _isCheckingNickname = false);
@@ -176,37 +182,44 @@ class _SignupScreenState extends State<SignupScreen> {
     if (termsAgreedAt == null ||
         privacyAgreedAt == null ||
         locationAgreedAt == null) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('필수 정책 동의 정보가 누락되었습니다. 다시 시도해주세요.')),
+      ToastHelper.show(
+        context: context,
+        message: GameStrings.requiredPolicyAgreementMissing,
+        isSuccess: false,
       );
       Navigator.of(context).pop();
       return;
     }
 
     if (_nicknameController.text.isEmpty) {
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(SnackBar(content: Text(GameStrings.enterNickname)));
+      ToastHelper.show(
+        context: context,
+        message: GameStrings.enterNickname,
+        isSuccess: false,
+      );
       return;
     }
 
     if (!_isNicknameChecked || !_isNicknameAvailable) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(GameStrings.errorNicknameCheckRequired)),
+      ToastHelper.show(
+        context: context,
+        message: GameStrings.errorNicknameCheckRequired,
+        isSuccess: false,
       );
       return;
     }
 
     if (!_isEmailChecked || !_isEmailValid) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(GameStrings.errorEmailCheckRequired)),
+      ToastHelper.show(
+        context: context,
+        message: GameStrings.errorEmailCheckRequired,
+        isSuccess: false,
       );
       return;
     }
 
     final authProvider = context.read<AuthProvider>();
-    final colorHex =
-        '#${_selectedColor.toARGB32().toRadixString(16).padLeft(8, '0').substring(2).toUpperCase()}';
+    final colorHex = GameColors.myTileColorHex;
 
     // 현재 GPS 기준 현재타일을 구하여 내 기지로 지정
     final loc = context.read<LocationProvider>();
@@ -268,9 +281,11 @@ class _SignupScreenState extends State<SignupScreen> {
       }
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(
-          context,
-        ).showSnackBar(SnackBar(content: Text(ErrorTranslator.translate(e))));
+        ToastHelper.show(
+          context: context,
+          message: ErrorTranslator.translate(e),
+          isSuccess: false,
+        );
       }
     }
   }

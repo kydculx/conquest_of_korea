@@ -163,8 +163,12 @@ class HexTileComponent extends PositionComponent
         final dy = cy - c.dy;
         final dist = math.sqrt(dx * dx + dy * dy);
 
-        final double insetX = dist > padding ? c.dx + (dx / dist) * padding : c.dx;
-        final double insetY = dist > padding ? c.dy + (dy / dist) * padding : c.dy;
+        final double insetX = dist > padding
+            ? c.dx + (dx / dist) * padding
+            : c.dx;
+        final double insetY = dist > padding
+            ? c.dy + (dy / dist) * padding
+            : c.dy;
         insetCorners.add(Offset(insetX, insetY));
       }
 
@@ -172,7 +176,8 @@ class HexTileComponent extends PositionComponent
       _cachedPath = Path();
       for (int i = 0; i < insetCorners.length; i++) {
         final current = insetCorners[i];
-        final prev = insetCorners[(i - 1 + insetCorners.length) % insetCorners.length];
+        final prev =
+            insetCorners[(i - 1 + insetCorners.length) % insetCorners.length];
         final next = insetCorners[(i + 1) % insetCorners.length];
 
         final vPrevX = prev.dx - current.dx;
@@ -183,7 +188,10 @@ class HexTileComponent extends PositionComponent
         final vNextY = next.dy - current.dy;
         final lenNext = math.sqrt(vNextX * vNextX + vNextY * vNextY);
 
-        final double r = math.min(cornerRadius, math.min(lenPrev / 2, lenNext / 2));
+        final double r = math.min(
+          cornerRadius,
+          math.min(lenPrev / 2, lenNext / 2),
+        );
 
         final startX = current.dx + (vPrevX / lenPrev) * r;
         final startY = current.dy + (vPrevY / lenPrev) * r;
@@ -204,16 +212,20 @@ class HexTileComponent extends PositionComponent
     // 3. 점령된 타일 채우기 (아기자기한 방사형 그라데이션 젤리 스타일)
     if (colorHex != null) {
       final Color baseColor = _parseColor(colorHex) ?? GameColors.transparent;
-      
+
       // 젤리 반사광 및 입체감 극대화용 Radial Gradient 셰이더 생성
       final double gradientRadius = _tileRadius * 1.1; // 헥사곤 외곽선 경계까지 그라데이션 커버
-      
+
       _fillPaint.shader = Gradient.radial(
         Offset(_centerX, _centerY),
         gradientRadius,
         [
-          baseColor.withValues(alpha: GameConfig.tileOpacity * 0.45), // 중심부는 반짝이도록 맑게 비춤
-          baseColor.withValues(alpha: GameConfig.tileOpacity * 1.35), // 가장자리는 쫀득하게 채색
+          baseColor.withValues(
+            alpha: GameConfig.tileOpacity * 0.45,
+          ), // 중심부는 반짝이도록 맑게 비춤
+          baseColor.withValues(
+            alpha: GameConfig.tileOpacity * 1.35,
+          ), // 가장자리는 쫀득하게 채색
         ],
         const [0.0, 1.0],
       );

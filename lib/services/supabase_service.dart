@@ -1,7 +1,6 @@
 import 'package:flutter/foundation.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import '../core/app_config.dart';
-import '../core/constants/game_config.dart';
 import '../models/tile_model.dart';
 import '../models/user_profile.dart';
 
@@ -62,7 +61,7 @@ class SupabaseService {
         'p_user_id': tile.userId,
         'p_color_hex': tile.colorHex,
         'p_target_capture_count': tile.captureCount,
-        'p_shield_duration_seconds': GameConfig.tileShieldDurationSeconds,
+        'p_shield_duration_seconds': 0,
       };
       debugPrint('🏹 RPC 점령 안전 트랜잭션 전송 중: ${tile.id}, 파라미터: $params');
 

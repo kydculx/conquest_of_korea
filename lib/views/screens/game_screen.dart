@@ -116,7 +116,7 @@ class _GameScreenState extends State<GameScreen> {
     if (profile != null) {
       currentTiles.updateAll((id, tile) {
         if (tile.userId == userId) {
-          return tile.copyWith(colorHex: profile.colorHex);
+          return tile.copyWith(colorHex: GameColors.myTileColorHex);
         }
         return tile;
       });
@@ -126,7 +126,7 @@ class _GameScreenState extends State<GameScreen> {
       capturedTiles: currentTiles,
       capturingTileId: _gameProvider!.capturingTileId,
       captureProgress: _gameProvider!.captureProgress,
-      capturingColorHex: profile?.colorHex,
+      capturingColorHex: GameColors.myTileColorHex,
       currentLocation: _locationProvider!.currentLocation,
       mainBaseTileId: profile?.mainBaseTileId,
       selectedScanTileId: _gameProvider!.selectedScanTileId,

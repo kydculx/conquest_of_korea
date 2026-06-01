@@ -507,8 +507,26 @@ class GameStrings {
   static String get rebaseConfirmTitle => 'rebaseConfirmTitle'.tr();
 
   /// 이전 대상 기지 타일 상세 안내 포맷팅 함수
-  static String rebaseConfirmContent(String tileId) =>
-      'rebaseConfirmContent'.tr(namedArgs: {'tileId': tileId});
+  static String rebaseConfirmContent({
+    required String tileId,
+    required String cost,
+    required String currentGold,
+  }) =>
+      'rebaseConfirmContent'.tr(namedArgs: {
+        'tileId': tileId,
+        'cost': cost,
+        'currentGold': currentGold,
+      });
+
+  /// 본진 이전 재화 부족 경고 메시지 포맷팅 함수
+  static String rebaseGoldShortageMessage(String cost, String currentGold) =>
+      'rebaseGoldShortageMessage'.tr(namedArgs: {
+        'cost': cost,
+        'currentGold': currentGold,
+      });
+
+  /// 본진 이전 동일 위치 오류 메시지
+  static String get rebaseSameLocationMessage => 'rebaseSameLocationMessage'.tr();
 
   /// 기지 이전 버튼 라벨
   static String get rebaseButton => 'rebaseButton'.tr();
@@ -799,4 +817,143 @@ class GameStrings {
   /// 점령 빈도 횟수 표시 (동적 횟수 전달)
   static String satCaptureCount(String count) =>
       'satCaptureCount'.tr(namedArgs: {'count': count});
+
+  /// 언어 설정 타이틀
+  static String get languageSettings => 'languageSettings'.tr();
+
+  /// 언어 설정 상세 설명
+  static String get languageSettingsSub => 'languageSettingsSub'.tr();
+
+  /// 표시 언어 선택 타이틀
+  static String get selectLanguage => 'selectLanguage'.tr();
+
+  /// 한국어
+  static String get languageKorean => 'languageKorean'.tr();
+
+  /// 영어
+  static String get languageEnglish => 'languageEnglish'.tr();
+
+  /// 언어 변경 완료 알림
+  static String get languageChanged => 'languageChanged'.tr();
+
+  /// 한국어로 언어 변경 완료 알림
+  static String get languageChangedToKorean => 'languageChangedToKorean'.tr();
+
+  /// 영어로 언어 변경 완료 알림
+  static String get languageChangedToEnglish => 'languageChangedToEnglish'.tr();
+
+  /// 보안 해제 실패 알림
+  static String get satSecurityDecryptFailed => 'satSecurityDecryptFailed'.tr();
+
+  /// 보안 해제 성공 알림
+  static String get satSecurityDecryptSuccess => 'satSecurityDecryptSuccess'.tr();
+
+  /// 위성 점령 골드 부족 상세 정보 (required, current 인자)
+  static String satGoldShortageDetail(String required, String current) =>
+      'satGoldShortageDetail'.tr(namedArgs: {'required': required, 'current': current});
+
+  /// 약관 기록 없음 알림
+  static String get termsAgreementRecordNotFound => 'termsAgreementRecordNotFound'.tr();
+
+  /// 필수 동의 누락 알림
+  static String get requiredPolicyAgreementMissing => 'requiredPolicyAgreementMissing'.tr();
+
+  /// '필수' 라벨
+  static String get requiredLabel => 'requiredLabel'.tr();
+
+  /// '초' 단위 매핑
+  static String secondsUnit(String seconds) =>
+      'secondsUnit'.tr(namedArgs: {'seconds': seconds});
+
+  /// 언어 시스템 설명 라벨
+  static String get appO10NSystem => 'appO10NSystem'.tr();
+
+  /// 나의 순위 라벨
+  static String get rankingMyLabel => 'rankingMyLabel'.tr();
+
+  /// 월드 연결 로딩 메시지
+  static String get loadingBaseConnection => 'loadingBaseConnection'.tr();
+
+  /// 스플래시 화면 서브타이틀 번역 문자열
+  static String get splashSubtitle => 'splashSubtitle'.tr();
+
+  // --- 게임 설명서 (Game Guide) ---
+  /// 게임 설명서 타이틀
+  static String get gameGuide => 'gameGuide'.tr();
+
+  /// 게임 설명서 서브타이틀
+  static String get gameGuideSub => 'gameGuideSub'.tr();
+
+  /// 게임 개요 타이틀
+  static String get guideOverviewTitle => 'guideOverviewTitle'.tr();
+
+  /// 게임 개요 내용
+  static String get guideOverviewContent => 'guideOverviewContent'.tr();
+
+  /// 이동 모드 설명 타이틀
+  static String get guideMoveModeTitle => 'guideMoveModeTitle'.tr();
+
+  /// 이동 모드 설명 내용
+  static String get guideMoveModeContent => 'guideMoveModeContent'.tr();
+
+  /// 원격 모드 설명 타이틀
+  static String get guideRemoteModeTitle => 'guideRemoteModeTitle'.tr();
+
+  /// 원격 모드 설명 내용
+  static String get guideRemoteModeContent => 'guideRemoteModeContent'.tr();
+
+  /// 본진 기지 설명 타이틀
+  static String get guideHqTitle => 'guideHqTitle'.tr();
+
+  /// 본진 기지 설명 내용
+  static String get guideHqContent => 'guideHqContent'.tr();
+
+  /// 구역 설명 타이틀
+  static String get guideAreaTitle => 'guideAreaTitle'.tr();
+
+  /// 구역 설명 내용
+  static String get guideAreaContent => 'guideAreaContent'.tr();
+
+  /// 점령 설명 타이틀
+  static String get guideCaptureTitle => 'guideCaptureTitle'.tr();
+
+  /// 점령 설명 내용
+  static String get guideCaptureContent => 'guideCaptureContent'.tr();
+
+  /// 영토 보호막 설명 타이틀
+  static String get guideShieldTitle => 'guideShieldTitle'.tr();
+
+  /// 영토 보호막 설명 내용
+  static String get guideShieldContent => 'guideShieldContent'.tr();
+
+  /// 보안 정보 조회 설명 타이틀
+  static String get guideRevealTitle => 'guideRevealTitle'.tr();
+
+  /// 보안 정보 조회 설명 내용
+  static String get guideRevealContent => 'guideRevealContent'.tr();
+
+  /// 실시간 경보 설명 타이틀
+  static String get guideAlertTitle => 'guideAlertTitle'.tr();
+
+  /// 실시간 경보 설명 내용
+  static String get guideAlertContent => 'guideAlertContent'.tr();
+
+  // --- HUD 정보창 다국어 라벨 ---
+  /// 좌표 라벨
+  static String get hudCoordinateLabel => 'hudCoordinateLabel'.tr();
+
+  /// 점령횟수 라벨
+  static String get hudCaptureCountLabel => 'hudCaptureCountLabel'.tr();
+
+  /// 필요재화 라벨
+  static String get hudRequiredGoldLabel => 'hudRequiredGoldLabel'.tr();
+
+  /// 소요시간 라벨
+  static String get hudRequiredTimeLabel => 'hudRequiredTimeLabel'.tr();
+
+  /// 보안 구역 라벨
+  static String get hudSecretAreaLabel => 'hudSecretAreaLabel'.tr();
+
+  /// 정보 은폐됨 라벨
+  static String get hudSecretHiddenLabel => 'hudSecretHiddenLabel'.tr();
 }

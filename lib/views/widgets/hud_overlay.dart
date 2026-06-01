@@ -9,6 +9,7 @@ import '../../core/constants/strings.dart';
 import '../../providers/game_provider.dart';
 import '../../providers/auth_provider.dart';
 import '../../services/hex_service.dart';
+import '../screens/game_guide_screen.dart';
 
 /// 인게임 HUD 오버레이 (점수판, 점령 버튼, 유틸리티 버튼, 위성 스캔 연동)
 class HudOverlay extends StatelessWidget {
@@ -41,6 +42,13 @@ class HudOverlay extends StatelessWidget {
           top: topOffset + 3.0,
           left: 20.0,
           child: const _CozyHeaderBar(),
+        ),
+
+        // [상단 우측 - 가이드 버튼] 랭킹 버튼 바로 왼쪽에 1:1 대칭 정렬 나란히 배치 (44x44)
+        Positioned(
+          top: topOffset,
+          right: 20.0 + 44.0 + 10.0 + 44.0 + 10.0, // 프로필 44 + 랭킹 44 + 여백 오프셋 연산
+          child: const _GuideActionButton(size: 44),
         ),
 
         // [상단 우측 - 랭킹 버튼] 유저 프로필 버튼 바로 왼쪽에 1:1 대칭 정렬 나란히 배치 (44x44)
@@ -127,7 +135,12 @@ class _CozyHeaderBar extends StatelessWidget {
       builder: (context, gold, child) {
         return Container(
           height: 38,
-          padding: const EdgeInsets.only(left: 10, right: 16, top: 2, bottom: 2),
+          padding: const EdgeInsets.only(
+            left: 10,
+            right: 16,
+            top: 2,
+            bottom: 2,
+          ),
           decoration: ShapeDecoration(
             color: GameColors.backgroundMedium.withValues(alpha: 0.92),
             shape: RoundedRectangleBorder(
@@ -278,7 +291,6 @@ class _ProfileFloatingButtonState extends State<_ProfileFloatingButton> {
   }
 }
 
-
 /// [신규] 접이식 메뉴 수납용 랭킹 이동 젤리 버튼
 class _RankingActionButton extends StatefulWidget {
   final double size;
@@ -357,6 +369,101 @@ class _RankingActionButtonState extends State<_RankingActionButton> {
               const Center(
                 child: Icon(
                   Icons.emoji_events_rounded,
+                  color: Colors.white,
+                  size: 20,
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+/// [신규] 접이식 메뉴 수납용 게임 가이드 이동 젤리 버튼
+class _GuideActionButton extends StatefulWidget {
+  final double size;
+
+  const _GuideActionButton({required this.size});
+
+  @override
+  State<_GuideActionButton> createState() => _GuideActionButtonState();
+}
+
+class _GuideActionButtonState extends State<_GuideActionButton> {
+  bool _isPressed = false;
+
+  @override
+  Widget build(BuildContext context) {
+    final double glowRadius = widget.size * 0.38;
+
+    return GestureDetector(
+      onTapDown: (_) => setState(() => _isPressed = true),
+      onTapCancel: () => setState(() => _isPressed = false),
+      onTapUp: (_) {
+        setState(() => _isPressed = false);
+        Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (context) => const GameGuideScreen(),
+          ),
+        );
+      },
+      child: AnimatedScale(
+        scale: _isPressed ? 0.88 : 1.0,
+        duration: const Duration(milliseconds: 100),
+        child: Container(
+          width: widget.size,
+          height: widget.size,
+          decoration: BoxDecoration(
+            shape: BoxShape.circle,
+            gradient: const LinearGradient(
+              begin: Alignment.topCenter,
+              end: Alignment.bottomCenter,
+              colors: [
+                Color(0xFF00E5FF),
+                Color(0xFF00838F),
+              ], // 일관성 있는 사이버 네온 시안 젤리
+            ),
+            border: Border.all(
+              color: Colors.white.withValues(alpha: 0.45),
+              width: 1.2,
+            ),
+            boxShadow: [
+              BoxShadow(
+                color: const Color(0xFF00E5FF).withValues(alpha: 0.25),
+                blurRadius: 6,
+                offset: const Offset(0, 2),
+              ),
+            ],
+          ),
+          child: Stack(
+            children: [
+              Positioned(
+                top: 2,
+                left: 5,
+                right: 5,
+                height: glowRadius,
+                child: Container(
+                  decoration: BoxDecoration(
+                    borderRadius: BorderRadius.vertical(
+                      top: Radius.circular(glowRadius),
+                    ),
+                    gradient: LinearGradient(
+                      begin: Alignment.topCenter,
+                      end: Alignment.bottomCenter,
+                      colors: [
+                        Colors.white.withValues(alpha: 0.45),
+                        Colors.white.withValues(alpha: 0.0),
+                      ],
+                    ),
+                  ),
+                ),
+              ),
+              const Center(
+                child: Icon(
+                  Icons.menu_book_rounded,
                   color: Colors.white,
                   size: 20,
                 ),
@@ -488,7 +595,6 @@ class _MapFollowRotationButton extends StatefulWidget {
   final double iconSize;
 
   const _MapFollowRotationButton({
-    super.key,
     this.size = 42.0,
     this.iconSize = 20.0,
   });
@@ -504,7 +610,8 @@ class _MapFollowRotationButtonState extends State<_MapFollowRotationButton> {
   @override
   Widget build(BuildContext context) {
     return Selector<GameProvider, (bool, bool)>(
-      selector: (_, provider) => (provider.isFollowingUser, provider.isMapRotationMode),
+      selector: (_, provider) =>
+          (provider.isFollowingUser, provider.isMapRotationMode),
       builder: (context, state, child) {
         final isFollowing = state.$1;
         final isRotation = state.$2;
@@ -516,13 +623,18 @@ class _MapFollowRotationButtonState extends State<_MapFollowRotationButton> {
         final double angle = isRotation ? -math.pi / 4 : 0.0;
 
         final gradientColors = isFollowing
-            ? [const Color(0xFF00E5FF), const Color(0xFF00838F)] // 활성: 사이버 네온 시안 젤리
+            ? [
+                const Color(0xFF00E5FF),
+                const Color(0xFF00838F),
+              ] // 활성: 사이버 네온 시안 젤리
             : [
                 const Color(0xFF37474F),
                 const Color(0xFF212121),
               ]; // 비활성: 다크 메탈릭 실버 젤리
 
-        final shadowColor = isFollowing ? const Color(0xFF00E5FF) : Colors.black;
+        final shadowColor = isFollowing
+            ? const Color(0xFF00E5FF)
+            : Colors.black;
 
         final double glowRadius = widget.size * 0.38;
 
@@ -560,7 +672,9 @@ class _MapFollowRotationButtonState extends State<_MapFollowRotationButton> {
                 ),
                 boxShadow: [
                   BoxShadow(
-                    color: shadowColor.withValues(alpha: isFollowing ? 0.35 : 0.12),
+                    color: shadowColor.withValues(
+                      alpha: isFollowing ? 0.35 : 0.12,
+                    ),
                     blurRadius: isFollowing ? 10 : 4,
                     offset: const Offset(0, 2.5),
                   ),
@@ -746,7 +860,7 @@ class _StartStopCaptureButtonState extends State<_StartStopCaptureButton> {
 
 /// 선택된 위성 조준 타일 위에 실시간으로 위치가 갱신되는 말풍선 위젯.
 class _SatelliteMapBubble extends StatefulWidget {
-  const _SatelliteMapBubble({super.key});
+  const _SatelliteMapBubble();
 
   @override
   State<_SatelliteMapBubble> createState() => _SatelliteMapBubbleState();
@@ -773,6 +887,11 @@ class _SatelliteMapBubbleState extends State<_SatelliteMapBubble> {
 
   @override
   Widget build(BuildContext context) {
+    final auth = context.read<AuthProvider>();
+    if (!auth.isAuthenticated) {
+      return const SizedBox.shrink();
+    }
+
     final game = context.read<GameProvider>();
     final tileLatLng = game.selectedScanTileLatLng;
     final selectedId = game.selectedScanTileId;
@@ -780,9 +899,9 @@ class _SatelliteMapBubbleState extends State<_SatelliteMapBubble> {
     if (tileLatLng == null || selectedId == null) {
       return const SizedBox.shrink();
     }
-
-    final auth = context.read<AuthProvider>();
-    final bool isCapturing = game.isSatelliteCapturing && game.satelliteCapturingTileId == selectedId;
+    final bool isCapturing =
+        game.isSatelliteCapturing &&
+        game.satelliteCapturingTileId == selectedId;
 
     // --- 보안 판독(Reveal) 권한 조회 ---
     final bool isRevealed = game.isTileInfoRevealed(selectedId);
@@ -825,7 +944,7 @@ class _SatelliteMapBubbleState extends State<_SatelliteMapBubble> {
       final remainingSec = game.remainingSatelliteCaptureSeconds;
       themeColor = const Color(0xFFFF5252);
       detailsText = GameStrings.satCapturingAttempt;
-      timeStr = '$remainingSec초';
+      timeStr = GameStrings.secondsUnit(remainingSec.toString());
       showActionButton = true;
       actionButtonText = GameStrings.cancel;
       buttonGradient = [const Color(0xFFFF5252), const Color(0xFFC62828)];
@@ -882,7 +1001,7 @@ class _SatelliteMapBubbleState extends State<_SatelliteMapBubble> {
             buttonGradient = [const Color(0xFF00E5FF), const Color(0xFF00838F)];
             onActionPressed = () => game.executeSatelliteCapture(selectedId);
           }
-          timeStr = '$durationSec초';
+          timeStr = GameStrings.secondsUnit(durationSec.toString());
         }
       } else {
         // 기존 점령지가 존재할 때 내 소유(isMine)인지 타인 소유인지 정교하게 판독
@@ -905,7 +1024,9 @@ class _SatelliteMapBubbleState extends State<_SatelliteMapBubble> {
             themeColor = const Color(0xFFFF7700);
             final dist = game.getTileDistance(selectedId);
             showActionButton = true;
-            actionButtonText = GameStrings.satRevealVillageWithGp(dist.toString());
+            actionButtonText = GameStrings.satRevealVillageWithGp(
+              dist.toString(),
+            );
             buttonGradient = [const Color(0xFFFF8800), const Color(0xFFE65100)];
             onActionPressed = onRevealPressed;
           }
@@ -1137,14 +1258,14 @@ class _BubbleBodyState extends State<_BubbleBody> {
                       children: [
                         // 📍 좌표 칩
                         _buildMiniBadge(
-                          Icons.location_on_rounded,
-                          '${widget.q}, ${widget.r}',
+                          '${GameStrings.hudCoordinateLabel}: ${widget.q}, ${widget.r}',
                           const Color(0xFF00E5FF),
                         ),
                         // 🔥 점령 빈도 칩
                         _buildMiniBadge(
-                          Icons.local_fire_department_rounded,
-                          GameStrings.satCaptureCount(widget.captureCount.toString()),
+                          GameStrings.satCaptureCount(
+                            widget.captureCount.toString(),
+                          ),
                           const Color(0xFFFF9900),
                         ),
                         // 🛡️ 쉴드 활성 칩 (활성화 시에만 노출)
@@ -1160,7 +1281,6 @@ class _BubbleBodyState extends State<_BubbleBody> {
                               final timeStr =
                                   '${m.toString().padLeft(2, '0')}:${s.toString().padLeft(2, '0')}';
                               return _buildMiniBadge(
-                                Icons.shield_rounded,
                                 GameStrings.satShieldWithTime(timeStr),
                                 const Color(0xFF4CAF50),
                               );
@@ -1180,7 +1300,6 @@ class _BubbleBodyState extends State<_BubbleBody> {
                               final timeStr =
                                   '${m.toString().padLeft(2, '0')}:${s.toString().padLeft(2, '0')}';
                               return _buildMiniBadge(
-                                Icons.hourglass_bottom_rounded,
                                 GameStrings.satPeekTimeWithTime(timeStr),
                                 const Color(0xFFFFD54F),
                               );
@@ -1190,6 +1309,33 @@ class _BubbleBodyState extends State<_BubbleBody> {
                         ],
                       ],
                     ),
+                    // 필요재화 / 소요시간 배지
+                    if (widget.distanceStr != null ||
+                        widget.timeStr != null) ...[
+                      const SizedBox(height: 6),
+                      Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          if (widget.distanceStr != null) ...[
+                            _buildBadge(
+                              GameStrings.satRequiredGold,
+                              widget.distanceStr!,
+                              widget.themeColor,
+                              isGold: true,
+                            ),
+                            const SizedBox(width: 8),
+                          ],
+                          if (widget.timeStr != null)
+                            _buildBadge(
+                              widget.isCooltime
+                                  ? GameStrings.satCooltimeWaitingText
+                                  : GameStrings.satRequiredTime,
+                              widget.timeStr!,
+                              widget.themeColor,
+                            ),
+                        ],
+                      ),
+                    ],
                   ] else ...[
                     // 🔒 보안 잠금 칩 -> 귀여운 아기자기한 비밀 은폐로 개조
                     Wrap(
@@ -1197,12 +1343,10 @@ class _BubbleBodyState extends State<_BubbleBody> {
                       runSpacing: 6,
                       children: [
                         _buildMiniBadge(
-                          Icons.location_off_rounded,
                           GameStrings.satSecretArea,
                           const Color(0xFFFF5252),
                         ),
                         _buildMiniBadge(
-                          Icons.lock_rounded,
                           GameStrings.satSecretHidden,
                           const Color(0xFFFF5252),
                         ),
@@ -1211,93 +1355,31 @@ class _BubbleBodyState extends State<_BubbleBody> {
                   ],
                   // [신규] 점령 프로필명 정보 노출 (보안 해제 상태 연동 및 귀여운 명칭화)
                   if (widget.agentNicknameFuture != null) ...[
-                    const SizedBox(height: 8),
+                    const SizedBox(height: 6),
                     if (widget.isRevealed)
                       FutureBuilder<String>(
                         future: widget.agentNicknameFuture,
                         builder: (context, snapshot) {
                           final nickname = snapshot.data ?? '...';
-                          return Row(
-                            children: [
-                              Icon(
-                                Icons.face_rounded,
-                                color: widget.themeColor.withValues(alpha: 0.8),
-                                size: 13,
-                              ),
-                              const SizedBox(width: 5),
-                              Text(
-                                GameStrings.satVillageOwner,
-                                style: GoogleFonts.quicksand(
-                                  color: GameColors.textSecondary,
-                                  fontSize: 10,
-                                  fontWeight: FontWeight.bold,
-                                ),
-                              ),
-                              Text(
-                                nickname,
-                                style: GoogleFonts.quicksand(
-                                  color: widget.themeColor,
-                                  fontSize: 10.5,
-                                  fontWeight: FontWeight.w900,
-                                ),
-                              ),
-                            ],
+                          return Text(
+                            '${GameStrings.satVillageOwner}$nickname',
+                            style: GoogleFonts.quicksand(
+                              color: widget.themeColor,
+                              fontSize: 10.5,
+                              fontWeight: FontWeight.w900,
+                            ),
                           );
                         },
                       )
                     else
-                      Row(
-                        children: [
-                          const Icon(
-                            Icons.lock_outline_rounded,
-                            color: Color(0xFFFF5252),
-                            size: 13,
-                          ),
-                          const SizedBox(width: 5),
-                          Text(
-                            GameStrings.satVillageOwner,
-                            style: GoogleFonts.quicksand(
-                              color: GameColors.textSecondary,
-                              fontSize: 10,
-                              fontWeight: FontWeight.bold,
-                            ),
-                          ),
-                          Text(
-                            GameStrings.satItsSecret,
-                            style: GoogleFonts.quicksand(
-                              color: const Color(0xFFFF5252),
-                              fontSize: 10.5,
-                              fontWeight: FontWeight.w900,
-                            ),
-                          ),
-                        ],
+                      Text(
+                        '${GameStrings.satVillageOwner}${GameStrings.satItsSecret}',
+                        style: GoogleFonts.quicksand(
+                          color: const Color(0xFFFF5252),
+                          fontSize: 10.5,
+                          fontWeight: FontWeight.w900,
+                        ),
                       ),
-                  ],
-                  // 메트릭 배지 (거리 / 시간)
-                  if (widget.distanceStr != null || widget.timeStr != null) ...[
-                    const SizedBox(height: 7),
-                    Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        if (widget.distanceStr != null) ...[
-                          _buildBadge(
-                            GameStrings.satRequiredGold,
-                            widget.distanceStr!,
-                            widget.themeColor,
-                            isGold: true,
-                          ),
-                          const SizedBox(width: 8),
-                        ],
-                        if (widget.timeStr != null)
-                          _buildBadge(
-                            widget.isCooltime
-                                ? GameStrings.satCooltimeWaitingText
-                                : GameStrings.satRequiredTime,
-                            widget.timeStr!,
-                            widget.themeColor,
-                          ),
-                      ],
-                    ),
                   ],
                   // 하단 전술 행동 버튼 (All-In-One 통합)
                   if (widget.showActionButton &&
@@ -1372,47 +1454,6 @@ class _BubbleBodyState extends State<_BubbleBody> {
     );
   }
 
-  Widget _buildBadge(String label, String value, Color color, {bool isGold = false}) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-      decoration: BoxDecoration(
-        color: color.withValues(alpha: 0.10),
-        borderRadius: BorderRadius.circular(6),
-        border: Border.all(color: color.withValues(alpha: 0.30), width: 0.8),
-      ),
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
-        crossAxisAlignment: CrossAxisAlignment.center,
-        children: [
-          Text(
-            '$label: ',
-            style: GoogleFonts.quicksand(
-              color: GameColors.textSecondary,
-              fontSize: 9,
-              fontWeight: FontWeight.w800,
-            ),
-          ),
-          if (isGold) ...[
-            const Icon(
-              Icons.monetization_on_rounded,
-              color: Color(0xFF00E5FF),
-              size: 11.0,
-            ),
-            const SizedBox(width: 2),
-          ],
-          Text(
-            isGold ? value.replaceAll(RegExp(r'[\$\s]'), '') : value,
-            style: GoogleFonts.quicksand(
-              color: isGold ? const Color(0xFF00E5FF) : color,
-              fontSize: 9.5,
-              fontWeight: FontWeight.w900,
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
   Widget _buildButtonContent(String text) {
     if (text.contains('\$')) {
       final parts = text.split('\$');
@@ -1474,7 +1515,19 @@ class _BubbleBodyState extends State<_BubbleBody> {
     );
   }
 
-  Widget _buildMiniBadge(IconData icon, String text, Color color) {
+  Widget _buildMiniBadge(String text, Color color) {
+    // ':' 구분자를 기준으로 제목과 값을 파싱하여 제목은 보통체, 값은 굵고 고유 색상으로 분리 렌더링
+    final parts = text.split(':');
+    final String label;
+    final String? value;
+    if (parts.length >= 2) {
+      label = parts[0].trim();
+      value = parts.sublist(1).join(':').trim();
+    } else {
+      label = text;
+      value = null;
+    }
+
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 3),
       decoration: BoxDecoration(
@@ -1484,15 +1537,62 @@ class _BubbleBodyState extends State<_BubbleBody> {
       ),
       child: Row(
         mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.center,
         children: [
-          Icon(icon, color: color, size: 10.5),
-          const SizedBox(width: 3),
           Text(
-            text,
+            value != null ? '$label: ' : label,
             style: GoogleFonts.quicksand(
-              color: GameColors.textPrimary.withValues(alpha: 0.9),
+              color: GameColors.textSecondary,
+              fontSize: 9,
+              fontWeight: FontWeight.w500, // 보통 글씨체
+            ),
+          ),
+          if (value != null)
+            Text(
+              value,
+              style: GoogleFonts.quicksand(
+                color: color, // 값은 굵고 고유 색상있게
+                fontSize: 9.5,
+                fontWeight: FontWeight.w900,
+              ),
+            ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildBadge(
+    String label,
+    String value,
+    Color color, {
+    bool isGold = false,
+  }) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+      decoration: BoxDecoration(
+        color: color.withValues(alpha: 0.10),
+        borderRadius: BorderRadius.circular(6),
+        border: Border.all(color: color.withValues(alpha: 0.30), width: 0.8),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.center,
+        children: [
+          Text(
+            '$label: ',
+            style: GoogleFonts.quicksand(
+              color: GameColors.textSecondary,
+              fontSize: 9,
+              fontWeight: FontWeight.w500, // 제목은 보통 글씨체
+            ),
+          ),
+          // 아이콘은 전부 제거하라는 지시에 의해 Gold 동전 아이콘 렌더링 비활성화
+          Text(
+            isGold ? value.replaceAll(RegExp(r'[\$\s]'), '') : value,
+            style: GoogleFonts.quicksand(
+              color: isGold ? const Color(0xFF00E5FF) : color, // 값은 굵고 고유 색상있게
               fontSize: 9.5,
-              fontWeight: FontWeight.w800,
+              fontWeight: FontWeight.w900,
             ),
           ),
         ],

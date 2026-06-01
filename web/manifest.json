@@ -1,11 +1,11 @@
 {
-    "name": "한국정복",
-    "short_name": "한국정복",
+    "name": "찜! 대모험",
+    "short_name": "찜! 대모험",
     "start_url": ".",
     "display": "standalone",
     "background_color": "#0175C2",
     "theme_color": "#0175C2",
-    "description": "A new Flutter project.",
+    "description": "Dibs Adventure - Real-time Location-based Game",
     "orientation": "portrait-primary",
     "prefer_related_applications": false,
     "icons": [

@@ -375,12 +375,6 @@ class GameProvider extends ChangeNotifier with WidgetsBindingObserver {
       return false;
     }
 
-    // [신규] 쉴드(보호) 시간 검증 추가
-    final tile = currentTile;
-    if (tile != null && tile.isShieldActive) {
-      return false; // 아직 쉴드 시간이 경과하지 않았으므로 점령 불가!
-    }
-
     return true;
   }
 
@@ -672,17 +666,6 @@ class GameProvider extends ChangeNotifier with WidgetsBindingObserver {
     // mine: 내 타일 → 점령 중단
     // empty/enemy: 점령 대상이므로 진행
     if (status == TileStatus.empty || status == TileStatus.enemy) {
-      // 상대방 타일(enemy)일 때 쉴드 시간 검증
-      if (status == TileStatus.enemy) {
-        final tile = _capturedTiles[tileId];
-        if (tile != null && tile.isShieldActive) {
-          if (_captureController.capturingTileId == tileId) {
-            _captureController.cancelCapture();
-          }
-          return;
-        }
-      }
-
       if (_isAutoCapture && !_captureController.isCapturing) {
         // 자동 점령 개시 직전, DB 서버에서 해당 타일의 실시간 최신 정보 강제 패치
         try {
@@ -1124,12 +1107,51 @@ class GameProvider extends ChangeNotifier with WidgetsBindingObserver {
             _currentGold = previousGold;
             _revealedTileTimes.remove(tileId);
             notifyListeners();
-            addAlert('보안 해제에 실패했습니다.', AlertType.error);
+            addAlert(GameStrings.satSecurityDecryptFailed, AlertType.error);
           });
     }
 
-    addAlert('상대 타일 보안 판독 완료', AlertType.success);
+    addAlert(GameStrings.satSecurityDecryptSuccess, AlertType.success);
     return true;
+  }
+
+  /// 본진을 새로운 위치로 이전(재설정)하고 해당 거리에 따른 비용(재화)을 차감합니다.
+  Future<bool> rebaseMainBase(String tileId, double cost) async {
+    final myId = _authProvider?.user?.id;
+    if (myId == null) return false;
+
+    if (_currentGold < cost) {
+      addAlert(GameStrings.satGoldShortage, AlertType.error);
+      return false;
+    }
+
+    final double previousGold = _currentGold;
+    final nowUtc = DateTime.now().toUtc();
+
+    // 낙관적 업데이트
+    _currentGold = (_currentGold - cost).clamp(0.0, double.infinity);
+    notifyListeners();
+
+    try {
+      await _supabase.client
+          .from('profiles')
+          .update({
+            'main_base_tile_id': tileId,
+            'gold': _currentGold,
+            'last_gold_updated_at': nowUtc.toIso8601String(),
+          })
+          .eq('id', myId);
+
+      // 프로필 데이터 강제 동기화
+      await _authProvider?.refreshProfile();
+      return true;
+    } catch (e) {
+      debugPrint('⚠️ 본진 이전 처리 중 오류 발생: $e');
+      // 롤백
+      _currentGold = previousGold;
+      notifyListeners();
+      return false;
+    }
   }
 
   @override
@@ -1175,6 +1197,9 @@ class GameProvider extends ChangeNotifier with WidgetsBindingObserver {
   /// 위성 스캔 화면 상에서 조준점으로 지정할 대상 헥사곤 타일을 선택 조준합니다.
   /// 이미 선택된 타일을 다시 선택하는 경우 조준을 해제합니다.
   void selectScanTile(String tileId) {
+    if (_authProvider == null || !_authProvider!.isAuthenticated) {
+      return;
+    }
     if (_selectedScanTileId == tileId) {
       _selectedScanTileId = null;
       _selectedScanTileLatLng = null;
@@ -1368,7 +1393,7 @@ class GameProvider extends ChangeNotifier with WidgetsBindingObserver {
     // 위성 점령 소모 재화 부족 검증 (거리가 D이면 D GP 소모)
     if (_currentGold < dist) {
       addAlert(
-        '위성 점령 재화가 부족합니다 (필요: $dist GP / 보유: ${_currentGold.toInt()} GP)',
+        GameStrings.satGoldShortageDetail(dist.toString(), _currentGold.toInt().toString()),
         AlertType.error,
       );
       return;
@@ -1604,10 +1629,6 @@ class GameProvider extends ChangeNotifier with WidgetsBindingObserver {
         return;
       }
       final profile = auth.profile!;
-      final now = DateTime.now().toUtc();
-      final lastUpdated = profile.lastGoldUpdatedAt ?? now;
-      final diffSeconds = now.difference(lastUpdated).inSeconds;
-      final elapsed = diffSeconds > 0 ? diffSeconds : 0;
 
       // 본진(mainBaseTileId)이 있는 경우 최소 1개 영역 인정 보정
       final myMainBaseId = profile.mainBaseTileId;
@@ -1619,9 +1640,8 @@ class GameProvider extends ChangeNotifier with WidgetsBindingObserver {
       }
 
       // 시간당 1 GP를 3600초로 나누어 매초 정밀하게 소수점 단위 가산
-      final double earnedGold =
-          elapsed * effectiveTilesCount * (_goldRate / 3600.0);
-      _currentGold = profile.gold + earnedGold;
+      final double earnedGoldPerSecond = effectiveTilesCount * (_goldRate / 3600.0);
+      _currentGold += earnedGoldPerSecond;
       notifyListeners();
 
       // 성능 보존을 위해 매 10초마다 자동으로 서버 백엔드에 정밀 영속화 수행

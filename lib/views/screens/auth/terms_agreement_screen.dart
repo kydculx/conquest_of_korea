@@ -72,51 +72,53 @@ class _TermsAgreementScreenState extends State<TermsAgreementScreen> {
         borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
       ),
       builder: (context) {
-        return Container(
-          padding: const EdgeInsets.all(24),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              Text(
-                title,
-                style: GoogleFonts.fredoka(
-                  color: GameColors.accentNeon,
-                  fontSize: 16,
-                  fontWeight: FontWeight.bold,
-                  letterSpacing: 0.5,
+        return SafeArea(
+          child: Container(
+            padding: const EdgeInsets.all(24),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                Text(
+                  title,
+                  style: GoogleFonts.fredoka(
+                    color: GameColors.accentNeon,
+                    fontSize: 16,
+                    fontWeight: FontWeight.bold,
+                    letterSpacing: 0.5,
+                  ),
                 ),
-              ),
-              const SizedBox(height: 16),
-              Flexible(
-                child: SingleChildScrollView(
-                  child: Text(
-                    detailText,
-                    style: GoogleFonts.quicksand(
-                      color: GameColors.textSecondary,
-                      fontSize: 13,
-                      height: 1.6,
-                      fontWeight: FontWeight.bold,
+                const SizedBox(height: 16),
+                Flexible(
+                  child: SingleChildScrollView(
+                    child: Text(
+                      detailText,
+                      style: GoogleFonts.quicksand(
+                        color: GameColors.textSecondary,
+                        fontSize: 13,
+                        height: 1.6,
+                        fontWeight: FontWeight.bold,
+                      ),
                     ),
                   ),
                 ),
-              ),
-              const SizedBox(height: 24),
-              ElevatedButton(
-                onPressed: () => Navigator.pop(context),
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: GameColors.accentNeon,
-                  foregroundColor: Colors.white,
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(20),
+                const SizedBox(height: 24),
+                ElevatedButton(
+                  onPressed: () => Navigator.pop(context),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: GameColors.accentNeon,
+                    foregroundColor: Colors.white,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(20),
+                    ),
+                  ),
+                  child: Text(
+                    GameStrings.confirm,
+                    style: GoogleFonts.fredoka(fontWeight: FontWeight.bold),
                   ),
                 ),
-                child: Text(
-                  GameStrings.confirm,
-                  style: GoogleFonts.fredoka(fontWeight: FontWeight.bold),
-                ),
-              ),
-            ],
+              ],
+            ),
           ),
         );
       },
@@ -396,7 +398,7 @@ class _TermsAgreementScreenState extends State<TermsAgreementScreen> {
         subtitle: isOptional
             ? null
             : Text(
-                '(${GameStrings.confirm} 필수)',
+                '(${GameStrings.requiredLabel})',
                 style: GoogleFonts.quicksand(
                   color: value
                       ? GameColors.accentNeon.withValues(alpha: 0.8)
