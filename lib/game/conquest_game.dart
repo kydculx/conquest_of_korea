@@ -161,19 +161,19 @@ class ConquestGame extends FlameGame {
 
   /// 현재 줌 레벨에 맞는 헥사곤 미터 규격(Size) 반환
   double _getHexSizeForZoom(double zoom) {
-    if (zoom >= 15.0) return GameConfig.lodSize0;
-    if (zoom >= 14.0) return GameConfig.lodSize1;
-    if (zoom >= 13.0) return GameConfig.lodSize2;
-    if (zoom >= 11.5) return GameConfig.lodSize3;
+    if (zoom >= GameConfig.lodZoomThreshold0) return GameConfig.lodSize0;
+    if (zoom >= GameConfig.lodZoomThreshold1) return GameConfig.lodSize1;
+    if (zoom >= GameConfig.lodZoomThreshold2) return GameConfig.lodSize2;
+    if (zoom >= GameConfig.lodZoomThreshold3) return GameConfig.lodSize3;
     return GameConfig.lodSize4;
   }
 
   /// 현재 줌 레벨에 맞는 LOD 레벨(0 ~ 4) 반환
   int _getLodLevelForZoom(double zoom) {
-    if (zoom >= 15.0) return 0;
-    if (zoom >= 14.0) return 1;
-    if (zoom >= 13.0) return 2;
-    if (zoom >= 11.5) return 3;
+    if (zoom >= GameConfig.lodZoomThreshold0) return 0;
+    if (zoom >= GameConfig.lodZoomThreshold1) return 1;
+    if (zoom >= GameConfig.lodZoomThreshold2) return 2;
+    if (zoom >= GameConfig.lodZoomThreshold3) return 3;
     return 4;
   }
 
@@ -186,7 +186,10 @@ class ConquestGame extends FlameGame {
   }
 
   /// 소형 100m 기준의 타일 데이터를 현재 LOD dynamicSize 규격에 맞게 실시간 뭉뚱그려(Clustering) 병합
-  void _rebuildClusteredTiles(Map<String, HexTile> capturedTiles, double dynamicSize) {
+  void _rebuildClusteredTiles(
+    Map<String, HexTile> capturedTiles,
+    double dynamicSize,
+  ) {
     if (dynamicSize == GameConfig.lodSize0) {
       _lastClusteredTiles = Map.from(capturedTiles);
       return;
@@ -195,10 +198,18 @@ class ConquestGame extends FlameGame {
     final Map<String, HexTile> clustered = {};
     capturedTiles.forEach((id, tile) {
       // 100m 소형 기준의 지리 중심 획득
-      final smallCenter = _getTileCenter(tile.q, tile.r, id, GameConfig.lodSize0);
+      final smallCenter = _getTileCenter(
+        tile.q,
+        tile.r,
+        id,
+        GameConfig.lodSize0,
+      );
 
       // dynamicHexSize 기준의 q, r 헥사 좌표 역산
-      final dynamicHex = HexService.latLngToHex(smallCenter, hexSize: dynamicSize);
+      final dynamicHex = HexService.latLngToHex(
+        smallCenter,
+        hexSize: dynamicSize,
+      );
       final dq = dynamicHex['q']!;
       final dr = dynamicHex['r']!;
       final String clusterId = _getTileId(dq, dr, dynamicSize);
@@ -231,12 +242,18 @@ class ConquestGame extends FlameGame {
 
   /// 타일 ID에 상응하는 지리적 중심점 캐시 반환
   LatLng _getTileCenter(int q, int r, String id, double hexSize) {
-    return _tileCenterCache.putIfAbsent(id, () => HexService.hexToLatLng(q, r, hexSize: hexSize));
+    return _tileCenterCache.putIfAbsent(
+      id,
+      () => HexService.hexToLatLng(q, r, hexSize: hexSize),
+    );
   }
 
   /// 타일 ID에 상응하는 지리적 6개 꼭짓점 캐시 반환
   List<LatLng> _getTileCorners(int q, int r, String id, double hexSize) {
-    return _tileCornersCache.putIfAbsent(id, () => HexService.getHexCorners(q, r, hexSize: hexSize));
+    return _tileCornersCache.putIfAbsent(
+      id,
+      () => HexService.getHexCorners(q, r, hexSize: hexSize),
+    );
   }
 
   /// 점령 타일 렌더링 업데이트 (LOD 병합 및 캐싱 최적화 버전)
@@ -275,7 +292,10 @@ class ConquestGame extends FlameGame {
     // [순간이동 가드] 카메라 중심점이 급변(1km 이상)했을 경우, 잔상 방지를 위해 기존 헥사 컴포넌트 즉시 강제 전체 소거
     final LatLng currentCenter = _mapController!.camera.center;
     if (_lastCameraCenter != null) {
-      final double dist = HexService.calculateDistance(_lastCameraCenter!, currentCenter);
+      final double dist = HexService.calculateDistance(
+        _lastCameraCenter!,
+        currentCenter,
+      );
       if (dist > 1000.0) {
         _tileMap.clear();
         final toRemove = children.whereType<HexTileComponent>().toList();
@@ -353,7 +373,8 @@ class ConquestGame extends FlameGame {
       }
 
       // [적군 영토 은폐 가드] 1순위 초고속 필터: 투영 및 지리 연산 전에 적군 타일을 선결 거름으로써 CPU 부하 99% 제거
-      if (dynamicHexSize >= GameConfig.lodSize3 && tileData.userId != _currentUserId) {
+      if (dynamicHexSize >= GameConfig.lodSize3 &&
+          tileData.userId != _currentUserId) {
         if (_tileMap.containsKey(id)) {
           final component = _tileMap.remove(id);
           if (component != null) remove(component);
@@ -363,7 +384,9 @@ class ConquestGame extends FlameGame {
 
       final centerLatLng = _getTileCenter(q, r, id, dynamicHexSize);
       final cornerLatLngs = _getTileCorners(q, r, id, dynamicHexSize);
-      final screenOffset = _mapController!.camera.latLngToScreenOffset(centerLatLng);
+      final screenOffset = _mapController!.camera.latLngToScreenOffset(
+        centerLatLng,
+      );
 
       final targetTileColorHex = (tileData.userId == _currentUserId)
           ? GameColors.myTileColorHex
@@ -373,16 +396,17 @@ class ConquestGame extends FlameGame {
         _tileMap[id]!.position = Vector2(screenOffset.dx, screenOffset.dy);
         _tileMap[id]!.updateData(colorHex: targetTileColorHex);
       } else {
-        final component = HexTileComponent(
-          q: q,
-          r: r,
-          centerLatLng: centerLatLng,
-          cornerLatLngs: cornerLatLngs,
-          colorHex: targetTileColorHex,
-          hexSize: dynamicHexSize,
-        )
-          ..position = Vector2(screenOffset.dx, screenOffset.dy)
-          ..priority = 0;
+        final component =
+            HexTileComponent(
+                q: q,
+                r: r,
+                centerLatLng: centerLatLng,
+                cornerLatLngs: cornerLatLngs,
+                colorHex: targetTileColorHex,
+                hexSize: dynamicHexSize,
+              )
+              ..position = Vector2(screenOffset.dx, screenOffset.dy)
+              ..priority = 0;
         _tileMap[id] = component;
         add(component);
       }
@@ -401,7 +425,9 @@ class ConquestGame extends FlameGame {
     }
 
     // 점령 중인 타일 특수 상태 처리 (위성 점령 - 정밀 LOD 0 에서만 가시화)
-    if (isSatelliteCapturing && satelliteCapturingTileId != null && dynamicHexSize == GameConfig.lodSize0) {
+    if (isSatelliteCapturing &&
+        satelliteCapturingTileId != null &&
+        dynamicHexSize == GameConfig.lodSize0) {
       final bool shouldAnimateTile =
           _satelliteCapturePhase == SatelliteCapturePhase.capturing;
       _updateActiveCaptureTile(
@@ -470,21 +496,24 @@ class ConquestGame extends FlameGame {
 
         if (isGeographicallyVisible) {
           final cornerLatLngs = _getTileCorners(q, r, tileId, hexSize);
-          final screenOffset = _mapController!.camera.latLngToScreenOffset(centerLatLng);
+          final screenOffset = _mapController!.camera.latLngToScreenOffset(
+            centerLatLng,
+          );
 
-          final tempTile = HexTileComponent(
-            q: q,
-            r: r,
-            centerLatLng: centerLatLng,
-            cornerLatLngs: cornerLatLngs,
-            colorHex: null,
-            hexSize: hexSize,
-            isCapturing: isCapturing,
-            progress: progress,
-            capturingColorHex: colorHex,
-          )
-            ..position = Vector2(screenOffset.dx, screenOffset.dy)
-            ..priority = 0;
+          final tempTile =
+              HexTileComponent(
+                  q: q,
+                  r: r,
+                  centerLatLng: centerLatLng,
+                  cornerLatLngs: cornerLatLngs,
+                  colorHex: null,
+                  hexSize: hexSize,
+                  isCapturing: isCapturing,
+                  progress: progress,
+                  capturingColorHex: colorHex,
+                )
+                ..position = Vector2(screenOffset.dx, screenOffset.dy)
+                ..priority = 0;
           _tileMap[tileId] = tempTile;
           add(tempTile);
         }
@@ -499,7 +528,10 @@ class ConquestGame extends FlameGame {
     // [순간이동 가드] 카메라 중심점이 급변(1km 이상)했을 경우, 잔상 방지를 위해 기존 헥사 컴포넌트 즉시 강제 전체 소거
     final LatLng currentCenter = _mapController!.camera.center;
     if (_lastCameraCenter != null) {
-      final double dist = HexService.calculateDistance(_lastCameraCenter!, currentCenter);
+      final double dist = HexService.calculateDistance(
+        _lastCameraCenter!,
+        currentCenter,
+      );
       if (dist > 1000.0) {
         _tileMap.clear();
         final toRemove = children.whereType<HexTileComponent>().toList();
@@ -577,7 +609,8 @@ class ConquestGame extends FlameGame {
       }
 
       // [적군 영토 은폐 가드] 1순위 초고속 필터: 투영 및 지리 연산 전에 적군 타일을 선결 거름으로써 CPU 부하 99% 제거
-      if (dynamicHexSize >= GameConfig.lodSize3 && tileData.userId != _currentUserId) {
+      if (dynamicHexSize >= GameConfig.lodSize3 &&
+          tileData.userId != _currentUserId) {
         if (_tileMap.containsKey(id)) {
           final component = _tileMap.remove(id);
           if (component != null) remove(component);
@@ -587,7 +620,9 @@ class ConquestGame extends FlameGame {
 
       final centerLatLng = _getTileCenter(q, r, id, dynamicHexSize);
       final cornerLatLngs = _getTileCorners(q, r, id, dynamicHexSize);
-      final screenOffset = _mapController!.camera.latLngToScreenOffset(centerLatLng);
+      final screenOffset = _mapController!.camera.latLngToScreenOffset(
+        centerLatLng,
+      );
 
       final targetTileColorHex = (tileData.userId == _currentUserId)
           ? GameColors.myTileColorHex
@@ -597,16 +632,17 @@ class ConquestGame extends FlameGame {
         _tileMap[id]!.position = Vector2(screenOffset.dx, screenOffset.dy);
         _tileMap[id]!.updateData(colorHex: targetTileColorHex);
       } else {
-        final component = HexTileComponent(
-          q: q,
-          r: r,
-          centerLatLng: centerLatLng,
-          cornerLatLngs: cornerLatLngs,
-          colorHex: targetTileColorHex,
-          hexSize: dynamicHexSize,
-        )
-          ..position = Vector2(screenOffset.dx, screenOffset.dy)
-          ..priority = 0;
+        final component =
+            HexTileComponent(
+                q: q,
+                r: r,
+                centerLatLng: centerLatLng,
+                cornerLatLngs: cornerLatLngs,
+                colorHex: targetTileColorHex,
+                hexSize: dynamicHexSize,
+              )
+              ..position = Vector2(screenOffset.dx, screenOffset.dy)
+              ..priority = 0;
         _tileMap[id] = component;
         add(component);
       }

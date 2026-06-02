@@ -308,6 +308,8 @@ class _GameMapWidgetState extends State<GameMapWidget>
                     }
                   });
                 }
+                // [Desync 박멸] 부드러운 줌(관성 및 핀치 줌 포함) 시 1프레임 시차도 없도록 지리-화면 투영을 매 프레임 실시간 강제 정렬
+                widget.game.updateProjection(_mapController);
               },
             ),
             children: [
