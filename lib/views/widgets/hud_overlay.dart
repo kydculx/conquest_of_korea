@@ -8,7 +8,6 @@ import '../../core/constants/colors.dart';
 import '../../core/constants/strings.dart';
 import '../../providers/game_provider.dart';
 import '../../providers/auth_provider.dart';
-import '../../services/hex_service.dart';
 import '../screens/game_guide_screen.dart';
 
 /// 인게임 HUD 오버레이 (점수판, 점령 버튼, 유틸리티 버튼, 위성 스캔 연동)
@@ -976,18 +975,8 @@ class _SatelliteMapBubbleState extends State<_SatelliteMapBubble> {
             selectedId,
           );
           detailsText = GameStrings.satLockOnReady;
-          final mainBaseId = auth.profile?.mainBaseTileId;
-          int distance = 0;
-          if (mainBaseId != null && mainBaseId.isNotEmpty) {
-            final partsBase = mainBaseId.split('_');
-            final bq = int.tryParse(partsBase[1]) ?? 0;
-            final br = int.tryParse(partsBase[2]) ?? 0;
-            final partsTarget = selectedId.split('_');
-            final tq = int.tryParse(partsTarget[1]) ?? 0;
-            final tr = int.tryParse(partsTarget[2]) ?? 0;
-            distance = HexService.hexDistance(bq, br, tq, tr);
-            distanceStr = '\$ $distance';
-          }
+          final distance = game.getTileDistance(selectedId);
+          distanceStr = '\$ $distance';
 
           // 위성 점령 소모 재화(골드) 부족 여부 검증
           final double currentGold = game.currentGold;

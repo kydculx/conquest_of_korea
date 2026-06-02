@@ -1013,8 +1013,96 @@ class GameProvider extends ChangeNotifier with WidgetsBindingObserver {
   /// 정보가 보안 해제(Reveal)된 타일 ID와 해제 일시 맵
   final Map<String, DateTime> _revealedTileTimes = {};
 
-  /// 대상 타일과 유저의 본진 타일 간의 헥사 거리를 계산하여 반환합니다.
+  /// 본진 기지에서 시작하여 플레이어가 소유한 타일망을 통해서만 이동하여 대상 타일까지 도달하는 최단 BFS 경로를 탐색합니다.
+  /// 경로를 찾으면 해당 경로의 타일 목록(`List<String>`)을 반환하고, 찾지 못하면 null을 반환합니다.
+  List<String>? _findShortestPathToHQ(String targetTileId) {
+    final mainBaseId = _authProvider?.profile?.mainBaseTileId;
+    final myId = _authProvider?.user?.id;
+    if (mainBaseId == null || mainBaseId.isEmpty || myId == null) {
+      return null;
+    }
+
+    if (mainBaseId == targetTileId) {
+      return [mainBaseId];
+    }
+
+    final partsTarget = targetTileId.split('_');
+    if (partsTarget.length != 3 || partsTarget[0] != 'hex') return null;
+    final tq = int.tryParse(partsTarget[1]);
+    final tr = int.tryParse(partsTarget[2]);
+    if (tq == null || tr == null) return null;
+
+    final partsBase = mainBaseId.split('_');
+    if (partsBase.length != 3 || partsBase[0] != 'hex') return null;
+    final hqQ = int.tryParse(partsBase[1]);
+    final hqR = int.tryParse(partsBase[2]);
+    if (hqQ == null || hqR == null) return null;
+
+    // BFS 큐: 각 원소는 경로의 타일 ID 리스트
+    final queue = <List<String>>[
+      [mainBaseId],
+    ];
+    final visited = <String>{mainBaseId};
+
+    const directions = [
+      [1, 0],
+      [1, -1],
+      [0, -1],
+      [-1, 0],
+      [-1, 1],
+      [0, 1],
+    ];
+
+    while (queue.isNotEmpty) {
+      final path = queue.removeAt(0);
+      final currentId = path.last;
+
+      if (currentId == targetTileId) {
+        return path;
+      }
+
+      final partsCurr = currentId.split('_');
+      if (partsCurr.length != 3 || partsCurr[0] != 'hex') continue;
+      final cq = int.tryParse(partsCurr[1]);
+      final cr = int.tryParse(partsCurr[2]);
+      if (cq == null || cr == null) continue;
+
+      for (final dir in directions) {
+        final nq = cq + dir[0];
+        final nr = cr + dir[1];
+        final neighborId = 'hex_${nq}_$nr';
+
+        if (visited.contains(neighborId)) continue;
+
+        // 대상 타일에 도달하면 즉시 경로 추가
+        if (neighborId == targetTileId) {
+          queue.add(List<String>.from(path)..add(neighborId));
+          visited.add(neighborId);
+          continue;
+        }
+
+        // 내 영토인지 여부
+        final tile = _capturedTiles[neighborId];
+        final isMine = tile != null && tile.userId == myId;
+
+        if (isMine) {
+          queue.add(List<String>.from(path)..add(neighborId));
+          visited.add(neighborId);
+        }
+      }
+    }
+
+    return null;
+  }
+
+  /// 대상 타일과 유저의 본진에서 출발하는 영토망을 따르는 최단 경로(점선 홉 수)를 계산하여 반환합니다.
   int getTileDistance(String targetTileId) {
+    final path = _findShortestPathToHQ(targetTileId);
+    if (path != null && path.length >= 2) {
+      return path.length - 1; // 점선이 통과하는 타일 홉 수 (본진 -> 내 땅들 -> 대상 타일의 실제 최단 홉 수)
+    }
+
+    // 폴백: 최단 경로가 없거나 예외 발생 시, 본진과의 물리 직선 거리를 반환
     final mainBaseId = _authProvider?.profile?.mainBaseTileId;
     if (mainBaseId == null || mainBaseId.isEmpty) return 0;
 
@@ -1298,47 +1386,20 @@ class GameProvider extends ChangeNotifier with WidgetsBindingObserver {
     return false;
   }
 
-  /// 본진(HQ) 타일과 대상 타일 간의 H3 헥사곤 거리를 산출하여 위성 점령 완료에 소요될 지연 시간(초)을 계산합니다.
+  /// 내 영토와 대상 타일 간의 헥사곤 거리를 산출하여 위성 점령 완료에 소요될 지연 시간(초)을 계산합니다.
   int getSatelliteCaptureDurationSeconds(String tileId) {
-    final mainBaseId = _authProvider?.profile?.mainBaseTileId;
-    if (mainBaseId == null || mainBaseId.isEmpty) return 0;
-
-    final partsBase = mainBaseId.split('_');
-    final bq = int.tryParse(partsBase[1]);
-    final br = int.tryParse(partsBase[2]);
-
-    final partsTarget = tileId.split('_');
-    final tq = int.tryParse(partsTarget[1]);
-    final tr = int.tryParse(partsTarget[2]);
-
-    if (bq == null || br == null || tq == null || tr == null) return 0;
-
-    final dist = HexService.hexDistance(bq, br, tq, tr);
+    final dist = getTileDistance(tileId);
     final travelSeconds = dist;
     const captureSeconds = 1; // 점령 고유 소요시간 1초
     return travelSeconds + captureSeconds;
   }
 
-  /// 본진(HQ) 타일과 대상 타일 간의 거리를 기준으로 하여, 위성 점령의 총 시간 중 '이동(비행) 시간'이 차지하는 비율을 산출합니다.
+  /// 내 영토와 대상 타일 간의 거리를 기준으로 하여, 위성 점령의 총 시간 중 '이동(비행) 시간'이 차지하는 비율을 산출합니다.
   double getSatelliteTravelRatio(String tileId) {
-    final mainBaseId = _authProvider?.profile?.mainBaseTileId;
-    if (mainBaseId == null || mainBaseId.isEmpty) return 0.8;
-
-    final partsBase = mainBaseId.split('_');
-    final bq = int.tryParse(partsBase[1]);
-    final br = int.tryParse(partsBase[2]);
-
-    final partsTarget = tileId.split('_');
-    final tq = int.tryParse(partsTarget[1]);
-    final tr = int.tryParse(partsTarget[2]);
-
-    if (bq == null || br == null || tq == null || tr == null) return 0.8;
-
-    final dist = HexService.hexDistance(bq, br, tq, tr);
-    final travelSeconds = dist.toDouble();
+    final dist = getTileDistance(tileId).toDouble();
     const captureSeconds = 1.0; // 점령 고유 소요시간 1초
-    final total = travelSeconds + captureSeconds;
-    return total > 0.0 ? (travelSeconds / total) : 0.8;
+    final total = dist + captureSeconds;
+    return total > 0.0 ? (dist / total) : 0.8;
   }
 
   /// 지정한 대상 헥사곤 타일에 대한 위성 연결 점령(Satellite Capture) 타이머를 구동하여 점령을 실행합니다.
@@ -1374,21 +1435,8 @@ class GameProvider extends ChangeNotifier with WidgetsBindingObserver {
       return;
     }
 
-    final partsBase = mainBaseId.split('_');
-    final bq = int.tryParse(partsBase[1]);
-    final br = int.tryParse(partsBase[2]);
-
-    final partsTarget = tileId.split('_');
-    final tq = int.tryParse(partsTarget[1]);
-    final tr = int.tryParse(partsTarget[2]);
-
-    if (bq == null || br == null || tq == null || tr == null) {
-      addAlert(GameStrings.satelliteCoordError, AlertType.error);
-      return;
-    }
-
-    // 거리에 비례하여 점령 소요 시간 계산 (1타일당 1초)
-    final dist = HexService.hexDistance(bq, br, tq, tr);
+    // 내 영토로부터의 최단 거리에 비례하여 점령 소요 시간 및 골드 비용 계산
+    final dist = getTileDistance(tileId);
 
     // 위성 점령 소모 재화 부족 검증 (거리가 D이면 D GP 소모)
     if (_currentGold < dist) {
@@ -1527,10 +1575,7 @@ class GameProvider extends ChangeNotifier with WidgetsBindingObserver {
         if (profile != null) {
           final mainBaseId = profile.mainBaseTileId;
           if (mainBaseId != null && mainBaseId.isNotEmpty) {
-            final partsBase = mainBaseId.split('_');
-            final bq = int.tryParse(partsBase[1]) ?? 0;
-            final br = int.tryParse(partsBase[2]) ?? 0;
-            final dist = HexService.hexDistance(bq, br, q, r);
+            final dist = getTileDistance(tileId);
             
             // 실시간 축적분이 담긴 최신 _currentGold 기준으로 거리 차감 진행
             final newGold = (_currentGold - dist).clamp(0.0, double.infinity);

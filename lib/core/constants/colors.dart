@@ -3,12 +3,14 @@ import 'package:flutter/material.dart';
 /// 게임 전반에서 사용되는 공용 전술 컬러 클래스 (외부 제어 및 동적 갱신 가능)
 class GameColors {
   /// 내 영토(타일)용 캐주얼 파스텔 파란색 (동적 변경 가능한 변수로 전환)
-  static Color myTileColor = const Color(0xFF64B5F6);
-  static String myTileColorHex = '#64B5F6';
+  static Color myTileColor = const Color.fromARGB(255, 204, 0, 255);
+  static String get myTileColorHex =>
+      '#${myTileColor.toARGB32().toRadixString(16).padLeft(8, '0').substring(2).toUpperCase()}';
 
   /// 상대 영토(타일)용 캐주얼 파스텔 회색 (동적 변경 가능한 변수로 전환)
-  static Color enemyTileColor = const Color(0xFF90A4AE);
-  static String enemyTileColorHex = '#90A4AE';
+  static Color enemyTileColor = const Color.fromARGB(255, 144, 164, 174);
+  static String get enemyTileColorHex =>
+      '#${enemyTileColor.toARGB32().toRadixString(16).padLeft(8, '0').substring(2).toUpperCase()}';
 
   /// 앱 전반의 아기자기한 다크 테마용 배경 그라데이션
   static const Gradient cozyDarkGradient = LinearGradient(
@@ -43,6 +45,7 @@ class GameColors {
 
   /// 반투명 우유빛 오버레이 배경 컬러 -> 80% 반투명 다크 딥 인디고 젤리
   static Color backgroundTranslucent = const Color(0xCC1A2232);
+
   /// 가독성을 대폭 높인 메인 텍스트용 차콜 네이비 컬러 -> 맑고 뽀얀 파스텔 민트 화이트
   static Color textPrimary = const Color(0xFFECEFF1);
 
@@ -101,14 +104,12 @@ class GameColors {
       final parsed = _parseHexColor(myColor);
       if (parsed != null) {
         myTileColor = parsed;
-        myTileColorHex = myColor;
       }
     }
     if (enemyColor != null) {
       final parsed = _parseHexColor(enemyColor);
       if (parsed != null) {
         enemyTileColor = parsed;
-        enemyTileColorHex = enemyColor;
       }
     }
     if (accent != null) {
