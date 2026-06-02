@@ -914,6 +914,7 @@ class _SatelliteMapBubbleState extends State<_SatelliteMapBubble> {
 
     // 내 소유 및 빈 타일 판별
     final myId = auth.user?.id;
+    final String myNickname = auth.profile?.nickname ?? '';
     final bool isMine = existingTile != null && existingTile.userId == myId;
     final bool isTileEmpty =
         existingTile == null ||
@@ -1003,7 +1004,6 @@ class _SatelliteMapBubbleState extends State<_SatelliteMapBubble> {
         if (isMine) {
           themeColor = GameColors.accentNeon;
           isError = false;
-          final myNickname = auth.profile?.nickname ?? '';
           detailsText = GameStrings.satAlreadyCapturedByMe(myNickname);
           showActionButton = false;
         } else {
@@ -1059,6 +1059,8 @@ class _SatelliteMapBubbleState extends State<_SatelliteMapBubble> {
         isRevealed: isRevealed,
         onRevealPressed: onRevealPressed,
         revealExpiration: revealExpiration,
+        isMine: isMine,
+        myNickname: myNickname,
       ),
     );
   }
@@ -1088,6 +1090,8 @@ class _BubbleColumn extends StatelessWidget {
   final bool isRevealed;
   final VoidCallback? onRevealPressed;
   final DateTime? revealExpiration;
+  final bool isMine;
+  final String myNickname;
 
   const _BubbleColumn({
     required this.themeColor,
@@ -1110,6 +1114,8 @@ class _BubbleColumn extends StatelessWidget {
     required this.isRevealed,
     this.onRevealPressed,
     this.revealExpiration,
+    required this.isMine,
+    required this.myNickname,
   });
 
   @override
@@ -1135,6 +1141,8 @@ class _BubbleColumn extends StatelessWidget {
       isRevealed: isRevealed,
       onRevealPressed: onRevealPressed,
       revealExpiration: revealExpiration,
+      isMine: isMine,
+      myNickname: myNickname,
     );
   }
 }
@@ -1163,6 +1171,8 @@ class _BubbleBody extends StatefulWidget {
   final bool isRevealed;
   final VoidCallback? onRevealPressed;
   final DateTime? revealExpiration;
+  final bool isMine;
+  final String myNickname;
 
   const _BubbleBody({
     required this.themeColor,
@@ -1185,6 +1195,8 @@ class _BubbleBody extends StatefulWidget {
     required this.isRevealed,
     this.onRevealPressed,
     this.revealExpiration,
+    required this.isMine,
+    required this.myNickname,
   });
 
   @override
@@ -1229,22 +1241,12 @@ class _BubbleBodyState extends State<_BubbleBody> {
                         height: 5,
                         margin: const EdgeInsets.only(right: 6, top: 1),
                         decoration: BoxDecoration(
-                          color: widget.themeColor,
+                          color: GameColors.textPrimary,
                           shape: BoxShape.circle,
                         ),
                       ),
                       Expanded(
-                        child: Text(
-                          widget.detailsText,
-                          style: GoogleFonts.fredoka(
-                            color: widget.isError
-                                ? GameColors.error
-                                : GameColors.textPrimary,
-                            fontSize: 11.5,
-                            fontWeight: FontWeight.bold,
-                            letterSpacing: 0.4,
-                          ),
-                        ),
+                        child: _buildDetailsText(context),
                       ),
                       const SizedBox(width: 20), // 우측 닫기(X) 버튼 영역 겹침 방지 여백 강제 확보
                     ],
@@ -1352,34 +1354,6 @@ class _BubbleBodyState extends State<_BubbleBody> {
                         ),
                       ],
                     ),
-                  ],
-                  // [신규] 점령 프로필명 정보 노출 (보안 해제 상태 연동 및 귀여운 명칭화)
-                  if (widget.agentNicknameFuture != null) ...[
-                    const SizedBox(height: 6),
-                    if (widget.isRevealed)
-                      FutureBuilder<String>(
-                        future: widget.agentNicknameFuture,
-                        builder: (context, snapshot) {
-                          final nickname = snapshot.data ?? '...';
-                          return Text(
-                            '${GameStrings.satVillageOwner}$nickname',
-                            style: GoogleFonts.quicksand(
-                              color: widget.themeColor,
-                              fontSize: 10.5,
-                              fontWeight: FontWeight.w900,
-                            ),
-                          );
-                        },
-                      )
-                    else
-                      Text(
-                        '${GameStrings.satVillageOwner}${GameStrings.satItsSecret}',
-                        style: GoogleFonts.quicksand(
-                          color: const Color(0xFFFF5252),
-                          fontSize: 10.5,
-                          fontWeight: FontWeight.w900,
-                        ),
-                      ),
                   ],
                   // 하단 전술 행동 버튼 (All-In-One 통합)
                   if (widget.showActionButton &&
@@ -1597,6 +1571,62 @@ class _BubbleBodyState extends State<_BubbleBody> {
           ),
         ],
       ),
+    );
+  }
+
+  /// 닉네임과 테마색/타일색을 연동하여 '누구 님의 구역입니다.' 형태의 미려한 RichText 및 일반 상태 텍스트를 분기 렌더링합니다.
+  Widget _buildDetailsText(BuildContext context) {
+    final defaultStyle = GoogleFonts.fredoka(
+      color: GameColors.textPrimary,
+      fontSize: 11.5,
+      fontWeight: FontWeight.bold,
+      letterSpacing: 0.4,
+    );
+
+    // 1. 본인 소유의 타일인 경우 -> 동기적으로 내 닉네임을 내 타일 테마색(GameColors.myTileColor)으로 물들여 표시
+    if (widget.isMine) {
+      final nameColor = GameColors.myTileColor;
+      return RichText(
+        text: TextSpan(
+          style: defaultStyle,
+          children: [
+            TextSpan(
+              text: widget.myNickname,
+              style: TextStyle(color: nameColor),
+            ),
+            const TextSpan(text: ' 님의 구역입니다.'),
+          ],
+        ),
+      );
+    }
+
+    // 2. 다른 플레이어 소유이고 상세 엿보기가 활성화된 경우 -> 비동기적으로 상대 닉네임을 상대 테마색(widget.themeColor)으로 물들여 표시
+    if (!widget.isMine && widget.isRevealed && widget.agentNicknameFuture != null) {
+      final nameColor = widget.themeColor;
+      return FutureBuilder<String>(
+        future: widget.agentNicknameFuture,
+        builder: (context, snapshot) {
+          final nickname = snapshot.data ?? '...';
+          return RichText(
+            text: TextSpan(
+              style: defaultStyle,
+              children: [
+                TextSpan(
+                  text: nickname,
+                  style: TextStyle(color: nameColor),
+                ),
+                const TextSpan(text: ' 님의 구역입니다.'),
+              ],
+            ),
+          );
+        },
+      );
+    }
+
+    // 3. 그 외 일반 정보 상태 (중립지, 정보 가림 상태, 통신 해제 등) -> 기본 detailsText 일반 출력
+    return Text(
+      widget.detailsText,
+      style: defaultStyle,
     );
   }
 }
