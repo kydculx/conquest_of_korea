@@ -640,6 +640,12 @@ class GameStrings {
   /// 원격 모드 통신 차단 라벨
   static String get satDisconnectedLabel => 'satDisconnectedLabel'.tr();
 
+  /// 연결 끊긴 적 영토 경고 라벨
+  static String get satDisconnectedOtherTerritory => 'satDisconnectedOtherTerritory'.tr();
+
+  /// 연결 끊긴 적 영토 표시 라벨
+  static String get satDisconnectedOtherTerritoryLabel => 'satDisconnectedOtherTerritoryLabel'.tr();
+
   /// 원격 모드 조준 준비 완료 라벨
   static String get satLockOnReady => 'satLockOnReady'.tr();
 

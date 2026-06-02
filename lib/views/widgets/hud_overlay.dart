@@ -902,10 +902,6 @@ class _SatelliteMapBubbleState extends State<_SatelliteMapBubble> {
         game.isSatelliteCapturing &&
         game.satelliteCapturingTileId == selectedId;
 
-    // --- 보안 판독(Reveal) 권한 조회 ---
-    final bool isRevealed = game.isTileInfoRevealed(selectedId);
-    void onRevealPressed() => game.revealTileInfo(selectedId);
-
     // --- All-In-One 타일 기본 정보 파싱 ---
     final parts = selectedId.split('_');
     final int q = parts.length == 3 ? (int.tryParse(parts[1]) ?? 0) : 0;
@@ -916,8 +912,24 @@ class _SatelliteMapBubbleState extends State<_SatelliteMapBubble> {
     final bool isShieldActive = existingTile?.isShieldActive ?? false;
     final DateTime? shieldExpiration = existingTile?.shieldExpiration;
 
+    // 내 소유 및 빈 타일 판별
+    final myId = auth.user?.id;
+    final bool isMine = existingTile != null && existingTile.userId == myId;
+    final bool isTileEmpty =
+        existingTile == null ||
+        existingTile.userId == null ||
+        existingTile.userId == 'none';
+
+    // 연결망 판단 (내가 소유한 구역이거나, 본진에서부터 유효한 BFS 연결망이 닿는 경우 true)
+    final bool isConnected = isMine || game.checkSatelliteCaptureConnectivity(selectedId);
+
+    // --- 보안 판독(Reveal) 권한 조회 ---
+    // 만약 타인 영토인데 연결망마저 끊어졌다면, 무조건 보안 해제 상태를 false로 잠금
+    final bool isRevealed = isMine ? true : (isConnected && game.isTileInfoRevealed(selectedId));
+    void onRevealPressed() => game.revealTileInfo(selectedId);
+
     final String? ownerId =
-        (existingTile != null && existingTile.userId != 'none')
+        (existingTile != null && existingTile.userId != 'none' && (isMine || isConnected))
         ? existingTile.userId
         : null;
     final Future<String>? nicknameFuture = ownerId != null
@@ -949,14 +961,8 @@ class _SatelliteMapBubbleState extends State<_SatelliteMapBubble> {
       buttonGradient = [const Color(0xFFFF5252), const Color(0xFFC62828)];
       onActionPressed = () => game.cancelSatelliteCapture();
     } else {
-      final isTileEmpty =
-          existingTile == null ||
-          existingTile.userId == null ||
-          existingTile.userId == 'none';
-
       if (isTileEmpty) {
         final satCooltime = game.remainingSatelliteCaptureCoolSeconds;
-        final isConnected = game.checkSatelliteCaptureConnectivity(selectedId);
 
         if (satCooltime > 0) {
           final minutes = satCooltime ~/ 60;
@@ -993,10 +999,7 @@ class _SatelliteMapBubbleState extends State<_SatelliteMapBubble> {
           timeStr = GameStrings.secondsUnit(durationSec.toString());
         }
       } else {
-        // 기존 점령지가 존재할 때 내 소유(isMine)인지 타인 소유인지 정교하게 판독
-        final myId = auth.user?.id;
-        final bool isMine = existingTile.userId == myId;
-
+        // 기존 점령지가 존재할 때
         if (isMine) {
           themeColor = GameColors.accentNeon;
           isError = false;
@@ -1004,20 +1007,28 @@ class _SatelliteMapBubbleState extends State<_SatelliteMapBubble> {
           detailsText = GameStrings.satAlreadyCapturedByMe(myNickname);
           showActionButton = false;
         } else {
-          themeColor = GameColors.error;
-          isError = true;
-          detailsText = GameStrings.satOtherPlayerTerritory;
+          // 상대 타일인 경우
+          if (!isConnected) {
+            themeColor = GameColors.error;
+            isError = true;
+            detailsText = GameStrings.satDisconnectedOtherTerritory;
+            showActionButton = false; // 엿보기 버튼 원천 차단
+          } else {
+            themeColor = GameColors.error;
+            isError = true;
+            detailsText = GameStrings.satOtherPlayerTerritory;
 
-          // 상대 타일이고 보안 판독 전인 경우 -> [동네 엿보기] 유료 버튼 바인딩
-          if (!isRevealed) {
-            themeColor = const Color(0xFFFF7700);
-            final dist = game.getTileDistance(selectedId);
-            showActionButton = true;
-            actionButtonText = GameStrings.satRevealVillageWithGp(
-              dist.toString(),
-            );
-            buttonGradient = [const Color(0xFFFF8800), const Color(0xFFE65100)];
-            onActionPressed = onRevealPressed;
+            // 상대 타일이고 보안 판독 전인 경우 -> [동네 엿보기] 유료 버튼 바인딩
+            if (!isRevealed) {
+              themeColor = const Color(0xFFFF7700);
+              final dist = game.getTileDistance(selectedId);
+              showActionButton = true;
+              actionButtonText = GameStrings.satRevealVillageWithGp(
+                dist.toString(),
+              );
+              buttonGradient = [const Color(0xFFFF8800), const Color(0xFFE65100)];
+              onActionPressed = onRevealPressed;
+            }
           }
         }
       }
