@@ -810,7 +810,7 @@ class GameStrings {
   static String satShieldWithTime(String time) =>
       'satShieldWithTime'.tr(namedArgs: {'time': time});
 
-  /// 엿보기 구경 만료 시간 표시 (동적 시간 전달)
+  /// 정보시간 표시 (동적 시간 전달)
   static String satPeekTimeWithTime(String time) =>
       'satPeekTimeWithTime'.tr(namedArgs: {'time': time});
 

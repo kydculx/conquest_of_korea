@@ -249,7 +249,7 @@
   "satVillageOwner": "소유주: ",
   "satItsSecret": "정보를 확인할 수 없습니다.",
   "satShieldWithTime": "방어 보호막: {time}",
-  "satPeekTimeWithTime": "잔여 시간: {time}",
+  "satPeekTimeWithTime": "정보시간: {time}",
   "satCaptureCount": "점령 횟수: {count}",
   "languageSettings": "언어 설정",
   "languageSettingsSub": "애플리케이션 표시 언어를 설정합니다.",
