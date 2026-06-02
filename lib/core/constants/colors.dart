@@ -2,13 +2,13 @@ import 'package:flutter/material.dart';
 
 /// 게임 전반에서 사용되는 공용 전술 컬러 클래스 (외부 제어 및 동적 갱신 가능)
 class GameColors {
-  /// 내 영토(타일)용 캐주얼 파스텔 파란색 (동적 변경 가능한 변수로 전환)
-  static Color myTileColor = const Color.fromARGB(255, 204, 0, 255);
+  /// 내 영토(타일)용 화사한 비비드 네온 핑크 마젠타 (시인성과 화사함 대폭 보강)
+  static Color myTileColor = const Color(0xFFFF17AB);
   static String get myTileColorHex =>
       '#${myTileColor.toARGB32().toRadixString(16).padLeft(8, '0').substring(2).toUpperCase()}';
 
-  /// 상대 영토(타일)용 캐주얼 파스텔 회색 (동적 변경 가능한 변수로 전환)
-  static Color enemyTileColor = const Color.fromARGB(255, 144, 164, 174);
+  /// 상대 영토(타일)용 화사하고 세련된 파스텔 라벤더 실버 블루 (칙칙한 회색 탈피)
+  static Color enemyTileColor = const Color(0xFF9FA8DA);
   static String get enemyTileColorHex =>
       '#${enemyTileColor.toARGB32().toRadixString(16).padLeft(8, '0').substring(2).toUpperCase()}';
 
