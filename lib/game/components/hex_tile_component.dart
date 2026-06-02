@@ -1,18 +1,30 @@
 import 'dart:ui';
 import 'dart:math' as math;
 import 'package:flame/components.dart';
+import 'package:latlong2/latlong.dart' hide Path;
 import '../../core/constants/colors.dart';
 import '../../core/constants/game_config.dart';
 import '../conquest_game.dart';
 
 /// 지도 상에서 특정 헥사곤 거점의 영역과 외각선을 그리고, 현재 점령 중일 때 게이지 진행 상황 및 펄스 이펙트 애니메이션을 렌더링하는 Flame 컴포넌트
+/// 중심점(0, 0) 기준 로컬 좌표계 및 줌 레벨별 Bezier 그리기 패스 캐싱을 활용하여 극대화된 렌더링 속도를 보장합니다.
 class HexTileComponent extends PositionComponent
     with HasGameReference<ConquestGame> {
+  /// 헥사곤 좌표축 파라미터
+  final int q;
+  final int r;
+
+  /// 타일의 지리적 고정 중심 좌표
+  final LatLng centerLatLng;
+
+  /// 타일의 지리적 고정 6개 꼭짓점 좌표 목록
+  final List<LatLng> cornerLatLngs;
+
+  /// 이 헥사곤이 현재 렌더링되고 있는 줌 레벨 스케일의 LOD 픽셀 크기
+  final double hexSize;
+
   /// 타일이 점령되었을 때 칠해질 요원의 진영 색상 (Hex)
   String? colorHex;
-
-  /// 스크린 기준으로 산출된 헥사곤 꼭짓점 6개의 픽셀 좌표 리스트
-  List<Offset> corners;
 
   /// 현재 이 타일이 요원(물리/위성)에 의해 점령 시도 중인지 여부
   bool isCapturing;
@@ -22,6 +34,15 @@ class HexTileComponent extends PositionComponent
 
   /// 현재 이 타일을 점령 시도 중인 요원의 진영 색상 (Hex)
   String? capturingColorHex;
+
+  /// 로컬 꼭짓점 6개의 픽셀 상대 좌표 리스트 (중심 (0, 0) 기준)
+  List<Offset> localCorners = [];
+
+  /// 마지막으로 꼭짓점 및 패스를 연산 완료한 시점의 카메라 줌 레벨 캐시
+  double lastCalculatedZoom = -1.0;
+
+  /// 마지막으로 꼭짓점 및 패스를 연산 완료한 시점의 카메라 회전 각도(라디안) 캐시
+  double lastCalculatedRotation = -999.0;
 
   /// 타일 내부 영역을 채울 때 사용하는 Paint 객체
   late Paint _fillPaint;
@@ -35,28 +56,25 @@ class HexTileComponent extends PositionComponent
   /// 점령 외곽선 펄스 애니메이션 속도를 계산하기 위한 타임 누적 값
   double _timer = 0;
 
-  /// 꼭짓점 좌표가 변경되어 캐시가 갱신될 때 산출한 타일 중심점 X좌표
-  double _centerX = 0;
-
-  /// 꼭짓점 좌표가 변경되어 캐시가 갱신될 때 산출한 타일 중심점 Y좌표
-  double _centerY = 0;
-
-  /// 헥사곤의 평균 반지름 (그라데이션 연산용)
+  /// 헥사곤의 평균 반지름 (그라데이션 및 프러스텀 컬링 연산용)
   double _tileRadius = 0;
 
   /// HexTileComponent 생성자로 필요한 헥사곤 좌표 정보와 상태를 설정받습니다.
   HexTileComponent({
+    required this.q,
+    required this.r,
+    required this.centerLatLng,
+    required this.cornerLatLngs,
     required this.colorHex,
-    required this.corners,
+    required this.hexSize,
     this.isCapturing = false,
     this.progress = 0.0,
     this.capturingColorHex,
   });
 
-  /// 헥사곤 좌표 꼭짓점, 점령 요원의 식별 색상, 점령 진행도 상태가 갱신되었을 때 해당 상태를 반영하고 화면 갱신을 준비합니다.
+  /// 점령 요원의 식별 색상, 점령 진행도 상태가 갱신되었을 때 해당 상태를 반영하고 화면 갱신을 준비합니다.
   void updateData({
     String? colorHex,
-    List<Offset>? corners,
     bool? isCapturing,
     double? progress,
     String? capturingColorHex,
@@ -64,10 +82,6 @@ class HexTileComponent extends PositionComponent
     if (colorHex != null && this.colorHex != colorHex) {
       this.colorHex = colorHex;
       if (isMounted) _updateStyles();
-    }
-    if (corners != null) {
-      this.corners = corners;
-      _cachedPath = null; // 좌표 변경 시 패시 캐시 무효화
     }
     if (isCapturing != null) this.isCapturing = isCapturing;
     if (progress != null) this.progress = progress;
@@ -115,52 +129,66 @@ class HexTileComponent extends PositionComponent
 
   @override
   void render(Canvas canvas) {
-    if (corners.isEmpty) return;
+    // 0. 수명 주기 가드: 제거 중이거나 마운트가 덜 된 컴포넌트는 드로잉 즉시 강제 중지하여 잔상 차단
+    if (isRemoving || !isMounted) return;
 
-    // 1. 프러스텀 컬링 (화면 밖에 있는 타일은 그리지 않고 스킵)
+    // 1. 초고속 프러스텀 컬링 (중심점 위치와 픽셀 반지름 기준으로 화면 경계 밖 타일 1차 스킵)
     final gameSize = game.size;
-    final isVisible = corners.any(
-      (c) =>
-          c.dx >= -50 &&
-          c.dx <= gameSize.x + 50 &&
-          c.dy >= -50 &&
-          c.dy <= gameSize.y + 50,
-    );
+    final rVal = _tileRadius > 0 ? _tileRadius + 20.0 : 60.0;
+    final isVisible = position.x >= -rVal &&
+        position.x <= gameSize.x + rVal &&
+        position.y >= -rVal &&
+        position.y <= gameSize.y + rVal;
     if (!isVisible) return;
 
-    // 2. 둥근 모서리 벌집 타일(Rounded Hexagon Path) 캐싱 및 중심점/반지름 산출
-    if (_cachedPath == null) {
-      // 타일의 중심점 계산
-      double cx = 0, cy = 0;
-      for (final c in corners) {
-        cx += c.dx;
-        cy += c.dy;
-      }
-      cx /= corners.length;
-      cy /= corners.length;
-      _centerX = cx;
-      _centerY = cy;
+    // 2. 줌 레벨 및 카메라 회전각 변동 여부 감지하여 로컬 꼭짓점 좌표계 및 Bezier 그리기 패스 캐싱 처리
+    final double currentZoom = game.mapController?.camera.zoom ?? 1.0;
+    final double currentRotation = game.mapController?.camera.rotation ?? 0.0;
 
-      // 헥사곤 반지름 계산
+    // 컴포넌트 자체의 회전각(라디안)을 카메라 회전각과 100% 실시간으로 일치시킴
+    angle = currentRotation * (math.pi / 180.0);
+
+    // 지도가 회전해도 헥사곤의 고유 형태는 변하지 않으므로, 패스 캐싱 조건에서 회전값 비교를 배제하여 CPU 연산 낭비를 완벽 차단합니다.
+    if (_cachedPath == null || (currentZoom - lastCalculatedZoom).abs() > 0.001) {
+      if (game.mapController == null) return;
+
+      final centerOffset = game.mapController!.camera.latLngToScreenOffset(centerLatLng);
+
+      // 카메라 회전각(라디안)에 따른 역회전 삼각비 산출
+      final double rotationRad = currentRotation * (math.pi / 180.0);
+      final double cosTheta = math.cos(-rotationRad);
+      final double sinTheta = math.sin(-rotationRad);
+
+      // 로컬 중심점 (0, 0)을 기준으로 한 상대적 픽셀 꼭짓점 좌표 산출 (역회전 행렬을 적용하여 '회전 0' 정방향 상태로 정규화)
+      localCorners = cornerLatLngs.map((latlng) {
+        final offset = game.mapController!.camera.latLngToScreenOffset(latlng);
+        final rx = offset.dx - centerOffset.dx;
+        final ry = offset.dy - centerOffset.dy;
+
+        // 역회전 변환 수행
+        final nx = rx * cosTheta - ry * sinTheta;
+        final ny = rx * sinTheta + ry * cosTheta;
+        return Offset(nx, ny);
+      }).toList();
+
+      // 로컬 꼭짓점들로부터 평균 반지름 계산
       double radSum = 0;
-      for (final c in corners) {
-        final dx = c.dx - cx;
-        final dy = c.dy - cy;
-        radSum += math.sqrt(dx * dx + dy * dy);
+      for (final c in localCorners) {
+        radSum += math.sqrt(c.dx * c.dx + c.dy * c.dy);
       }
-      _tileRadius = radSum / corners.length;
+      _tileRadius = localCorners.isNotEmpty ? radSum / localCorners.length : 0.0;
 
-      // 아기자기한 캐주얼 헥사칩 둥글기 수준 (육각형 본래 대칭각과 둥글기의 균형 조율)
+      // 둥근 모서리 벌집 타일(Rounded Hexagon Path) 로컬 좌표계 그리기 패스 생성
       final double cornerRadius = math.min(8.0, _tileRadius * 0.26);
-      // 타일 간의 아기자기한 보드게임형 갭(Padding) 생성
-      const double padding = 2.2;
+      const double padding = 2.2; // 타일 간 보드게임형 갭
 
-      // 1) 패딩이 적용된 수축 꼭짓점 산출
+      // 1) 패딩이 수축 적용된 로컬 꼭짓점 계산
       final List<Offset> insetCorners = [];
-      for (int i = 0; i < corners.length; i++) {
-        final c = corners[i];
-        final dx = cx - c.dx;
-        final dy = cy - c.dy;
+      for (int i = 0; i < localCorners.length; i++) {
+        final c = localCorners[i];
+        // 로컬 중심 (0, 0) 기준이므로 꼭짓점에서 중심 방향 벡터는 (-c.dx, -c.dy)
+        final dx = -c.dx;
+        final dy = -c.dy;
         final dist = math.sqrt(dx * dx + dy * dy);
 
         final double insetX = dist > padding
@@ -172,12 +200,11 @@ class HexTileComponent extends PositionComponent
         insetCorners.add(Offset(insetX, insetY));
       }
 
-      // 2) 베지에 곡선 기반 둥근 육각형 그리기 패스 생성
+      // 2) 베지에 곡선 기반 둥근 육각형 로컬 그리기 패스 구축
       _cachedPath = Path();
       for (int i = 0; i < insetCorners.length; i++) {
         final current = insetCorners[i];
-        final prev =
-            insetCorners[(i - 1 + insetCorners.length) % insetCorners.length];
+        final prev = insetCorners[(i - 1 + insetCorners.length) % insetCorners.length];
         final next = insetCorners[(i + 1) % insetCorners.length];
 
         final vPrevX = prev.dx - current.dx;
@@ -207,25 +234,25 @@ class HexTileComponent extends PositionComponent
         _cachedPath!.quadraticBezierTo(current.dx, current.dy, endX, endY);
       }
       _cachedPath!.close();
+
+      lastCalculatedZoom = currentZoom;
+      lastCalculatedRotation = currentRotation;
     }
 
-    // 3. 점령된 타일 채우기 (아기자기한 방사형 그라데이션 젤리 스타일)
+    if (localCorners.isEmpty || _cachedPath == null) return;
+
+    // 3. 점령된 타일 채우기 (로컬 중심 (0, 0) 기준 그라데이션 및 드로잉)
     if (colorHex != null) {
       final Color baseColor = _parseColor(colorHex) ?? GameColors.transparent;
+      final double gradientRadius = _tileRadius * 1.1;
 
-      // 젤리 반사광 및 입체감 극대화용 Radial Gradient 셰이더 생성
-      final double gradientRadius = _tileRadius * 1.1; // 헥사곤 외곽선 경계까지 그라데이션 커버
-
+      // 로컬 중심 (0, 0)을 정밀하게 활용하는 radial gradient 셰이더 바인딩
       _fillPaint.shader = Gradient.radial(
-        Offset(_centerX, _centerY),
+        const Offset(0, 0),
         gradientRadius,
         [
-          baseColor.withValues(
-            alpha: GameConfig.tileOpacity * 0.45,
-          ), // 중심부는 반짝이도록 맑게 비춤
-          baseColor.withValues(
-            alpha: GameConfig.tileOpacity * 1.35,
-          ), // 가장자리는 쫀득하게 채색
+          baseColor.withValues(alpha: GameConfig.tileOpacity * 0.45),
+          baseColor.withValues(alpha: GameConfig.tileOpacity * 1.35),
         ],
         const [0.0, 1.0],
       );
@@ -233,7 +260,7 @@ class HexTileComponent extends PositionComponent
       // 1) 젤리 그라데이션 바디 드로잉
       canvas.drawPath(_cachedPath!, _fillPaint);
 
-      // 2) 아기자기함을 더할 부드러운 소프트 테두리 스트로크 추가
+      // 2) 소프트 테두리 스트로크
       final Paint borderPaint = Paint()
         ..color = baseColor.withValues(alpha: 0.45)
         ..style = PaintingStyle.stroke
@@ -241,11 +268,10 @@ class HexTileComponent extends PositionComponent
       canvas.drawPath(_cachedPath!, borderPaint);
     }
 
-    // 4. 점령 애니메이션 최적화
+    // 4. 점령 애니메이션 드로잉 (로컬 꼭짓점 기준 좌표 투영 100% 스킵)
     if (isCapturing) {
       final pulse = (0.5 + 0.5 * math.sin(_timer)).clamp(0.0, 1.0);
-      final captureColor =
-          _parseColor(capturingColorHex) ?? GameColors.accentNeon;
+      final captureColor = _parseColor(capturingColorHex) ?? GameColors.accentNeon;
 
       // 외곽선 펄스 효과
       _capturePaint.color = captureColor.withValues(
@@ -254,14 +280,13 @@ class HexTileComponent extends PositionComponent
       _capturePaint.strokeWidth = 1.5 + (2.5 * pulse);
       canvas.drawPath(_cachedPath!, _capturePaint);
 
-      // 내부 채우기 애니메이션 (아래에서 위로 progress만큼 차오름)
+      // 내부 채우기 애니메이션 (로컬 경계 Y축 범위 계산)
       canvas.save();
-      // 둥근 헥사곤 패스로 정밀 클리핑하여 둥근 모서리에 예쁘게 차오르게 제어
       canvas.clipPath(_cachedPath!);
 
-      double minY = corners[0].dy;
-      double maxY = corners[0].dy;
-      for (final c in corners) {
+      double minY = localCorners[0].dy;
+      double maxY = localCorners[0].dy;
+      for (final c in localCorners) {
         if (c.dy < minY) minY = c.dy;
         if (c.dy > maxY) maxY = c.dy;
       }
@@ -269,9 +294,9 @@ class HexTileComponent extends PositionComponent
       final fillY = maxY - (height * progress);
 
       final fillRect = Rect.fromLTRB(
-        corners.map((e) => e.dx).reduce((a, b) => a < b ? a : b),
+        localCorners.map((e) => e.dx).reduce((a, b) => a < b ? a : b),
         fillY,
-        corners.map((e) => e.dx).reduce((a, b) => a > b ? a : b),
+        localCorners.map((e) => e.dx).reduce((a, b) => a > b ? a : b),
         maxY,
       );
 

@@ -56,6 +56,19 @@ class GameConfig {
 
   /// 스플래시 화면 최소 유지 시간
   static const Duration splashDuration = Duration(seconds: 3);
+
+  /// LOD 0 단계 타일 규격 크기 (100m)
+  static const double lodSize0 = 100.0;
+
+  /// LOD 1 단계 타일 규격 크기 (200m)
+  static const double lodSize1 = 400.0;
+
+  /// LOD 2 단계 타일 규격 크기 (400m)
+  static const double lodSize2 = 800.0;
+
+  /// LOD 3 단계 타일 규격 크기 (800m - 적군 은폐 가드 작동)
+  static const double lodSize3 = 1600.0;
+
+  /// LOD 4 단계 타일 규격 크기 (1600m - 적군 은폐 가드 작동)
+  static const double lodSize4 = 3200.0;
 }
-
-
