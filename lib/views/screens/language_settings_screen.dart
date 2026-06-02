@@ -14,7 +14,7 @@ class LanguageSettingsScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final currentLocale = context.locale;
+    final currentLocale = EasyLocalization.of(context)!.locale;
 
     return Scaffold(
       backgroundColor: GameColors.tacticalBlack,
@@ -107,7 +107,7 @@ class LanguageSettingsScreen extends StatelessWidget {
               ? GameStrings.languageChangedToKorean
               : GameStrings.languageChangedToEnglish;
 
-          await context.setLocale(locale);
+          await EasyLocalization.of(context)!.setLocale(locale);
           if (context.mounted) {
             ToastHelper.show(
               context: context,

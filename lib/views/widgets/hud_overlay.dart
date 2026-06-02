@@ -8,7 +8,6 @@ import '../../core/constants/colors.dart';
 import '../../core/constants/strings.dart';
 import '../../providers/game_provider.dart';
 import '../../providers/auth_provider.dart';
-import '../screens/game_guide_screen.dart';
 
 /// 인게임 HUD 오버레이 (점수판, 점령 버튼, 유틸리티 버튼, 위성 스캔 연동)
 class HudOverlay extends StatelessWidget {
@@ -29,9 +28,6 @@ class HudOverlay extends StatelessWidget {
     // 여백 조율을 위한 기본 하단 마진
     final double baseBottomMargin = bottomPadding > 0 ? 16.0 : 32.0;
 
-    // 화면 가로 너비
-    final double screenWidth = MediaQuery.of(context).size.width;
-
     return Stack(
       children: [
         const SizedBox.expand(),
@@ -43,12 +39,7 @@ class HudOverlay extends StatelessWidget {
           child: const _CozyHeaderBar(),
         ),
 
-        // [상단 우측 - 가이드 버튼] 랭킹 버튼 바로 왼쪽에 1:1 대칭 정렬 나란히 배치 (44x44)
-        Positioned(
-          top: topOffset,
-          right: 20.0 + 44.0 + 10.0 + 44.0 + 10.0, // 프로필 44 + 랭킹 44 + 여백 오프셋 연산
-          child: const _GuideActionButton(size: 44),
-        ),
+
 
         // [상단 우측 - 랭킹 버튼] 유저 프로필 버튼 바로 왼쪽에 1:1 대칭 정렬 나란히 배치 (44x44)
         Positioned(
@@ -71,22 +62,8 @@ class HudOverlay extends StatelessWidget {
           child: const _MapFollowRotationButton(size: 42, iconSize: 20),
         ),
 
-        // [하단 중앙] 콤팩트해진 점령 전술 조작 버튼 (오직 로그인 요원에게만 노출)
-        Selector<AuthProvider, bool>(
-          selector: (_, a) => a.isAuthenticated,
-          builder: (context, isAuthenticated, child) {
-            if (!isAuthenticated) return const SizedBox.shrink();
-            return Positioned(
-              bottom: baseBottomMargin + bottomPadding,
-              left: (screenWidth - 76) / 2,
-              child: SizedBox(
-                width: 76,
-                height: 76,
-                child: Center(child: _StartStopCaptureButton(game: game)),
-              ),
-            );
-          },
-        ),
+        // [하단 중앙] 콤팩트해진 점령 전술 조작 버튼 (항상 자동 기동되므로 버튼 미노출)
+        const SizedBox.shrink(),
 
         // [하단 우측 - 테마 순환 버튼] 접이식 메뉴를 걷어내고 기존 메뉴 버튼 자리에 독립형 젤리 단추로 배치 (44x44)
         Positioned(
@@ -218,11 +195,7 @@ class _ProfileFloatingButtonState extends State<_ProfileFloatingButton> {
       onTapCancel: () => setState(() => _isPressed = false),
       onTapUp: (_) {
         setState(() => _isPressed = false);
-        if (isAuth) {
-          Navigator.pushNamed(context, '/profile');
-        } else {
-          Navigator.pushNamed(context, '/login');
-        }
+        Navigator.pushNamed(context, '/profile');
       },
       child: AnimatedScale(
         scale: _isPressed ? 0.88 : 1.0,
@@ -380,100 +353,7 @@ class _RankingActionButtonState extends State<_RankingActionButton> {
   }
 }
 
-/// [신규] 접이식 메뉴 수납용 게임 가이드 이동 젤리 버튼
-class _GuideActionButton extends StatefulWidget {
-  final double size;
 
-  const _GuideActionButton({required this.size});
-
-  @override
-  State<_GuideActionButton> createState() => _GuideActionButtonState();
-}
-
-class _GuideActionButtonState extends State<_GuideActionButton> {
-  bool _isPressed = false;
-
-  @override
-  Widget build(BuildContext context) {
-    final double glowRadius = widget.size * 0.38;
-
-    return GestureDetector(
-      onTapDown: (_) => setState(() => _isPressed = true),
-      onTapCancel: () => setState(() => _isPressed = false),
-      onTapUp: (_) {
-        setState(() => _isPressed = false);
-        Navigator.push(
-          context,
-          MaterialPageRoute(
-            builder: (context) => const GameGuideScreen(),
-          ),
-        );
-      },
-      child: AnimatedScale(
-        scale: _isPressed ? 0.88 : 1.0,
-        duration: const Duration(milliseconds: 100),
-        child: Container(
-          width: widget.size,
-          height: widget.size,
-          decoration: BoxDecoration(
-            shape: BoxShape.circle,
-            gradient: const LinearGradient(
-              begin: Alignment.topCenter,
-              end: Alignment.bottomCenter,
-              colors: [
-                Color(0xFF00E5FF),
-                Color(0xFF00838F),
-              ], // 일관성 있는 사이버 네온 시안 젤리
-            ),
-            border: Border.all(
-              color: Colors.white.withValues(alpha: 0.45),
-              width: 1.2,
-            ),
-            boxShadow: [
-              BoxShadow(
-                color: const Color(0xFF00E5FF).withValues(alpha: 0.25),
-                blurRadius: 6,
-                offset: const Offset(0, 2),
-              ),
-            ],
-          ),
-          child: Stack(
-            children: [
-              Positioned(
-                top: 2,
-                left: 5,
-                right: 5,
-                height: glowRadius,
-                child: Container(
-                  decoration: BoxDecoration(
-                    borderRadius: BorderRadius.vertical(
-                      top: Radius.circular(glowRadius),
-                    ),
-                    gradient: LinearGradient(
-                      begin: Alignment.topCenter,
-                      end: Alignment.bottomCenter,
-                      colors: [
-                        Colors.white.withValues(alpha: 0.45),
-                        Colors.white.withValues(alpha: 0.0),
-                      ],
-                    ),
-                  ),
-                ),
-              ),
-              const Center(
-                child: Icon(
-                  Icons.menu_book_rounded,
-                  color: Colors.white,
-                  size: 20,
-                ),
-              ),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-}
 
 /// [신규] 하단 조작계 극좌측 날개에 배치되는 3D 솜사탕 보석 젤리 지도 스타일 순환 버튼
 class _MapStyleCycleButton extends StatefulWidget {

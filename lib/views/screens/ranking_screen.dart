@@ -297,10 +297,13 @@ class _RankingListTile extends StatelessWidget {
                             ],
                           ),
                           child: Center(
-                            child: Icon(
-                              Icons.emoji_events_rounded,
-                              color: rankTextColor,
-                              size: 16,
+                            child: Text(
+                              '$rank',
+                              style: GoogleFonts.quicksand(
+                                color: rankTextColor,
+                                fontSize: 13.0,
+                                fontWeight: FontWeight.w800,
+                              ),
                             ),
                           ),
                         )
@@ -341,27 +344,6 @@ class _RankingListTile extends StatelessWidget {
                       overflow: TextOverflow.ellipsis,
                     ),
                   ),
-                  if (isMe)
-                    Container(
-                      margin: const EdgeInsets.only(left: 8),
-                      padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 2.5),
-                      decoration: BoxDecoration(
-                        borderRadius: BorderRadius.circular(6),
-                        color: const Color(0xFF00E5FF).withValues(alpha: 0.15),
-                        border: Border.all(
-                          color: const Color(0xFF00E5FF).withValues(alpha: 0.3),
-                          width: 0.8,
-                        ),
-                      ),
-                      child: Text(
-                        GameStrings.rankingMyLabel,
-                        style: GoogleFonts.fredoka(
-                          color: const Color(0xFF00E5FF),
-                          fontSize: 9,
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
-                    ),
                 ],
               ),
               trailing: Text(

@@ -13,13 +13,105 @@ import '../../core/utils/error_translator.dart';
 import '../widgets/tactical_app_bar.dart';
 import '../widgets/tactical_dialog.dart';
 import 'language_settings_screen.dart';
-import 'security_policy_screen.dart';
+import 'policy_webview_screen.dart';
+import 'game_guide_screen.dart';
 
 /// 로그인한 요원의 상세 프로필 상태(소속 전술 색상, 점령한 총 영토 수)를
 /// 검토하고, 전술 색상 수정 및 본진 이전(Rebase), 로그아웃 등 작전 설정을 관리하는 프로필 화면 클래스입니다.
 class ProfileScreen extends StatelessWidget {
   /// 프로필 화면의 생성자입니다.
   const ProfileScreen({super.key});
+
+  Widget _buildLoginPromptCard(BuildContext context) {
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(24),
+      decoration: ShapeDecoration(
+        color: GameColors.backgroundMedium.withValues(alpha: 0.85),
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(24),
+          side: BorderSide(
+            color: GameColors.accentNeon.withValues(alpha: 0.25),
+            width: 1.2,
+          ),
+        ),
+        shadows: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.04),
+            blurRadius: 16,
+            spreadRadius: 1,
+            offset: const Offset(0, 6),
+          ),
+        ],
+      ),
+      child: Column(
+        children: [
+          Container(
+            width: 80,
+            height: 80,
+            decoration: ShapeDecoration(
+              color: GameColors.textMuted.withValues(alpha: 0.1),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(20),
+                side: BorderSide(
+                  color: GameColors.textMuted.withValues(alpha: 0.3),
+                  width: 1.5,
+                ),
+              ),
+            ),
+            child: Center(
+              child: Icon(
+                Icons.lock_outline_rounded,
+                size: 40,
+                color: GameColors.textMuted,
+              ),
+            ),
+          ),
+          const SizedBox(height: 16),
+          Text(
+            GameStrings.loginRequiredOperation,
+            style: GoogleFonts.fredoka(
+              color: GameColors.textPrimary,
+              fontSize: 16,
+              fontWeight: FontWeight.bold,
+              letterSpacing: 0.5,
+            ),
+          ),
+          const SizedBox(height: 20),
+          Container(
+            width: double.infinity,
+            height: 48,
+            decoration: BoxDecoration(
+              borderRadius: BorderRadius.circular(16),
+              gradient: const LinearGradient(
+                colors: [
+                  Color(0xFF00E5FF),
+                  Color(0xFF00838F),
+                ],
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+              ),
+            ),
+            child: ElevatedButton(
+              onPressed: () => Navigator.pushNamed(context, '/login'),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: Colors.transparent,
+                shadowColor: Colors.transparent,
+                foregroundColor: Colors.white,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(16),
+                ),
+              ),
+              child: Text(
+                GameStrings.login,
+                style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -28,14 +120,8 @@ class ProfileScreen extends StatelessWidget {
     final profile = auth.profile;
     final user = auth.user;
 
-    if (!auth.isAuthenticated || profile == null) {
-      return Scaffold(
-        backgroundColor: GameColors.tacticalBlack,
-        body: const SizedBox.shrink(),
-      );
-    }
-
-    final teamColor = GameColors.myTileColor;
+    final bool isAuth = auth.isAuthenticated && profile != null;
+    final teamColor = isAuth ? GameColors.myTileColor : GameColors.textMuted;
 
     return Scaffold(
       backgroundColor: GameColors.tacticalBlack,
@@ -49,79 +135,82 @@ class ProfileScreen extends StatelessWidget {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              // 프로필 상단 카드
-              Container(
-                width: double.infinity,
-                padding: const EdgeInsets.all(24),
-                decoration: ShapeDecoration(
-                  color: GameColors.backgroundMedium.withValues(alpha: 0.85),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(24),
-                    side: BorderSide(
-                      color: GameColors.accentNeon.withValues(alpha: 0.25),
-                      width: 1.2,
+              // 프로필 상단 카드 (로그인 상태에 따라 분기)
+              if (isAuth)
+                Container(
+                  width: double.infinity,
+                  padding: const EdgeInsets.all(24),
+                  decoration: ShapeDecoration(
+                    color: GameColors.backgroundMedium.withValues(alpha: 0.85),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(24),
+                      side: BorderSide(
+                        color: GameColors.accentNeon.withValues(alpha: 0.25),
+                        width: 1.2,
+                      ),
                     ),
+                    shadows: [
+                      BoxShadow(
+                        color: Colors.black.withValues(alpha: 0.04),
+                        blurRadius: 16,
+                        spreadRadius: 1,
+                        offset: const Offset(0, 6),
+                      ),
+                    ],
                   ),
-                  shadows: [
-                    BoxShadow(
-                      color: Colors.black.withValues(alpha: 0.04),
-                      blurRadius: 16,
-                      spreadRadius: 1,
-                      offset: const Offset(0, 6),
-                    ),
-                  ],
-                ),
-                child: Column(
-                  children: [
-                    // 전술적 둥근 프로필 컨테이너
-                    Container(
-                      width: 80,
-                      height: 80,
-                      decoration: ShapeDecoration(
-                        color: teamColor.withValues(alpha: 0.15),
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(20),
-                          side: BorderSide(color: teamColor, width: 2.0),
+                  child: Column(
+                    children: [
+                      // 전술적 둥근 프로필 컨테이너
+                      Container(
+                        width: 80,
+                        height: 80,
+                        decoration: ShapeDecoration(
+                          color: teamColor.withValues(alpha: 0.15),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(20),
+                            side: BorderSide(color: teamColor, width: 2.0),
+                          ),
+                        ),
+                        child: Center(
+                          child: Icon(Icons.person, size: 40, color: teamColor),
                         ),
                       ),
-                      child: Center(
-                        child: Icon(Icons.person, size: 40, color: teamColor),
-                      ),
-                    ),
-                    const SizedBox(height: 16),
-                    Text(
-                      profile.nickname,
-                      style: GoogleFonts.fredoka(
-                        color: GameColors.textPrimary,
-                        fontSize: 24,
-                        fontWeight: FontWeight.bold,
-                        letterSpacing: 0.5,
-                      ),
-                    ),
-                    const SizedBox(height: 4),
-                    Text(
-                      user?.email ?? '',
-                      style: GoogleFonts.quicksand(
-                        color: GameColors.textMuted,
-                        fontSize: 14,
-                        fontWeight: FontWeight.bold,
-                        letterSpacing: 0.2,
-                      ),
-                    ),
-                    const SizedBox(height: 20),
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        _buildStatItem(
-                          GameStrings.capturedTiles,
-                          '${game.myCapturedCount}${GameStrings.countUnit}',
-                          GameColors.accentNeon,
+                      const SizedBox(height: 16),
+                      Text(
+                        profile.nickname,
+                        style: GoogleFonts.fredoka(
+                          color: GameColors.textPrimary,
+                          fontSize: 24,
+                          fontWeight: FontWeight.bold,
+                          letterSpacing: 0.5,
                         ),
-                      ],
-                    ),
-                  ],
-                ),
-              ),
+                      ),
+                      const SizedBox(height: 4),
+                      Text(
+                        user?.email ?? '',
+                        style: GoogleFonts.quicksand(
+                          color: GameColors.textMuted,
+                          fontSize: 14,
+                          fontWeight: FontWeight.bold,
+                          letterSpacing: 0.2,
+                        ),
+                      ),
+                      const SizedBox(height: 20),
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          _buildStatItem(
+                            GameStrings.capturedTiles,
+                            '${game.myCapturedCount}${GameStrings.countUnit}',
+                            GameColors.accentNeon,
+                          ),
+                        ],
+                      ),
+                    ],
+                  ),
+                )
+              else
+                _buildLoginPromptCard(context),
 
               const SizedBox(height: 24),
               Text(
@@ -136,68 +225,87 @@ class ProfileScreen extends StatelessWidget {
 
               // 설정 메뉴 리스트
               _buildMenuCard([
+                // [공통] 게임 설명서
                 _buildMenuItem(
-                  icon: Icons.notifications_active,
-                  title: GameStrings.pushNotifications,
-                  subtitle: GameStrings.pushNotificationsSub,
-                  trailing: Switch(
-                    value: game.isNotificationEnabled,
-                    onChanged: (val) => game.toggleNotifications(),
-                    activeThumbColor: GameColors.accentNeon,
+                  icon: Icons.menu_book_rounded,
+                  title: GameStrings.gameGuide,
+                  subtitle: GameStrings.gameGuideSub,
+                  onTap: () => Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) => const GameGuideScreen(),
+                    ),
                   ),
                 ),
-                AnimatedSize(
-                  duration: const Duration(milliseconds: 250),
-                  curve: Curves.easeInOut,
-                  child: game.isNotificationEnabled
-                      ? Container(
-                          padding: const EdgeInsets.only(
-                            left: 20,
-                            right: 12,
-                            bottom: 8,
-                            top: 4,
-                          ),
-                          color: GameColors.backgroundMedium.withValues(
-                            alpha: 0.2,
-                          ),
-                          child: Column(
-                            children: [
-                              _buildSubMenuItem(
-                                title: GameStrings.notifTerritoryAttackTitle,
-                                subtitle: GameStrings.notifTerritoryAttackSub,
-                                value: game.isNotifTerritoryAttack,
-                                onChanged: (val) =>
-                                    game.toggleNotifTerritoryAttack(),
-                              ),
-                              _buildSubDivider(),
-                              _buildSubMenuItem(
-                                title: GameStrings.notifSatelliteCompleteTitle,
-                                subtitle: GameStrings.notifSatelliteCompleteSub,
-                                value: game.isNotifSatelliteComplete,
-                                onChanged: (val) =>
-                                    game.toggleNotifSatelliteComplete(),
-                              ),
-                              _buildSubDivider(),
-                              _buildSubMenuItem(
-                                title: GameStrings.notifSystemNoticeTitle,
-                                subtitle: GameStrings.notifSystemNoticeSub,
-                                value: game.isNotifSystemNotice,
-                                onChanged: (val) =>
-                                    game.toggleNotifSystemNotice(),
-                              ),
-                            ],
-                          ),
-                        )
-                      : const SizedBox.shrink(),
-                ),
                 _buildDivider(),
-                _buildMenuItem(
-                  icon: Icons.my_location_rounded,
-                  title: GameStrings.profileRebaseTitle,
-                  subtitle: GameStrings.profileRebaseSubtitle,
-                  onTap: () => _handleRebase(context, auth),
-                ),
-                _buildDivider(),
+
+                // [로그인 요원 전용] 알림 설정
+                if (isAuth) ...[
+                  _buildMenuItem(
+                    icon: Icons.notifications_active,
+                    title: GameStrings.pushNotifications,
+                    subtitle: GameStrings.pushNotificationsSub,
+                    trailing: Switch(
+                      value: game.isNotificationEnabled,
+                      onChanged: (val) => game.toggleNotifications(),
+                      activeThumbColor: GameColors.accentNeon,
+                    ),
+                  ),
+                  AnimatedSize(
+                    duration: const Duration(milliseconds: 250),
+                    curve: Curves.easeInOut,
+                    child: game.isNotificationEnabled
+                        ? Container(
+                            padding: const EdgeInsets.only(
+                              left: 20,
+                              right: 12,
+                              bottom: 8,
+                              top: 4,
+                            ),
+                            color: GameColors.backgroundMedium.withValues(
+                              alpha: 0.2,
+                            ),
+                            child: Column(
+                              children: [
+                                _buildSubMenuItem(
+                                  title: GameStrings.notifTerritoryAttackTitle,
+                                  subtitle: GameStrings.notifTerritoryAttackSub,
+                                  value: game.isNotifTerritoryAttack,
+                                  onChanged: (val) =>
+                                      game.toggleNotifTerritoryAttack(),
+                                ),
+                                _buildSubDivider(),
+                                _buildSubMenuItem(
+                                  title: GameStrings.notifSatelliteCompleteTitle,
+                                  subtitle: GameStrings.notifSatelliteCompleteSub,
+                                  value: game.isNotifSatelliteComplete,
+                                  onChanged: (val) =>
+                                      game.toggleNotifSatelliteComplete(),
+                                ),
+                                _buildSubDivider(),
+                                _buildSubMenuItem(
+                                  title: GameStrings.notifSystemNoticeTitle,
+                                  subtitle: GameStrings.notifSystemNoticeSub,
+                                  value: game.isNotifSystemNotice,
+                                  onChanged: (val) =>
+                                      game.toggleNotifSystemNotice(),
+                                ),
+                              ],
+                            ),
+                          )
+                        : const SizedBox.shrink(),
+                  ),
+                  _buildDivider(),
+                  _buildMenuItem(
+                    icon: Icons.my_location_rounded,
+                    title: GameStrings.profileRebaseTitle,
+                    subtitle: GameStrings.profileRebaseSubtitle,
+                    onTap: () => _handleRebase(context, auth),
+                  ),
+                  _buildDivider(),
+                ],
+
+                // [공통] 언어 설정
                 _buildMenuItem(
                   icon: Icons.translate_rounded,
                   title: GameStrings.languageSettings,
@@ -210,63 +318,87 @@ class ProfileScreen extends StatelessWidget {
                   ),
                 ),
                 _buildDivider(),
+
+                // [공통] 서비스 이용약관 (웹뷰)
                 _buildMenuItem(
-                  icon: Icons.security,
-                  title: GameStrings.securityPolicy,
-                  subtitle: GameStrings.securityPolicySub,
+                  icon: Icons.description_rounded,
+                  title: GameStrings.termsOfService,
+                  subtitle: GameStrings.termsOfServiceSub,
                   onTap: () => Navigator.push(
                     context,
                     MaterialPageRoute(
-                      builder: (context) => const SecurityPolicyScreen(),
+                      builder: (context) => PolicyWebviewScreen(
+                        title: GameStrings.termsOfService,
+                        url: GameUrls.termsOfService,
+                      ),
+                    ),
+                  ),
+                ),
+                _buildDivider(),
+
+                // [공통] 개인정보 처리방침 (웹뷰)
+                _buildMenuItem(
+                  icon: Icons.privacy_tip_rounded,
+                  title: GameStrings.privacyPolicy,
+                  subtitle: GameStrings.privacyPolicySub,
+                  onTap: () => Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) => PolicyWebviewScreen(
+                        title: GameStrings.privacyPolicy,
+                        url: GameUrls.privacyPolicy,
+                      ),
                     ),
                   ),
                 ),
               ]),
 
-              const SizedBox(height: 24),
-              Text(
-                GameStrings.accountManagement,
-                style: TextStyle(
-                  color: GameColors.textMuted,
-                  fontWeight: FontWeight.bold,
-                  fontSize: 13,
+              // [로그인 요원 전용] 계정 관리 섹션
+              if (isAuth) ...[
+                const SizedBox(height: 24),
+                Text(
+                  GameStrings.accountManagement,
+                  style: TextStyle(
+                    color: GameColors.textMuted,
+                    fontWeight: FontWeight.bold,
+                    fontSize: 13,
+                  ),
                 ),
-              ),
-              const SizedBox(height: 12),
-
-              _buildMenuCard([
-                _buildMenuItem(
-                  icon: Icons.logout,
-                  title: GameStrings.logout,
-                  titleColor: GameColors.error,
-                  onTap: () async {
-                    final confirm = await _showLogoutConfirm(context);
-                    if (confirm == true) {
-                      if (context.mounted) Navigator.pop(context);
-                      await auth.signOut();
-                    }
-                  },
-                ),
-                _buildMenuItem(
-                  icon: Icons.delete_forever,
-                  title: GameStrings.deleteAccount,
-                  titleColor: GameColors.error,
-                  onTap: () async {
-                    final confirm = await _showDeleteAccountConfirm(context);
-                    if (confirm == true) {
-                      if (context.mounted) Navigator.pop(context);
-                      await auth.deleteAccount();
-                      if (context.mounted) {
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          SnackBar(
-                            content: Text(GameStrings.deleteAccountSuccess),
-                          ),
-                        );
+                const SizedBox(height: 12),
+                _buildMenuCard([
+                  _buildMenuItem(
+                    icon: Icons.logout,
+                    title: GameStrings.logout,
+                    titleColor: GameColors.error,
+                    onTap: () async {
+                      final confirm = await _showLogoutConfirm(context);
+                      if (confirm == true) {
+                        if (context.mounted) Navigator.pop(context);
+                        await auth.signOut();
                       }
-                    }
-                  },
-                ),
-              ]),
+                    },
+                  ),
+                  _buildMenuItem(
+                    icon: Icons.delete_forever,
+                    title: GameStrings.deleteAccount,
+                    titleColor: GameColors.error,
+                    onTap: () async {
+                      final confirm = await _showDeleteAccountConfirm(context);
+                      if (confirm == true) {
+                        if (context.mounted) Navigator.pop(context);
+                        await auth.deleteAccount();
+                        if (context.mounted) {
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            SnackBar(
+                              content: Text(GameStrings.deleteAccountSuccess),
+                            ),
+                          );
+                        }
+                      }
+                    },
+                  ),
+                ]),
+              ],
 
               const SizedBox(height: 40),
               FutureBuilder<PackageInfo>(

@@ -449,6 +449,9 @@ class GameProvider extends ChangeNotifier with WidgetsBindingObserver {
     _authProvider = auth;
 
     if (auth.isAuthenticated) {
+      // 🎯 [신규] 로그인 상태에서는 항상 자동 점령(Auto Capture) 활성화
+      _isAutoCapture = true;
+
       // 1. 프로필이 null이었다가 최초 로드(비동기 완료)된 시점
       // 2. 혹은 골드 타이머가 실행 중이지 않은 상태일 때 동기화 트리거
       if ((oldProfile == null && auth.profile != null) ||
@@ -775,7 +778,11 @@ class GameProvider extends ChangeNotifier with WidgetsBindingObserver {
 
   /// 자동 점령 작전의 활성/비활성 여부를 토글합니다.
   void toggleAutoCapture() {
-    _isAutoCapture = !_isAutoCapture;
+    if (_authProvider?.isAuthenticated == true) {
+      _isAutoCapture = true; // 로그인 상태에서는 항상 자동 점령 강제 유지
+    } else {
+      _isAutoCapture = !_isAutoCapture;
+    }
     notifyListeners();
   }
 
@@ -1599,6 +1606,30 @@ class GameProvider extends ChangeNotifier with WidgetsBindingObserver {
 
       _capturedTiles[tileId] = tile;
       addAlert(GameStrings.satelliteCaptureSuccess, AlertType.success);
+
+      // 🎯 [신규] 위성 원격 점령 성공 시 푸시 알림 발송 트리거
+      if (_isNotifSatelliteComplete) {
+        try {
+          debugPrint('📡 위성 원격 점령 성공 푸시 알림 발송 요청 시작 (user: $myId)');
+          _supabase.client.functions.invoke(
+            'send-push',
+            body: {
+              'topic': 'user_$myId',
+              'title': GameStrings.notifSatelliteCompleteTitle,
+              'body': GameStrings.satelliteCaptureSuccess,
+              'data_payload': {
+                'type': 'satellite_complete',
+              },
+            },
+          ).then((response) {
+            debugPrint('🎯 위성 점령 푸시 알림 발송 결과: ${response.status}');
+          }).catchError((e) {
+            debugPrint('⚠️ 위성 점령 푸시 알림 발송 중 에러 발생: $e');
+          });
+        } catch (e) {
+          debugPrint('⚠️ 위성 점령 푸시 알림 발송 예외 발생: $e');
+        }
+      }
 
       // 위성 점령이 최종 성공했으므로 조준 상태를 깔끔하게 비움
       _selectedScanTileId = null;

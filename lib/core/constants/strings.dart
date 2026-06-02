@@ -256,6 +256,18 @@ class GameStrings {
   /// 보안 정책 문서 확인 안내 문구
   static String get securityPolicySub => 'securityPolicySub'.tr();
 
+  /// 서비스 이용약관 버튼 라벨
+  static String get termsOfService => 'termsOfService'.tr();
+
+  /// 서비스 이용약관 안내 문구
+  static String get termsOfServiceSub => 'termsOfServiceSub'.tr();
+
+  /// 개인정보 처리방침 버튼 라벨
+  static String get privacyPolicy => 'privacyPolicy'.tr();
+
+  /// 개인정보 처리방침 안내 문구
+  static String get privacyPolicySub => 'privacyPolicySub'.tr();
+
   /// 계정 관리 메뉴 타이틀
   static String get accountManagement => 'accountManagement'.tr();
 
@@ -966,4 +978,9 @@ class GameStrings {
 
   /// 정보 은폐됨 라벨
   static String get hudSecretHiddenLabel => 'hudSecretHiddenLabel'.tr();
+}
+
+class GameUrls {
+  static const String termsOfService = 'https://example.com/terms';
+  static const String privacyPolicy = 'https://example.com/privacy';
 }
