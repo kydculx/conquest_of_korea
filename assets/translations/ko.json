@@ -229,6 +229,7 @@
   "deleteAccount": "계정 삭제",
   "deleteAccountConfirmTitle": "⚠️ 계정 영구 탈퇴 안내",
   "deleteAccountConfirmMessage": "탈퇴 시 점령 영토 및 보유 재화는 소멸하며 복구가 불가능합니다. 또한 모든 점령 구역은 중립화됩니다. 정말로 탈퇴하시겠습니까?",
+  "deleteAccountCheckboxLabel": "유의사항을 확인했으며, 계정 삭제에 동의합니다.",
   "deleteAccountSuccess": "계정 삭제가 완료되었습니다. 그동안 서비스를 이용해주셔서 감사합니다.",
   "modeChangeDialogTitle": "플레이 모드 변경",
   "modeMoveTitle": "이동 모드 (Move Mode)",

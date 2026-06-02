@@ -746,6 +746,10 @@ class GameStrings {
   static String get deleteAccountConfirmMessage =>
       'deleteAccountConfirmMessage'.tr();
 
+  /// 계정 삭제 동의 체크박스 라벨
+  static String get deleteAccountCheckboxLabel =>
+      'deleteAccountCheckboxLabel'.tr();
+
   /// 계정 삭제 완료 알림 문구
   static String get deleteAccountSuccess => 'deleteAccountSuccess'.tr();
 

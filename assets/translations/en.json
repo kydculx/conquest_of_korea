@@ -229,6 +229,7 @@
   "deleteAccount": "Delete Account",
   "deleteAccountConfirmTitle": "⚠️ Permanent Account Deletion Warning",
   "deleteAccountConfirmMessage": "Upon deleting your account, all conquest data and earned gold assets will be completely destroyed, and immediate recovery is impossible. Additionally, all territories you occupied will immediately transition to neutral zones and be opened to other players. Do you really want to delete your account and resign as a player?",
+  "deleteAccountCheckboxLabel": "I have read the notice and agree to permanently delete my account.",
   "deleteAccountSuccess": "The account has been permanently deleted. Thank you for playing.",
   "modeChangeDialogTitle": "Play Mode Selection",
   "modeMoveTitle": "Move Mode",
