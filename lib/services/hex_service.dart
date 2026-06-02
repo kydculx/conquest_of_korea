@@ -148,4 +148,26 @@ class HexService {
     }
     return results;
   }
+
+  /// 타일 ID 문자열(예: 'hex_q_r' 또는 'hex_size_q_r')을 분석 파싱하여 정수형 q, r 좌표 및 줌 스케일 크기 정보를 안전하게 추출합니다.
+  /// 파싱 실패 시 null을 반환하여 강력한 가드 처리를 제공합니다.
+  static Map<String, dynamic>? parseTileId(String id) {
+    final parts = id.split('_');
+    if (parts.length == 3 && parts[0] == 'hex') {
+      final q = int.tryParse(parts[1]);
+      final r = int.tryParse(parts[2]);
+      if (q != null && r != null) {
+        return {'q': q, 'r': r, 'size': null};
+      }
+    } else if (parts.length == 4 && parts[0] == 'hex') {
+      final size = double.tryParse(parts[1]);
+      final q = int.tryParse(parts[2]);
+      final r = int.tryParse(parts[3]);
+      if (q != null && r != null) {
+        return {'q': q, 'r': r, 'size': size};
+      }
+    }
+    return null;
+  }
 }
+

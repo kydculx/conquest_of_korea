@@ -319,74 +319,56 @@ class ConquestGame extends FlameGame {
       _lastLodLevel = currentLod;
     }
 
-    // [초근본 가혹 필터] 뷰포트 지리지형 Frustum Culling 경계선 획득
+    // [초최적화 위경도 Frustum Culling] 뷰포트 지리지형 경계선 획득 및 안전 마진 정의
     final bounds = _mapController!.camera.visibleBounds;
     final sw = bounds.southWest;
     final ne = bounds.northEast;
-    final nw = LatLng(ne.latitude, sw.longitude);
-    final se = LatLng(sw.latitude, ne.longitude);
 
-    final hSw = HexService.latLngToHex(sw, hexSize: dynamicHexSize);
-    final hNe = HexService.latLngToHex(ne, hexSize: dynamicHexSize);
-    final hNw = HexService.latLngToHex(nw, hexSize: dynamicHexSize);
-    final hSe = HexService.latLngToHex(se, hexSize: dynamicHexSize);
+    // 안전 렌더링 버퍼 확보를 위해 위경도 임계 범위 마진 가미 (약 0.02도)
+    final double marginLat = 0.02;
+    final double marginLng = 0.02;
+    final double minLat = sw.latitude - marginLat;
+    final double maxLat = ne.latitude + marginLat;
+    final double minLng = sw.longitude - marginLng;
+    final double maxLng = ne.longitude + marginLng;
 
-    final List<int> qs = [hSw['q']!, hNe['q']!, hNw['q']!, hSe['q']!];
-    final List<int> rs = [hSw['r']!, hNe['r']!, hNw['r']!, hSe['r']!];
-
-    // 안전 버퍼 2칸 추가
-    final int minQ = qs.reduce((a, b) => a < b ? a : b) - 2;
-    final int maxQ = qs.reduce((a, b) => a > b ? a : b) + 2;
-    final int minR = rs.reduce((a, b) => a < b ? a : b) - 2;
-    final int maxR = rs.reduce((a, b) => a > b ? a : b) + 2;
-
-    // 현재 화면 영역에 가시적인 타일 ID 집합 생성 (O(화면 크기)로 루프 횟수 감축)
+    // 1. 뷰포트 내 가식 영역에 포함되는 타일 데이터 선별 (O(K) 1차원 루프로 줌아웃 CPU 랙 원천 해결)
     final Set<String> visibleIds = {};
-    for (int q = minQ; q <= maxQ; q++) {
-      for (int r = minR; r <= maxR; r++) {
-        visibleIds.add(_getTileId(q, r, dynamicHexSize));
-      }
-    }
+    final List<HexTile> visibleTiles = [];
 
-    // 1. 화면 영역 밖으로 벗어나거나 실제 점령 데이터가 없는 기존 컴포넌트 타일들은 즉시 소멸시켜 CPU/메모리 부하 차단
+    _lastClusteredTiles.forEach((id, tile) {
+      final centerLatLng = _getTileCenter(tile.q, tile.r, id, dynamicHexSize);
+      final double lat = centerLatLng.latitude;
+      final double lng = centerLatLng.longitude;
+
+      if (lat >= minLat && lat <= maxLat && lng >= minLng && lng <= maxLng) {
+        // [적군 영토 은폐 가드] 1순위 초고속 필터: 투영 및 지리 연산 전에 적군 타일을 선결 거름으로써 CPU 부하 99% 제거
+        if (dynamicHexSize >= GameConfig.lodSize3 && tile.userId != _currentUserId) {
+          return;
+        }
+        visibleIds.add(id);
+        visibleTiles.add(tile);
+      }
+    });
+
+    // 2. 화면 영역 밖으로 벗어났거나 실제 점령 데이터가 없는 기존 컴포넌트 타일들은 즉시 소멸시켜 CPU/메모리 부하 차단
     final existingIds = _tileMap.keys.toSet();
     for (final id in existingIds) {
-      if (!visibleIds.contains(id) || !_lastClusteredTiles.containsKey(id)) {
+      if (!visibleIds.contains(id)) {
         final component = _tileMap.remove(id);
         if (component != null) remove(component);
       }
     }
 
-    // 2. 화면 내 가식 영역에 포함되면서 실제 점령 데이터가 존재하는 타일들만 생성/업데이트
-    for (final id in visibleIds) {
-      final tileData = _lastClusteredTiles[id];
-      if (tileData == null) continue; // 실제 점령 데이터가 없는 더미 타일은 생성 배제
-
-      final parts = id.split('_');
-      final int q, r;
-      if (parts.length == 4) {
-        q = int.parse(parts[2]);
-        r = int.parse(parts[3]);
-      } else {
-        q = int.parse(parts[1]);
-        r = int.parse(parts[2]);
-      }
-
-      // [적군 영토 은폐 가드] 1순위 초고속 필터: 투영 및 지리 연산 전에 적군 타일을 선결 거름으로써 CPU 부하 99% 제거
-      if (dynamicHexSize >= GameConfig.lodSize3 &&
-          tileData.userId != _currentUserId) {
-        if (_tileMap.containsKey(id)) {
-          final component = _tileMap.remove(id);
-          if (component != null) remove(component);
-        }
-        continue;
-      }
+    // 3. 화면 내 가식 영역에 속하는 타일들만 생성/업데이트
+    for (final tileData in visibleTiles) {
+      final String id = tileData.id;
+      final int q = tileData.q;
+      final int r = tileData.r;
 
       final centerLatLng = _getTileCenter(q, r, id, dynamicHexSize);
       final cornerLatLngs = _getTileCorners(q, r, id, dynamicHexSize);
-      final screenOffset = _mapController!.camera.latLngToScreenOffset(
-        centerLatLng,
-      );
+      final screenOffset = _mapController!.camera.latLngToScreenOffset(centerLatLng);
 
       final targetTileColorHex = (tileData.userId == _currentUserId)
           ? GameColors.myTileColorHex
@@ -396,17 +378,16 @@ class ConquestGame extends FlameGame {
         _tileMap[id]!.position = Vector2(screenOffset.dx, screenOffset.dy);
         _tileMap[id]!.updateData(colorHex: targetTileColorHex);
       } else {
-        final component =
-            HexTileComponent(
-                q: q,
-                r: r,
-                centerLatLng: centerLatLng,
-                cornerLatLngs: cornerLatLngs,
-                colorHex: targetTileColorHex,
-                hexSize: dynamicHexSize,
-              )
-              ..position = Vector2(screenOffset.dx, screenOffset.dy)
-              ..priority = 0;
+        final component = HexTileComponent(
+          q: q,
+          r: r,
+          centerLatLng: centerLatLng,
+          cornerLatLngs: cornerLatLngs,
+          colorHex: targetTileColorHex,
+          hexSize: dynamicHexSize,
+        )
+          ..position = Vector2(screenOffset.dx, screenOffset.dy)
+          ..priority = 0;
         _tileMap[id] = component;
         add(component);
       }
@@ -470,10 +451,10 @@ class ConquestGame extends FlameGame {
       // 맵에 존재하지 않는 중립 구역인 경우
       int? q;
       int? r;
-      final parts = tileId.split('_');
-      if (parts.length == 3 && parts[0] == 'hex') {
-        q = int.tryParse(parts[1]);
-        r = int.tryParse(parts[2]);
+      final parsed = HexService.parseTileId(tileId);
+      if (parsed != null) {
+        q = parsed['q'];
+        r = parsed['r'];
       } else if (fallbackLocation != null) {
         final hex = HexService.latLngToHex(fallbackLocation, hexSize: hexSize);
         q = hex['q'];
@@ -481,41 +462,78 @@ class ConquestGame extends FlameGame {
       }
 
       if (q != null && r != null) {
-        // 화면 가시성 1차 가드 필터링
+        // [초최적화 위경도 Frustum Culling] 뷰포트 지리지형 경계선 획득 및 안전 마진 정의
         final bounds = _mapController!.camera.visibleBounds;
-        final double minLat = bounds.southWest.latitude - 0.03;
-        final double maxLat = bounds.northEast.latitude + 0.03;
-        final double minLng = bounds.southWest.longitude - 0.03;
-        final double maxLng = bounds.northEast.longitude + 0.03;
+        final sw = bounds.southWest;
+        final ne = bounds.northEast;
 
-        final centerLatLng = _getTileCenter(q, r, tileId, hexSize);
-        final double lat = centerLatLng.latitude;
-        final double lng = centerLatLng.longitude;
-        final bool isGeographicallyVisible =
-            lat >= minLat && lat <= maxLat && lng >= minLng && lng <= maxLng;
+        // 안전 렌더링 버퍼 확보를 위해 위경도 임계 범위 마진 가미 (약 0.02도)
+        final double marginLat = 0.02;
+        final double marginLng = 0.02;
+        final double minLat = sw.latitude - marginLat;
+        final double maxLat = ne.latitude + marginLat;
+        final double minLng = sw.longitude - marginLng;
+        final double maxLng = ne.longitude + marginLng;
 
-        if (isGeographicallyVisible) {
-          final cornerLatLngs = _getTileCorners(q, r, tileId, hexSize);
-          final screenOffset = _mapController!.camera.latLngToScreenOffset(
-            centerLatLng,
-          );
+        // 1. 뷰포트 내 가식 영역에 포함되는 타일 데이터 선별 (O(K) 1차원 루프로 줌아웃 CPU 랙 원천 해결)
+        final Set<String> visibleIds = {};
+        final List<HexTile> visibleTiles = [];
 
-          final tempTile =
-              HexTileComponent(
-                  q: q,
-                  r: r,
-                  centerLatLng: centerLatLng,
-                  cornerLatLngs: cornerLatLngs,
-                  colorHex: null,
-                  hexSize: hexSize,
-                  isCapturing: isCapturing,
-                  progress: progress,
-                  capturingColorHex: colorHex,
-                )
-                ..position = Vector2(screenOffset.dx, screenOffset.dy)
-                ..priority = 0;
-          _tileMap[tileId] = tempTile;
-          add(tempTile);
+        _lastClusteredTiles.forEach((id, tile) {
+          final centerLatLng = _getTileCenter(tile.q, tile.r, id, hexSize);
+          final double lat = centerLatLng.latitude;
+          final double lng = centerLatLng.longitude;
+
+          if (lat >= minLat && lat <= maxLat && lng >= minLng && lng <= maxLng) {
+            // [적군 영토 은폐 가드] 1순위 초고속 필터: 투영 및 지리 연산 전에 적군 타일을 선결 거름으로써 CPU 부하 99% 제거
+            if (hexSize >= GameConfig.lodSize3 && tile.userId != _currentUserId) {
+              return;
+            }
+            visibleIds.add(id);
+            visibleTiles.add(tile);
+          }
+        });
+
+        // 2. 화면 영역 밖으로 벗어났거나 실제 점령 데이터가 없는 기존 컴포넌트 타일들은 즉시 소멸시켜 CPU/메모리 부하 차단
+        final existingIds = _tileMap.keys.toSet();
+        for (final id in existingIds) {
+          if (!visibleIds.contains(id)) {
+            final component = _tileMap.remove(id);
+            if (component != null) remove(component);
+          }
+        }
+
+        // 3. 화면 내 가식 영역에 속하는 타일들만 생성/좌표 업데이트
+        for (final tileData in visibleTiles) {
+          final String id = tileData.id;
+          final int q = tileData.q;
+          final int r = tileData.r;
+
+          final centerLatLng = _getTileCenter(q, r, id, hexSize);
+          final cornerLatLngs = _getTileCorners(q, r, id, hexSize);
+          final screenOffset = _mapController!.camera.latLngToScreenOffset(centerLatLng);
+
+          final targetTileColorHex = (tileData.userId == _currentUserId)
+              ? GameColors.myTileColorHex
+              : GameColors.enemyTileColorHex;
+
+          if (_tileMap.containsKey(id)) {
+            _tileMap[id]!.position = Vector2(screenOffset.dx, screenOffset.dy);
+            _tileMap[id]!.updateData(colorHex: targetTileColorHex);
+          } else {
+            final component = HexTileComponent(
+              q: q,
+              r: r,
+              centerLatLng: centerLatLng,
+              cornerLatLngs: cornerLatLngs,
+              colorHex: targetTileColorHex,
+              hexSize: hexSize,
+            )
+              ..position = Vector2(screenOffset.dx, screenOffset.dy)
+              ..priority = 0;
+            _tileMap[id] = component;
+            add(component);
+          }
         }
       }
     }
@@ -555,74 +573,56 @@ class ConquestGame extends FlameGame {
       _lastLodLevel = currentLod;
     }
 
-    // [초근본 가혹 필터] 뷰포트 지리지형 Frustum Culling 경계선 획득
+    // [초최적화 위경도 Frustum Culling] 뷰포트 지리지형 경계선 획득 및 안전 마진 정의
     final bounds = _mapController!.camera.visibleBounds;
     final sw = bounds.southWest;
     final ne = bounds.northEast;
-    final nw = LatLng(ne.latitude, sw.longitude);
-    final se = LatLng(sw.latitude, ne.longitude);
 
-    final hSw = HexService.latLngToHex(sw, hexSize: dynamicHexSize);
-    final hNe = HexService.latLngToHex(ne, hexSize: dynamicHexSize);
-    final hNw = HexService.latLngToHex(nw, hexSize: dynamicHexSize);
-    final hSe = HexService.latLngToHex(se, hexSize: dynamicHexSize);
+    // 안전 렌더링 버퍼 확보를 위해 위경도 임계 범위 마진 가미 (약 0.02도)
+    final double marginLat = 0.02;
+    final double marginLng = 0.02;
+    final double minLat = sw.latitude - marginLat;
+    final double maxLat = ne.latitude + marginLat;
+    final double minLng = sw.longitude - marginLng;
+    final double maxLng = ne.longitude + marginLng;
 
-    final List<int> qs = [hSw['q']!, hNe['q']!, hNw['q']!, hSe['q']!];
-    final List<int> rs = [hSw['r']!, hNe['r']!, hNw['r']!, hSe['r']!];
-
-    // 안전 버퍼 2칸 추가
-    final int minQ = qs.reduce((a, b) => a < b ? a : b) - 2;
-    final int maxQ = qs.reduce((a, b) => a > b ? a : b) + 2;
-    final int minR = rs.reduce((a, b) => a < b ? a : b) - 2;
-    final int maxR = rs.reduce((a, b) => a > b ? a : b) + 2;
-
-    // 현재 화면 영역에 가시적인 타일 ID 집합 생성
+    // 1. 뷰포트 내 가식 영역에 포함되는 타일 데이터 선별 (O(K) 1차원 루프로 줌아웃 CPU 랙 원천 해결)
     final Set<String> visibleIds = {};
-    for (int q = minQ; q <= maxQ; q++) {
-      for (int r = minR; r <= maxR; r++) {
-        visibleIds.add(_getTileId(q, r, dynamicHexSize));
-      }
-    }
+    final List<HexTile> visibleTiles = [];
 
-    // 1. 화면 영역 밖으로 벗어나거나 실제 점령 데이터가 없는 기존 컴포넌트 타일들은 즉시 소멸시켜 CPU/메모리 부하 차단
+    _lastClusteredTiles.forEach((id, tile) {
+      final centerLatLng = _getTileCenter(tile.q, tile.r, id, dynamicHexSize);
+      final double lat = centerLatLng.latitude;
+      final double lng = centerLatLng.longitude;
+
+      if (lat >= minLat && lat <= maxLat && lng >= minLng && lng <= maxLng) {
+        // [적군 영토 은폐 가드] 1순위 초고속 필터: 투영 및 지리 연산 전에 적군 타일을 선결 거름으로써 CPU 부하 99% 제거
+        if (dynamicHexSize >= GameConfig.lodSize3 && tile.userId != _currentUserId) {
+          return;
+        }
+        visibleIds.add(id);
+        visibleTiles.add(tile);
+      }
+    });
+
+    // 2. 화면 영역 밖으로 벗어났거나 실제 점령 데이터가 없는 기존 컴포넌트 타일들은 즉시 소멸시켜 CPU/메모리 부하 차단
     final existingIds = _tileMap.keys.toSet();
     for (final id in existingIds) {
-      if (!visibleIds.contains(id) || !_lastClusteredTiles.containsKey(id)) {
+      if (!visibleIds.contains(id)) {
         final component = _tileMap.remove(id);
         if (component != null) remove(component);
       }
     }
 
-    // 2. 화면 내 가식 영역에 포함되면서 실제 점령 데이터가 존재하는 타일들만 생성/좌표 업데이트
-    for (final id in visibleIds) {
-      final tileData = _lastClusteredTiles[id];
-      if (tileData == null) continue; // 실제 점령 데이터가 없는 더미 타일은 생성 배제
-
-      final parts = id.split('_');
-      final int q, r;
-      if (parts.length == 4) {
-        q = int.parse(parts[2]);
-        r = int.parse(parts[3]);
-      } else {
-        q = int.parse(parts[1]);
-        r = int.parse(parts[2]);
-      }
-
-      // [적군 영토 은폐 가드] 1순위 초고속 필터: 투영 및 지리 연산 전에 적군 타일을 선결 거름으로써 CPU 부하 99% 제거
-      if (dynamicHexSize >= GameConfig.lodSize3 &&
-          tileData.userId != _currentUserId) {
-        if (_tileMap.containsKey(id)) {
-          final component = _tileMap.remove(id);
-          if (component != null) remove(component);
-        }
-        continue;
-      }
+    // 3. 화면 내 가식 영역에 속하는 타일들만 생성/좌표 업데이트
+    for (final tileData in visibleTiles) {
+      final String id = tileData.id;
+      final int q = tileData.q;
+      final int r = tileData.r;
 
       final centerLatLng = _getTileCenter(q, r, id, dynamicHexSize);
       final cornerLatLngs = _getTileCorners(q, r, id, dynamicHexSize);
-      final screenOffset = _mapController!.camera.latLngToScreenOffset(
-        centerLatLng,
-      );
+      final screenOffset = _mapController!.camera.latLngToScreenOffset(centerLatLng);
 
       final targetTileColorHex = (tileData.userId == _currentUserId)
           ? GameColors.myTileColorHex
@@ -632,17 +632,16 @@ class ConquestGame extends FlameGame {
         _tileMap[id]!.position = Vector2(screenOffset.dx, screenOffset.dy);
         _tileMap[id]!.updateData(colorHex: targetTileColorHex);
       } else {
-        final component =
-            HexTileComponent(
-                q: q,
-                r: r,
-                centerLatLng: centerLatLng,
-                cornerLatLngs: cornerLatLngs,
-                colorHex: targetTileColorHex,
-                hexSize: dynamicHexSize,
-              )
-              ..position = Vector2(screenOffset.dx, screenOffset.dy)
-              ..priority = 0;
+        final component = HexTileComponent(
+          q: q,
+          r: r,
+          centerLatLng: centerLatLng,
+          cornerLatLngs: cornerLatLngs,
+          colorHex: targetTileColorHex,
+          hexSize: dynamicHexSize,
+        )
+          ..position = Vector2(screenOffset.dx, screenOffset.dy)
+          ..priority = 0;
         _tileMap[id] = component;
         add(component);
       }
@@ -690,14 +689,12 @@ class ConquestGame extends FlameGame {
     }
 
     if (newHQTileId != null && newHQTileId.isNotEmpty) {
-      final parts = newHQTileId.split('_');
-      if (parts.length == 3 && parts[0] == 'hex') {
-        final q = int.tryParse(parts[1]);
-        final r = int.tryParse(parts[2]);
-        if (q != null && r != null) {
-          _hqMarker = HQBaseMarker(q: q, r: r, colorHex: colorHex);
-          add(_hqMarker!);
-        }
+      final parsed = HexService.parseTileId(newHQTileId);
+      if (parsed != null) {
+        final int q = parsed['q'];
+        final int r = parsed['r'];
+        _hqMarker = HQBaseMarker(q: q, r: r, colorHex: colorHex);
+        add(_hqMarker!);
       }
     }
   }
@@ -713,10 +710,10 @@ class ConquestGame extends FlameGame {
         : (isScanMode ? selectedScanTileId : null);
 
     if (activeTileId != null && activeTileId.isNotEmpty) {
-      final parts = activeTileId.split('_');
-      if (parts.length == 3 && parts[0] == 'hex') {
-        targetQ = int.tryParse(parts[1]);
-        targetR = int.tryParse(parts[2]);
+      final parsed = HexService.parseTileId(activeTileId);
+      if (parsed != null) {
+        targetQ = parsed['q'];
+        targetR = parsed['r'];
       }
     }
 
