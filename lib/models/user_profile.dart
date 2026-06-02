@@ -57,6 +57,9 @@ class UserProfile {
   /// 시스템 공지 알림 동의 여부
   final bool notifSystemNotice;
 
+  /// 요원의 마지막 로그인 세션 식별자
+  final String? lastSessionId;
+
   /// UserProfile 생성자
   UserProfile({
     required this.id,
@@ -78,6 +81,7 @@ class UserProfile {
     this.gold = 0.0,
     this.capturedTilesCount = 0,
     this.lastGoldUpdatedAt,
+    this.lastSessionId,
   });
 
   /// Map 구조의 JSON 데이터로부터 UserProfile 인스턴스를 생성하는 팩토리 메서드
@@ -112,6 +116,7 @@ class UserProfile {
       notifTerritoryAttack: json['notif_territory_attack'] as bool? ?? true,
       notifSatelliteComplete: json['notif_satellite_complete'] as bool? ?? true,
       notifSystemNotice: json['notif_system_notice'] as bool? ?? true,
+      lastSessionId: json['last_session_id'] as String?,
     );
   }
 
@@ -135,6 +140,7 @@ class UserProfile {
       'notif_territory_attack': notifTerritoryAttack,
       'notif_satellite_complete': notifSatelliteComplete,
       'notif_system_notice': notifSystemNotice,
+      'last_session_id': lastSessionId,
     };
   }
 
@@ -155,6 +161,7 @@ class UserProfile {
       'notif_territory_attack': notifTerritoryAttack,
       'notif_satellite_complete': notifSatelliteComplete,
       'notif_system_notice': notifSystemNotice,
+      'last_session_id': lastSessionId,
     };
   }
 
@@ -179,6 +186,7 @@ class UserProfile {
     double? gold,
     int? capturedTilesCount,
     DateTime? lastGoldUpdatedAt,
+    String? lastSessionId,
   }) {
     return UserProfile(
       id: id ?? this.id,
@@ -202,6 +210,7 @@ class UserProfile {
       gold: gold ?? this.gold,
       capturedTilesCount: capturedTilesCount ?? this.capturedTilesCount,
       lastGoldUpdatedAt: lastGoldUpdatedAt ?? this.lastGoldUpdatedAt,
+      lastSessionId: lastSessionId ?? this.lastSessionId,
     );
   }
 }

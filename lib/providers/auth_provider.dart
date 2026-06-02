@@ -1,3 +1,5 @@
+import 'dart:async';
+import 'dart:math';
 import 'package:flutter/material.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import '../services/auth_service.dart';
@@ -24,6 +26,15 @@ class AuthProvider extends ChangeNotifier {
   /// 최근 발생한 에러 메시지
   String? _error;
 
+  /// 중복 로그인 방지를 위한 로컬 세션 고유 식별자
+  late final String _localSessionId;
+
+  /// 중복 로그인 발생으로 인해 강제 로그아웃되었는지 여부
+  bool _isDuplicateLoggedOut = false;
+
+  /// profiles 테이블 실시간 감지용 스트림 구독 객체
+  StreamSubscription<List<Map<String, dynamic>>>? _profileSubscription;
+
   /// 현재 로그인된 Supabase User 객체를 반환합니다.
   User? get user => _user;
 
@@ -39,9 +50,22 @@ class AuthProvider extends ChangeNotifier {
   /// 사용자가 로그인되어 세션이 활성화된 상태인지 여부를 반환합니다.
   bool get isAuthenticated => _user != null;
 
+  /// 로컬 세션 ID 게터
+  String get localSessionId => _localSessionId;
+
+  /// 중복 로그인 감지 플래그 게터
+  bool get isDuplicateLoggedOut => _isDuplicateLoggedOut;
+
   /// AuthProvider 생성자로, 앱 구동 시 내부 초기화 과정을 수행합니다.
   AuthProvider() {
+    _localSessionId = _generateSessionId();
     _init();
+  }
+
+  /// 고유 세션 ID 생성
+  String _generateSessionId() {
+    final rand = Random().nextInt(999999);
+    return '${DateTime.now().millisecondsSinceEpoch}_$rand';
   }
 
   /// 초기 사용자의 인증 정보 및 세션 변경 흐름을 모니터링하기 위한 리스너를 바인딩합니다.
@@ -49,6 +73,8 @@ class AuthProvider extends ChangeNotifier {
     _user = _authService.currentUser;
     if (_user != null) {
       _loadProfile(_user!.id, isAppStart: true);
+      _updateSessionIdInDatabase(_user!.id);
+      _subscribeProfileRealtime(_user!.id);
     }
 
     _authService.authStateChanges.listen((data) {
@@ -58,9 +84,15 @@ class AuthProvider extends ChangeNotifier {
       _user = session?.user;
 
       if (event == AuthChangeEvent.signedIn && _user != null) {
-        _loadProfile(_user!.id);
+        _isDuplicateLoggedOut = false;
+        _updateSessionIdInDatabase(_user!.id).then((_) {
+          _loadProfile(_user!.id);
+          _subscribeProfileRealtime(_user!.id);
+        });
         _notificationService.subscribeToTopic('user_${_user!.id}');
       } else if (event == AuthChangeEvent.signedOut) {
+        _profileSubscription?.cancel();
+        _profileSubscription = null;
         if (_user != null) {
           _notificationService.unsubscribeFromTopic('user_${_user!.id}');
         }
@@ -69,6 +101,69 @@ class AuthProvider extends ChangeNotifier {
 
       notifyListeners();
     });
+  }
+
+  /// DB profiles 테이블의 last_session_id 필드를 로컬 세션 ID로 업데이트합니다.
+  Future<void> _updateSessionIdInDatabase(String userId) async {
+    try {
+      await _authService.client
+          .from('profiles')
+          .update({'last_session_id': _localSessionId})
+          .eq('id', userId);
+      debugPrint('🔑 로컬 세션 ID ($_localSessionId) DB 갱신 성공');
+    } catch (e) {
+      debugPrint('⚠️ DB last_session_id 갱신 실패 (컬럼 미생성 상태일 수 있음): $e');
+    }
+  }
+
+  /// profiles 테이블의 변화를 실시간으로 리스닝하여 중복 로그인을 체크합니다.
+  void _subscribeProfileRealtime(String userId) {
+    _profileSubscription?.cancel();
+    
+    // 첫 번째 이벤트는 DB의 기존 상태(구독 시점의 캐시 데이터)이므로 비교를 스킵합니다.
+    bool isFirstEvent = true;
+
+    _profileSubscription = _authService.client
+        .from('profiles')
+        .stream(primaryKey: ['id'])
+        .eq('id', userId)
+        .listen((data) {
+          if (data.isNotEmpty) {
+            final updatedProfile = UserProfile.fromJson(data.first);
+            final serverSessionId = updatedProfile.lastSessionId;
+
+            if (isFirstEvent) {
+              isFirstEvent = false;
+              debugPrint('ℹ️ 실시간 세션 감시 시작 (최초 세션 ID: $serverSessionId)');
+              return;
+            }
+
+            // 서버 세션 ID가 존재하고, 로컬 세션 ID와 다른 경우 중복 로그인 발생
+            if (serverSessionId != null && serverSessionId != _localSessionId) {
+              _handleDuplicateLogin();
+            }
+          }
+        }, onError: (e) {
+          debugPrint('⚠️ 프로필 실시간 구독 에러 (무시 가능): $e');
+        });
+  }
+
+  /// 중복 로그인 감지 시 로그아웃 및 상태 초기화를 진행합니다.
+  Future<void> _handleDuplicateLogin() async {
+    debugPrint('🚨 중복 로그인 감지 - 접속을 종료합니다.');
+    _isDuplicateLoggedOut = true;
+
+    _profileSubscription?.cancel();
+    _profileSubscription = null;
+
+    await signOut();
+    notifyListeners();
+  }
+
+  /// 중복 로그인 플래그를 초기화합니다.
+  void clearDuplicateLogoutFlag() {
+    _isDuplicateLoggedOut = false;
+    notifyListeners();
   }
 
   /// 특정 사용자 ID를 기반으로 DB 프로필 정보를 로드하고 FCM 알림 토픽에 등록합니다.
@@ -138,6 +233,7 @@ class AuthProvider extends ChangeNotifier {
 
   /// 로그인
   Future<void> signIn({required String email, required String password}) async {
+    _isDuplicateLoggedOut = false;
     _setLoading(true);
     try {
       await _authService.signIn(email: email, password: password);
@@ -223,7 +319,10 @@ class AuthProvider extends ChangeNotifier {
 
     _setLoading(true);
     try {
-      final updatedProfile = _profile!.copyWith(colorHex: newColorHex);
+      final updatedProfile = _profile!.copyWith(
+        colorHex: newColorHex,
+        lastSessionId: _localSessionId,
+      );
       await _authService.updateProfile(updatedProfile);
       _profile = updatedProfile;
       notifyListeners();
@@ -248,6 +347,7 @@ class AuthProvider extends ChangeNotifier {
         notifTerritoryAttack: territoryAttack,
         notifSatelliteComplete: satelliteComplete,
         notifSystemNotice: systemNotice,
+        lastSessionId: _localSessionId,
       );
       await _authService.updateProfile(updatedProfile);
       _profile = updatedProfile;
@@ -263,7 +363,10 @@ class AuthProvider extends ChangeNotifier {
 
     _setLoading(true);
     try {
-      final updatedProfile = _profile!.copyWith(mainBaseTileId: tileId);
+      final updatedProfile = _profile!.copyWith(
+        mainBaseTileId: tileId,
+        lastSessionId: _localSessionId,
+      );
       await _authService.updateProfile(updatedProfile);
       _profile = updatedProfile;
       notifyListeners();

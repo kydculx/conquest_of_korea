@@ -99,6 +99,65 @@ class _GameScreenState extends State<GameScreen> {
     }
   }
 
+  bool _isDuplicateDialogShowing = false;
+
+  void _showDuplicateLoginDialog() {
+    if (_isDuplicateDialogShowing) return;
+    _isDuplicateDialogShowing = true;
+
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (context) {
+        return TacticalDialog(
+          title: GameStrings.duplicateLoginTitle,
+          icon: Icons.error_outline_rounded,
+          accentColor: GameColors.accentNeon,
+          content: Text(
+            GameStrings.duplicateLoginMessage,
+            style: TextStyle(
+              color: GameColors.textPrimary.withValues(alpha: 0.85),
+              fontSize: 13,
+              height: 1.6,
+            ),
+          ),
+          actions: [
+            ElevatedButton(
+              onPressed: () {
+                _authProvider?.clearDuplicateLogoutFlag();
+                Navigator.pop(context);
+                _isDuplicateDialogShowing = false;
+                Navigator.pushNamedAndRemoveUntil(
+                  context,
+                  '/login',
+                  (route) => false,
+                );
+              },
+              style: ElevatedButton.styleFrom(
+                backgroundColor: GameColors.accentNeon,
+                foregroundColor: GameColors.tacticalBlack,
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 20,
+                  vertical: 12,
+                ),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(16),
+                ),
+              ),
+              child: Text(
+                GameStrings.confirm,
+                style: const TextStyle(
+                  fontSize: 13,
+                  fontWeight: FontWeight.w900,
+                ),
+              ),
+            ),
+          ],
+        );
+      },
+    );
+  }
+
   /// 프로바이더 내부 상태 변화 감지 시, UI 리빌드(Scaffold 빌드) 없이 Flame 게임 엔진의 데이터만 직접 동기화
   void _onStateChanged() {
     if (!mounted ||
@@ -106,6 +165,12 @@ class _GameScreenState extends State<GameScreen> {
         _authProvider == null ||
         _locationProvider == null ||
         _flameGame == null) {
+      return;
+    }
+
+    // 중복 로그인 감지 시 처리
+    if (_authProvider!.isDuplicateLoggedOut) {
+      _showDuplicateLoginDialog();
       return;
     }
 

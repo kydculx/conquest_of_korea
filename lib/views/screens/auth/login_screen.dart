@@ -39,6 +39,19 @@ class _LoginScreenState extends State<LoginScreen> {
     super.dispose();
   }
 
+  /// 로그인 성공 및 화면 복귀 처리를 공통으로 수행하는 라우팅 헬퍼입니다.
+  void _handleLoginSuccess() {
+    if (!mounted) return;
+    final navigator = Navigator.of(context);
+    if (navigator.canPop()) {
+      navigator.pop();
+    } else {
+      navigator.pushReplacement(
+        MaterialPageRoute(builder: (context) => const GameScreen()),
+      );
+    }
+  }
+
   /// 이메일과 비밀번호 정보를 기반으로 Supabase 서버에 사용자 인증 로그인을 요청합니다.
   Future<void> _handleLogin() async {
     final authProvider = context.read<AuthProvider>();
@@ -47,7 +60,7 @@ class _LoginScreenState extends State<LoginScreen> {
         email: _emailController.text.trim(),
         password: _passwordController.text.trim(),
       );
-      if (mounted) Navigator.of(context).pop();
+      _handleLoginSuccess();
     } catch (e) {
       if (mounted) {
         ToastHelper.show(
@@ -62,14 +75,7 @@ class _LoginScreenState extends State<LoginScreen> {
   /// 뒤로 가기(pop)를 시도할 때, 스택 뒤에 아무것도 없는 경우를 방지하여
   /// 안전하게 게임 화면(GameScreen)으로 복귀하는 헬퍼 메서드입니다.
   void _handleBackToGame() {
-    final navigator = Navigator.of(context);
-    if (navigator.canPop()) {
-      navigator.pop();
-    } else {
-      navigator.pushReplacement(
-        MaterialPageRoute(builder: (context) => const GameScreen()),
-      );
-    }
+    _handleLoginSuccess();
   }
 
   @override
@@ -319,10 +325,9 @@ class _LoginScreenState extends State<LoginScreen> {
                         _buildSocialCircleButton(
                           onPressed: () async {
                             final authProvider = context.read<AuthProvider>();
-                            final navigator = Navigator.of(context);
                             try {
                               await authProvider.signInWithGoogle();
-                              navigator.pop();
+                              _handleLoginSuccess();
                             } catch (e) {
                               if (context.mounted) {
                                 ToastHelper.show(
@@ -345,16 +350,15 @@ class _LoginScreenState extends State<LoginScreen> {
                             ),
                           ),
                         ),
-                        if (!kIsWeb && Platform.isIOS) ...[
+                        if (!kIsWeb && Platform.isIOS) ... [
                           const SizedBox(width: 20),
                           // Apple
                           _buildSocialCircleButton(
                             onPressed: () async {
                               final authProvider = context.read<AuthProvider>();
-                              final navigator = Navigator.of(context);
                               try {
                                 await authProvider.signInWithApple();
-                                navigator.pop();
+                                _handleLoginSuccess();
                               } catch (e) {
                                 if (context.mounted) {
                                   ToastHelper.show(

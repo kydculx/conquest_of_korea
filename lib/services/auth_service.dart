@@ -12,6 +12,9 @@ class AuthService {
   /// Supabase SDK 클라이언트 객체
   final SupabaseClient _client = Supabase.instance.client;
 
+  /// Supabase 클라이언트 인스턴스 게터
+  SupabaseClient get client => _client;
+
   /// 현재 로그인 완료 상태인 사용자(User) 정보를 반환합니다. 비로그인 시 null을 반환합니다.
   User? get currentUser => _client.auth.currentUser;
 

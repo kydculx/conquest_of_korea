@@ -304,5 +304,7 @@
   "hudRequiredGoldLabel": "필요재화",
   "hudRequiredTimeLabel": "소요시간",
   "hudSecretAreaLabel": "보안 구역",
-  "hudSecretHiddenLabel": "정보 은폐됨"
+  "hudSecretHiddenLabel": "정보 은폐됨",
+  "duplicateLoginTitle": "중복 로그인 감지",
+  "duplicateLoginMessage": "다른 기기에서 동일한 계정으로 로그인하였습니다. 현재 기기에서의 접속을 종료합니다."
 }

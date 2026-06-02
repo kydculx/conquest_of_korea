@@ -978,6 +978,12 @@ class GameStrings {
 
   /// 정보 은폐됨 라벨
   static String get hudSecretHiddenLabel => 'hudSecretHiddenLabel'.tr();
+
+  /// 중복 로그인 다이얼로그 타이틀
+  static String get duplicateLoginTitle => 'duplicateLoginTitle'.tr();
+
+  /// 중복 로그인 다이얼로그 본문
+  static String get duplicateLoginMessage => 'duplicateLoginMessage'.tr();
 }
 
 class GameUrls {

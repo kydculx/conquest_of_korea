@@ -304,5 +304,7 @@
   "hudRequiredGoldLabel": "Cost",
   "hudRequiredTimeLabel": "Time",
   "hudSecretAreaLabel": "Secret Area",
-  "hudSecretHiddenLabel": "Hidden"
+  "hudSecretHiddenLabel": "Hidden",
+  "duplicateLoginTitle": "Duplicate Login Detected",
+  "duplicateLoginMessage": "Logged in from another device with the same account. The session on this device has been closed."
 }
