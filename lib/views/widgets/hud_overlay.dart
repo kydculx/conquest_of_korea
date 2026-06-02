@@ -1223,7 +1223,6 @@ class _BubbleBodyState extends State<_BubbleBody> {
                 children: [
                   // 상태 텍스트
                   Row(
-                    mainAxisSize: MainAxisSize.min,
                     children: [
                       Container(
                         width: 5,
@@ -1234,7 +1233,7 @@ class _BubbleBodyState extends State<_BubbleBody> {
                           shape: BoxShape.circle,
                         ),
                       ),
-                      Flexible(
+                      Expanded(
                         child: Text(
                           widget.detailsText,
                           style: GoogleFonts.fredoka(
@@ -1247,6 +1246,7 @@ class _BubbleBodyState extends State<_BubbleBody> {
                           ),
                         ),
                       ),
+                      const SizedBox(width: 20), // 우측 닫기(X) 버튼 영역 겹침 방지 여백 강제 확보
                     ],
                   ),
                   // [신규] All-in-One 타일 상세 정보 그리드 패널 (보안 해제 상태 연동)
