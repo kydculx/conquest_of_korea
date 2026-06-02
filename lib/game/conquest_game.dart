@@ -309,15 +309,16 @@ class ConquestGame extends FlameGame {
     final int currentLod = _getLodLevelForZoom(currentZoom);
     final double dynamicHexSize = _getHexSizeForZoom(currentZoom);
 
-    // LOD 세대교체가 발생했거나 데이터 리프레시 필요 시 클러스터링 가동
+    // 줌 레벨(LOD) 스케일이 실제로 바뀌었을 경우 기존 컴포넌트들을 강제로 일괄 파기하여 무대 청소
     if (_lastLodLevel != currentLod || _lastClusteredTiles.isEmpty) {
-      _rebuildClusteredTiles(capturedTiles, dynamicHexSize);
-      // LOD 가 변했으므로 기존 컴포넌트들을 강제로 일괄 파기 및 무대 완벽 청소
       _tileMap.clear();
       final toRemove = children.whereType<HexTileComponent>().toList();
       removeAll(toRemove);
       _lastLodLevel = currentLod;
     }
+
+    // 서버 실시간 갱신 데이터에 맞춰 클러스터링 데이터를 매번 누락 없이 100% 최신화 리빌드
+    _rebuildClusteredTiles(capturedTiles, dynamicHexSize);
 
     // [초최적화 위경도 Frustum Culling] 뷰포트 지리지형 경계선 획득 및 안전 마진 정의
     final bounds = _mapController!.camera.visibleBounds;
