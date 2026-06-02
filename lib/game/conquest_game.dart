@@ -351,10 +351,12 @@ class ConquestGame extends FlameGame {
       }
     });
 
-    // 2. 화면 영역 밖으로 벗어났거나 실제 점령 데이터가 없는 기존 컴포넌트 타일들은 즉시 소멸시켜 CPU/메모리 부하 차단
+    // 2. 화면 영역 밖으로 벗어났거나 실제 점령 데이터가 없는 기존 컴포넌트 타일들은 즉시 소멸시켜 CPU/메모리 부하 차단 (단, 현재 점령 진행 중인 타일은 예외 수호)
     final existingIds = _tileMap.keys.toSet();
     for (final id in existingIds) {
-      if (!visibleIds.contains(id)) {
+      final isStillCapturing = id == capturingTileId ||
+          (isSatelliteCapturing && id == satelliteCapturingTileId);
+      if (!visibleIds.contains(id) && !isStillCapturing) {
         final component = _tileMap.remove(id);
         if (component != null) remove(component);
       }
@@ -393,8 +395,8 @@ class ConquestGame extends FlameGame {
       }
     }
 
-    // 점령 중인 타일 특수 상태 처리 (일반 점령 - 정밀 LOD 0 에서만 가시화)
-    if (capturingTileId != null && dynamicHexSize == GameConfig.lodSize0) {
+    // 점령 중인 타일 특수 상태 처리 (일반 점령 - 모든 LOD 단계에서 실시간 가시화 보장)
+    if (capturingTileId != null) {
       _updateActiveCaptureTile(
         tileId: capturingTileId,
         progress: captureProgress,
@@ -405,10 +407,8 @@ class ConquestGame extends FlameGame {
       );
     }
 
-    // 점령 중인 타일 특수 상태 처리 (위성 점령 - 정밀 LOD 0 에서만 가시화)
-    if (isSatelliteCapturing &&
-        satelliteCapturingTileId != null &&
-        dynamicHexSize == GameConfig.lodSize0) {
+    // 점령 중인 타일 특수 상태 처리 (위성 원격 점령 - 모든 LOD 단계에서 실시간 가시화 보장)
+    if (isSatelliteCapturing && satelliteCapturingTileId != null) {
       final bool shouldAnimateTile =
           _satelliteCapturePhase == SatelliteCapturePhase.capturing;
       _updateActiveCaptureTile(
@@ -462,78 +462,38 @@ class ConquestGame extends FlameGame {
       }
 
       if (q != null && r != null) {
-        // [초최적화 위경도 Frustum Culling] 뷰포트 지리지형 경계선 획득 및 안전 마진 정의
+        // [중요 가드] 점령 중인 단일 타일의 화면 가시성 판정
         final bounds = _mapController!.camera.visibleBounds;
-        final sw = bounds.southWest;
-        final ne = bounds.northEast;
+        final double minLat = bounds.southWest.latitude - 0.02;
+        final double maxLat = bounds.northEast.latitude + 0.02;
+        final double minLng = bounds.southWest.longitude - 0.02;
+        final double maxLng = bounds.northEast.longitude + 0.02;
 
-        // 안전 렌더링 버퍼 확보를 위해 위경도 임계 범위 마진 가미 (약 0.02도)
-        final double marginLat = 0.02;
-        final double marginLng = 0.02;
-        final double minLat = sw.latitude - marginLat;
-        final double maxLat = ne.latitude + marginLat;
-        final double minLng = sw.longitude - marginLng;
-        final double maxLng = ne.longitude + marginLng;
+        final centerLatLng = _getTileCenter(q, r, tileId, hexSize);
+        final double lat = centerLatLng.latitude;
+        final double lng = centerLatLng.longitude;
+        final bool isGeographicallyVisible =
+            lat >= minLat && lat <= maxLat && lng >= minLng && lng <= maxLng;
 
-        // 1. 뷰포트 내 가식 영역에 포함되는 타일 데이터 선별 (O(K) 1차원 루프로 줌아웃 CPU 랙 원천 해결)
-        final Set<String> visibleIds = {};
-        final List<HexTile> visibleTiles = [];
-
-        _lastClusteredTiles.forEach((id, tile) {
-          final centerLatLng = _getTileCenter(tile.q, tile.r, id, hexSize);
-          final double lat = centerLatLng.latitude;
-          final double lng = centerLatLng.longitude;
-
-          if (lat >= minLat && lat <= maxLat && lng >= minLng && lng <= maxLng) {
-            // [적군 영토 은폐 가드] 1순위 초고속 필터: 투영 및 지리 연산 전에 적군 타일을 선결 거름으로써 CPU 부하 99% 제거
-            if (hexSize >= GameConfig.lodSize3 && tile.userId != _currentUserId) {
-              return;
-            }
-            visibleIds.add(id);
-            visibleTiles.add(tile);
-          }
-        });
-
-        // 2. 화면 영역 밖으로 벗어났거나 실제 점령 데이터가 없는 기존 컴포넌트 타일들은 즉시 소멸시켜 CPU/메모리 부하 차단
-        final existingIds = _tileMap.keys.toSet();
-        for (final id in existingIds) {
-          if (!visibleIds.contains(id)) {
-            final component = _tileMap.remove(id);
-            if (component != null) remove(component);
-          }
-        }
-
-        // 3. 화면 내 가식 영역에 속하는 타일들만 생성/좌표 업데이트
-        for (final tileData in visibleTiles) {
-          final String id = tileData.id;
-          final int q = tileData.q;
-          final int r = tileData.r;
-
-          final centerLatLng = _getTileCenter(q, r, id, hexSize);
-          final cornerLatLngs = _getTileCorners(q, r, id, hexSize);
+        if (isGeographicallyVisible) {
+          final cornerLatLngs = _getTileCorners(q, r, tileId, hexSize);
           final screenOffset = _mapController!.camera.latLngToScreenOffset(centerLatLng);
 
-          final targetTileColorHex = (tileData.userId == _currentUserId)
-              ? GameColors.myTileColorHex
-              : GameColors.enemyTileColorHex;
-
-          if (_tileMap.containsKey(id)) {
-            _tileMap[id]!.position = Vector2(screenOffset.dx, screenOffset.dy);
-            _tileMap[id]!.updateData(colorHex: targetTileColorHex);
-          } else {
-            final component = HexTileComponent(
-              q: q,
-              r: r,
-              centerLatLng: centerLatLng,
-              cornerLatLngs: cornerLatLngs,
-              colorHex: targetTileColorHex,
-              hexSize: hexSize,
-            )
-              ..position = Vector2(screenOffset.dx, screenOffset.dy)
-              ..priority = 0;
-            _tileMap[id] = component;
-            add(component);
-          }
+          final tempTile = HexTileComponent(
+            q: q,
+            r: r,
+            centerLatLng: centerLatLng,
+            cornerLatLngs: cornerLatLngs,
+            colorHex: null, // 점령 진행 중인 중립 구역은 채우기 색상 null
+            hexSize: hexSize,
+            isCapturing: isCapturing,
+            progress: progress,
+            capturingColorHex: colorHex,
+          )
+            ..position = Vector2(screenOffset.dx, screenOffset.dy)
+            ..priority = 0;
+          _tileMap[tileId] = tempTile;
+          add(tempTile);
         }
       }
     }
@@ -605,11 +565,13 @@ class ConquestGame extends FlameGame {
       }
     });
 
-    // 2. 화면 영역 밖으로 벗어났거나 실제 점령 데이터가 없는 기존 컴포넌트 타일들은 즉시 소멸시켜 CPU/메모리 부하 차단
+    // 2. 화면 영역 밖으로 벗어났거나 실제 점령 데이터가 없는 기존 컴포넌트 타일들은 즉시 소멸시켜 CPU/메모리 부하 차단 (단, 현재 점령 진행 중인 타일은 예외 수호)
     final existingIds = _tileMap.keys.toSet();
     for (final id in existingIds) {
-      if (!visibleIds.contains(id)) {
-        final component = _tileMap.remove(id);
+      final component = _tileMap[id];
+      final isStillCapturing = component != null && component.isCapturing;
+      if (!visibleIds.contains(id) && !isStillCapturing) {
+        _tileMap.remove(id);
         if (component != null) remove(component);
       }
     }
