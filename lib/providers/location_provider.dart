@@ -100,16 +100,32 @@ class LocationProvider extends ChangeNotifier with WidgetsBindingObserver {
         final double currentHeading = event.heading!;
         final now = DateTime.now();
 
-        // 1. 시간 기반 스로틀링 (최소 20ms 주기 갭을 두어 초당 최대 50회 부드럽게 갱신 허용)
+        // 1. 시간 기반 스로틀링 (16ms 주기 갭을 두어 초당 최대 60회 60fps에 완벽 정렬 갱신)
         final elapsedMs = now.difference(_lastCompassUpdatedTime).inMilliseconds;
-        if (elapsedMs < 20) return;
+        if (elapsedMs < 16) return;
 
-        // 2. Dead Zone (각도 필터): 초정밀 0.3도 단위로 갱신하여 랙 체감 현상 소멸 및 노이즈 미동만 억제
-        final double diff = (currentHeading - _lastNotifiedHeading).abs();
-        final double normalizedDiff = diff > 180 ? 360 - diff : diff;
-        if (_lastNotifiedHeading != -999.0 && normalizedDiff < 0.3) return;
+        // 2. 최초 수신 시에는 평활화 필터를 건너뛰고 즉시 초기화하여 부팅 지연 방지
+        if (_lastNotifiedHeading == -999.0) {
+          _heading = currentHeading;
+          _lastNotifiedHeading = currentHeading;
+          _lastCompassUpdatedTime = now;
+          notifyListeners();
+          return;
+        }
 
-        _heading = currentHeading;
+        // 3. [초근본 개선] 360도 경계선 회전 Wrap-around를 방지하는 최단 경로 변위 산출
+        double diff = currentHeading - _heading;
+        diff = diff % 360;
+        if (diff > 180) {
+          diff -= 360;
+        } else if (diff < -180) {
+          diff += 360;
+        }
+
+        // 4. 지수 평활화(EMA) 필터 가동 (0.18의 정밀 가중치를 가미해 딜레이 없는 극한의 자연스러운 스무딩 수렴)
+        final double nextHeading = (_heading + diff * 0.18) % 360;
+
+        _heading = nextHeading;
         _lastNotifiedHeading = currentHeading;
         _lastCompassUpdatedTime = now;
         notifyListeners();

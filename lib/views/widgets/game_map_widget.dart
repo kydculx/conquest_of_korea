@@ -99,6 +99,8 @@ class _GameMapWidgetState extends State<GameMapWidget>
     final loc = _locProvider!;
     final gameProvider = Provider.of<GameProvider>(context, listen: false);
 
+    bool hasMoved = false;
+
     // 1. 위치 이동은 내 위치 추적 활성화 상태이고 사용자가 지도를 조작 중(터치/핀치)이 아니며, 이동 애니메이션이 진행 중이지 않을 때만 수행
     final isAnimating =
         _animationController != null && _animationController!.isAnimating;
@@ -107,22 +109,38 @@ class _GameMapWidgetState extends State<GameMapWidget>
         !_isPinching &&
         _pointerCount == 0 &&
         !isAnimating) {
-      _mapController.move(loc.currentLocation!, _currentZoom);
-    }
-
-    // 2. 회전은 위치 추적 여부와 관계없이 회전 모드 여부에 따라 항상 화면 중앙을 기준으로 동기화
-    if (gameProvider.isMapRotationMode) {
-      _mapController.rotate(-loc.heading);
-    } else {
-      if (_mapController.camera.rotation != 0.0) {
-        _mapController.rotate(0.0);
+      // 실제 카메라 센터 위치와 목적지의 변위 차이를 판별하여 유효 이동이 일어났을 때만 move 기동
+      final double latDiff = (_mapController.camera.center.latitude - loc.currentLocation!.latitude).abs();
+      final double lngDiff = (_mapController.camera.center.longitude - loc.currentLocation!.longitude).abs();
+      if (latDiff > 0.00001 || lngDiff > 0.00001) {
+        _mapController.move(loc.currentLocation!, _currentZoom);
+        hasMoved = true;
       }
     }
 
-    // Flame 엔진 프로젝션 업데이트 트리거
-    widget.game.updateProjection(_mapController);
+    // 2. 회전은 위치 추적 여부와 관계없이 회전 모드 여부에 따라 항상 화면 중앙을 기준으로 동기화
+    bool hasRotated = false;
+    if (gameProvider.isMapRotationMode) {
+      final double currentRot = _mapController.camera.rotation;
+      final double targetRot = -loc.heading;
+      // 미세 오차 임계치(0.1도) 이상 변위 발생 시에만 실제 rotate 처리 및 플래그 ON
+      if ((currentRot - targetRot).abs() > 0.1) {
+        _mapController.rotate(targetRot);
+        hasRotated = true;
+      }
+    } else {
+      if (_mapController.camera.rotation != 0.0) {
+        _mapController.rotate(0.0);
+        hasRotated = true;
+      }
+    }
 
-    // 3. Flame 엔진에 실시간 플레이어 위치 및 헤딩 동기화
+    // 3. [초근본 최적화] 지도가 물리적으로 이동했거나 실제로 회전 변형이 일어났을 때만 고비용 프로젝션 업데이트 기동
+    if (hasMoved || hasRotated) {
+      widget.game.updateProjection(_mapController);
+    }
+
+    // 4. Flame 엔진에 실시간 플레이어 위치 및 헤딩 동기화
     if (loc.currentLocation != null) {
       widget.game.updatePlayerLocation(loc.currentLocation!);
     }
