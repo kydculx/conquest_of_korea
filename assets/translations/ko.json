@@ -242,7 +242,7 @@
   "alertInfo": "안내",
   "satAlreadyCapturedByMe": "{nickname} 님의 구역입니다.",
   "satOtherPlayerTerritory": "타 플레이어의 구역입니다.",
-  "satRevealVillageWithGp": "상세 정보 조회 ({distance} GP)",
+  "satRevealVillageWithGp": "상세 정보 조회 (비용: {distance})",
   "satCaptureAction": "원격 확보 실행",
   "satSecretArea": "보안 구역",
   "satSecretHidden": "정보를 확인할 수 없습니다.",

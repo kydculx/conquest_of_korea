@@ -242,7 +242,7 @@
   "alertInfo": "System",
   "satAlreadyCapturedByMe": "{nickname}'s territory!",
   "satOtherPlayerTerritory": "Other player's village!",
-  "satRevealVillageWithGp": "View Info ($ {distance})",
+  "satRevealVillageWithGp": "View Info (Cost: {distance})",
   "satCaptureAction": "Remote Capture!",
   "satSecretArea": "Secret Area",
   "satSecretHidden": "Secret is hidden!",
