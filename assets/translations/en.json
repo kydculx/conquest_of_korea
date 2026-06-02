@@ -111,6 +111,8 @@
   "alreadyCapturedByMe": "You have already captured this zone.",
   "noRankingData": "No ranking data available.",
   "tacticalRankingBoard": "Hall of Fame",
+  "rankingHeaderRank": "Rank",
+  "rankingHeaderCapturedTiles": "Grids",
   "capturedTerritory": "Captured Territory",
   "agentMe": "Player (Me)",
   "nicknameWithMe": "{nickname} (Me)",

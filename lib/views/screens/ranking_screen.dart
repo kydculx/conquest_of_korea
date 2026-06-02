@@ -42,12 +42,12 @@ class _RankingScreenState extends State<RankingScreen> {
       ),
       child: Row(
         children: [
-          const SizedBox(
+          SizedBox(
             width: 42,
             child: Center(
               child: Text(
-                '순위',
-                style: TextStyle(
+                GameStrings.rankingHeaderRank,
+                style: const TextStyle(
                   color: Color(0xFF00E5FF),
                   fontSize: 12,
                   fontWeight: FontWeight.bold,
@@ -56,10 +56,10 @@ class _RankingScreenState extends State<RankingScreen> {
             ),
           ),
           const SizedBox(width: 16),
-          const Expanded(
+          Expanded(
             child: Text(
-              '닉네임',
-              style: TextStyle(
+              GameStrings.nickname,
+              style: const TextStyle(
                 color: Color(0xFF00E5FF),
                 fontSize: 12,
                 fontWeight: FontWeight.bold,
@@ -67,9 +67,9 @@ class _RankingScreenState extends State<RankingScreen> {
             ),
           ),
           Text(
-            '구역수',
-            style: TextStyle(
-              color: const Color(0xFF00E5FF),
+            GameStrings.rankingHeaderCapturedTiles,
+            style: const TextStyle(
+              color: Color(0xFF00E5FF),
               fontSize: 12,
               fontWeight: FontWeight.bold,
             ),

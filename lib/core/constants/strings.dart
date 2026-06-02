@@ -307,6 +307,12 @@ class GameStrings {
   /// 전술 상황 랭킹판 타이틀
   static String get tacticalRankingBoard => 'tacticalRankingBoard'.tr();
 
+  /// 랭킹 헤더 순위 라벨
+  static String get rankingHeaderRank => 'rankingHeaderRank'.tr();
+
+  /// 랭킹 헤더 구역수 라벨
+  static String get rankingHeaderCapturedTiles => 'rankingHeaderCapturedTiles'.tr();
+
   /// 점령 영토 탭 레이블
   static String get capturedTerritory => 'capturedTerritory'.tr();
 

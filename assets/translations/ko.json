@@ -111,6 +111,8 @@
   "alreadyCapturedByMe": "이미 확보한 구역입니다.",
   "noRankingData": "순위 데이터가 존재하지 않습니다.",
   "tacticalRankingBoard": "명예의 전당",
+  "rankingHeaderRank": "순위",
+  "rankingHeaderCapturedTiles": "구역수",
   "capturedTerritory": "점령 영토",
   "agentMe": "플레이어 (본인)",
   "nicknameWithMe": "{nickname}",
