@@ -27,7 +27,7 @@ class AuthProvider extends ChangeNotifier {
   String? _error;
 
   /// 중복 로그인 방지를 위한 로컬 세션 고유 식별자
-  late final String _localSessionId;
+  late String _localSessionId;
 
   /// 중복 로그인 발생으로 인해 강제 로그아웃되었는지 여부
   bool _isDuplicateLoggedOut = false;
@@ -105,14 +105,20 @@ class AuthProvider extends ChangeNotifier {
 
   /// DB profiles 테이블의 last_session_id 필드를 로컬 세션 ID로 업데이트합니다.
   Future<void> _updateSessionIdInDatabase(String userId) async {
+    _localSessionId = _generateSessionId();
+    
+    // Supabase Auth 토큰이 HTTP 클라이언트 헤더에 완전히 동기화되도록 미세한 지연을 가집니다.
+    await Future.delayed(const Duration(milliseconds: 300));
+
     try {
-      await _authService.client
+      final response = await _authService.client
           .from('profiles')
           .update({'last_session_id': _localSessionId})
-          .eq('id', userId);
-      debugPrint('🔑 로컬 세션 ID ($_localSessionId) DB 갱신 성공');
+          .eq('id', userId)
+          .select();
+      debugPrint('🔑 로컬 세션 ID ($_localSessionId) DB 갱신 성공: $response');
     } catch (e) {
-      debugPrint('⚠️ DB last_session_id 갱신 실패 (컬럼 미생성 상태일 수 있음): $e');
+      debugPrint('❌ DB last_session_id 갱신 에러: $e');
     }
   }
 

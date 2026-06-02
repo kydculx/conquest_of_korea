@@ -161,7 +161,6 @@ class UserProfile {
       'notif_territory_attack': notifTerritoryAttack,
       'notif_satellite_complete': notifSatelliteComplete,
       'notif_system_notice': notifSystemNotice,
-      'last_session_id': lastSessionId,
     };
   }
 
