@@ -55,35 +55,87 @@ class HQBaseMarker extends PositionComponent
         _screenCenter!.dy <= gameSize.y + 100;
     if (!isVisible) return;
 
-    // 🚩 이모티콘 렌더링
-    _drawHQFlagEmoji(
+    // 🚩 전술 2D 벡터 깃발 정밀 렌더링 (이모지 대비 높은 시인성과 전술 컬러 일치화 확보)
+    _drawVectorHQFlag(
       canvas,
       _screenCenter!.dx,
       _screenCenter!.dy,
     );
   }
 
-  /// 지정된 화면 중앙(cx, cy) 좌표를 기준으로 친숙하고 직관적인 🚩 깃발 이모지(Emoji)를 텍스트로 정밀 드로잉합니다.
-  void _drawHQFlagEmoji(Canvas canvas, double cx, double cy) {
-    final textPainter = TextPainter(
-      text: const TextSpan(
-        text: '🚩',
-        style: TextStyle(
-          fontSize: 28.0, // 직관적이고 시인성 높은 크기 28.0px
-        ),
-      ),
-      textDirection: TextDirection.ltr,
-    );
-    textPainter.layout();
+  /// 지정된 화면 중앙(cx, cy) 좌표를 기준으로 펄럭이는 캐주얼 보드게임 스타일의 2D 벡터 깃발(Flag)을 정밀 드로잉합니다.
+  void _drawVectorHQFlag(Canvas canvas, double cx, double cy) {
+    // 16진수 진영 색상 파싱 (실패 시 기본 네온 아군 색상)
+    final Color flagColor = _parseColor(colorHex) ?? const Color(0xFF00E5FF);
 
-    // 이모지가 스크린 좌표의 정확한 중심에 고정되도록 오프셋 보정 드로잉
-    textPainter.paint(
-      canvas,
-      Offset(
-        cx - textPainter.width / 2,
-        cy - textPainter.height / 2,
-      ),
+    // 1) 깃발 바닥 오프셋 그림자 (Drop Shadow로 공중 입체감 부여)
+    final Paint shadowPaint = Paint()
+      ..color = const Color(0xFF000000).withValues(alpha: 0.28)
+      ..style = PaintingStyle.fill
+      ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 1.8);
+    canvas.drawOval(
+      Rect.fromLTRB(cx - 7, cy + 11, cx + 7, cy + 14),
+      shadowPaint,
     );
+
+    // 2) 깃대 바닥 꽂임용 원형 링 받침대 (Flag Base)
+    final Paint basePaint = Paint()
+      ..color = const Color(0xFF78909C)
+      ..style = PaintingStyle.fill;
+    canvas.drawOval(
+      Rect.fromLTRB(cx - 4.5, cy + 11.5, cx + 4.5, cy + 13.8),
+      basePaint,
+    );
+
+    // 3) 단단한 은색 메탈 재질의 깃대 (Flagpole)
+    final Paint flagpolePaint = Paint()
+      ..color = const Color(0xFFB0BEC5)
+      ..style = PaintingStyle.fill;
+    final Rect flagpole = Rect.fromLTRB(cx - 1.2, cy - 16, cx + 1.2, cy + 12);
+    canvas.drawRect(flagpole, flagpolePaint);
+
+    // 4) 깃대 끝머리의 아기자기한 황금 장식 구슬 (Top Gold Ornament)
+    final Paint goldPaint = Paint()
+      ..color = const Color(0xFFFFD54F)
+      ..style = PaintingStyle.fill;
+    canvas.drawCircle(Offset(cx, cy - 17.5), 2.8, goldPaint);
+
+    // 5) 바람에 나부끼는 둥근 물결 천 (Waving Flag Banner)
+    final Paint flagPaint = Paint()
+      ..color = flagColor
+      ..style = PaintingStyle.fill;
+
+    final Path flagPath = Path();
+    flagPath.moveTo(cx + 1.2, cy - 14.5);
+    // 윗변 물결 곡선 연출
+    flagPath.quadraticBezierTo(cx + 8.5, cy - 17.8, cx + 18, cy - 13.8);
+    // 우측 마감선
+    flagPath.lineTo(cx + 18, cy - 3.8);
+    // 아랫변 물결 곡선 연출
+    flagPath.quadraticBezierTo(cx + 8.5, cy - 6.8, cx + 1.2, cy - 3.5);
+    flagPath.close();
+
+    canvas.drawPath(flagPath, flagPaint);
+
+    // 6) 깃발 테두리 부드러운 소프트 라인 (Banner Border)
+    final Paint flagBorderPaint = Paint()
+      ..color = Colors.white.withValues(alpha: 0.35)
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = 0.8;
+    canvas.drawPath(flagPath, flagBorderPaint);
+  }
+
+  /// 16진수 색상 디코딩 도우미 유틸리티
+  Color? _parseColor(String? hex) {
+    if (hex == null || hex.isEmpty) return null;
+    try {
+      final buffer = StringBuffer();
+      if (hex.length == 6 || hex.length == 7) buffer.write('ff');
+      buffer.write(hex.replaceFirst('#', ''));
+      return Color(int.parse(buffer.toString(), radix: 16));
+    } catch (_) {
+      return null;
+    }
   }
 }
 
