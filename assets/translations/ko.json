@@ -196,8 +196,6 @@
   "satCapturingAttempt": "원격 구역 확보를 시도 중입니다...",
   "satCooltimeWaitingLabel": "원격 재충전 중",
   "satDisconnectedLabel": "본진 및 영토 연결망 해제됨",
-  "satDisconnectedOtherTerritory": "본인 영토와 연결된 경우에만 다른 플레이어의 타일 정보를 확인할 수 있습니다.",
-  "satDisconnectedOtherTerritoryLabel": "연결망 확인 불가",
   "satLockOnReady": "대상 선택 완료. 확보 대기 중입니다.",
   "satAlreadyCapturedLabel": "이미 확보된 구역입니다.",
   "captureExecute": "점령 실행",

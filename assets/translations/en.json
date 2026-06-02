@@ -196,8 +196,6 @@
   "satCapturingAttempt": "Remote capturing...",
   "satCooltimeWaitingLabel": "Waiting for remote recharge",
   "satDisconnectedLabel": "No Main Base or captured territory connection (Cannot capture)",
-  "satDisconnectedOtherTerritory": "You can only view other players' tile info when connected to your territory.",
-  "satDisconnectedOtherTerritoryLabel": "Territory Disconnected",
   "satLockOnReady": "Remote target selected. Ready for capture.",
   "satAlreadyCapturedLabel": "This area is already captured.",
   "captureExecute": "EXECUTE CAPTURE",

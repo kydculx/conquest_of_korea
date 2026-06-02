@@ -1011,7 +1011,7 @@ class _SatelliteMapBubbleState extends State<_SatelliteMapBubble> {
           if (!isConnected) {
             themeColor = GameColors.error;
             isError = true;
-            detailsText = GameStrings.satDisconnectedOtherTerritory;
+            detailsText = GameStrings.satDisconnectedLabel;
             showActionButton = false; // 엿보기 버튼 원천 차단
           } else {
             themeColor = GameColors.error;
