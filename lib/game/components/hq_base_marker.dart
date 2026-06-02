@@ -1,3 +1,4 @@
+import 'dart:math' as math;
 import 'package:flame/components.dart';
 import 'package:flutter/material.dart';
 import '../conquest_game.dart';
@@ -18,6 +19,9 @@ class HQBaseMarker extends PositionComponent
   /// 스크린 기준으로 투영된 본진 중심 좌표
   Offset? _screenCenter;
 
+  /// 깃발 펄럭임 애니메이션을 위한 누적 시간
+  double _waveTime = 0.0;
+
   /// HQBaseMarker 생성자로 H3 좌표 및 진영 색상을 설정받고 렌더링 레이어 우선순위(Priority)를 조율합니다.
   HQBaseMarker({required this.q, required this.r, this.colorHex}) {
     priority = 15; // 플레이어(20)보다는 아래, 일반 타일(0)보다는 위
@@ -33,6 +37,12 @@ class HQBaseMarker extends PositionComponent
   @override
   void update(double dt) {
     super.update(dt);
+
+    // 펄럭임 애니메이션 시간 누적 (주기성 오버플로우 방지 처리)
+    _waveTime += dt * 8.0;
+    if (_waveTime > math.pi * 2) {
+      _waveTime -= math.pi * 2;
+    }
 
     if (game.mapController != null) {
       final centerLatLng = HexService.hexToLatLng(q, r);
@@ -105,14 +115,28 @@ class HQBaseMarker extends PositionComponent
       ..color = flagColor
       ..style = PaintingStyle.fill;
 
+    // 펄럭임 효과를 위해 삼각함수 위상차(sin, cos) 기반의 미세 Y변형 파동 오프셋 계산 (깃대는 단단히 고정)
+    final double waveOffsetMiddle = math.sin(_waveTime) * 1.5;
+    final double waveOffsetEnd = math.cos(_waveTime) * 1.8;
+
     final Path flagPath = Path();
     flagPath.moveTo(cx + 1.2, cy - 14.5);
-    // 윗변 물결 곡선 연출
-    flagPath.quadraticBezierTo(cx + 8.5, cy - 17.8, cx + 18, cy - 13.8);
-    // 우측 마감선
-    flagPath.lineTo(cx + 18, cy - 3.8);
+    // 윗변 물결 곡선 연출 (제어점과 끝점 부분에 파동 결합)
+    flagPath.quadraticBezierTo(
+      cx + 8.5,
+      cy - 17.8 + waveOffsetMiddle,
+      cx + 18,
+      cy - 13.8 + waveOffsetEnd,
+    );
+    // 우측 마감선 (끝점 위상 변위 적용)
+    flagPath.lineTo(cx + 18, cy - 3.8 + waveOffsetEnd);
     // 아랫변 물결 곡선 연출
-    flagPath.quadraticBezierTo(cx + 8.5, cy - 6.8, cx + 1.2, cy - 3.5);
+    flagPath.quadraticBezierTo(
+      cx + 8.5,
+      cy - 6.8 + waveOffsetMiddle,
+      cx + 1.2,
+      cy - 3.5,
+    );
     flagPath.close();
 
     canvas.drawPath(flagPath, flagPaint);
