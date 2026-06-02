@@ -328,17 +328,20 @@ class ConquestGame extends FlameGame {
       }
     }
 
-    // 1. 화면 영역 밖으로 벗어난 기존 컴포넌트 타일들은 즉시 소멸시켜 CPU/메모리 부하 차단
+    // 1. 화면 영역 밖으로 벗어나거나 실제 점령 데이터가 없는 기존 컴포넌트 타일들은 즉시 소멸시켜 CPU/메모리 부하 차단
     final existingIds = _tileMap.keys.toSet();
     for (final id in existingIds) {
-      if (!visibleIds.contains(id)) {
+      if (!visibleIds.contains(id) || !_lastClusteredTiles.containsKey(id)) {
         final component = _tileMap.remove(id);
         if (component != null) remove(component);
       }
     }
 
-    // 2. 화면 내 가식 영역에 포함되는 타일들만 생성/업데이트
+    // 2. 화면 내 가식 영역에 포함되면서 실제 점령 데이터가 존재하는 타일들만 생성/업데이트
     for (final id in visibleIds) {
+      final tileData = _lastClusteredTiles[id];
+      if (tileData == null) continue; // 실제 점령 데이터가 없는 더미 타일은 생성 배제
+
       final parts = id.split('_');
       final int q, r;
       if (parts.length == 4) {
@@ -348,14 +351,6 @@ class ConquestGame extends FlameGame {
         q = int.parse(parts[1]);
         r = int.parse(parts[2]);
       }
-
-      final HexTile tileData = _lastClusteredTiles[id] ?? HexTile(
-        id: id,
-        q: q,
-        r: r,
-        userId: 'dummy_test_user',
-        capturedAt: DateTime.now().toUtc(),
-      );
 
       // [적군 영토 은폐 가드] 1순위 초고속 필터: 투영 및 지리 연산 전에 적군 타일을 선결 거름으로써 CPU 부하 99% 제거
       if (dynamicHexSize >= GameConfig.lodSize3 && tileData.userId != _currentUserId) {
@@ -557,17 +552,20 @@ class ConquestGame extends FlameGame {
       }
     }
 
-    // 1. 화면 영역 밖으로 벗어난 기존 컴포넌트 타일들은 즉시 소멸시켜 CPU/메모리 부하 차단
+    // 1. 화면 영역 밖으로 벗어나거나 실제 점령 데이터가 없는 기존 컴포넌트 타일들은 즉시 소멸시켜 CPU/메모리 부하 차단
     final existingIds = _tileMap.keys.toSet();
     for (final id in existingIds) {
-      if (!visibleIds.contains(id)) {
+      if (!visibleIds.contains(id) || !_lastClusteredTiles.containsKey(id)) {
         final component = _tileMap.remove(id);
         if (component != null) remove(component);
       }
     }
 
-    // 2. 화면 내 가식 영역에 포함되는 타일들만 생성/좌표 업데이트
+    // 2. 화면 내 가식 영역에 포함되면서 실제 점령 데이터가 존재하는 타일들만 생성/좌표 업데이트
     for (final id in visibleIds) {
+      final tileData = _lastClusteredTiles[id];
+      if (tileData == null) continue; // 실제 점령 데이터가 없는 더미 타일은 생성 배제
+
       final parts = id.split('_');
       final int q, r;
       if (parts.length == 4) {
@@ -577,14 +575,6 @@ class ConquestGame extends FlameGame {
         q = int.parse(parts[1]);
         r = int.parse(parts[2]);
       }
-
-      final HexTile tileData = _lastClusteredTiles[id] ?? HexTile(
-        id: id,
-        q: q,
-        r: r,
-        userId: 'dummy_test_user',
-        capturedAt: DateTime.now().toUtc(),
-      );
 
       // [적군 영토 은폐 가드] 1순위 초고속 필터: 투영 및 지리 연산 전에 적군 타일을 선결 거름으로써 CPU 부하 99% 제거
       if (dynamicHexSize >= GameConfig.lodSize3 && tileData.userId != _currentUserId) {
