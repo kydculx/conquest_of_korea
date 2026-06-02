@@ -209,53 +209,36 @@ class HexTileComponent extends PositionComponent
       _cachedPath!.close();
     }
 
-    // 3. 점령된 타일 채우기 (3D 보드게임 칩 & 비대칭 광택 젤리 스펙큘러 입체 스타일)
+    // 3. 점령된 타일 채우기 (아기자기한 방사형 그라데이션 젤리 스타일)
     if (colorHex != null) {
       final Color baseColor = _parseColor(colorHex) ?? GameColors.transparent;
 
-      // 1) 3D 드롭 섀도우 (바닥 그림자 효과로 공중에 입체적으로 떠 있는 보드게임 칩 느낌 형성)
-      canvas.save();
-      canvas.translate(0, 3.5); // 아래로 3.5px 오프셋
-      final Paint shadowPaint = Paint()
-        ..color = const Color(0xFF000000).withValues(alpha: 0.32)
-        ..style = PaintingStyle.fill
-        ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 2.5); // 흐림 효과 가미
-      canvas.drawPath(_cachedPath!, shadowPaint);
-      canvas.restore();
+      // 젤리 반사광 및 입체감 극대화용 Radial Gradient 셰이더 생성
+      final double gradientRadius = _tileRadius * 1.1; // 헥사곤 외곽선 경계까지 그라데이션 커버
 
-      // 2) 비대칭 specularity 광원 효과를 가미한 스펙큘러 그라데이션 설계 (빛이 좌측 상단 45도에서 쬐는 볼륨 엠보싱)
-      final double gradientRadius = _tileRadius * 1.15;
       _fillPaint.shader = Gradient.radial(
         Offset(_centerX, _centerY),
         gradientRadius,
         [
-          const Color(0xFFFFFFFF).withValues(alpha: 0.75), // 좌측 상단 반사Specular 하이라이트
-          baseColor.withValues(alpha: GameConfig.tileOpacity * 0.65), // 바디 기본 색상
-          baseColor.withValues(alpha: GameConfig.tileOpacity * 1.45), // 하단 음영 섀도우 대비 쫀득한 채색
+          baseColor.withValues(
+            alpha: GameConfig.tileOpacity * 0.45,
+          ), // 중심부는 반짝이도록 맑게 비춤
+          baseColor.withValues(
+            alpha: GameConfig.tileOpacity * 1.35,
+          ), // 가장자리는 쫀득하게 채색
         ],
-        const [0.0, 0.28, 1.0],
-        TileMode.clamp,
-        null,
-        Offset(_centerX - _tileRadius * 0.35, _centerY - _tileRadius * 0.35), // 광원 중심(Focal)을 좌측 상단으로 이동!
-        0.0,
+        const [0.0, 1.0],
       );
 
-      // 3) 3D 입체 젤리 바디 드로잉
+      // 1) 젤리 그라데이션 바디 드로잉
       canvas.drawPath(_cachedPath!, _fillPaint);
 
-      // 4) 윗면의 부드러운 하이라이트(림 라이트/베벨 입체감) 테두리 그리기
-      final Paint lightBorderPaint = Paint()
-        ..color = const Color(0xFFFFFFFF).withValues(alpha: 0.38)
+      // 2) 아기자기함을 더할 부드러운 소프트 테두리 스트로크 추가
+      final Paint borderPaint = Paint()
+        ..color = baseColor.withValues(alpha: 0.45)
         ..style = PaintingStyle.stroke
-        ..strokeWidth = 1.2;
-      canvas.drawPath(_cachedPath!, lightBorderPaint);
-
-      // 5) 아래쪽 어두운 입체 음영 테두리 그리기
-      final Paint darkBorderPaint = Paint()
-        ..color = const Color(0xFF000000).withValues(alpha: 0.25)
-        ..style = PaintingStyle.stroke
-        ..strokeWidth = 0.8;
-      canvas.drawPath(_cachedPath!, darkBorderPaint);
+        ..strokeWidth = 1.0;
+      canvas.drawPath(_cachedPath!, borderPaint);
     }
 
     // 4. 점령 애니메이션 최적화
