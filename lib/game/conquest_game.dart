@@ -4,7 +4,6 @@ import 'package:latlong2/latlong.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'components/player_component.dart';
 import 'components/hex_tile_component.dart';
-import 'components/static_tile_layer_component.dart';
 import 'components/hq_base_marker.dart';
 import 'components/scan_target_marker.dart';
 import '../services/hex_service.dart';
@@ -17,16 +16,13 @@ class ConquestGame extends FlameGame {
   /// 요원 본인을 지도 상에 나타내는 2D 방향 컴포넌트
   late PlayerComponent player;
 
-  /// 정적 타일 일괄 렌더링 및 캐싱을 담당하는 고성능 최적화 레이어
-  StaticTileLayerComponent? _staticTileLayer;
-
   /// 화면 좌표와 지도 좌표 간 변환(투영)을 수행하는 FlutterMap 지도 컨트롤러 캐시 객체
   MapController? _mapController;
 
   /// 마지막으로 전달받은 서버 기준 점령 타일 목록 캐시
   Map<String, HexTile> _lastCapturedTiles = {};
 
-  /// 렌더링에 사용 중인 동적 Flame 컴포넌트 맵 (Key: 타일 ID, Value: 헥사곤 컴포넌트)
+  /// 렌더링에 사용 중인 Flame 컴포넌트 맵 (Key: 타일 ID, Value: 헥사곤 컴포넌트)
   final Map<String, HexTileComponent> _tileMap = {};
 
   /// 본부 기지(HQ) 아이콘 및 링 반경 연출을 시각화하는 마커 컴포넌트
@@ -101,9 +97,6 @@ class ConquestGame extends FlameGame {
 
   @override
   Future<void> onLoad() async {
-    _staticTileLayer = StaticTileLayerComponent();
-    add(_staticTileLayer!);
-
     player = PlayerComponent()..priority = 20;
     player.isVisible = true;
     add(player);
@@ -181,27 +174,41 @@ class ConquestGame extends FlameGame {
     }
     _updateHQMarker(mainBaseTileId, capturingColorHex);
     _updateScanTargetMarker(selectedScanTileId, isScanMode);
-
-    // 🚀 [신규 최적화] 정적 타일 레이어에 최신 점령지 데이터를 주입하고 캐싱 갱신 처리
-    _staticTileLayer?.updateTiles(capturedTiles);
-
     if (_mapController == null) return;
 
-    // 1. 점령이 진행 중인 '동적 액티브 타일 ID' 목록 구성
-    final activeIds = <String>{};
-    if (capturingTileId != null) activeIds.add(capturingTileId);
-    if (isSatelliteCapturing && satelliteCapturingTileId != null) {
-      activeIds.add(satelliteCapturingTileId);
-    }
+    final currentIds = capturedTiles.keys.toSet();
+    final existingIds = _tileMap.keys.toSet();
 
-    // 2. 점령 대상에서 탈락했거나 완료되어 정적 상태가 된 컴포넌트는 컴포넌트 트리와 _tileMap에서 즉각 해체 및 삭제
-    final inactiveIds = _tileMap.keys.toSet().difference(activeIds);
-    for (final id in inactiveIds) {
+    // 제거된 타일 삭제
+    for (final id in existingIds.difference(currentIds)) {
       final tile = _tileMap.remove(id);
       if (tile != null) remove(tile);
     }
 
-    // 3. 점령 중인 타일 특수 상태 처리 (일반 점령)
+    // 신규/업데이트 타일 처리
+    capturedTiles.forEach((id, data) {
+      final screenCorners = _calcScreenCorners(data.q, data.r);
+      // 내 타일은 내 전술 전역 변수 색상, 상대 타일은 상대방 전술 전역 변수 색상으로 처리
+      final targetTileColorHex = (data.userId == _currentUserId)
+          ? GameColors.myTileColorHex
+          : GameColors.enemyTileColorHex;
+
+      if (_tileMap.containsKey(id)) {
+        _tileMap[id]!.updateData(
+          colorHex: targetTileColorHex,
+          corners: screenCorners,
+        );
+      } else {
+        final tile = HexTileComponent(
+          colorHex: targetTileColorHex,
+          corners: screenCorners,
+        )..priority = 0;
+        _tileMap[id] = tile;
+        add(tile);
+      }
+    });
+
+    // 점령 중인 타일 특수 상태 처리 (일반 점령)
     if (capturingTileId != null) {
       _updateActiveCaptureTile(
         tileId: capturingTileId,
@@ -212,7 +219,7 @@ class ConquestGame extends FlameGame {
       );
     }
 
-    // 4. 점령 중인 타일 특수 상태 처리 (위성 점령)
+    // 점령 중인 타일 특수 상태 처리 (위성 점령)
     if (isSatelliteCapturing && satelliteCapturingTileId != null) {
       final bool shouldAnimateTile =
           _satelliteCapturePhase == SatelliteCapturePhase.capturing;
@@ -223,6 +230,16 @@ class ConquestGame extends FlameGame {
         isCapturing: shouldAnimateTile,
       );
     }
+
+    // 점령 중이 아닌 타일 상태 초기화
+    _tileMap.forEach((id, tile) {
+      final isStillCapturing =
+          id == capturingTileId ||
+          (isSatelliteCapturing && id == satelliteCapturingTileId);
+      if (!isStillCapturing && tile.isCapturing) {
+        tile.updateData(isCapturing: false, progress: 0.0);
+      }
+    });
   }
 
   /// 점령이 진행 중인 특정 타일(일반 물리 점령 및 위성 원격 점령 공용)의
@@ -282,9 +299,6 @@ class ConquestGame extends FlameGame {
   /// 화면 스크린 변화 감지 시 렌더링 중인 플레이어 및 타일 컴포넌트들의 스크린 좌표를 일괄 재계산하여 이동시킵니다.
   void _updateAllPositions() {
     if (_mapController == null) return;
-
-    // 지도가 움직이면 정적 캐시를 무효화하여 다시 그리도록 제어
-    _staticTileLayer?.invalidate();
 
     // 타일 위치 갱신
     _tileMap.forEach((id, tile) {
