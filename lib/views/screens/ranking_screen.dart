@@ -28,6 +28,57 @@ class _RankingScreenState extends State<RankingScreen> {
     });
   }
 
+  Widget _buildHeaderRow() {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+      margin: const EdgeInsets.only(left: 16, right: 16, top: 12, bottom: 4),
+      decoration: BoxDecoration(
+        color: GameColors.backgroundMedium.withValues(alpha: 0.2),
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(
+          color: const Color(0xFF00E5FF).withValues(alpha: 0.1),
+          width: 1.0,
+        ),
+      ),
+      child: Row(
+        children: [
+          const SizedBox(
+            width: 42,
+            child: Center(
+              child: Text(
+                '순위',
+                style: TextStyle(
+                  color: Color(0xFF00E5FF),
+                  fontSize: 12,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+            ),
+          ),
+          const SizedBox(width: 16),
+          const Expanded(
+            child: Text(
+              '닉네임',
+              style: TextStyle(
+                color: Color(0xFF00E5FF),
+                fontSize: 12,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+          ),
+          Text(
+            '구역수',
+            style: TextStyle(
+              color: const Color(0xFF00E5FF),
+              fontSize: 12,
+              fontWeight: FontWeight.bold,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final ranking = context.watch<RankingProvider>();
@@ -39,10 +90,6 @@ class _RankingScreenState extends State<RankingScreen> {
         titleText: GameStrings.tacticalRankingBoard,
         showBackButton: true,
         backgroundColor: GameColors.tacticalBlack,
-        bottom: PreferredSize(
-          preferredSize: const Size.fromHeight(60),
-          child: _RankingCategoryTabs(ranking: ranking),
-        ),
       ),
       body: Stack(
         children: [
@@ -63,9 +110,16 @@ class _RankingScreenState extends State<RankingScreen> {
                       color: GameColors.accentNeon,
                     ),
                   )
-                : _RankingListView(
-                    ranking: ranking,
-                    currentUserId: auth.user?.id,
+                : Column(
+                    children: [
+                      _buildHeaderRow(),
+                      Expanded(
+                        child: _RankingListView(
+                          ranking: ranking,
+                          currentUserId: auth.user?.id,
+                        ),
+                      ),
+                    ],
                   ),
           ),
 
@@ -109,91 +163,7 @@ class _TacticalGridPainter extends CustomPainter {
   bool shouldRepaint(covariant CustomPainter oldDelegate) => false;
 }
 
-/// 점령수 / 누적 이동 / 당일 이동 3대 카테고리 전환 탭 세그먼트 위젯
-class _RankingCategoryTabs extends StatelessWidget {
-  final RankingProvider ranking;
-  const _RankingCategoryTabs({required this.ranking});
 
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-      padding: const EdgeInsets.all(4),
-      decoration: BoxDecoration(
-        color: GameColors.backgroundMedium.withValues(alpha: 0.6),
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(
-          color: const Color(0xFF00E5FF).withValues(alpha: 0.15),
-          width: 1.2,
-        ),
-      ),
-      child: Row(
-        children: [
-          _TabItem(
-            label: GameStrings.capturedTerritory,
-            isActive: ranking.currentType == RankingType.capturedTiles,
-            onTap: () => ranking.loadRankings(type: RankingType.capturedTiles),
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-class _TabItem extends StatelessWidget {
-  final String label;
-  final bool isActive;
-  final VoidCallback onTap;
-
-  const _TabItem({
-    required this.label,
-    required this.isActive,
-    required this.onTap,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return Expanded(
-      child: GestureDetector(
-        onTap: onTap,
-        child: AnimatedContainer(
-          duration: const Duration(milliseconds: 220),
-          padding: const EdgeInsets.symmetric(vertical: 8),
-          decoration: BoxDecoration(
-            borderRadius: BorderRadius.circular(12),
-            gradient: isActive
-                ? const LinearGradient(
-                    begin: Alignment.topCenter,
-                    end: Alignment.bottomCenter,
-                    colors: [Color(0xFF00E5FF), Color(0xFF00838F)],
-                  )
-                : null,
-            boxShadow: isActive
-                ? [
-                    BoxShadow(
-                      color: const Color(0xFF00E5FF).withValues(alpha: 0.25),
-                      blurRadius: 8,
-                      offset: const Offset(0, 2),
-                    ),
-                  ]
-                : null,
-          ),
-          child: Center(
-            child: Text(
-              label,
-              style: GoogleFonts.fredoka(
-                color: isActive ? Colors.white : GameColors.textSecondary,
-                fontSize: 12.5,
-                fontWeight: FontWeight.bold,
-                letterSpacing: 0.3,
-              ),
-            ),
-          ),
-        ),
-      ),
-    );
-  }
-}
 
 /// 1위부터 100위까지 랭킹 리스트를 렌더링하는 위젯
 class _RankingListView extends StatelessWidget {
@@ -218,7 +188,7 @@ class _RankingListView extends StatelessWidget {
       padding: EdgeInsets.only(
         left: 16,
         right: 16,
-        top: 8,
+        top: 4,
         bottom: 120 + MediaQuery.of(context).padding.bottom, // 하단 플로팅 배너 간섭 방지 패딩
       ),
       itemCount: list.length,
