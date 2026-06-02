@@ -81,9 +81,7 @@ class _LoginScreenState extends State<LoginScreen> {
         leadingOnPressed: _handleBackToGame,
       ),
       body: Container(
-        decoration: const BoxDecoration(
-          gradient: GameColors.cozyDarkGradient,
-        ),
+        decoration: const BoxDecoration(gradient: GameColors.cozyDarkGradient),
         child: SafeArea(
           child: Center(
             child: SingleChildScrollView(
@@ -103,11 +101,15 @@ class _LoginScreenState extends State<LoginScreen> {
                             width: 100,
                             height: 100,
                             decoration: BoxDecoration(
-                              color: GameColors.accentNeon.withValues(alpha: 0.15),
+                              color: GameColors.accentNeon.withValues(
+                                alpha: 0.15,
+                              ),
                               shape: BoxShape.circle,
                               boxShadow: [
                                 BoxShadow(
-                                  color: GameColors.accentNeon.withValues(alpha: 0.3),
+                                  color: GameColors.accentNeon.withValues(
+                                    alpha: 0.3,
+                                  ),
                                   blurRadius: 30,
                                   spreadRadius: 5,
                                 ),
@@ -120,10 +122,7 @@ class _LoginScreenState extends State<LoginScreen> {
                             height: 84,
                             decoration: BoxDecoration(
                               gradient: const LinearGradient(
-                                colors: [
-                                  Color(0x33FFFFFF),
-                                  Color(0x0FFFFFFF),
-                                ],
+                                colors: [Color(0x33FFFFFF), Color(0x0FFFFFFF)],
                                 begin: Alignment.topLeft,
                                 end: Alignment.bottomRight,
                               ),
@@ -141,7 +140,9 @@ class _LoginScreenState extends State<LoginScreen> {
                                   Icon(
                                     Icons.map_rounded,
                                     size: 44,
-                                    color: GameColors.textSecondary.withValues(alpha: 0.3),
+                                    color: GameColors.textSecondary.withValues(
+                                      alpha: 0.3,
+                                    ),
                                   ),
                                   // 솜사탕 핑크 레드 깃발
                                   Transform.translate(
@@ -160,7 +161,7 @@ class _LoginScreenState extends State<LoginScreen> {
                       ),
                     ),
                     const SizedBox(height: 24),
-                    
+
                     // 영롱한 그라데이션 타이틀
                     ShaderMask(
                       shaderCallback: (bounds) => LinearGradient(
@@ -183,7 +184,7 @@ class _LoginScreenState extends State<LoginScreen> {
                       ),
                     ),
                     const SizedBox(height: 8),
-                    
+
                     // Cozy한 서브 텍스트
                     Text(
                       GameStrings.tacticalMissionStart,
@@ -213,10 +214,13 @@ class _LoginScreenState extends State<LoginScreen> {
                       isObscure: _isObscure,
                       suffixIcon: IconButton(
                         icon: Icon(
-                          _isObscure ? Icons.visibility_off_rounded : Icons.visibility_rounded,
+                          _isObscure
+                              ? Icons.visibility_off_rounded
+                              : Icons.visibility_rounded,
                           color: GameColors.textMuted,
                         ),
-                        onPressed: () => setState(() => _isObscure = !_isObscure),
+                        onPressed: () =>
+                            setState(() => _isObscure = !_isObscure),
                       ),
                     ),
                     const SizedBox(height: 32),
@@ -231,14 +235,18 @@ class _LoginScreenState extends State<LoginScreen> {
                             gradient: LinearGradient(
                               colors: [
                                 GameColors.accentNeon,
-                                const Color(0xFF81C784), // 솜사탕 네온 블루 -> 초록 그라데이션
+                                const Color(
+                                  0xFF81C784,
+                                ), // 솜사탕 네온 블루 -> 초록 그라데이션
                               ],
                               begin: Alignment.topLeft,
                               end: Alignment.bottomRight,
                             ),
                             boxShadow: [
                               BoxShadow(
-                                color: GameColors.accentNeon.withValues(alpha: 0.25),
+                                color: GameColors.accentNeon.withValues(
+                                  alpha: 0.25,
+                                ),
                                 blurRadius: 12,
                                 offset: const Offset(0, 4),
                               ),
@@ -280,19 +288,25 @@ class _LoginScreenState extends State<LoginScreen> {
                     // OR Divider
                     Row(
                       children: [
-                        Expanded(child: Divider(color: GameColors.dividerColor)),
+                        Expanded(
+                          child: Divider(color: GameColors.dividerColor),
+                        ),
                         Padding(
                           padding: const EdgeInsets.symmetric(horizontal: 12),
                           child: Text(
                             GameStrings.or,
                             style: GoogleFonts.fredoka(
-                              color: GameColors.textMuted.withValues(alpha: 0.6),
+                              color: GameColors.textMuted.withValues(
+                                alpha: 0.6,
+                              ),
                               fontSize: 13,
                               fontWeight: FontWeight.bold,
                             ),
                           ),
                         ),
-                        Expanded(child: Divider(color: GameColors.dividerColor)),
+                        Expanded(
+                          child: Divider(color: GameColors.dividerColor),
+                        ),
                       ],
                     ),
                     const SizedBox(height: 24),

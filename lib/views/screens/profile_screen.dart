@@ -279,7 +279,9 @@ class ProfileScreen extends StatelessWidget {
                     child: Text(
                       '${GameStrings.appName} $versionText',
                       style: TextStyle(
-                        color: GameColors.textMuted.withValues(alpha: 100 / 255),
+                        color: GameColors.textMuted.withValues(
+                          alpha: 100 / 255,
+                        ),
                         fontSize: 12,
                       ),
                     ),
@@ -301,7 +303,11 @@ class ProfileScreen extends StatelessWidget {
       children: [
         Text(
           label,
-          style: GoogleFonts.quicksand(color: GameColors.textMuted, fontSize: 12, fontWeight: FontWeight.bold),
+          style: GoogleFonts.quicksand(
+            color: GameColors.textMuted,
+            fontSize: 12,
+            fontWeight: FontWeight.bold,
+          ),
         ),
         const SizedBox(height: 4),
         Text(
@@ -490,105 +496,42 @@ class ProfileScreen extends StatelessWidget {
   Future<bool?> _showDeleteAccountConfirm(BuildContext context) {
     return showDialog<bool>(
       context: context,
-      builder: (context) {
-        bool isChecked = false;
-        return StatefulBuilder(
-          builder: (context, setState) {
-            return TacticalDialog(
-              title: GameStrings.deleteAccountConfirmTitle,
-              icon: Icons.dangerous_rounded,
-              accentColor: GameColors.error,
-              content: Column(
-                mainAxisSize: MainAxisSize.min,
-                crossAxisAlignment: CrossAxisAlignment.stretch,
-                children: [
-                  Text(
-                    GameStrings.deleteAccountConfirmMessage,
-                    style: TextStyle(
-                      color: GameColors.textSecondary,
-                      fontSize: 13,
-                      height: 1.5,
-                    ),
-                  ),
-                  const SizedBox(height: 16),
-                  GestureDetector(
-                    onTap: () {
-                      setState(() {
-                        isChecked = !isChecked;
-                      });
-                    },
-                    child: Row(
-                      children: [
-                        SizedBox(
-                          width: 24,
-                          height: 24,
-                          child: Checkbox(
-                            value: isChecked,
-                            onChanged: (val) {
-                              setState(() {
-                                isChecked = val ?? false;
-                              });
-                            },
-                            activeColor: GameColors.error,
-                            checkColor: GameColors.tacticalWhite,
-                            side: BorderSide(
-                              color: GameColors.textMuted.withValues(alpha: 0.5),
-                              width: 1.5,
-                            ),
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(4),
-                            ),
-                          ),
-                        ),
-                        const SizedBox(width: 8),
-                        Expanded(
-                          child: Text(
-                            GameStrings.deleteAccountCheckboxLabel,
-                            style: TextStyle(
-                              color: isChecked
-                                  ? GameColors.textPrimary
-                                  : GameColors.textSecondary,
-                              fontSize: 12,
-                              fontWeight: FontWeight.bold,
-                            ),
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                ],
+      builder: (context) => TacticalDialog(
+        title: GameStrings.deleteAccountConfirmTitle,
+        icon: Icons.dangerous_rounded,
+        accentColor: GameColors.error,
+        content: Text(
+          GameStrings.deleteAccountConfirmMessage,
+          style: TextStyle(
+            color: GameColors.textSecondary,
+            fontSize: 13,
+            height: 1.5,
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context, false),
+            style: TextButton.styleFrom(foregroundColor: GameColors.textMuted),
+            child: Text(GameStrings.cancel),
+          ),
+          ElevatedButton(
+            onPressed: () => Navigator.pop(context, true),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: GameColors.error,
+              foregroundColor: GameColors.tacticalWhite,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(16),
               ),
-              actions: [
-                TextButton(
-                  onPressed: () => Navigator.pop(context, false),
-                  style: TextButton.styleFrom(foregroundColor: GameColors.textMuted),
-                  child: Text(GameStrings.cancel),
-                ),
-                ElevatedButton(
-                  onPressed: isChecked ? () => Navigator.pop(context, true) : null,
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: GameColors.error,
-                    foregroundColor: GameColors.tacticalWhite,
-                    disabledBackgroundColor: GameColors.error.withValues(alpha: 0.25),
-                    disabledForegroundColor: GameColors.tacticalWhite.withValues(alpha: 0.35),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(16),
-                    ),
-                  ),
-                  child: Text(
-                    GameStrings.deleteAccount,
-                    style: const TextStyle(fontWeight: FontWeight.bold),
-                  ),
-                ),
-              ],
-            );
-          },
-        );
-      },
+            ),
+            child: Text(
+              GameStrings.deleteAccount,
+              style: const TextStyle(fontWeight: FontWeight.bold),
+            ),
+          ),
+        ],
+      ),
     );
   }
-
-
 
   /// 요원의 현 GPS 물리 위치를 기점으로 삼아 메인 본부 기지(HQ) 헥사곤 좌표를 재설정(이전)하도록 통제하는 비동기 메서드입니다.
   Future<void> _handleRebase(BuildContext context, AuthProvider auth) async {
@@ -658,7 +601,11 @@ class ProfileScreen extends StatelessWidget {
               requiredGold.toInt().toString(),
               game.currentGold.toInt().toString(),
             ),
-            style: TextStyle(color: GameColors.textSecondary, fontSize: 13, height: 1.4),
+            style: TextStyle(
+              color: GameColors.textSecondary,
+              fontSize: 13,
+              height: 1.4,
+            ),
           ),
           actions: [
             ElevatedButton(
@@ -694,7 +641,11 @@ class ProfileScreen extends StatelessWidget {
             cost: requiredGold.toInt().toString(),
             currentGold: game.currentGold.toInt().toString(),
           ),
-          style: TextStyle(color: GameColors.textSecondary, fontSize: 13, height: 1.4),
+          style: TextStyle(
+            color: GameColors.textSecondary,
+            fontSize: 13,
+            height: 1.4,
+          ),
         ),
         actions: [
           TextButton(
