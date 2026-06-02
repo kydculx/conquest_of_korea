@@ -89,10 +89,12 @@ class AuthProvider extends ChangeNotifier {
           _loadProfile(_user!.id);
           _subscribeProfileRealtime(_user!.id);
         });
+        _notificationService.setCurrentUserId(_user!.id);
         _notificationService.subscribeToTopic('user_${_user!.id}');
       } else if (event == AuthChangeEvent.signedOut) {
         _profileSubscription?.cancel();
         _profileSubscription = null;
+        _notificationService.setCurrentUserId(null);
         if (_user != null) {
           _notificationService.unsubscribeFromTopic('user_${_user!.id}');
         }
@@ -179,6 +181,7 @@ class AuthProvider extends ChangeNotifier {
       _profile = await _authService.getUserProfile(userId);
 
       // 프로필 로드 시 개인 토픽 구독 (중복 구독은 FCM 내부적으로 처리됨)
+      _notificationService.setCurrentUserId(userId);
       _notificationService.subscribeToTopic('user_$userId');
 
       // 만약 프로필이 없다면 (가입 시 권한 문제로 저장이 안 된 경우 등)
@@ -251,6 +254,7 @@ class AuthProvider extends ChangeNotifier {
   /// 로그아웃
   Future<void> signOut() async {
     if (_user != null) {
+      _notificationService.setCurrentUserId(null);
       await _notificationService.unsubscribeFromTopic('user_${_user!.id}');
     }
     await _authService.signOut();

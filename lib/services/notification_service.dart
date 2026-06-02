@@ -151,12 +151,27 @@ class NotificationService {
         debugPrint('백그라운드 알림 클릭됨: ${message.data}');
       });
 
+      // FCM 토큰이 갱신되거나 최초 발급되는 시점에 토픽 자동 재구독 연동
+      _fcm?.onTokenRefresh.listen((token) {
+        debugPrint('🔑 FCM 토큰 최초/갱신 취득 완료: $token');
+        if (_currentUserId != null) {
+          subscribeToTopic('user_$_currentUserId');
+        }
+      });
+
       await _clearBadge();
 
       _initialized = true;
     } catch (e) {
       debugPrint('NotificationService 초기화 실패: $e');
     }
+  }
+
+  String? _currentUserId;
+
+  /// 현재 로그인된 사용자 ID를 셋업합니다.
+  void setCurrentUserId(String? userId) {
+    _currentUserId = userId;
   }
 
   /// 로컬 푸시 알림을 즉시 화면에 노출시킵니다.
