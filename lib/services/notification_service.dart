@@ -188,7 +188,9 @@ class NotificationService {
         debugPrint('🔔 [알림 차단] 마스터 알림이 비활성화 상태이므로 로컬 알림 노출 스킵.');
         return;
       }
-    } catch (_) {}
+    } catch (e) {
+      debugPrint('⚠️ SharedPreferences 알림 설정 조회 실패: $e');
+    }
 
     await _localNotifications.show(
       id: id,

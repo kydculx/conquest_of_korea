@@ -151,11 +151,11 @@ class _SocialProfileSetupScreenState extends State<SocialProfileSetupScreen> {
     String? mainBaseTileId;
     if (currentLocation != null) {
       final hex = HexService.latLngToHex(currentLocation);
-      mainBaseTileId = 'hex_${hex['q']}_${hex['r']}';
+      mainBaseTileId = HexService.tileId(hex['q']!, hex['r']!);
     } else {
       // GPS 정보 미수신 시 안전 장치로 기본 맵 기준 좌표 적용
       final hex = HexService.latLngToHex(MapConfig.defaultPosition);
-      mainBaseTileId = 'hex_${hex['q']}_${hex['r']}';
+      mainBaseTileId = HexService.tileId(hex['q']!, hex['r']!);
     }
 
     try {

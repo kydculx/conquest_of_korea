@@ -266,7 +266,7 @@ class _GameMapWidgetState extends State<GameMapWidget>
               },
               onTap: (tapPosition, point) {
                 final hex = HexService.latLngToHex(point);
-                final tileId = 'hex_${hex['q']}_${hex['r']}';
+                final tileId = HexService.tileId(hex['q']!, hex['r']!);
                 gameProvider.selectScanTile(tileId);
               },
               onMapEvent: (event) {

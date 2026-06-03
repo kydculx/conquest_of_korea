@@ -626,42 +626,100 @@ class ProfileScreen extends StatelessWidget {
 
   /// 계정 영구 삭제 처리를 하기 전 사용자에게 확인 의사를 재차 검증하는 경고 팝업 창을 띄웁니다.
   Future<bool?> _showDeleteAccountConfirm(BuildContext context) {
+    bool isAgreed = false;
     return showDialog<bool>(
       context: context,
-      builder: (context) => TacticalDialog(
-        title: GameStrings.deleteAccountConfirmTitle,
-        icon: Icons.dangerous_rounded,
-        accentColor: GameColors.error,
-        content: Text(
-          GameStrings.deleteAccountConfirmMessage,
-          style: TextStyle(
-            color: GameColors.textSecondary,
-            fontSize: 13,
-            height: 1.5,
-          ),
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context, false),
-            style: TextButton.styleFrom(foregroundColor: GameColors.textMuted),
-            child: Text(GameStrings.cancel),
-          ),
-          ElevatedButton(
-            onPressed: () => Navigator.pop(context, true),
-            style: ElevatedButton.styleFrom(
-              backgroundColor: GameColors.error,
-              foregroundColor: GameColors.tacticalWhite,
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(16),
+      builder: (context) {
+        return StatefulBuilder(
+          builder: (context, setState) {
+            return TacticalDialog(
+              title: GameStrings.deleteAccountConfirmTitle,
+              icon: Icons.dangerous_rounded,
+              accentColor: GameColors.error,
+              content: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  Text(
+                    GameStrings.deleteAccountConfirmMessage,
+                    style: TextStyle(
+                      color: GameColors.textSecondary,
+                      fontSize: 13,
+                      height: 1.5,
+                    ),
+                  ),
+                  const SizedBox(height: 16),
+                  InkWell(
+                    onTap: () {
+                      setState(() {
+                        isAgreed = !isAgreed;
+                      });
+                    },
+                    borderRadius: BorderRadius.circular(8),
+                    child: Padding(
+                      padding: const EdgeInsets.symmetric(vertical: 8.0, horizontal: 4.0),
+                      child: Row(
+                        children: [
+                          Checkbox(
+                            value: isAgreed,
+                            onChanged: (bool? value) {
+                              setState(() {
+                                isAgreed = value ?? false;
+                              });
+                            },
+                            activeColor: GameColors.error,
+                            checkColor: GameColors.tacticalWhite,
+                            materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                            visualDensity: VisualDensity.compact,
+                            side: BorderSide(
+                              color: GameColors.textMuted,
+                              width: 1.5,
+                            ),
+                          ),
+                          const SizedBox(width: 8),
+                          Expanded(
+                            child: Text(
+                              GameStrings.deleteAccountCheckboxLabel,
+                              style: TextStyle(
+                                color: GameColors.textPrimary,
+                                fontSize: 12,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                ],
               ),
-            ),
-            child: Text(
-              GameStrings.deleteAccount,
-              style: const TextStyle(fontWeight: FontWeight.bold),
-            ),
-          ),
-        ],
-      ),
+              actions: [
+                TextButton(
+                  onPressed: () => Navigator.pop(context, false),
+                  style: TextButton.styleFrom(foregroundColor: GameColors.textMuted),
+                  child: Text(GameStrings.cancel),
+                ),
+                ElevatedButton(
+                  onPressed: isAgreed ? () => Navigator.pop(context, true) : null,
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: GameColors.error,
+                    foregroundColor: GameColors.tacticalWhite,
+                    disabledBackgroundColor: GameColors.textMuted.withValues(alpha: 0.15),
+                    disabledForegroundColor: GameColors.textMuted,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(16),
+                    ),
+                  ),
+                  child: Text(
+                    GameStrings.deleteAccount,
+                    style: const TextStyle(fontWeight: FontWeight.bold),
+                  ),
+                ),
+              ],
+            );
+          },
+        );
+      },
     );
   }
 
@@ -681,7 +739,7 @@ class ProfileScreen extends StatelessWidget {
     }
 
     final hex = HexService.latLngToHex(currentLocation);
-    final tileId = 'hex_${hex['q']}_${hex['r']}';
+    final tileId = HexService.tileId(hex['q']!, hex['r']!);
 
     // 1. 동일 위치 검증 및 에러 팝업
     final mainBaseId = auth.profile?.mainBaseTileId;

@@ -61,6 +61,8 @@ class _GameScreenState extends State<GameScreen> {
 
           _checkAndPromptBatteryOptimization(geo);
         }
+      }).catchError((e) {
+        debugPrint('⚠️ 위치 권한 확인 실패: $e');
       });
     });
   }

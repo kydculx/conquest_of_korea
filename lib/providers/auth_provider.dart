@@ -88,6 +88,8 @@ class AuthProvider extends ChangeNotifier {
         _updateSessionIdInDatabase(_user!.id).then((_) {
           _loadProfile(_user!.id);
           _subscribeProfileRealtime(_user!.id);
+        }).catchError((e) {
+          debugPrint('⚠️ 세션 ID DB 업데이트 실패: $e');
         });
         _notificationService.setCurrentUserId(_user!.id);
         _notificationService.subscribeToTopic('user_${_user!.id}');

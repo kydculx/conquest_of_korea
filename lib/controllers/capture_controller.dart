@@ -117,7 +117,7 @@ class CaptureController {
     // [신규] 실시간 GPS 위치가 공급되었고, 그 위치의 타일ID가 시작 시 타일ID와 다르면 점령 즉시 취소!
     if (currentLocation != null) {
       final currentHex = HexService.latLngToHex(currentLocation);
-      final currentTileId = 'hex_${currentHex['q']}_${currentHex['r']}';
+      final currentTileId = HexService.tileId(currentHex['q']!, currentHex['r']!);
       if (currentTileId != _capturingTileId) {
         cancelCapture();
         onAlert(GameStrings.captureCanceledOutOfBoundary, AlertType.error);
@@ -159,7 +159,7 @@ class CaptureController {
     // [신규] 최종 저장 시점에도 현재 실시간 위치의 타일ID가 시작 시 타일ID와 동일한지 크로스 검증!
     if (currentLocation != null) {
       final currentHex = HexService.latLngToHex(currentLocation);
-      final currentTileId = 'hex_${currentHex['q']}_${currentHex['r']}';
+      final currentTileId = HexService.tileId(currentHex['q']!, currentHex['r']!);
       if (currentTileId != _capturingTileId) {
         _isSaving = false;
         _capturingTileId = null;
@@ -213,7 +213,9 @@ class CaptureController {
           if (pattern is int) Vibration.vibrate(duration: pattern);
         }
       });
-    } catch (_) {}
+    } catch (e) {
+      debugPrint('⚠️ 진동 확인 실패: $e');
+    }
   }
 
   /// 점령 컨트롤러 리소스 해제 시 점령 상태 모니터링 타이머를 중단합니다.

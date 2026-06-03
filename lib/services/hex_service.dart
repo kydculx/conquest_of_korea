@@ -11,6 +11,16 @@ class HexService {
   /// 그리드 변환 시 기준점으로 삼는 기준 경도 (서울 중심부)
   static const double originLng = 126.9780;
 
+  /// 헥사곤 그리드 BFS 탐색 시 사용할 6방향 인접 타일 좌표 오프셋
+  static const hexDirections = [
+    [1, 0],
+    [1, -1],
+    [0, -1],
+    [-1, 0],
+    [-1, 1],
+    [0, 1],
+  ];
+
   /// 하버사인(Haversine) 공식을 사용하여 두 위경도 좌표점 사이의 물리적 거리를 계산하여 미터 단위로 반환합니다.
   static double calculateDistance(LatLng p1, LatLng p2) {
     const double R = 6371000; // 지구 반경 (m)
@@ -147,6 +157,15 @@ class HexService {
       results.add({'q': rounded['x']!, 'r': rounded['z']!});
     }
     return results;
+  }
+
+  /// 헥사 좌표 (q, r)를 기반으로 타일 ID 문자열('hex_q_r')을 생성합니다.
+  /// [hexSize]가 제공되고 기본 크기(lodSize0=100)가 아닌 경우 'hex_{sizeInt}_{q}_{r}' 형식으로 생성합니다.
+  static String tileId(int q, int r, {double? hexSize}) {
+    if (hexSize != null && hexSize != GameConfig.lodSize0) {
+      return 'hex_${hexSize.toInt()}_${q}_$r';
+    }
+    return 'hex_${q}_$r';
   }
 
   /// 타일 ID 문자열(예: 'hex_q_r' 또는 'hex_size_q_r')을 분석 파싱하여 정수형 q, r 좌표 및 줌 스케일 크기 정보를 안전하게 추출합니다.

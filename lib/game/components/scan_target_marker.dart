@@ -1,3 +1,4 @@
+import 'dart:collection';
 import 'dart:math' as math;
 import 'package:flutter/material.dart';
 import 'package:flame/components.dart';
@@ -348,26 +349,14 @@ class ScanTargetMarker extends PositionComponent
 
     if (hqQ == q && hqR == r) return null;
 
-    final queue = <List<Map<String, int>>>[
-      [
-        {'q': hqQ, 'r': hqR},
-      ],
-    ];
-    final visited = <String>{'hex_${hqQ}_$hqR'};
-
-    const directions = [
-      [1, 0],
-      [1, -1],
-      [0, -1],
-      [-1, 0],
-      [-1, 1],
-      [0, 1],
-    ];
+    final queue = Queue<List<Map<String, int>>>()
+      ..add([{'q': hqQ, 'r': hqR}]);
+    final visited = <String>{HexService.tileId(hqQ, hqR)};
 
     List<Map<String, int>>? resultPath;
 
     while (queue.isNotEmpty) {
-      final path = queue.removeAt(0);
+      final path = queue.removeFirst();
       final current = path.last;
       final cq = current['q']!;
       final cr = current['r']!;
@@ -377,10 +366,10 @@ class ScanTargetMarker extends PositionComponent
         break;
       }
 
-      for (final dir in directions) {
+      for (final dir in HexService.hexDirections) {
         final nq = cq + dir[0];
         final nr = cr + dir[1];
-        final neighborId = 'hex_${nq}_$nr';
+        final neighborId = HexService.tileId(nq, nr);
 
         if (visited.contains(neighborId)) continue;
 

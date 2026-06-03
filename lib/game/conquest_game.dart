@@ -144,7 +144,7 @@ class ConquestGame extends FlameGame {
         capturedTiles: _lastCapturedTiles,
         mainBaseTileId: _currentHQTileId,
         selectedScanTileId: _scanTargetMarker != null
-            ? 'hex_${_scanTargetMarker!.q}_${_scanTargetMarker!.r}'
+            ? HexService.tileId(_scanTargetMarker!.q, _scanTargetMarker!.r)
             : null,
         isScanMode: _scanTargetMarker != null,
         capturingColorHex: _lastCapturingColorHex,
@@ -178,12 +178,8 @@ class ConquestGame extends FlameGame {
   }
 
   /// 줌 레벨 스케일(LOD)에 맞춘 고유 타일 ID 생성
-  String _getTileId(int q, int r, double hexSize) {
-    if (hexSize == GameConfig.lodSize0) {
-      return 'hex_${q}_$r';
-    }
-    return 'hex_${hexSize.toInt()}_${q}_$r';
-  }
+  String _getTileId(int q, int r, double hexSize) =>
+      HexService.tileId(q, r, hexSize: hexSize);
 
   /// 소형 100m 기준의 타일 데이터를 현재 LOD dynamicSize 규격에 맞게 실시간 뭉뚱그려(Clustering) 병합
   void _rebuildClusteredTiles(
@@ -256,39 +252,14 @@ class ConquestGame extends FlameGame {
     );
   }
 
-  /// 점령 타일 렌더링 업데이트 (LOD 병합 및 캐싱 최적화 버전)
-  void updateCapturedTiles({
-    required Map<String, HexTile> capturedTiles,
+  /// 공통 렌더링 로직: 카메라 점프 가드 + LOD 체크 + 클러스터 리빌드 + Frustum Culling + 타일 생성/업데이트
+  /// [capturedTilesSource]: 클러스터링에 사용할 타일 데이터 소스
+  /// [capturingTileId], [satelliteCapturingTileId]: 점령 중인 타일은 culling에서 제외
+  void _renderVisibleTiles(
+    Map<String, HexTile> capturedTilesSource, {
     String? capturingTileId,
-    double captureProgress = 0.0,
-    String? capturingColorHex,
-    LatLng? currentLocation,
-    String? mainBaseTileId,
-    String? selectedScanTileId,
-    bool isScanMode = false,
-    String? currentUserId,
-    bool isSatelliteCapturing = false,
-    SatelliteCapturePhase satelliteCapturePhase = SatelliteCapturePhase.none,
-    double satelliteTravelProgress = 0.0,
-    double satelliteCaptureProgress = 0.0,
     String? satelliteCapturingTileId,
   }) {
-    _lastCapturedTiles = capturedTiles;
-    _lastCapturingColorHex = capturingColorHex;
-    _isScanMode = isScanMode;
-    _currentUserId = currentUserId;
-    _isSatelliteCapturing = isSatelliteCapturing;
-    _satelliteCapturePhase = satelliteCapturePhase;
-    _satelliteTravelProgress = satelliteTravelProgress;
-    _satelliteCaptureProgress = satelliteCaptureProgress;
-    _satelliteCapturingTileId = satelliteCapturingTileId;
-    if (isLoaded) {
-      player.isVisible = true;
-    }
-    _updateHQMarker(mainBaseTileId, capturingColorHex);
-    _updateScanTargetMarker(selectedScanTileId, isScanMode);
-    if (_mapController == null) return;
-
     // [순간이동 가드] 카메라 중심점이 급변(1km 이상)했을 경우, 잔상 방지를 위해 기존 헥사 컴포넌트 즉시 강제 전체 소거
     final LatLng currentCenter = _mapController!.camera.center;
     if (_lastCameraCenter != null) {
@@ -317,8 +288,7 @@ class ConquestGame extends FlameGame {
       _lastLodLevel = currentLod;
     }
 
-    // 서버 실시간 갱신 데이터에 맞춰 클러스터링 데이터를 매번 누락 없이 100% 최신화 리빌드
-    _rebuildClusteredTiles(capturedTiles, dynamicHexSize);
+    _rebuildClusteredTiles(capturedTilesSource, dynamicHexSize);
 
     // [초최적화 위경도 Frustum Culling] 뷰포트 지리지형 경계선 획득 및 안전 마진 정의
     final bounds = _mapController!.camera.visibleBounds;
@@ -356,7 +326,7 @@ class ConquestGame extends FlameGame {
     final existingIds = _tileMap.keys.toSet();
     for (final id in existingIds) {
       final isStillCapturing = id == capturingTileId ||
-          (isSatelliteCapturing && id == satelliteCapturingTileId);
+          (satelliteCapturingTileId != null && id == satelliteCapturingTileId);
       if (!visibleIds.contains(id) && !isStillCapturing) {
         final component = _tileMap.remove(id);
         if (component != null) remove(component);
@@ -395,6 +365,49 @@ class ConquestGame extends FlameGame {
         add(component);
       }
     }
+  }
+
+  /// 점령 타일 렌더링 업데이트 (LOD 병합 및 캐싱 최적화 버전)
+  void updateCapturedTiles({
+    required Map<String, HexTile> capturedTiles,
+    String? capturingTileId,
+    double captureProgress = 0.0,
+    String? capturingColorHex,
+    LatLng? currentLocation,
+    String? mainBaseTileId,
+    String? selectedScanTileId,
+    bool isScanMode = false,
+    String? currentUserId,
+    bool isSatelliteCapturing = false,
+    SatelliteCapturePhase satelliteCapturePhase = SatelliteCapturePhase.none,
+    double satelliteTravelProgress = 0.0,
+    double satelliteCaptureProgress = 0.0,
+    String? satelliteCapturingTileId,
+  }) {
+    _lastCapturedTiles = capturedTiles;
+    _lastCapturingColorHex = capturingColorHex;
+    _isScanMode = isScanMode;
+    _currentUserId = currentUserId;
+    _isSatelliteCapturing = isSatelliteCapturing;
+    _satelliteCapturePhase = satelliteCapturePhase;
+    _satelliteTravelProgress = satelliteTravelProgress;
+    _satelliteCaptureProgress = satelliteCaptureProgress;
+    _satelliteCapturingTileId = satelliteCapturingTileId;
+    if (isLoaded) {
+      player.isVisible = true;
+    }
+    _updateHQMarker(mainBaseTileId, capturingColorHex);
+    _updateScanTargetMarker(selectedScanTileId, isScanMode);
+    if (_mapController == null) return;
+
+    final double dynamicHexSize = _getHexSizeForZoom(_mapController!.camera.zoom);
+
+    // 공통 타일 렌더링
+    _renderVisibleTiles(
+      capturedTiles,
+      capturingTileId: capturingTileId,
+      satelliteCapturingTileId: satelliteCapturingTileId,
+    );
 
     // 점령 중인 타일 특수 상태 처리 (일반 점령 - 모든 LOD 단계에서 실시간 가시화 보장)
     if (capturingTileId != null) {
@@ -504,111 +517,25 @@ class ConquestGame extends FlameGame {
   void _updateAllPositions() {
     if (_mapController == null) return;
 
-    // [순간이동 가드] 카메라 중심점이 급변(1km 이상)했을 경우, 잔상 방지를 위해 기존 헥사 컴포넌트 즉시 강제 전체 소거
-    final LatLng currentCenter = _mapController!.camera.center;
-    if (_lastCameraCenter != null) {
-      final double dist = HexService.calculateDistance(
-        _lastCameraCenter!,
-        currentCenter,
-      );
-      if (dist > 1000.0) {
-        _tileMap.clear();
-        final toRemove = children.whereType<HexTileComponent>().toList();
-        removeAll(toRemove);
-      }
-    }
-    _lastCameraCenter = currentCenter;
-
-    // 현재 LOD 레벨 및 규격 파악
-    final double currentZoom = _mapController!.camera.zoom;
-    final int currentLod = _getLodLevelForZoom(currentZoom);
-    final double dynamicHexSize = _getHexSizeForZoom(currentZoom);
-
-    // LOD 가 변했으면 타일들을 강제 리빌드 및 소멸 처리
-    if (_lastLodLevel != currentLod || _lastClusteredTiles.isEmpty) {
-      _rebuildClusteredTiles(_lastCapturedTiles, dynamicHexSize);
-      // LOD 가 변했으므로 기존 컴포넌트들을 강제로 일괄 파기 및 무대 완벽 청소
-      _tileMap.clear();
-      final toRemove = children.whereType<HexTileComponent>().toList();
-      removeAll(toRemove);
-      _lastLodLevel = currentLod;
-    }
-
-    // [초최적화 위경도 Frustum Culling] 뷰포트 지리지형 경계선 획득 및 안전 마진 정의
-    final bounds = _mapController!.camera.visibleBounds;
-    final sw = bounds.southWest;
-    final ne = bounds.northEast;
-
-    // 안전 렌더링 버퍼 확보를 위해 위경도 임계 범위 마진 가미 (약 0.02도)
-    final double marginLat = 0.02;
-    final double marginLng = 0.02;
-    final double minLat = sw.latitude - marginLat;
-    final double maxLat = ne.latitude + marginLat;
-    final double minLng = sw.longitude - marginLng;
-    final double maxLng = ne.longitude + marginLng;
-
-    // 1. 뷰포트 내 가식 영역에 포함되는 타일 데이터 선별 (O(K) 1차원 루프로 줌아웃 CPU 랙 원천 해결)
-    final Set<String> visibleIds = {};
-    final List<HexTile> visibleTiles = [];
-
-    _lastClusteredTiles.forEach((id, tile) {
-      final centerLatLng = _getTileCenter(tile.q, tile.r, id, dynamicHexSize);
-      final double lat = centerLatLng.latitude;
-      final double lng = centerLatLng.longitude;
-
-      if (lat >= minLat && lat <= maxLat && lng >= minLng && lng <= maxLng) {
-        // [적군 영토 은폐 가드] 1순위 초고속 필터: 투영 및 지리 연산 전에 적군 타일을 선결 거름으로써 CPU 부하 99% 제거
-        if (dynamicHexSize >= GameConfig.lodSize3 && tile.userId != _currentUserId) {
-          return;
+    // 점령 중인 타일 ID를 컴포넌트 상태에서 추출 (culling 제외 대상)
+    String? capturingTileId;
+    String? satelliteCapturingId;
+    for (final entry in _tileMap.entries) {
+      if (entry.value.isCapturing) {
+        if (entry.key == _satelliteCapturingTileId) {
+          satelliteCapturingId = entry.key;
+        } else {
+          capturingTileId = entry.key;
         }
-        visibleIds.add(id);
-        visibleTiles.add(tile);
-      }
-    });
-
-    // 2. 화면 영역 밖으로 벗어났거나 실제 점령 데이터가 없는 기존 컴포넌트 타일들은 즉시 소멸시켜 CPU/메모리 부하 차단 (단, 현재 점령 진행 중인 타일은 예외 수호)
-    final existingIds = _tileMap.keys.toSet();
-    for (final id in existingIds) {
-      final component = _tileMap[id];
-      final isStillCapturing = component != null && component.isCapturing;
-      if (!visibleIds.contains(id) && !isStillCapturing) {
-        _tileMap.remove(id);
-        if (component != null) remove(component);
       }
     }
 
-    // 3. 화면 내 가식 영역에 속하는 타일들만 생성/좌표 업데이트
-    for (final tileData in visibleTiles) {
-      final String id = tileData.id;
-      final int q = tileData.q;
-      final int r = tileData.r;
-
-      final centerLatLng = _getTileCenter(q, r, id, dynamicHexSize);
-      final cornerLatLngs = _getTileCorners(q, r, id, dynamicHexSize);
-      final screenOffset = _mapController!.camera.latLngToScreenOffset(centerLatLng);
-
-      final targetTileColorHex = (tileData.userId == _currentUserId)
-          ? GameColors.myTileColorHex
-          : GameColors.enemyTileColorHex;
-
-      if (_tileMap.containsKey(id)) {
-        _tileMap[id]!.position = Vector2(screenOffset.dx, screenOffset.dy);
-        _tileMap[id]!.updateData(colorHex: targetTileColorHex);
-      } else {
-        final component = HexTileComponent(
-          q: q,
-          r: r,
-          centerLatLng: centerLatLng,
-          cornerLatLngs: cornerLatLngs,
-          colorHex: targetTileColorHex,
-          hexSize: dynamicHexSize,
-        )
-          ..position = Vector2(screenOffset.dx, screenOffset.dy)
-          ..priority = 0;
-        _tileMap[id] = component;
-        add(component);
-      }
-    }
+    // 공통 타일 렌더링 (점령 중인 타일은 culling에서 보존)
+    _renderVisibleTiles(
+      _lastCapturedTiles,
+      capturingTileId: capturingTileId,
+      satelliteCapturingTileId: satelliteCapturingId,
+    );
 
     // 플레이어 위치 갱신
     if (isLoaded) {
