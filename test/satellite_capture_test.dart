@@ -125,8 +125,8 @@ void main() {
   late FakeAuthProvider fakeAuth;
   late FakeLocationProvider fakeLocation;
 
-  final testUserId = 'test-user-123';
-  final enemyUserId = 'enemy-user-456';
+  const testUserId = 'test-user-123';
+  const enemyUserId = 'enemy-user-456';
 
   setUp(() async {
     SharedPreferences.setMockInitialValues({});

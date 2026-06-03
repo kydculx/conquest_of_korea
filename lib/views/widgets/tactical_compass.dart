@@ -113,7 +113,7 @@ class _ModernCompassPainter extends CustomPainter {
     canvas.rotate(headingRad);
 
     final double pinLength = radius - 8;
-    final double pinWidth = 5.0;
+    const double pinWidth = 5.0;
 
     // 북쪽 가리키는 핀 (그라데이션 네온 레드 솜사탕)
     final Path northPath = Path()
@@ -123,12 +123,12 @@ class _ModernCompassPainter extends CustomPainter {
       ..close();
 
     final northPaint = Paint()
-      ..shader = LinearGradient(
+      ..shader = const LinearGradient(
         begin: Alignment.topCenter,
         end: Alignment.bottomCenter,
         colors: [
-          const Color(0xFFFF5252),
-          const Color(0xFFFF8A80),
+          Color(0xFFFF5252),
+          Color(0xFFFF8A80),
         ],
       ).createShader(Rect.fromLTRB(-pinWidth, -pinLength, pinWidth, 0))
       ..style = PaintingStyle.fill;

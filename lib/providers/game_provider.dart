@@ -511,7 +511,10 @@ class GameProvider extends ChangeNotifier with WidgetsBindingObserver {
       }
       notifyListeners();
     }
-    _tilesStreamSub = _supabase.capturedTilesStream.listen(_onTilesUpdated);
+    _tilesStreamSub = _supabase.capturedTilesStream.listen(
+      _onTilesUpdated,
+      onError: (e) => debugPrint('⚠️ 점령 타일 스트림 에러: $e'),
+    );
     _startBackgroundPolling(); // 추가: 주기적 감시 시작
   }
 
@@ -603,16 +606,20 @@ class GameProvider extends ChangeNotifier with WidgetsBindingObserver {
 
     if (changed) {
       // 위성 점령 진행 중일 때, 기지 침공이나 영토 분실 등으로 연결성이 끊어졌는지 실시간 체크
+      bool alreadyNotified = false;
       if (isSatelliteCapturing) {
         final stillConnected = checkSatelliteCaptureConnectivity(
           _satelliteCapturingTileId!,
         );
         if (!stillConnected) {
-          cancelSatelliteCapture();
-          addAlert(GameStrings.satelliteDisconnectedAlert, AlertType.error);
+          cancelSatelliteCapture(); // notifyListeners() 내부 호출
+          addAlert(GameStrings.satelliteDisconnectedAlert, AlertType.error); // notifyListeners() 내부 호출
+          alreadyNotified = true;
         }
       }
-      notifyListeners();
+      if (!alreadyNotified) {
+        notifyListeners();
+      }
     }
   }
 
@@ -794,9 +801,13 @@ class GameProvider extends ChangeNotifier with WidgetsBindingObserver {
   /// 지도 회전 모드(나침반 헤딩 동기화)를 활성화/비활성화하고 내부 설정을 SharedPreferences에 유지합니다.
   Future<void> toggleMapRotationMode() async {
     _isMapRotationMode = !_isMapRotationMode;
-    final prefs = await SharedPreferences.getInstance();
-    await prefs.setBool(_rotationModeKey, _isMapRotationMode);
     notifyListeners();
+    // SharedPreferences IO는 백그라운드 비동기 처리 — UI 반응성 확보
+    SharedPreferences.getInstance().then((prefs) {
+      prefs.setBool(_rotationModeKey, _isMapRotationMode);
+    }).catchError((e) {
+      debugPrint('⚠️ 회전 모드 설정 저장 실패: $e');
+    });
   }
 
   /// 현재 위치의 헥사곤 타일 점령 상태를 서버 기준으로 실시간 확인하는 함수

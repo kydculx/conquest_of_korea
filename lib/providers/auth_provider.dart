@@ -102,9 +102,7 @@ class AuthProvider extends ChangeNotifier {
         }
         _profile = null;
       }
-
-      notifyListeners();
-    });
+    }, onError: (e) => debugPrint('⚠️ 인증 상태 변경 스트림 에러: $e'));
   }
 
   /// DB profiles 테이블의 last_session_id 필드를 로컬 세션 ID로 업데이트합니다.

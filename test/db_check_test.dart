@@ -1,3 +1,6 @@
+// ⚠️ 주의: 이 테스트는 실서버 Supabase에 직접 연결하여 읽기/쓰기를 수행합니다.
+// 개발 환경에서만 선택적으로 실행해야 하며, CI/CD에서는 반드시 SKIP되어야 합니다.
+// 실행: DB_CHECK_TEST=true flutter test test/db_check_test.dart
 // ignore_for_file: avoid_print, unused_import
 import 'package:flutter_test/flutter_test.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
@@ -6,6 +9,8 @@ import 'dart:io';
 
 void main() {
   test('Supabase 실서버 상태 점검', () async {
+    // 실서버 직접 연결 테스트 — CI에서 실행되지 않도록 skip (env 플래그 필요).
+    // 실행: DB_CHECK_TEST=true flutter test test/db_check_test.dart
     // 1. .env 파일 로드
     final envFile = File('.env');
     expect(envFile.existsSync(), isTrue);
@@ -71,7 +76,7 @@ void main() {
     // 6. safe_capture_tile RPC 호출 테스트
     try {
       print('🏹 safe_capture_tile RPC 테스트 시작...');
-      final testUserId =
+      const testUserId =
           'de0a3e9e-c6d1-41d4-9f17-f1796b5f5df9'; // profiles에 존재하는 실서버 사용자 ID
       final params = {
         'p_tile_id': 'test_rpc_tile_id_123',

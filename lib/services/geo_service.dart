@@ -106,9 +106,7 @@ class GeoService {
 
     _positionStreamSubscription =
         Geolocator.getPositionStream(locationSettings: locationSettings).listen(
-          (Position position) {
-            _locationController.add(position);
-          },
+          _locationController.add,
         );
   }
 

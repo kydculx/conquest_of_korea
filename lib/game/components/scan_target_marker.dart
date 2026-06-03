@@ -507,7 +507,7 @@ class ScanTargetMarker extends PositionComponent
     final double scale = 1.0 + 0.08 * math.sin(_timer * 3.5); // 맥동을 조금 더 부드러운 호흡으로 제어
     final double r1 = 11.0 * scale;
     final double r2 = 19.0 * scale;
-    final double crossLen = 5.0; // 귀여운 느낌을 위한 십자선 길이 단축
+    const double crossLen = 5.0; // 귀여운 느낌을 위한 십자선 길이 단축
 
     canvas.drawCircle(Offset(cx, cy), r1, circlePaint);
     canvas.drawCircle(Offset(cx, cy), r2, circlePaint);

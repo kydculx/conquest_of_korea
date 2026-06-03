@@ -296,8 +296,8 @@ class ConquestGame extends FlameGame {
     final ne = bounds.northEast;
 
     // 안전 렌더링 버퍼 확보를 위해 위경도 임계 범위 마진 가미 (약 0.02도)
-    final double marginLat = 0.02;
-    final double marginLng = 0.02;
+    const double marginLat = 0.02;
+    const double marginLng = 0.02;
     final double minLat = sw.latitude - marginLat;
     final double maxLat = ne.latitude + marginLat;
     final double minLng = sw.longitude - marginLng;

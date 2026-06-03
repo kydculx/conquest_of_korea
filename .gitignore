@@ -63,3 +63,6 @@ android/build/
 supabase/conquest-of-korea-*.json
 supabase/.temp/
 .supabase/
+
+# Apple Sign-In private keys (sensitive)
+assets/auth/AuthKey_*.p8

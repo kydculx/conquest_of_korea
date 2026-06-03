@@ -111,7 +111,7 @@ class SatelliteMapBubbleState extends State<SatelliteMapBubble> {
       showActionButton = true;
       actionButtonText = GameStrings.cancel;
       buttonGradient = [const Color(0xFFFF5252), const Color(0xFFC62828)];
-      onActionPressed = () => game.cancelSatelliteCapture();
+      onActionPressed = game.cancelSatelliteCapture;
     } else {
       if (isTileEmpty) {
         final satCooltime = game.remainingSatelliteCaptureCoolSeconds;

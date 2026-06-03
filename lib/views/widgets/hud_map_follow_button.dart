@@ -43,14 +43,12 @@ class MapFollowRotationButtonState extends State<MapFollowRotationButton> {
 
         final IconData icon = _getCurrentIcon(isFollowing, isRotation);
 
-        final Color iconColor;
-        if (!isFollowing) {
-          iconColor = GameColors.textSecondary;
-        } else if (isRotation) {
-          iconColor = Colors.white;
-        } else {
-          iconColor = const Color(0xFF80DEEA);
-        }
+        final Color iconColor = switch ((isFollowing, isRotation)) {
+          (true, true) => Colors.white,
+          (true, false) => const Color(0xFF80DEEA),
+          (false, false) => GameColors.textSecondary,
+          (false, true) => const Color(0xFFFFD54F),
+        };
 
         final double glowRadius = widget.size * 0.38;
 
@@ -74,12 +72,12 @@ class MapFollowRotationButtonState extends State<MapFollowRotationButton> {
               height: widget.size,
               decoration: BoxDecoration(
                 shape: BoxShape.circle,
-                gradient: LinearGradient(
+                gradient: const LinearGradient(
                   begin: Alignment.topCenter,
                   end: Alignment.bottomCenter,
                   colors: [
-                    const Color(0xFF00E5FF),
-                    const Color(0xFF00838F),
+                    Color(0xFF00E5FF),
+                    Color(0xFF00838F),
                   ],
                 ),
                 border: Border.all(

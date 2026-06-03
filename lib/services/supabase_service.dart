@@ -6,6 +6,10 @@ import '../models/user_profile.dart';
 
 /// Supabase 백엔드 데이터베이스 및 Realtime 데이터 처리를 담당하는 네트워크 통신 서비스 클래스
 class SupabaseService {
+  /// Supabase 응답(Map 타입이 아닌 동적 값)을 안전하게 `Map<String, dynamic>`으로 변환
+  static Map<String, dynamic> _toMap(dynamic value) =>
+      Map<String, dynamic>.from(value);
+
   /// 마지막으로 발생한 RPC 또는 데이터베이스 에러 메시지
   String? lastError;
 
@@ -46,7 +50,7 @@ class SupabaseService {
         .stream(primaryKey: ['id'])
         .map(
           (list) => list
-              .map((e) => HexTile.fromJson(Map<String, dynamic>.from(e)))
+              .map((e) => HexTile.fromJson(_toMap(e)))
               .toList(),
         );
   }
@@ -91,7 +95,7 @@ class SupabaseService {
 
       if (response == null) return TileStatus.empty;
 
-      final data = Map<String, dynamic>.from(response);
+      final data = _toMap(response);
       final String? ownerId = data['user_id'];
       if (ownerId == currentUserId) return TileStatus.mine;
 
@@ -112,7 +116,7 @@ class SupabaseService {
           .maybeSingle();
 
       if (response == null) return null;
-      return HexTile.fromJson(Map<String, dynamic>.from(response));
+      return HexTile.fromJson(_toMap(response));
     } catch (e) {
       debugPrint('❌ 단일 타일 서버 조회 실패: $e');
       return null;

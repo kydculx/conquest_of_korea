@@ -185,7 +185,7 @@ class _SocialProfileSetupScreenState extends State<SocialProfileSetupScreen> {
   @override
   Widget build(BuildContext context) {
     final Widget mainContent = Scaffold(
-      appBar: TacticalAppBar(showBackButton: true),
+      appBar: const TacticalAppBar(showBackButton: true),
       extendBodyBehindAppBar: true,
       body: Stack(
         children: [

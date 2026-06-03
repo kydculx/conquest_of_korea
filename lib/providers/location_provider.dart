@@ -60,7 +60,9 @@ class LocationProvider extends ChangeNotifier with WidgetsBindingObserver {
     if (_geoService == geo) return;
     _geoService = geo;
     _locationSubscription?.cancel();
-    _locationSubscription = geo.locationStream.listen(_onPositionUpdate);
+    _locationSubscription = geo.locationStream.listen(_onPositionUpdate,
+      onError: (e) => debugPrint('⚠️ 위치 스트림 에러: $e'),
+    );
   }
 
   /// 최초 1회 GPS 좌표를 안정적으로 획득했음을 탐지하기 위한 Completer
@@ -142,6 +144,7 @@ class LocationProvider extends ChangeNotifier with WidgetsBindingObserver {
     await _geoService!.startTracking();
     _locationSubscription = _geoService!.locationStream.listen(
       _onPositionUpdate,
+      onError: (e) => debugPrint('⚠️ 위치 스트림 에러(재시작 후): $e'),
     );
     notifyListeners();
   }
