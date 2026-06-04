@@ -146,7 +146,9 @@ class GoldManager {
   void _startTimer() {
     _goldTimer?.cancel();
     _syncCounter = 0;
-    _goldTimer = Timer.periodic(const Duration(seconds: 1), (timer) async {
+    _goldTimer = Timer.periodic(
+      const Duration(seconds: GameConfig.goldTimerIntervalSeconds),
+      (timer) async {
       final auth = _auth;
       if (auth == null || !auth.isAuthenticated || auth.profile == null) {
         timer.cancel();

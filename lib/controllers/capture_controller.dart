@@ -212,6 +212,8 @@ class CaptureController {
           if (pattern is List<int>) Vibration.vibrate(pattern: pattern);
           if (pattern is int) Vibration.vibrate(duration: pattern);
         }
+      }).catchError((e) {
+        debugPrint('⚠️ 진동 실행 실패: $e');
       });
     } catch (e) {
       debugPrint('⚠️ 진동 확인 실패: $e');

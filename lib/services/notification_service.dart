@@ -145,11 +145,11 @@ class NotificationService {
         } catch (e) {
           debugPrint('⚠️ 포그라운드 푸시 필터링 중 오류: $e');
         }
-      });
+      }, onError: (e) => debugPrint('⚠️ FCM onMessage 스트림 에러: $e'));
 
       FirebaseMessaging.onMessageOpenedApp.listen((RemoteMessage message) {
         debugPrint('백그라운드 알림 클릭됨: ${message.data}');
-      });
+      }, onError: (e) => debugPrint('⚠️ FCM onMessageOpenedApp 스트림 에러: $e'));
 
       // FCM 토큰이 갱신되거나 최초 발급되는 시점에 토픽 자동 재구독 연동
       _fcm?.onTokenRefresh.listen((token) {
@@ -157,7 +157,7 @@ class NotificationService {
         if (_currentUserId != null) {
           subscribeToTopic('user_$_currentUserId');
         }
-      });
+      }, onError: (e) => debugPrint('⚠️ FCM 토큰 갱신 스트림 에러: $e'));
 
       await _clearBadge();
 

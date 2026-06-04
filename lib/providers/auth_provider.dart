@@ -2,6 +2,7 @@ import 'dart:async';
 import 'dart:math';
 import 'package:flutter/material.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
+import '../core/constants/game_config.dart';
 import '../services/auth_service.dart';
 import '../services/notification_service.dart';
 import '../models/user_profile.dart';
@@ -70,11 +71,11 @@ class AuthProvider extends ChangeNotifier {
 
   /// 초기 사용자의 인증 정보 및 세션 변경 흐름을 모니터링하기 위한 리스너를 바인딩합니다.
   void _init() {
-    _user = _authService.currentUser;
-    if (_user != null) {
-      _loadProfile(_user!.id, isAppStart: true);
-      _updateSessionIdInDatabase(_user!.id);
-      _subscribeProfileRealtime(_user!.id);
+    final initialUser = _user = _authService.currentUser;
+    if (initialUser != null) {
+      _loadProfile(initialUser.id, isAppStart: true);
+      _updateSessionIdInDatabase(initialUser.id);
+      _subscribeProfileRealtime(initialUser.id);
     }
 
     _authService.authStateChanges.listen((data) {
@@ -83,22 +84,25 @@ class AuthProvider extends ChangeNotifier {
 
       _user = session?.user;
 
-      if (event == AuthChangeEvent.signedIn && _user != null) {
+      if (event == AuthChangeEvent.signedIn) {
+        final user = _user;
+        if (user == null) return;
         _isDuplicateLoggedOut = false;
-        _updateSessionIdInDatabase(_user!.id).then((_) {
-          _loadProfile(_user!.id);
-          _subscribeProfileRealtime(_user!.id);
+        _updateSessionIdInDatabase(user.id).then((_) {
+          _loadProfile(user.id);
+          _subscribeProfileRealtime(user.id);
         }).catchError((e) {
           debugPrint('⚠️ 세션 ID DB 업데이트 실패: $e');
         });
-        _notificationService.setCurrentUserId(_user!.id);
-        _notificationService.subscribeToTopic('user_${_user!.id}');
+        _notificationService.setCurrentUserId(user.id);
+        _notificationService.subscribeToTopic('user_${user.id}');
       } else if (event == AuthChangeEvent.signedOut) {
         _profileSubscription?.cancel();
         _profileSubscription = null;
         _notificationService.setCurrentUserId(null);
-        if (_user != null) {
-          _notificationService.unsubscribeFromTopic('user_${_user!.id}');
+        final user = _user;
+        if (user != null) {
+          _notificationService.unsubscribeFromTopic('user_${user.id}');
         }
         _profile = null;
       }
@@ -110,7 +114,8 @@ class AuthProvider extends ChangeNotifier {
     _localSessionId = _generateSessionId();
     
     // Supabase Auth 토큰이 HTTP 클라이언트 헤더에 완전히 동기화되도록 미세한 지연을 가집니다.
-    await Future.delayed(const Duration(milliseconds: 300));
+    await Future.delayed(
+        const Duration(milliseconds: GameConfig.authTokenSyncDelayMs));
 
     try {
       final response = await _authService.client
@@ -185,8 +190,10 @@ class AuthProvider extends ChangeNotifier {
       _notificationService.subscribeToTopic('user_$userId');
 
       // 만약 프로필이 없다면 (가입 시 권한 문제로 저장이 안 된 경우 등)
-      if (_profile == null && _user != null) {
-        final metadata = _user!.userMetadata;
+      if (_profile == null) {
+        final user = _user;
+        if (user == null) return;
+        final metadata = user.userMetadata;
         if (metadata != null && metadata.containsKey('nickname')) {
           debugPrint('ℹ️ 누락된 프로필 자동 생성 중...');
           final now = DateTime.now();
@@ -253,9 +260,10 @@ class AuthProvider extends ChangeNotifier {
 
   /// 로그아웃
   Future<void> signOut() async {
-    if (_user != null) {
+    final user = _user;
+    if (user != null) {
       _notificationService.setCurrentUserId(null);
-      await _notificationService.unsubscribeFromTopic('user_${_user!.id}');
+      await _notificationService.unsubscribeFromTopic('user_${user.id}');
     }
     await _authService.signOut();
   }
@@ -299,12 +307,13 @@ class AuthProvider extends ChangeNotifier {
     String teamId = 'none',
     String? mainBaseTileId,
   }) async {
-    if (_user == null) return;
+    final currentUser = _user;
+    if (currentUser == null) return;
 
     _setLoading(true);
     try {
       final newProfile = UserProfile(
-        id: _user!.id,
+        id: currentUser.id,
         nickname: nickname,
         colorHex: colorHex,
         teamId: teamId,
@@ -325,11 +334,12 @@ class AuthProvider extends ChangeNotifier {
 
   /// 프로필 색상 업데이트
   Future<void> updateProfileColor(String newColorHex) async {
-    if (_profile == null) return;
+    final currentProfile = _profile;
+    if (currentProfile == null) return;
 
     _setLoading(true);
     try {
-      final updatedProfile = _profile!.copyWith(
+      final updatedProfile = currentProfile.copyWith(
         colorHex: newColorHex,
         lastSessionId: _localSessionId,
       );
@@ -348,11 +358,12 @@ class AuthProvider extends ChangeNotifier {
     required bool satelliteComplete,
     required bool systemNotice,
   }) async {
-    if (_profile == null) return;
+    final currentProfile = _profile;
+    if (currentProfile == null) return;
 
     _setLoading(true);
     try {
-      final updatedProfile = _profile!.copyWith(
+      final updatedProfile = currentProfile.copyWith(
         isNotificationsEnabled: isMasterEnabled,
         notifTerritoryAttack: territoryAttack,
         notifSatelliteComplete: satelliteComplete,
@@ -369,11 +380,12 @@ class AuthProvider extends ChangeNotifier {
 
   /// 메인 기지 설정/재설정
   Future<void> updateMainBase(String tileId) async {
-    if (_profile == null) return;
+    final currentProfile = _profile;
+    if (currentProfile == null) return;
 
     _setLoading(true);
     try {
-      final updatedProfile = _profile!.copyWith(
+      final updatedProfile = currentProfile.copyWith(
         mainBaseTileId: tileId,
         lastSessionId: _localSessionId,
       );
@@ -397,8 +409,9 @@ class AuthProvider extends ChangeNotifier {
 
   /// 프로필 정보를 서버로부터 강제로 다시 로드하여 동기화합니다.
   Future<void> refreshProfile() async {
-    if (_user != null) {
-      await _loadProfile(_user!.id);
+    final user = _user;
+    if (user != null) {
+      await _loadProfile(user.id);
     }
   }
 
@@ -410,11 +423,12 @@ class AuthProvider extends ChangeNotifier {
 
   /// 계정 영구 삭제 (회원 탈퇴) 프로세스를 총괄 조율합니다.
   Future<void> deleteAccount() async {
-    if (_user == null) return;
+    final user = _user;
+    if (user == null) return;
     _setLoading(true);
     try {
       // 1. FCM 토픽 구독 해제
-      await _notificationService.unsubscribeFromTopic('user_${_user!.id}');
+      await _notificationService.unsubscribeFromTopic('user_${user.id}');
       // 2. 백엔드 회원 정보 영구 삭제 호출
       await _authService.deleteAccount();
       // 3. 로컬 로그아웃 및 상태 전면 초기화

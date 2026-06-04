@@ -3,6 +3,7 @@ import 'package:flutter/widgets.dart';
 import 'package:flutter_compass/flutter_compass.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:latlong2/latlong.dart';
+import '../core/constants/game_config.dart';
 import '../services/geo_service.dart';
 
 /// 사용자 GPS 위치 좌표와 디바이스 컴파스 나침반 센서 데이터를 관리하는 프로바이더 클래스
@@ -84,7 +85,8 @@ class LocationProvider extends ChangeNotifier with WidgetsBindingObserver {
 
     // 10초간 업데이트 없으면 GPS 신호 유실로 판단
     _gpsSignalTimer?.cancel();
-    _gpsSignalTimer = Timer(const Duration(seconds: 10), () {
+    _gpsSignalTimer = Timer(
+        const Duration(seconds: GameConfig.gpsSignalLostTimeoutSeconds), () {
       _isGpsActive = false;
       notifyListeners();
     });
@@ -132,7 +134,7 @@ class LocationProvider extends ChangeNotifier with WidgetsBindingObserver {
         _lastCompassUpdatedTime = now;
         notifyListeners();
       }
-    });
+    }, onError: (e) => debugPrint('⚠️ 나침반 스트림 에러: $e'));
   }
 
   /// GPS 하드웨어 재시작 (고착 현상 해결)
@@ -140,7 +142,8 @@ class LocationProvider extends ChangeNotifier with WidgetsBindingObserver {
     if (_geoService == null) return;
     _locationSubscription?.cancel();
     _geoService!.stopTracking();
-    await Future.delayed(const Duration(milliseconds: 500));
+    await Future.delayed(
+        const Duration(milliseconds: GameConfig.gpsRestartDelayMs));
     await _geoService!.startTracking();
     _locationSubscription = _geoService!.locationStream.listen(
       _onPositionUpdate,

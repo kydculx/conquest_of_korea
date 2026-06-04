@@ -4,6 +4,7 @@ import 'package:google_fonts/google_fonts.dart';
 import '../../../core/constants/colors.dart';
 import '../../../core/constants/strings.dart';
 import '../../../core/utils/error_translator.dart';
+import '../../../core/utils/terms_helper.dart';
 import '../../../core/utils/toast_helper.dart';
 import '../../../providers/auth_provider.dart';
 import '../../../providers/location_provider.dart';
@@ -123,16 +124,8 @@ class _SocialProfileSetupScreenState extends State<SocialProfileSetupScreen> {
     }
 
     // 약관 동의 화면으로부터 넘어온 동의 시각 인자 획득
-    final args =
-        ModalRoute.of(context)?.settings.arguments as Map<String, dynamic>?;
-    final termsAgreedAt = args?['termsAgreedAt'] as DateTime?;
-    final privacyAgreedAt = args?['privacyAgreedAt'] as DateTime?;
-    final locationAgreedAt = args?['locationAgreedAt'] as DateTime?;
-    final marketingAgreedAt = args?['marketingAgreedAt'] as DateTime?;
-
-    if (termsAgreedAt == null ||
-        privacyAgreedAt == null ||
-        locationAgreedAt == null) {
+    final termsArgs = TermsHelper.extract(context);
+    if (termsArgs == null) {
       ToastHelper.show(
         context: context,
         message: GameStrings.termsAgreementRecordNotFound,
@@ -162,10 +155,10 @@ class _SocialProfileSetupScreenState extends State<SocialProfileSetupScreen> {
       await authProvider.createProfile(
         nickname: nickname,
         colorHex: colorHex,
-        termsAgreedAt: termsAgreedAt,
-        privacyAgreedAt: privacyAgreedAt,
-        locationAgreedAt: locationAgreedAt,
-        marketingAgreedAt: marketingAgreedAt,
+        termsAgreedAt: termsArgs.termsAgreedAt,
+        privacyAgreedAt: termsArgs.privacyAgreedAt,
+        locationAgreedAt: termsArgs.locationAgreedAt,
+        marketingAgreedAt: termsArgs.marketingAgreedAt,
         mainBaseTileId: mainBaseTileId,
       );
       if (mounted) {

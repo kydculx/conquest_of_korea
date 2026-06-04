@@ -117,7 +117,9 @@ class _SplashScreenState extends State<SplashScreen> {
     try {
       final game = context.read<GameProvider>();
       game.removeListener(_onGameProviderChanged);
-    } catch (_) {}
+    } catch (_) {
+      // dispose 과정에서 Provider를 못 찾는 경우 무시
+    }
     super.dispose();
   }
 

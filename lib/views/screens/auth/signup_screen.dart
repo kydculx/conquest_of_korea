@@ -4,6 +4,7 @@ import 'package:google_fonts/google_fonts.dart';
 import '../../../core/constants/colors.dart';
 import '../../../core/constants/strings.dart';
 import '../../../core/utils/error_translator.dart';
+import '../../../core/utils/terms_helper.dart';
 import '../../../core/utils/toast_helper.dart';
 import '../../../providers/auth_provider.dart';
 import '../../../providers/location_provider.dart';
@@ -172,16 +173,8 @@ class _SignupScreenState extends State<SignupScreen> {
 
   /// 필수 서비스 이용 약관의 동의 정보를 기반으로 회원 가입 및 계정 생성을 요청합니다.
   Future<void> _handleSignup() async {
-    final args =
-        ModalRoute.of(context)?.settings.arguments as Map<String, dynamic>?;
-    final termsAgreedAt = args?['termsAgreedAt'] as DateTime?;
-    final privacyAgreedAt = args?['privacyAgreedAt'] as DateTime?;
-    final locationAgreedAt = args?['locationAgreedAt'] as DateTime?;
-    final marketingAgreedAt = args?['marketingAgreedAt'] as DateTime?;
-
-    if (termsAgreedAt == null ||
-        privacyAgreedAt == null ||
-        locationAgreedAt == null) {
+    final termsArgs = TermsHelper.extract(context);
+    if (termsArgs == null) {
       ToastHelper.show(
         context: context,
         message: GameStrings.requiredPolicyAgreementMissing,
@@ -241,10 +234,10 @@ class _SignupScreenState extends State<SignupScreen> {
         password: _passwordController.text.trim(),
         nickname: _nicknameController.text.trim(),
         colorHex: colorHex,
-        termsAgreedAt: termsAgreedAt,
-        privacyAgreedAt: privacyAgreedAt,
-        locationAgreedAt: locationAgreedAt,
-        marketingAgreedAt: marketingAgreedAt,
+        termsAgreedAt: termsArgs.termsAgreedAt,
+        privacyAgreedAt: termsArgs.privacyAgreedAt,
+        locationAgreedAt: termsArgs.locationAgreedAt,
+        marketingAgreedAt: termsArgs.marketingAgreedAt,
         teamId: 'none',
         mainBaseTileId: mainBaseTileId,
       );

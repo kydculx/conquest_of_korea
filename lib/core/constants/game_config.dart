@@ -33,6 +33,30 @@ class GameConfig {
   /// 위성 점령 완료 후 재사용 대기 시간 (쿨타임)
   static const Duration satelliteCaptureCooltime = Duration(seconds: 10);
 
+  /// 골드 재화 자동 누적 타이머 주기 (초)
+  static const int goldTimerIntervalSeconds = 1;
+
+  /// GPS 하드웨어 폴링 간격 (초) — 안드로이드 네이티브 LocationRequest.interval
+  static const int gpsUpdateIntervalSeconds = 1;
+
+  /// GPS 예열(warm-up) 최대 대기 시간 (초)
+  static const int gpsWarmupTimeoutSeconds = 5;
+
+  /// 위치 업데이트 최소 이동 거리 필터 (미터)
+  static const int gpsDistanceFilterMeters = 3;
+
+  /// 마지막 위치 업데이트로부터 신호 유실로 간주하는 타임아웃 (초)
+  static const int gpsSignalLostTimeoutSeconds = 10;
+
+  /// GPS 재시작 전 하드웨어 안정화 대기 시간 (밀리초)
+  static const int gpsRestartDelayMs = 500;
+
+  /// Supabase Auth 토큰 동기화 대기 시간 (밀리초)
+  static const int authTokenSyncDelayMs = 300;
+
+  /// 화면 상단 알림(alert) 자동 제거 시간 (초)
+  static const int alertDismissDurationSeconds = 3;
+
   /// 서버 부하 방지를 위해 점령 요청 후 대기하는 딜레이 시간
   static const Duration serverCheckDelay = Duration(seconds: 3);
 

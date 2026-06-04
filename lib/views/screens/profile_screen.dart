@@ -5,13 +5,14 @@ import 'package:package_info_plus/package_info_plus.dart';
 import '../../core/constants/colors.dart';
 import '../../core/constants/strings.dart';
 import '../../core/utils/toast_helper.dart';
+import '../../core/utils/error_translator.dart';
 import '../../providers/auth_provider.dart';
 import '../../providers/game_provider.dart';
 import '../../providers/location_provider.dart';
 import '../../services/hex_service.dart';
-import '../../core/utils/error_translator.dart';
 import '../widgets/tactical_app_bar.dart';
 import '../widgets/tactical_dialog.dart';
+import '../widgets/profile_widgets.dart';
 import 'language_settings_screen.dart';
 import 'policy_webview_screen.dart';
 import 'game_guide_screen.dart';
@@ -19,10 +20,13 @@ import 'game_guide_screen.dart';
 /// 로그인한 요원의 상세 프로필 상태(소속 전술 색상, 점령한 총 영토 수)를
 /// 검토하고, 전술 색상 수정 및 본진 이전(Rebase), 로그아웃 등 작전 설정을 관리하는 프로필 화면 클래스입니다.
 class ProfileScreen extends StatelessWidget {
-  /// 프로필 화면의 생성자입니다.
   const ProfileScreen({super.key});
 
-  Widget _buildLoginPromptCard(BuildContext context) {
+  Widget _buildProfileHeader(BuildContext context, AuthProvider auth, GameProvider game) {
+    final profile = auth.profile!;
+    final user = auth.user;
+    final teamColor = GameColors.myTileColor;
+
     return Container(
       width: double.infinity,
       padding: const EdgeInsets.all(24),
@@ -50,63 +54,79 @@ class ProfileScreen extends StatelessWidget {
             width: 80,
             height: 80,
             decoration: ShapeDecoration(
-              color: GameColors.textMuted.withValues(alpha: 0.1),
+              color: teamColor.withValues(alpha: 0.15),
               shape: RoundedRectangleBorder(
                 borderRadius: BorderRadius.circular(20),
-                side: BorderSide(
-                  color: GameColors.textMuted.withValues(alpha: 0.3),
-                  width: 1.5,
-                ),
+                side: BorderSide(color: teamColor, width: 2.0),
               ),
             ),
             child: Center(
-              child: Icon(
-                Icons.lock_outline_rounded,
-                size: 40,
-                color: GameColors.textMuted,
-              ),
+              child: Icon(Icons.person, size: 40, color: teamColor),
             ),
           ),
           const SizedBox(height: 16),
           Text(
-            GameStrings.loginRequiredOperation,
+            profile.nickname,
             style: GoogleFonts.fredoka(
               color: GameColors.textPrimary,
-              fontSize: 16,
+              fontSize: 24,
               fontWeight: FontWeight.bold,
               letterSpacing: 0.5,
             ),
           ),
+          const SizedBox(height: 4),
+          Text(
+            user?.email ?? '',
+            style: GoogleFonts.quicksand(
+              color: GameColors.textMuted,
+              fontSize: 14,
+              fontWeight: FontWeight.bold,
+              letterSpacing: 0.2,
+            ),
+          ),
           const SizedBox(height: 20),
-          Container(
-            width: double.infinity,
-            height: 48,
-            decoration: BoxDecoration(
-              borderRadius: BorderRadius.circular(16),
-              gradient: const LinearGradient(
-                colors: [
-                  Color(0xFF00E5FF),
-                  Color(0xFF00838F),
-                ],
-                begin: Alignment.topLeft,
-                end: Alignment.bottomRight,
+          Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              ProfileStatItem(
+                label: GameStrings.capturedTiles,
+                value: '${game.myCapturedCount}${GameStrings.countUnit}',
+                color: GameColors.accentNeon,
               ),
-            ),
-            child: ElevatedButton(
-              onPressed: () => Navigator.pushNamed(context, '/login'),
-              style: ElevatedButton.styleFrom(
-                backgroundColor: Colors.transparent,
-                shadowColor: Colors.transparent,
-                foregroundColor: Colors.white,
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(16),
-                ),
-              ),
-              child: Text(
-                GameStrings.login,
-                style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
-              ),
-            ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildNotificationSubSettings(BuildContext context, GameProvider game) {
+    if (!game.isNotificationEnabled) return const SizedBox.shrink();
+
+    return Container(
+      padding: const EdgeInsets.only(left: 20, right: 12, bottom: 8, top: 4),
+      color: GameColors.backgroundMedium.withValues(alpha: 0.2),
+      child: Column(
+        children: [
+          ProfileSubMenuItem(
+            title: GameStrings.notifTerritoryAttackTitle,
+            subtitle: GameStrings.notifTerritoryAttackSub,
+            value: game.isNotifTerritoryAttack,
+            onChanged: (val) => game.toggleNotifTerritoryAttack(),
+          ),
+          const ProfileSubDivider(),
+          ProfileSubMenuItem(
+            title: GameStrings.notifSatelliteCompleteTitle,
+            subtitle: GameStrings.notifSatelliteCompleteSub,
+            value: game.isNotifSatelliteComplete,
+            onChanged: (val) => game.toggleNotifSatelliteComplete(),
+          ),
+          const ProfileSubDivider(),
+          ProfileSubMenuItem(
+            title: GameStrings.notifSystemNoticeTitle,
+            subtitle: GameStrings.notifSystemNoticeSub,
+            value: game.isNotifSystemNotice,
+            onChanged: (val) => game.toggleNotifSystemNotice(),
           ),
         ],
       ),
@@ -118,10 +138,7 @@ class ProfileScreen extends StatelessWidget {
     final auth = context.watch<AuthProvider>();
     final game = context.watch<GameProvider>();
     final profile = auth.profile;
-    final user = auth.user;
-
     final bool isAuth = auth.isAuthenticated && profile != null;
-    final teamColor = isAuth ? GameColors.myTileColor : GameColors.textMuted;
 
     return Scaffold(
       backgroundColor: GameColors.tacticalBlack,
@@ -135,82 +152,11 @@ class ProfileScreen extends StatelessWidget {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              // 프로필 상단 카드 (로그인 상태에 따라 분기)
+              // 프로필 상단 카드
               if (isAuth)
-                Container(
-                  width: double.infinity,
-                  padding: const EdgeInsets.all(24),
-                  decoration: ShapeDecoration(
-                    color: GameColors.backgroundMedium.withValues(alpha: 0.85),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(24),
-                      side: BorderSide(
-                        color: GameColors.accentNeon.withValues(alpha: 0.25),
-                        width: 1.2,
-                      ),
-                    ),
-                    shadows: [
-                      BoxShadow(
-                        color: Colors.black.withValues(alpha: 0.04),
-                        blurRadius: 16,
-                        spreadRadius: 1,
-                        offset: const Offset(0, 6),
-                      ),
-                    ],
-                  ),
-                  child: Column(
-                    children: [
-                      // 전술적 둥근 프로필 컨테이너
-                      Container(
-                        width: 80,
-                        height: 80,
-                        decoration: ShapeDecoration(
-                          color: teamColor.withValues(alpha: 0.15),
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(20),
-                            side: BorderSide(color: teamColor, width: 2.0),
-                          ),
-                        ),
-                        child: Center(
-                          child: Icon(Icons.person, size: 40, color: teamColor),
-                        ),
-                      ),
-                      const SizedBox(height: 16),
-                      Text(
-                        profile.nickname,
-                        style: GoogleFonts.fredoka(
-                          color: GameColors.textPrimary,
-                          fontSize: 24,
-                          fontWeight: FontWeight.bold,
-                          letterSpacing: 0.5,
-                        ),
-                      ),
-                      const SizedBox(height: 4),
-                      Text(
-                        user?.email ?? '',
-                        style: GoogleFonts.quicksand(
-                          color: GameColors.textMuted,
-                          fontSize: 14,
-                          fontWeight: FontWeight.bold,
-                          letterSpacing: 0.2,
-                        ),
-                      ),
-                      const SizedBox(height: 20),
-                      Row(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          _buildStatItem(
-                            GameStrings.capturedTiles,
-                            '${game.myCapturedCount}${GameStrings.countUnit}',
-                            GameColors.accentNeon,
-                          ),
-                        ],
-                      ),
-                    ],
-                  ),
-                )
+                _buildProfileHeader(context, auth, game)
               else
-                _buildLoginPromptCard(context),
+                const ProfileLoginPromptCard(),
 
               const SizedBox(height: 24),
               Text(
@@ -224,9 +170,9 @@ class ProfileScreen extends StatelessWidget {
               const SizedBox(height: 12),
 
               // 설정 메뉴 리스트
-              _buildMenuCard([
-                // [공통] 게임 설명서
-                _buildMenuItem(
+              ProfileMenuCard(children: [
+                // 게임 설명서
+                ProfileMenuItem(
                   icon: Icons.menu_book_rounded,
                   title: GameStrings.gameGuide,
                   subtitle: GameStrings.gameGuideSub,
@@ -237,11 +183,11 @@ class ProfileScreen extends StatelessWidget {
                     ),
                   ),
                 ),
-                _buildDivider(),
+                const ProfileMenuDivider(),
 
                 // [로그인 요원 전용] 알림 설정
                 if (isAuth) ...[
-                  _buildMenuItem(
+                  ProfileMenuItem(
                     icon: Icons.notifications_active,
                     title: GameStrings.pushNotifications,
                     subtitle: GameStrings.pushNotificationsSub,
@@ -254,59 +200,20 @@ class ProfileScreen extends StatelessWidget {
                   AnimatedSize(
                     duration: const Duration(milliseconds: 250),
                     curve: Curves.easeInOut,
-                    child: game.isNotificationEnabled
-                        ? Container(
-                            padding: const EdgeInsets.only(
-                              left: 20,
-                              right: 12,
-                              bottom: 8,
-                              top: 4,
-                            ),
-                            color: GameColors.backgroundMedium.withValues(
-                              alpha: 0.2,
-                            ),
-                            child: Column(
-                              children: [
-                                _buildSubMenuItem(
-                                  title: GameStrings.notifTerritoryAttackTitle,
-                                  subtitle: GameStrings.notifTerritoryAttackSub,
-                                  value: game.isNotifTerritoryAttack,
-                                  onChanged: (val) =>
-                                      game.toggleNotifTerritoryAttack(),
-                                ),
-                                _buildSubDivider(),
-                                _buildSubMenuItem(
-                                  title: GameStrings.notifSatelliteCompleteTitle,
-                                  subtitle: GameStrings.notifSatelliteCompleteSub,
-                                  value: game.isNotifSatelliteComplete,
-                                  onChanged: (val) =>
-                                      game.toggleNotifSatelliteComplete(),
-                                ),
-                                _buildSubDivider(),
-                                _buildSubMenuItem(
-                                  title: GameStrings.notifSystemNoticeTitle,
-                                  subtitle: GameStrings.notifSystemNoticeSub,
-                                  value: game.isNotifSystemNotice,
-                                  onChanged: (val) =>
-                                      game.toggleNotifSystemNotice(),
-                                ),
-                              ],
-                            ),
-                          )
-                        : const SizedBox.shrink(),
+                    child: _buildNotificationSubSettings(context, game),
                   ),
-                  _buildDivider(),
-                  _buildMenuItem(
+                  const ProfileMenuDivider(),
+                  ProfileMenuItem(
                     icon: Icons.my_location_rounded,
                     title: GameStrings.profileRebaseTitle,
                     subtitle: GameStrings.profileRebaseSubtitle,
                     onTap: () => _handleRebase(context, auth),
                   ),
-                  _buildDivider(),
+                  const ProfileMenuDivider(),
                 ],
 
-                // [공통] 언어 설정
-                _buildMenuItem(
+                // 언어 설정
+                ProfileMenuItem(
                   icon: Icons.translate_rounded,
                   title: GameStrings.languageSettings,
                   subtitle: GameStrings.languageSettingsSub,
@@ -317,10 +224,10 @@ class ProfileScreen extends StatelessWidget {
                     ),
                   ),
                 ),
-                _buildDivider(),
+                const ProfileMenuDivider(),
 
-                // [공통] 서비스 이용약관 (웹뷰)
-                _buildMenuItem(
+                // 서비스 이용약관
+                ProfileMenuItem(
                   icon: Icons.description_rounded,
                   title: GameStrings.termsOfService,
                   subtitle: GameStrings.termsOfServiceSub,
@@ -334,10 +241,10 @@ class ProfileScreen extends StatelessWidget {
                     ),
                   ),
                 ),
-                _buildDivider(),
+                const ProfileMenuDivider(),
 
-                // [공통] 개인정보 처리방침 (웹뷰)
-                _buildMenuItem(
+                // 개인정보 처리방침
+                ProfileMenuItem(
                   icon: Icons.privacy_tip_rounded,
                   title: GameStrings.privacyPolicy,
                   subtitle: GameStrings.privacyPolicySub,
@@ -353,7 +260,7 @@ class ProfileScreen extends StatelessWidget {
                 ),
               ]),
 
-              // [로그인 요원 전용] 계정 관리 섹션
+              // 계정 관리 섹션
               if (isAuth) ...[
                 const SizedBox(height: 24),
                 Text(
@@ -365,8 +272,8 @@ class ProfileScreen extends StatelessWidget {
                   ),
                 ),
                 const SizedBox(height: 12),
-                _buildMenuCard([
-                  _buildMenuItem(
+                ProfileMenuCard(children: [
+                  ProfileMenuItem(
                     icon: Icons.logout,
                     title: GameStrings.logout,
                     titleColor: GameColors.error,
@@ -378,7 +285,7 @@ class ProfileScreen extends StatelessWidget {
                       }
                     },
                   ),
-                  _buildMenuItem(
+                  ProfileMenuItem(
                     icon: Icons.delete_forever,
                     title: GameStrings.deleteAccount,
                     titleColor: GameColors.error,
@@ -389,9 +296,7 @@ class ProfileScreen extends StatelessWidget {
                         await auth.deleteAccount();
                         if (context.mounted) {
                           ScaffoldMessenger.of(context).showSnackBar(
-                            SnackBar(
-                              content: Text(GameStrings.deleteAccountSuccess),
-                            ),
+                            SnackBar(content: Text(GameStrings.deleteAccountSuccess)),
                           );
                         }
                       }
@@ -411,9 +316,7 @@ class ProfileScreen extends StatelessWidget {
                     child: Text(
                       '${GameStrings.appName} $versionText',
                       style: TextStyle(
-                        color: GameColors.textMuted.withValues(
-                          alpha: 100 / 255,
-                        ),
+                        color: GameColors.textMuted.withValues(alpha: 100 / 255),
                         fontSize: 12,
                       ),
                     ),
@@ -427,167 +330,8 @@ class ProfileScreen extends StatelessWidget {
     );
   }
 
-  /// 프로필 상단 카드에 표기될 핵심 통계 수치 항목을 빌드하는 도우미 위젯입니다.
-  ///
-  /// [label]은 항목명, [value]는 기록값, [color]는 강조 텍스트 색상입니다.
-  Widget _buildStatItem(String label, String value, Color color) {
-    return Column(
-      children: [
-        Text(
-          label,
-          style: GoogleFonts.quicksand(
-            color: GameColors.textMuted,
-            fontSize: 12,
-            fontWeight: FontWeight.bold,
-          ),
-        ),
-        const SizedBox(height: 4),
-        Text(
-          value,
-          style: GoogleFonts.fredoka(
-            color: color,
-            fontSize: 20,
-            fontWeight: FontWeight.bold,
-          ),
-        ),
-      ],
-    );
-  }
+  // --- 다이얼로그 및 로직 메서드 ---
 
-  /// 부드러운 둥근 모서리(Rounded)의 외부 테두리를 적용하여 설정 메뉴 항목들의 컨테이너를 이루는 위젯입니다.
-  Widget _buildMenuCard(List<Widget> children) {
-    return Container(
-      decoration: ShapeDecoration(
-        color: GameColors.backgroundMedium.withValues(alpha: 0.6),
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(16),
-          side: BorderSide(
-            color: GameColors.dividerColor.withValues(alpha: 0.15),
-            width: 1,
-          ),
-        ),
-      ),
-      child: Column(children: children),
-    );
-  }
-
-  /// 개별 설정 속성에 알맞은 타이틀, 부가 설명 및 우측 컨트롤러를 나타내는 메뉴 아이템 타일입니다.
-  Widget _buildMenuItem({
-    required IconData icon,
-    required String title,
-    String? subtitle,
-    Widget? trailing,
-    Color? titleColor,
-    VoidCallback? onTap,
-  }) {
-    final activeTitleColor = titleColor ?? GameColors.textPrimary;
-    return ListTile(
-      onTap: onTap,
-      leading: Icon(icon, color: activeTitleColor.withValues(alpha: 180 / 255)),
-      title: Text(
-        title,
-        style: GoogleFonts.fredoka(
-          color: activeTitleColor,
-          fontWeight: FontWeight.bold,
-          fontSize: 14,
-          letterSpacing: 0.2,
-        ),
-      ),
-      subtitle: subtitle != null
-          ? Text(
-              subtitle,
-              style: GoogleFonts.quicksand(
-                color: GameColors.textMuted,
-                fontSize: 11,
-                fontWeight: FontWeight.bold,
-                letterSpacing: 0.1,
-              ),
-            )
-          : null,
-      trailing:
-          trailing ??
-          (onTap != null
-              ? Icon(Icons.chevron_right, color: GameColors.dividerColor)
-              : null),
-    );
-  }
-
-  /// 카드 내 메뉴 항목들을 선명하게 구분해주는 간결한 구분선 위젯입니다.
-  Widget _buildDivider() {
-    return Divider(
-      height: 1,
-      color: GameColors.dividerColor.withValues(alpha: 30 / 255),
-      indent: 16,
-      endIndent: 16,
-    );
-  }
-
-  /// 개별 서브 알림 항목의 On/Off를 미려하게 토글할 수 있는 슬림형 전술 서브 메뉴 아이템 위젯
-  Widget _buildSubMenuItem({
-    required String title,
-    required String subtitle,
-    required bool value,
-    required ValueChanged<bool> onChanged,
-  }) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 4.0),
-      child: Row(
-        children: [
-          // 들여쓰기 가이드라인 라인 연출 (Tactical Link line)
-          Container(
-            width: 2,
-            height: 32,
-            margin: const EdgeInsets.only(right: 12),
-            decoration: BoxDecoration(
-              color: GameColors.accentNeon.withValues(alpha: 0.25),
-              borderRadius: BorderRadius.circular(1),
-            ),
-          ),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Text(
-                  title,
-                  style: TextStyle(
-                    color: GameColors.textPrimary.withValues(alpha: 0.95),
-                    fontWeight: FontWeight.bold,
-                    fontSize: 12.5,
-                  ),
-                ),
-                const SizedBox(height: 1),
-                Text(
-                  subtitle,
-                  style: TextStyle(color: GameColors.textMuted, fontSize: 10),
-                ),
-              ],
-            ),
-          ),
-          Transform.scale(
-            scale: 0.8,
-            child: Switch(
-              value: value,
-              onChanged: onChanged,
-              activeThumbColor: GameColors.accentNeon,
-              activeTrackColor: GameColors.accentNeon.withValues(alpha: 0.3),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  /// 개별 서브 알림 사이를 구분해주는 세밀한 라인 연출
-  Widget _buildSubDivider() {
-    return Divider(
-      height: 6,
-      color: GameColors.dividerColor.withValues(alpha: 15 / 255),
-      indent: 14,
-    );
-  }
-
-  /// 로그아웃 처리를 하기 전 사용자에게 확인 의사를 재차 검증하는 경고 팝업 창을 띄웁니다.
   Future<bool?> _showLogoutConfirm(BuildContext context) {
     return showDialog<bool>(
       context: context,
@@ -624,7 +368,6 @@ class ProfileScreen extends StatelessWidget {
     );
   }
 
-  /// 계정 영구 삭제 처리를 하기 전 사용자에게 확인 의사를 재차 검증하는 경고 팝업 창을 띄웁니다.
   Future<bool?> _showDeleteAccountConfirm(BuildContext context) {
     bool isAgreed = false;
     return showDialog<bool>(
@@ -650,11 +393,7 @@ class ProfileScreen extends StatelessWidget {
                   ),
                   const SizedBox(height: 16),
                   InkWell(
-                    onTap: () {
-                      setState(() {
-                        isAgreed = !isAgreed;
-                      });
-                    },
+                    onTap: () => setState(() => isAgreed = !isAgreed),
                     borderRadius: BorderRadius.circular(8),
                     child: Padding(
                       padding: const EdgeInsets.symmetric(vertical: 8.0, horizontal: 4.0),
@@ -662,19 +401,12 @@ class ProfileScreen extends StatelessWidget {
                         children: [
                           Checkbox(
                             value: isAgreed,
-                            onChanged: (bool? value) {
-                              setState(() {
-                                isAgreed = value ?? false;
-                              });
-                            },
+                            onChanged: (v) => setState(() => isAgreed = v ?? false),
                             activeColor: GameColors.error,
                             checkColor: GameColors.tacticalWhite,
                             materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
                             visualDensity: VisualDensity.compact,
-                            side: BorderSide(
-                              color: GameColors.textMuted,
-                              width: 1.5,
-                            ),
+                            side: BorderSide(color: GameColors.textMuted, width: 1.5),
                           ),
                           const SizedBox(width: 8),
                           Expanded(
@@ -723,102 +455,39 @@ class ProfileScreen extends StatelessWidget {
     );
   }
 
-  /// 요원의 현 GPS 물리 위치를 기점으로 삼아 메인 본부 기지(HQ) 헥사곤 좌표를 재설정(이전)하도록 통제하는 비동기 메서드입니다.
   Future<void> _handleRebase(BuildContext context, AuthProvider auth) async {
     final loc = context.read<LocationProvider>();
     final game = context.read<GameProvider>();
     final currentLocation = loc.currentLocation;
 
     if (currentLocation == null) {
-      ToastHelper.show(
-        context: context,
-        message: GameStrings.gpsSignalError,
-        isSuccess: false,
-      );
+      ToastHelper.show(context: context, message: GameStrings.gpsSignalError, isSuccess: false);
       return;
     }
 
     final hex = HexService.latLngToHex(currentLocation);
     final tileId = HexService.tileId(hex['q']!, hex['r']!);
 
-    // 1. 동일 위치 검증 및 에러 팝업
     final mainBaseId = auth.profile?.mainBaseTileId;
     if (mainBaseId == tileId) {
-      await showDialog(
-        context: context,
-        builder: (context) => TacticalDialog(
-          title: '[ 본진 재설정 오류 ]',
-          icon: Icons.error_outline_rounded,
-          accentColor: GameColors.error,
-          content: Text(
-            GameStrings.rebaseSameLocationMessage,
-            style: TextStyle(color: GameColors.textSecondary, fontSize: 13),
-          ),
-          actions: [
-            ElevatedButton(
-              onPressed: () => Navigator.pop(context),
-              style: ElevatedButton.styleFrom(
-                backgroundColor: GameColors.error,
-                foregroundColor: GameColors.tacticalWhite,
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(16),
-                ),
-              ),
-              child: Text(
-                GameStrings.confirm,
-                style: const TextStyle(fontWeight: FontWeight.bold),
-              ),
-            ),
-          ],
-        ),
-      );
+      await _showErrorDialog(context, GameStrings.rebaseSameLocationMessage);
       return;
     }
 
-    // 2. 소요 재화 산정 및 검증
     final distance = game.getTileDistance(tileId);
     final requiredGold = distance * 10.0;
 
     if (requiredGold > game.currentGold) {
-      await showDialog(
-        context: context,
-        builder: (context) => TacticalDialog(
-          title: '[ 재화 부족 ]',
-          icon: Icons.warning_amber_rounded,
-          accentColor: GameColors.error,
-          content: Text(
-            GameStrings.rebaseGoldShortageMessage(
-              requiredGold.toInt().toString(),
-              game.currentGold.toInt().toString(),
-            ),
-            style: TextStyle(
-              color: GameColors.textSecondary,
-              fontSize: 13,
-              height: 1.4,
-            ),
-          ),
-          actions: [
-            ElevatedButton(
-              onPressed: () => Navigator.pop(context),
-              style: ElevatedButton.styleFrom(
-                backgroundColor: GameColors.error,
-                foregroundColor: GameColors.tacticalWhite,
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(16),
-                ),
-              ),
-              child: Text(
-                GameStrings.confirm,
-                style: const TextStyle(fontWeight: FontWeight.bold),
-              ),
-            ),
-          ],
+      await _showErrorDialog(
+        context,
+        GameStrings.rebaseGoldShortageMessage(
+          requiredGold.toInt().toString(),
+          game.currentGold.toInt().toString(),
         ),
       );
       return;
     }
 
-    // 3. 재설정 동의 다이얼로그 호출
     final confirm = await showDialog<bool>(
       context: context,
       builder: (context) => TacticalDialog(
@@ -831,11 +500,7 @@ class ProfileScreen extends StatelessWidget {
             cost: requiredGold.toInt().toString(),
             currentGold: game.currentGold.toInt().toString(),
           ),
-          style: TextStyle(
-            color: GameColors.textSecondary,
-            fontSize: 13,
-            height: 1.4,
-          ),
+          style: TextStyle(color: GameColors.textSecondary, fontSize: 13, height: 1.4),
         ),
         actions: [
           TextButton(
@@ -848,14 +513,9 @@ class ProfileScreen extends StatelessWidget {
             style: ElevatedButton.styleFrom(
               backgroundColor: GameColors.accentNeon,
               foregroundColor: GameColors.tacticalBlack,
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(16),
-              ),
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
             ),
-            child: Text(
-              GameStrings.rebaseButton,
-              style: const TextStyle(fontWeight: FontWeight.bold),
-            ),
+            child: Text(GameStrings.rebaseButton, style: const TextStyle(fontWeight: FontWeight.bold)),
           ),
         ],
       ),
@@ -865,27 +525,38 @@ class ProfileScreen extends StatelessWidget {
       try {
         final success = await game.rebaseMainBase(tileId, requiredGold);
         if (success && context.mounted) {
-          ToastHelper.show(
-            context: context,
-            message: GameStrings.rebaseSuccessAlert(tileId),
-            isSuccess: true,
-          );
+          ToastHelper.show(context: context, message: GameStrings.rebaseSuccessAlert(tileId), isSuccess: true);
         } else if (context.mounted) {
-          ToastHelper.show(
-            context: context,
-            message: GameStrings.errorUnknown,
-            isSuccess: false,
-          );
+          ToastHelper.show(context: context, message: GameStrings.errorUnknown, isSuccess: false);
         }
       } catch (e) {
         if (context.mounted) {
-          ToastHelper.show(
-            context: context,
-            message: ErrorTranslator.translate(e),
-            isSuccess: false,
-          );
+          ToastHelper.show(context: context, message: ErrorTranslator.translate(e), isSuccess: false);
         }
       }
     }
+  }
+
+  Future<void> _showErrorDialog(BuildContext context, String message) {
+    return showDialog(
+      context: context,
+      builder: (context) => TacticalDialog(
+        title: '[ 오류 ]',
+        icon: Icons.error_outline_rounded,
+        accentColor: GameColors.error,
+        content: Text(message, style: TextStyle(color: GameColors.textSecondary, fontSize: 13)),
+        actions: [
+          ElevatedButton(
+            onPressed: () => Navigator.pop(context),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: GameColors.error,
+              foregroundColor: GameColors.tacticalWhite,
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+            ),
+            child: Text(GameStrings.confirm, style: const TextStyle(fontWeight: FontWeight.bold)),
+          ),
+        ],
+      ),
+    );
   }
 }

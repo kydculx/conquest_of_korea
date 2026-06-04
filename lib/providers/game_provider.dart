@@ -1,9 +1,9 @@
 import 'dart:async';
-import 'dart:collection';
 import 'package:flutter/widgets.dart';
 import 'package:latlong2/latlong.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../controllers/capture_controller.dart';
+import '../controllers/satellite_capture_controller.dart';
 import '../models/alert_model.dart';
 import '../models/tile_model.dart';
 import '../providers/location_provider.dart';
@@ -11,22 +11,10 @@ import '../providers/auth_provider.dart';
 import '../services/hex_service.dart';
 import '../services/supabase_service.dart';
 import '../services/notification_service.dart';
-import '../services/gold_manager.dart';
+import '../controllers/gold_manager.dart';
 import '../core/constants/game_config.dart';
 import '../core/constants/map_config.dart';
 import '../core/constants/strings.dart';
-
-/// 위성 원격 점령의 진행 단계를 구분하는 상태 열거형
-enum SatelliteCapturePhase {
-  /// 대기 상태
-  none,
-
-  /// 본진에서 대상 타일까지 빔 화살표가 날아가는 상태
-  flying,
-
-  /// 빔 도착 후 타일을 점령(오렌지 게이지 누적) 중인 상태
-  capturing,
-}
 
 /// 게임의 핵심 인게임 비즈니스 상태 및 점령 로직을 관리하고 UI에 변경을 전파하는 메인 프로바이더 클래스
 class GameProvider extends ChangeNotifier with WidgetsBindingObserver {
@@ -106,36 +94,9 @@ class GameProvider extends ChangeNotifier with WidgetsBindingObserver {
   /// 위성 스캔 조준 타일의 중심 지리 좌표 (맭 스크롤 시 실시간 화면 좌표 변환에 사용)
   LatLng? _selectedScanTileLatLng;
 
-  // --- 위성 점령 상태 변수 ---
-  /// 현재 위성 점령의 상태 단계
-  SatelliteCapturePhase _satelliteCapturePhase = SatelliteCapturePhase.none;
-
-  /// 현재 위성 점령을 시도 중인 대상 타일 ID
-  String? _satelliteCapturingTileId;
-
-  /// 위성 빔 비행 진행률 (0.0 ~ 1.0)
-  double _satelliteTravelProgress = 0.0;
-
-  /// 위성 원격 타일 점령 진행률 (0.0 ~ 1.0)
-  double _satelliteCaptureProgress = 0.0;
-
-  /// 위성 점령 주기 업데이트 타이머
-  Timer? _satelliteCaptureTimer;
-
-  /// 위성 점령 특정 단계(비행 또는 점령)를 시작한 일시
-  DateTime? _satellitePhaseStartTime;
-
-  /// 위성 빔 비행 완료에 소요되는 총 시간
-  Duration? _satelliteTravelDuration;
-
-  /// 위성 타일 점령 완료에 소요되는 총 시간
-  Duration? _satelliteCaptureDuration;
-
-  /// 마지막으로 성공한 위성 점령 일시
-  DateTime? _lastSatelliteCaptureTime;
-
-  /// 위성 점령 정보의 서버 저장 진행 여부
-  bool _isSavingSatellite = false;
+  // --- 위성 점령 컨트롤러 ---
+  /// 위성 원격 점령 프로세스를 전담 제어하는 컨트롤러
+  late final SatelliteCaptureController _satelliteController;
 
   // --- 위치 변경 감지 시 서버 부하 방지용 3초 딜레이 타이머 ---
   /// 서버 부하 방지를 위해 마지막으로 위치 상태를 조정한 일시
@@ -197,7 +158,7 @@ class GameProvider extends ChangeNotifier with WidgetsBindingObserver {
   double get goldRate => _goldManager.goldRate;
 
   /// 현재 전술 조준경(정보 카드) 활성화 여부 (조준된 타일이 있거나 원격 확보 작전이 진행 중일 때 참)
-  bool get isScanMode => _selectedScanTileId != null || isSatelliteCapturing;
+  bool get isScanMode => _selectedScanTileId != null || _satelliteController.isCapturing;
 
   /// 위성 조준 스캔 상에서 선택된 타일 ID
   String? get selectedScanTileId => _selectedScanTileId;
@@ -205,58 +166,29 @@ class GameProvider extends ChangeNotifier with WidgetsBindingObserver {
   /// 선택된 위성 조준 타일의 중심 지리 좌표 (맵 스크롤 시 실시간 화면 좌표 변환에 사용)
   LatLng? get selectedScanTileLatLng => _selectedScanTileLatLng;
 
-  /// 현재 위성 점령의 상태 단계 반환
-  SatelliteCapturePhase get satelliteCapturePhase => _satelliteCapturePhase;
+  /// 현재 위성 점령의 상태 단계 반환 (SatelliteCaptureController에 위임)
+  SatelliteCapturePhase get satelliteCapturePhase => _satelliteController.phase;
 
   /// 현재 위성 점령 진행 중인 타일 ID
-  String? get satelliteCapturingTileId => _satelliteCapturingTileId;
+  String? get satelliteCapturingTileId => _satelliteController.capturingTileId;
 
   /// 위성 빔 비행 진행률 (0.0 ~ 1.0)
-  double get satelliteTravelProgress => _satelliteTravelProgress;
+  double get satelliteTravelProgress => _satelliteController.travelProgress;
 
   /// 위성 점령 진행률 (0.0 ~ 1.0)
-  double get satelliteCaptureProgress => _satelliteCaptureProgress;
+  double get satelliteCaptureProgress => _satelliteController.captureProgress;
 
   /// 위성 점령 시도가 활성화 중인지 여부
-  bool get isSatelliteCapturing =>
-      _satelliteCapturePhase != SatelliteCapturePhase.none;
+  bool get isSatelliteCapturing => _satelliteController.isCapturing;
 
   /// 마지막으로 위성 점령에 성공한 일시
-  DateTime? get lastSatelliteCaptureTime => _lastSatelliteCaptureTime;
+  DateTime? get lastSatelliteCaptureTime => _satelliteController.lastCaptureTime;
 
-  /// 위성 점령이 완료될 때까지 남은 초 단위 시간 (비행 시간과 점령 시간의 잔여분 합산)
-  int get remainingSatelliteCaptureSeconds {
-    if (_satelliteCapturePhase == SatelliteCapturePhase.none ||
-        _satellitePhaseStartTime == null) {
-      return 0;
-    }
-    final now = DateTime.now();
-    if (_satelliteCapturePhase == SatelliteCapturePhase.flying) {
-      final elapsed = now.difference(_satellitePhaseStartTime!);
-      final remainingTravel =
-          (_satelliteTravelDuration!.inSeconds - elapsed.inSeconds)
-              .clamp(0, double.infinity)
-              .toInt();
-      final remainingCapture = _satelliteCaptureDuration!.inSeconds;
-      return remainingTravel + remainingCapture;
-    } else {
-      final elapsed = now.difference(_satellitePhaseStartTime!);
-      final remainingCapture =
-          (_satelliteCaptureDuration!.inSeconds - elapsed.inSeconds)
-              .clamp(0, double.infinity)
-              .toInt();
-      return remainingCapture;
-    }
-  }
+  /// 위성 점령이 완료될 때까지 남은 초 단위 시간
+  int get remainingSatelliteCaptureSeconds => _satelliteController.remainingSeconds;
 
   /// 위성 조준 장비의 재충전 쿨타임 남은 시간 (초)
-  int get remainingSatelliteCaptureCoolSeconds {
-    if (_lastSatelliteCaptureTime == null) return 0;
-    final diff = DateTime.now().difference(_lastSatelliteCaptureTime!);
-    final remaining =
-        GameConfig.satelliteCaptureCooltime.inSeconds - diff.inSeconds;
-    return remaining > 0 ? remaining : 0;
-  }
+  int get remainingSatelliteCaptureCoolSeconds => _satelliteController.remainingCoolSeconds;
 
   /// 인게임 전술 상황판 알림 목록
   List<GameAlert> get alerts => List.unmodifiable(_alerts);
@@ -401,7 +333,6 @@ class GameProvider extends ChangeNotifier with WidgetsBindingObserver {
       onTileCaptured: (id, tile, {required bool wasEnemyTile}) {
         _capturedTiles[id] = tile;
         if (_isNotificationEnabled) {
-          // 점령 유형에 따라 알림 문구 분기
           NotificationService().showLocalNotification(
             id: id.hashCode,
             title: GameStrings.notificationCaptureEmptyTitle,
@@ -413,7 +344,27 @@ class GameProvider extends ChangeNotifier with WidgetsBindingObserver {
       },
       onStateChanged: notifyListeners,
     );
-    // [추가] FCM 포그라운드 수신 시 인게임 알림(3초 자동 페이드아웃) 위젯으로 라우팅 등록
+    _satelliteController = SatelliteCaptureController(
+      supabase: supabase,
+      onAlert: addAlert,
+      onCaptureSuccess: (tileId, tile) {
+        _capturedTiles[tileId] = tile;
+        _selectedScanTileId = null;
+        _selectedScanTileLatLng = null;
+        notifyListeners();
+      },
+      onStateChanged: notifyListeners,
+      getCapturedTiles: () => _capturedTiles,
+      getUserId: () => _authProvider?.user?.id,
+      getColorHex: () => _authProvider?.profile?.colorHex,
+      getMainBaseTileId: () => _authProvider?.profile?.mainBaseTileId,
+      getCurrentGold: () => _goldManager.currentGold,
+      deductGold: (amount) => _goldManager.deductOptimistic(amount),
+      getCurrentUserId: () => _authProvider?.user?.id ?? '',
+      refreshProfile: () async => _authProvider?.refreshProfile(),
+      isPhysicalCapturing: () => _captureController.isCapturing,
+      cancelPhysicalCapture: () => _captureController.cancelCapture(),
+    );
     NotificationService().onForegroundMessageReceived = (title, body, type) {
       final alertType = switch (type) {
         'territory_attack' => AlertType.error,
@@ -465,7 +416,7 @@ class GameProvider extends ChangeNotifier with WidgetsBindingObserver {
       _isScanMode = false;
       _selectedScanTileId = null;
       _selectedScanTileLatLng = null;
-      cancelSatelliteCapture();
+      _satelliteController.cancelCapture();
 
       // 로그아웃 시 진행 중이던 물리 점령 작전 강제 중단
       _captureController.cancelCapture();
@@ -493,9 +444,7 @@ class GameProvider extends ChangeNotifier with WidgetsBindingObserver {
       final lastSatCapTimeStr = prefs.getString(
         'hq_last_satellite_capture_time',
       );
-      if (lastSatCapTimeStr != null) {
-        _lastSatelliteCaptureTime = DateTime.parse(lastSatCapTimeStr);
-      }
+      _satelliteController.loadLastCaptureTime(lastSatCapTimeStr);
 
       final tiles = await _supabase.fetchAllCapturedTiles();
       for (final tile in tiles) {
@@ -607,14 +556,15 @@ class GameProvider extends ChangeNotifier with WidgetsBindingObserver {
     if (changed) {
       // 위성 점령 진행 중일 때, 기지 침공이나 영토 분실 등으로 연결성이 끊어졌는지 실시간 체크
       bool alreadyNotified = false;
-      if (isSatelliteCapturing) {
-        final stillConnected = checkSatelliteCaptureConnectivity(
-          _satelliteCapturingTileId!,
-        );
-        if (!stillConnected) {
-          cancelSatelliteCapture(); // notifyListeners() 내부 호출
-          addAlert(GameStrings.satelliteDisconnectedAlert, AlertType.error); // notifyListeners() 내부 호출
-          alreadyNotified = true;
+      if (_satelliteController.isCapturing) {
+        final captTileId = _satelliteController.capturingTileId;
+        if (captTileId != null) {
+          final stillConnected = _satelliteController.checkConnectivity(captTileId);
+          if (!stillConnected) {
+            _satelliteController.cancelCapture();
+            addAlert(GameStrings.satelliteDisconnectedAlert, AlertType.error);
+            alreadyNotified = true;
+          }
         }
       }
       if (!alreadyNotified) {
@@ -695,7 +645,7 @@ class GameProvider extends ChangeNotifier with WidgetsBindingObserver {
         final Duration captureDuration = Duration(seconds: durationSeconds);
 
         // 물리 점령 개시 시점에 진행 중인 위성 점령이 있으면 중단
-        cancelSatelliteCapture();
+        _satelliteController.cancelCapture();
 
         _captureController.startCapture(
           tileId: tileId,
@@ -767,7 +717,7 @@ class GameProvider extends ChangeNotifier with WidgetsBindingObserver {
     final Duration captureDuration = Duration(seconds: durationSeconds);
 
     // 물리 점령 개시 시점에 진행 중인 위성 점령이 있으면 중단
-    cancelSatelliteCapture();
+    _satelliteController.cancelCapture();
 
     _captureController.startCapture(
       tileId: tileId,
@@ -978,7 +928,8 @@ class GameProvider extends ChangeNotifier with WidgetsBindingObserver {
     _alerts.insert(0, alert);
     if (_alerts.length > 5) _alerts.removeLast();
     notifyListeners();
-    Timer(const Duration(seconds: 3), () => _removeAlert(alert.id));
+    Timer(const Duration(seconds: GameConfig.alertDismissDurationSeconds),
+        () => _removeAlert(alert.id));
   }
 
   /// 알림 목록에서 특정 ID의 경고 알림을 제거하고 화면을 갱신합니다.
@@ -1029,98 +980,9 @@ class GameProvider extends ChangeNotifier with WidgetsBindingObserver {
   /// 정보가 보안 해제(Reveal)된 타일 ID와 해제 일시 맵
   final Map<String, DateTime> _revealedTileTimes = {};
 
-  /// 본진 기지에서 시작하여 플레이어가 소유한 타일망을 통해서만 이동하여 대상 타일까지 도달하는 최단 BFS 경로를 탐색합니다.
-  /// 경로를 찾으면 해당 경로의 타일 목록(`List<String>`)을 반환하고, 찾지 못하면 null을 반환합니다.
-  List<String>? _findShortestPathToHQ(String targetTileId) {
-    final mainBaseId = _authProvider?.profile?.mainBaseTileId;
-    final myId = _authProvider?.user?.id;
-    if (mainBaseId == null || mainBaseId.isEmpty || myId == null) {
-      return null;
-    }
-
-    if (mainBaseId == targetTileId) {
-      return [mainBaseId];
-    }
-
-    final partsTarget = targetTileId.split('_');
-    if (partsTarget.length != 3 || partsTarget[0] != 'hex') return null;
-    final tq = int.tryParse(partsTarget[1]);
-    final tr = int.tryParse(partsTarget[2]);
-    if (tq == null || tr == null) return null;
-
-    final partsBase = mainBaseId.split('_');
-    if (partsBase.length != 3 || partsBase[0] != 'hex') return null;
-    final hqQ = int.tryParse(partsBase[1]);
-    final hqR = int.tryParse(partsBase[2]);
-    if (hqQ == null || hqR == null) return null;
-
-    // BFS 큐: 각 원소는 경로의 타일 ID 리스트
-    final queue = Queue<List<String>>()..add([mainBaseId]);
-    final visited = <String>{mainBaseId};
-
-    while (queue.isNotEmpty) {
-      final path = queue.removeFirst();
-      final currentId = path.last;
-
-      if (currentId == targetTileId) {
-        return path;
-      }
-
-      final partsCurr = currentId.split('_');
-      if (partsCurr.length != 3 || partsCurr[0] != 'hex') continue;
-      final cq = int.tryParse(partsCurr[1]);
-      final cr = int.tryParse(partsCurr[2]);
-      if (cq == null || cr == null) continue;
-
-      for (final dir in HexService.hexDirections) {
-        final nq = cq + dir[0];
-        final nr = cr + dir[1];
-        final neighborId = HexService.tileId(nq, nr);
-
-        if (visited.contains(neighborId)) continue;
-
-        // 대상 타일에 도달하면 즉시 경로 추가
-        if (neighborId == targetTileId) {
-          queue.add(List<String>.from(path)..add(neighborId));
-          visited.add(neighborId);
-          continue;
-        }
-
-        // 내 영토인지 여부
-        final tile = _capturedTiles[neighborId];
-        final isMine = tile != null && tile.userId == myId;
-
-        if (isMine) {
-          queue.add(List<String>.from(path)..add(neighborId));
-          visited.add(neighborId);
-        }
-      }
-    }
-
-    return null;
-  }
-
-  /// 대상 타일과 유저의 본진에서 출발하는 영토망을 따르는 최단 경로(점선 홉 수)를 계산하여 반환합니다.
-  int getTileDistance(String targetTileId) {
-    final path = _findShortestPathToHQ(targetTileId);
-    if (path != null && path.length >= 2) {
-      return path.length - 1; // 점선이 통과하는 타일 홉 수 (본진 -> 내 땅들 -> 대상 타일의 실제 최단 홉 수)
-    }
-
-    // 폴백: 최단 경로가 없거나 예외 발생 시, 본진과의 물리 직선 거리를 반환
-    final mainBaseId = _authProvider?.profile?.mainBaseTileId;
-    if (mainBaseId == null || mainBaseId.isEmpty) return 0;
-
-    final partsBase = mainBaseId.split('_');
-    final bq = int.tryParse(partsBase[1]) ?? 0;
-    final br = int.tryParse(partsBase[2]) ?? 0;
-
-    final partsTarget = targetTileId.split('_');
-    final tq = int.tryParse(partsTarget[1]) ?? 0;
-    final tr = int.tryParse(partsTarget[2]) ?? 0;
-
-    return HexService.hexDistance(bq, br, tq, tr);
-  }
+  /// 대상 타일과 유저의 본진 사이의 최단 경로 거리를 반환합니다. (SatelliteCaptureController에 위임)
+  int getTileDistance(String targetTileId) =>
+      _satelliteController.getTileDistance(targetTileId);
 
   /// 타일 정보가 열람(보안 해제) 가능한 상태인지 여부를 판별합니다.
   /// 본인 타일이거나 중립(점령자 없음) 타일인 경우 항상 상시 노출(true)됩니다.
@@ -1252,33 +1114,16 @@ class GameProvider extends ChangeNotifier with WidgetsBindingObserver {
     WidgetsBinding.instance.removeObserver(this);
     _goldManager.dispose();
     _tilesStreamSub?.cancel();
-    _backgroundPollingTimer?.cancel(); // 타이머 해제
-    _satelliteCaptureTimer?.cancel();
-    _locationProvider?.removeListener(onLocationUpdated); // 리스너 해제 추가
+    _backgroundPollingTimer?.cancel();
+    _satelliteController.dispose();
+    _locationProvider?.removeListener(onLocationUpdated);
     _captureController.dispose();
     super.dispose();
   }
 
-  /// 지정한 타일이 본진 기지이거나 본진을 직간접으로 둘러싼 인접 1링(Ring) 범위에 포함되는지 확인합니다.
-  bool isHQOr1Ring(String tileId) {
-    final mainBaseId = _authProvider?.profile?.mainBaseTileId;
-    if (mainBaseId == null || mainBaseId.isEmpty) return false;
-
-    final partsTarget = tileId.split('_');
-    if (partsTarget.length != 3 || partsTarget[0] != 'hex') return false;
-    final tq = int.tryParse(partsTarget[1]);
-    final tr = int.tryParse(partsTarget[2]);
-
-    final partsBase = mainBaseId.split('_');
-    if (partsBase.length != 3 || partsBase[0] != 'hex') return false;
-    final bq = int.tryParse(partsBase[1]);
-    final br = int.tryParse(partsBase[2]);
-
-    if (tq == null || tr == null || bq == null || br == null) return false;
-
-    final dist = HexService.hexDistance(tq, tr, bq, br);
-    return dist <= 1;
-  }
+  /// 지정한 타일이 본진 기지이거나 본진을 둘러싼 인접 1링(Ring) 범위에 포함되는지 확인합니다.
+  bool isHQOr1Ring(String tileId) =>
+      _satelliteController.isHQOr1Ring(tileId);
 
   /// 위성 궤도 스캔 모드의 On/Off 여부를 전환합니다.
   void toggleScanMode() {
@@ -1326,319 +1171,25 @@ class GameProvider extends ChangeNotifier with WidgetsBindingObserver {
     }
   }
 
-  /// 본진 기지를 시발점으로 하여 요원이 지배 중인 타일 그리드를 거쳐 대상 영토까지 끊어짐 없이 헥사 결합되어 연결되는지 BFS(너비 우선 탐색)로 무결성을 검증합니다.
-  /// 참고: 대상 타일이 이미 내 소유인 경우 false 반환(위성 점령 자체가 불필요하므로).
-  bool checkSatelliteCaptureConnectivity(String targetTileId) {
-    final mainBaseId = _authProvider?.profile?.mainBaseTileId;
-    final myId = _authProvider?.user?.id;
-    if (mainBaseId == null || mainBaseId.isEmpty || myId == null) {
-      return false;
-    }
+  /// 위성 점령 연결성을 검증합니다. (SatelliteCaptureController에 위임)
+  bool checkSatelliteCaptureConnectivity(String targetTileId) =>
+      _satelliteController.checkConnectivity(targetTileId);
 
-    // 대상 타일이 이미 내 소유이면 위성 점령이 불필요하므로 false
-    final existingTile = _capturedTiles[targetTileId];
-    if (existingTile != null && existingTile.userId == myId) {
-      return false;
-    }
+  /// 내 영토와 대상 타일 간의 거리를 산출하여 위성 점령 완료에 소요될 지연 시간(초)을 계산합니다.
+  int getSatelliteCaptureDurationSeconds(String tileId) =>
+      _satelliteController.getCaptureDurationSeconds(tileId);
 
-    // 내 점령지 타일 ID 셋 구성
-    final myTiles = _capturedTiles.values
-        .where((t) => t.userId == myId)
-        .map((t) => t.id)
-        .toSet();
+  /// 위성 점령의 총 시간 중 '이동(비행) 시간'이 차지하는 비율을 산출합니다.
+  double getSatelliteTravelRatio(String tileId) =>
+      _satelliteController.getTravelRatio(tileId);
 
-    // 본진 타일은 소유 여부와 관계없이 BFS 탐색을 위한 연결 통로로 강제 포함
-    final effectiveMyTiles = {...myTiles, mainBaseId};
+  /// 위성 원격 점령을 실행합니다. (SatelliteCaptureController에 위임)
+  void executeSatelliteCapture(String tileId) =>
+      _satelliteController.executeCapture(tileId);
 
-    // BFS 탐색을 통한 연결성 검증
-    final queue = Queue<String>()..add(mainBaseId);
-    final visited = <String>{mainBaseId};
-
-    while (queue.isNotEmpty) {
-      final currentId = queue.removeFirst();
-
-      final parts = currentId.split('_');
-      if (parts.length != 3 || parts[0] != 'hex') continue;
-      final q = int.tryParse(parts[1]);
-      final r = int.tryParse(parts[2]);
-      if (q == null || r == null) continue;
-
-      for (final dir in HexService.hexDirections) {
-        final nq = q + dir[0];
-        final nr = r + dir[1];
-        final neighborId = HexService.tileId(nq, nr);
-
-        if (neighborId == targetTileId) {
-          return true;
-        }
-
-        if (effectiveMyTiles.contains(neighborId) &&
-            !visited.contains(neighborId)) {
-          visited.add(neighborId);
-          queue.add(neighborId);
-        }
-      }
-    }
-
-    return false;
-  }
-
-  /// 내 영토와 대상 타일 간의 헥사곤 거리를 산출하여 위성 점령 완료에 소요될 지연 시간(초)을 계산합니다.
-  int getSatelliteCaptureDurationSeconds(String tileId) {
-    final dist = getTileDistance(tileId);
-    final travelSeconds = dist;
-    const captureSeconds = 1; // 점령 고유 소요시간 1초
-    return travelSeconds + captureSeconds;
-  }
-
-  /// 내 영토와 대상 타일 간의 거리를 기준으로 하여, 위성 점령의 총 시간 중 '이동(비행) 시간'이 차지하는 비율을 산출합니다.
-  double getSatelliteTravelRatio(String tileId) {
-    final dist = getTileDistance(tileId).toDouble();
-    const captureSeconds = 1.0; // 점령 고유 소요시간 1초
-    final total = dist + captureSeconds;
-    return total > 0.0 ? (dist / total) : 0.8;
-  }
-
-  /// 지정한 대상 헥사곤 타일에 대한 위성 연결 점령(Satellite Capture) 타이머를 구동하여 점령을 실행합니다.
-  void executeSatelliteCapture(String tileId) {
-    if (tileId.isEmpty || _isSavingSatellite) return;
-
-    // 쿨타임 검증
-    if (remainingSatelliteCaptureCoolSeconds > 0) {
-      addAlert(GameStrings.satelliteCooltimeAlert, AlertType.error);
-      return;
-    }
-
-    // 빈 타일 여부 검증 (이미 누군가가 점령했다면 불가능)
-    final existingTile = _capturedTiles[tileId];
-    final isTileEmpty =
-        existingTile == null ||
-        existingTile.userId == null ||
-        existingTile.userId == 'none';
-    if (!isTileEmpty) {
-      addAlert(GameStrings.satelliteAlreadyCapturedAlert, AlertType.error);
-      return;
-    }
-
-    // 연결성 검증
-    if (!checkSatelliteCaptureConnectivity(tileId)) {
-      addAlert(GameStrings.satelliteDisconnectedAlert, AlertType.error);
-      return;
-    }
-
-    final mainBaseId = _authProvider?.profile?.mainBaseTileId;
-    if (mainBaseId == null || mainBaseId.isEmpty) {
-      addAlert(GameStrings.satelliteNoHQAlert, AlertType.error);
-      return;
-    }
-
-    // 내 영토로부터의 최단 거리에 비례하여 점령 소요 시간 및 골드 비용 계산
-    final dist = getTileDistance(tileId);
-
-    // 위성 점령 소모 재화 부족 검증 (거리가 D이면 D GP 소모)
-    if (_goldManager.currentGold < dist) {
-      addAlert(
-        GameStrings.satGoldShortageDetail(dist.toString(), _goldManager.currentGold.toInt().toString()),
-        AlertType.error,
-      );
-      return;
-    }
-
-    final travelSeconds = dist;
-    const captureSeconds = 1; // 점령 고유 소요시간 1초
-
-    // 물리 GPS 점령 진행 중인 경우 중단
-    if (isCapturing) {
-      _captureController.cancelCapture();
-    }
-
-    cancelSatelliteCapture();
-
-    _satelliteCapturingTileId = tileId;
-    _satelliteCapturePhase = SatelliteCapturePhase.flying;
-    _satelliteTravelProgress = 0.0;
-    _satelliteCaptureProgress = 0.0;
-    _satellitePhaseStartTime = DateTime.now();
-    _satelliteTravelDuration = Duration(
-      seconds: travelSeconds < 1 ? 1 : travelSeconds,
-    );
-    _satelliteCaptureDuration = const Duration(seconds: captureSeconds);
-
-    _satelliteCaptureTimer = Timer.periodic(
-      const Duration(milliseconds: GameConfig.updateIntervalMs),
-      (_) {
-        if (_satelliteCapturingTileId == null || _isSavingSatellite) return;
-
-        final now = DateTime.now();
-        if (_satelliteCapturePhase == SatelliteCapturePhase.flying) {
-          final elapsed = now.difference(_satellitePhaseStartTime!);
-          _satelliteTravelProgress =
-              (elapsed.inMilliseconds /
-                      _satelliteTravelDuration!.inMilliseconds)
-                  .clamp(0.0, 1.0);
-
-          if (_satelliteTravelProgress >= 1.0) {
-            // 1단계 비행 완료 ➔ 2단계 실제 점령 모드로 순차 전환!
-            _satelliteCapturePhase = SatelliteCapturePhase.capturing;
-            _satellitePhaseStartTime = now;
-            _satelliteCaptureProgress = 0.0;
-          }
-          notifyListeners();
-        } else if (_satelliteCapturePhase == SatelliteCapturePhase.capturing) {
-          final elapsed = now.difference(_satellitePhaseStartTime!);
-          _satelliteCaptureProgress =
-              (elapsed.inMilliseconds /
-                      _satelliteCaptureDuration!.inMilliseconds)
-                  .clamp(0.0, 1.0);
-
-          if (_satelliteCaptureProgress >= 1.0) {
-            _saveSatelliteCapture(tileId);
-          } else {
-            notifyListeners();
-          }
-        }
-      },
-    );
-
-    notifyListeners();
-  }
-
-  /// 현재 시도 중인 위성 원격 점령 지연 프로세스를 중단하고 취소합니다.
-  void cancelSatelliteCapture() {
-    if (_isSavingSatellite) return;
-    _satelliteCaptureTimer?.cancel();
-    _satelliteCaptureTimer = null;
-    _satelliteCapturingTileId = null;
-    _satelliteCapturePhase = SatelliteCapturePhase.none;
-    _satelliteTravelProgress = 0.0;
-    _satelliteCaptureProgress = 0.0;
-    _satelliteTravelDuration = null;
-    _satelliteCaptureDuration = null;
-    _satellitePhaseStartTime = null;
-    notifyListeners();
-  }
-
-  /// 위성 점령 데이터 DB 저장 및 쿨타임 갱신
-  Future<void> _saveSatelliteCapture(String tileId) async {
-    if (_isSavingSatellite) return;
-    _isSavingSatellite = true;
-    _satelliteCaptureTimer?.cancel();
-
-    final myId = _authProvider?.user?.id;
-    final myColor = _authProvider?.profile?.colorHex;
-
-    if (myId == null || myColor == null) {
-      addAlert(GameStrings.satelliteUserInvalid, AlertType.error);
-      _isSavingSatellite = false;
-      cancelSatelliteCapture();
-      return;
-    }
-
-    final parts = tileId.split('_');
-    final q = int.tryParse(parts[1]) ?? 0;
-    final r = int.tryParse(parts[2]) ?? 0;
-
-    final existing = _capturedTiles[tileId];
-    final targetCaptureCount = (existing?.captureCount ?? 0) + 1;
-
-    final tile = HexTile(
-      id: tileId,
-      q: q,
-      r: r,
-      userId: myId,
-      colorHex: myColor,
-      capturedAt: DateTime.now().toUtc(),
-      captureCount: targetCaptureCount, // 누적 가산된 목표 점령 횟수 주입
-    );
-
-    // [최적화] 중복 선제 골드 서버 영속화 API 제거 및 곧바로 캡처 진행
-    final success = await _supabase.captureTile(tile);
-    if (success) {
-      _lastSatelliteCaptureTime = DateTime.now();
-
-      // 쿨타임 저장은 백그라운드 비동기로 처리
-      SharedPreferences.getInstance().then((prefs) {
-        prefs.setString(
-          'hq_last_satellite_capture_time',
-          _lastSatelliteCaptureTime!.toIso8601String(),
-        );
-      }).catchError((e) {
-        debugPrint('SharedPreferences 쿨타임 저장 실패: $e');
-      });
-
-      // 위성 점령에 소모된 거리 비례 골드 차감 및 last_gold_updated_at 최적화 동기화
-      try {
-        final profile = _authProvider?.profile;
-        if (profile != null) {
-          final mainBaseId = profile.mainBaseTileId;
-          if (mainBaseId != null && mainBaseId.isNotEmpty) {
-            final dist = getTileDistance(tileId);
-            
-            // 실시간 축적분이 담긴 최신 goldManager 기준으로 거리 차감 진행
-            _goldManager.deductOptimistic(dist.toDouble());
-
-            // [최적화] 단 한 번의 쿼리로 차감된 골드 정보 백엔드 저장
-            await _goldManager.persistGoldUpdate(
-              _goldManager.currentGold,
-              DateTime.now(),
-              myId,
-            );
-          }
-        }
-      } catch (e) {
-        debugPrint('⚠️ 위성 점령 재화 차감 중 오류 발생: $e');
-      }
-
-      _capturedTiles[tileId] = tile;
-      addAlert(GameStrings.satelliteCaptureSuccess, AlertType.success);
-
-      // 🎯 [신규] 위성 원격 점령 성공 시 푸시 알림 발송 트리거
-      if (_isNotifSatelliteComplete) {
-        try {
-          debugPrint('📡 위성 원격 점령 성공 푸시 알림 발송 요청 시작 (user: $myId)');
-          _supabase.client.functions.invoke(
-            'send-push',
-            body: {
-              'topic': 'user_$myId',
-              'title': GameStrings.notifSatelliteCompleteTitle,
-              'body': GameStrings.satelliteCaptureSuccess,
-              'data_payload': {
-                'type': 'satellite_complete',
-              },
-            },
-          ).then((response) {
-            debugPrint('🎯 위성 점령 푸시 알림 발송 결과: ${response.status}');
-          }).catchError((e) {
-            debugPrint('⚠️ 위성 점령 푸시 알림 발송 중 에러 발생: $e');
-          });
-        } catch (e) {
-          debugPrint('⚠️ 위성 점령 푸시 알림 발송 예외 발생: $e');
-        }
-      }
-
-      // 위성 점령이 최종 성공했으므로 조준 상태를 깔끔하게 비움
-      _selectedScanTileId = null;
-      _selectedScanTileLatLng = null;
-
-      // [최적화] 무겁고 7번 중복 API 타는 syncGoldWithServer 대신 가벼운 refreshProfile 호출로 단축하여 병목 제거
-      _authProvider?.refreshProfile();
-    } else {
-      final errMsg = _supabase.lastError != null
-          ? ': ${_supabase.lastError}'
-          : '';
-      addAlert('${GameStrings.satelliteCaptureFail}$errMsg', AlertType.error);
-    }
-
-    _isSavingSatellite = false;
-    _satelliteCapturingTileId = null;
-    _satelliteCapturePhase = SatelliteCapturePhase.none;
-    _satelliteTravelProgress = 0.0;
-    _satelliteCaptureProgress = 0.0;
-    _satelliteTravelDuration = null;
-    _satelliteCaptureDuration = null;
-    _satellitePhaseStartTime = null;
-    notifyListeners();
-  }
+  /// 현재 시도 중인 위성 원격 점령을 취소합니다.
+  void cancelSatelliteCapture() =>
+      _satelliteController.cancelCapture();
 
   @override
   void didChangeAppLifecycleState(AppLifecycleState state) {

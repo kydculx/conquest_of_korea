@@ -4,10 +4,10 @@ import 'package:flutter/material.dart';
 import 'package:flame/components.dart';
 import 'package:latlong2/latlong.dart' hide Path;
 import '../../core/constants/colors.dart';
+import '../../controllers/satellite_capture_controller.dart';
 import '../conquest_game.dart';
 import '../../services/hex_service.dart';
 import '../../models/tile_model.dart';
-import '../../providers/game_provider.dart';
 
 /// 위성 스캔 모드에서 사용자가 선택한 타일의 조준선 프리뷰를 렌더링하는 컴포넌트
 /// 위성 궤도 정밀 조준 스캔 및 위성 원격 점령 모드에서 조준선, 본부로부터의 전술적 BFS 최단 경로 안내선, 점령 완료 시 보간 화살표 이동 애니메이션을 그리는 Flame 컴포넌트

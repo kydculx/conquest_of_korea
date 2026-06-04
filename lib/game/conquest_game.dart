@@ -8,7 +8,7 @@ import 'components/hq_base_marker.dart';
 import 'components/scan_target_marker.dart';
 import '../services/hex_service.dart';
 import '../models/tile_model.dart';
-import '../providers/game_provider.dart';
+import '../controllers/satellite_capture_controller.dart';
 import '../core/constants/colors.dart';
 import '../core/constants/game_config.dart';
 

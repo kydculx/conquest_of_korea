@@ -3,6 +3,7 @@ import 'dart:io';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart';
 import 'package:geolocator/geolocator.dart';
+import '../core/constants/game_config.dart';
 import '../core/constants/strings.dart';
 
 /// 디바이스의 물리 GPS 하드웨어를 직접 제어하고, 실시간 위치 스트림 데이터 수신 및 백그라운드 배터리 최적화 설정을 관리하는 서비스 클래스
@@ -80,9 +81,9 @@ class GeoService {
     } else if (!kIsWeb && Platform.isAndroid) {
       locationSettings = AndroidSettings(
         accuracy: LocationAccuracy.best,
-        distanceFilter: 3,
+        distanceFilter: GameConfig.gpsDistanceFilterMeters,
         forceLocationManager: true, // 구글 서비스를 거치지 않고 하드웨어 직접 제어
-        intervalDuration: const Duration(seconds: 1),
+        intervalDuration: const Duration(seconds: GameConfig.gpsUpdateIntervalSeconds),
         foregroundNotificationConfig: ForegroundNotificationConfig(
           notificationText: GameStrings.gpsServiceNotificationText,
           notificationTitle: GameStrings.gpsServiceNotificationTitle,
@@ -92,14 +93,14 @@ class GeoService {
     } else {
       locationSettings = const LocationSettings(
         accuracy: LocationAccuracy.best,
-        distanceFilter: 3,
+        distanceFilter: GameConfig.gpsDistanceFilterMeters,
       );
     }
 
     try {
       await Geolocator.getCurrentPosition(
         locationSettings: locationSettings,
-      ).timeout(const Duration(seconds: 5));
+      ).timeout(const Duration(seconds: GameConfig.gpsWarmupTimeoutSeconds));
     } catch (e) {
       debugPrint('GPS 예열 실패 (무시하고 스트림 시작): $e');
     }
@@ -107,6 +108,7 @@ class GeoService {
     _positionStreamSubscription =
         Geolocator.getPositionStream(locationSettings: locationSettings).listen(
           _locationController.add,
+          onError: (e) => debugPrint('⚠️ GPS 위치 스트림 에러: $e'),
         );
   }
 

@@ -1,3 +1,5 @@
+import 'package:flutter/services.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 import '../constants/strings.dart';
 
 /// 시스템 발생 오류 메시지를 사용자 친화적인 다국어 에러 메시지로 번역하는 유틸리티 클래스
@@ -7,27 +9,21 @@ class ErrorTranslator {
     String message = error.toString();
 
     // Supabase AuthException 처리
-    try {
-      if (error.runtimeType.toString().contains('AuthException')) {
-        message = error.message ?? message;
-      }
-    } catch (_) {}
+    if (error is AuthException) {
+      message = error.message;
+    }
 
     // Supabase PostgrestException 처리
-    try {
-      if (error.runtimeType.toString().contains('PostgrestException')) {
-        final String code = error.code ?? '';
-        if (code == '23505') return GameStrings.errorDuplicateInfo;
-        message = '${GameStrings.errorDatabase} ($code): ${error.message}';
-      }
-    } catch (_) {}
+    if (error is PostgrestException) {
+      final String code = error.code ?? '';
+      if (code == '23505') return GameStrings.errorDuplicateInfo;
+      message = '${GameStrings.errorDatabase} ($code): ${error.message}';
+    }
 
     // PlatformException 처리
-    try {
-      if (error.runtimeType.toString().contains('PlatformException')) {
-        message = '${error.code}: ${error.message}';
-      }
-    } catch (_) {}
+    if (error is PlatformException) {
+      message = '${error.code}: ${error.message}';
+    }
 
     final String lowerMsg = message.toLowerCase();
 
