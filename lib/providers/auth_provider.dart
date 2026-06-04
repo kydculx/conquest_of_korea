@@ -154,6 +154,19 @@ class AuthProvider extends ChangeNotifier {
             // 서버 세션 ID가 존재하고, 로컬 세션 ID와 다른 경우 중복 로그인 발생
             if (serverSessionId != null && serverSessionId != _localSessionId) {
               _handleDuplicateLogin();
+              return;
+            }
+
+            // [추가] 외부(관리자 대시보드 등)의 조작에 의해 프로필 데이터가 변경된 경우 실시간 동기화
+            if (_profile != null) {
+              final double diff = (updatedProfile.gold - _profile!.gold).abs();
+              // 골드 잔액이 변경되었거나, 전술 색상, 본진 설정 등이 수정되었을 때
+              if (diff > 0.05 ||
+                  updatedProfile.colorHex != _profile!.colorHex ||
+                  updatedProfile.mainBaseTileId != _profile!.mainBaseTileId) {
+                _profile = updatedProfile;
+                notifyListeners();
+              }
             }
           }
         }, onError: (e) {

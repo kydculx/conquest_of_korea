@@ -400,6 +400,15 @@ class GameProvider extends ChangeNotifier with WidgetsBindingObserver {
       // 🎯 [신규] 로그인 상태에서는 항상 자동 점령(Auto Capture) 활성화
       _isAutoCapture = true;
 
+      // [추가] 외부(관리자 등) 조작에 의해 profiles 테이블의 골드 잔액이 로컬과 편차가 생겼을 때 강제 덮어쓰기 동기화
+      if (auth.profile != null) {
+        final double serverGold = auth.profile!.gold;
+        final double localGold = _goldManager.currentGold;
+        if ((localGold - serverGold).abs() > 0.5) {
+          _goldManager.setGold(serverGold);
+        }
+      }
+
       // 1. 프로필이 null이었다가 최초 로드(비동기 완료)된 시점
       // 2. 혹은 골드 타이머가 실행 중이지 않은 상태일 때 동기화 트리거
       if ((oldProfile == null && auth.profile != null) ||

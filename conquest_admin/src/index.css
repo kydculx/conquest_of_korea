@@ -1,0 +1,295 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Outfit:wght@400;500;600;700;800&display=swap');
+
+:root {
+  /* 모던 슬레이트 다크 컬러 시스템 */
+  --bg-primary: #0f172a;        /* slate-900 (매우 짙은 다크 네이비/그레이) */
+  --bg-secondary: #1e293b;      /* slate-800 */
+  --bg-card: #1e293b;           /* slate-800 */
+  --bg-card-hover: #334155;     /* slate-700 */
+  
+  --border-color: #334155;      /* slate-700 */
+  --border-hover: #475569;      /* slate-600 */
+  
+  --accent-cyan: #3b82f6;       /* 로얄 블루 */
+  --accent-cyan-rgb: 59, 130, 246;
+  --accent-cyan-dark: #1d4ed8;  
+  
+  --accent-red: #ef4444;        /* red-500 */
+  --accent-red-rgb: 239, 68, 68;
+  
+  --accent-gold: #f59e0b;       /* amber-500 */
+  --accent-gold-rgb: 245, 158, 11;
+  
+  --text-primary: #f8fafc;      /* slate-50 (거의 흰색) */
+  --text-secondary: #94a3b8;    /* slate-400 */
+  --text-muted: #64748b;        /* slate-500 */
+  
+  --font-main: 'Inter', system-ui, -apple-system, sans-serif;
+  --font-display: 'Outfit', sans-serif;
+  
+  --shadow-neon: 0 4px 12px rgba(0, 0, 0, 0.25);
+  --shadow-neon-red: 0 4px 12px rgba(239, 68, 68, 0.05);
+  --shadow-card: 0 10px 15px -3px rgba(0, 0, 0, 0.3), 0 4px 6px -4px rgba(0, 0, 0, 0.3);
+  
+  --glow-radius: 12px;
+}
+
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+body {
+  background-color: var(--bg-primary);
+  color: var(--text-primary);
+  font-family: var(--font-main);
+  min-height: 100vh;
+  overflow-x: hidden;
+  position: relative;
+}
+
+/* 격자(Grid) 배경 제거 */
+body::before {
+  content: '';
+  display: none;
+}
+
+/* 모던 플랫 카드 스타일 */
+.tactical-card {
+  background: var(--bg-card);
+  border: 1px solid var(--border-color);
+  border-radius: var(--glow-radius);
+  padding: 1.5rem;
+  box-shadow: var(--shadow-card);
+  transition: border-color 0.2s ease, box-shadow 0.2s ease, transform 0.2s ease;
+  z-index: 1;
+}
+
+.tactical-card:hover {
+  border-color: var(--accent-cyan);
+  box-shadow: 0 10px 20px -3px rgba(0, 0, 0, 0.4), 0 4px 8px -4px rgba(0, 0, 0, 0.4);
+}
+
+/* 깔끔한 스크롤바 */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: var(--bg-primary);
+}
+
+::-webkit-scrollbar-thumb {
+  background: var(--border-hover);
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: var(--accent-cyan);
+}
+
+h1, h2, h3, h4, h5 {
+  font-family: var(--font-display);
+  font-weight: 700;
+  color: var(--text-primary);
+}
+
+/* 로딩 스피너 */
+.tactical-spinner {
+  width: 40px;
+  height: 40px;
+  border: 3px solid rgba(59, 130, 246, 0.15);
+  border-radius: 50%;
+  border-top-color: var(--accent-cyan);
+  animation: spin 1s linear infinite;
+  margin: 2rem auto;
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+/* 공통 모던 버튼 디자인 */
+.tactical-btn {
+  font-family: var(--font-display);
+  font-weight: 600;
+  font-size: 0.9rem;
+  padding: 0.6rem 1.2rem;
+  border-radius: 8px;
+  border: 1px solid var(--border-color);
+  background: rgba(255, 255, 255, 0.02);
+  color: var(--text-secondary);
+  cursor: pointer;
+  transition: all 0.2s ease;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.tactical-btn:hover:not(:disabled) {
+  background: var(--bg-card-hover);
+  color: var(--text-primary);
+  border-color: var(--border-hover);
+}
+
+.tactical-btn.active {
+  border-color: var(--accent-cyan);
+  background: rgba(59, 130, 246, 0.1);
+  color: var(--accent-cyan);
+}
+
+.tactical-btn:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+.tactical-btn.danger {
+  color: var(--accent-red);
+  border-color: var(--border-color);
+  background: rgba(255, 255, 255, 0.02);
+}
+
+.tactical-btn.danger:hover:not(:disabled) {
+  background: rgba(239, 68, 68, 0.1);
+  border-color: var(--accent-red);
+}
+
+/* 레이아웃 */
+.app-container {
+  display: flex;
+  min-height: 100vh;
+  position: relative;
+  background-color: var(--bg-primary);
+}
+
+.sidebar {
+  width: 260px;
+  background: var(--bg-primary);
+  border-right: 1px solid var(--border-color);
+  padding: 2rem 1.5rem;
+  display: flex;
+  flex-direction: column;
+  gap: 2rem;
+  z-index: 10;
+}
+
+.main-content {
+  flex: 1;
+  padding: 2rem 3rem;
+  overflow-y: auto;
+  z-index: 5;
+}
+
+.page-header {
+  margin-bottom: 2rem;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  border-bottom: 1px solid var(--border-color);
+  padding-bottom: 1rem;
+}
+
+.page-title {
+  font-size: 1.8rem;
+  color: var(--text-primary);
+}
+
+/* 통계 그리드 */
+.stats-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 1.5rem;
+  margin-bottom: 2rem;
+}
+
+.stat-value {
+  font-size: 2.2rem;
+  font-weight: 800;
+  font-family: var(--font-display);
+  margin-top: 0.5rem;
+}
+
+/* 테이블 스타일 */
+.tactical-table-container {
+  background: var(--bg-card);
+  border: 1px solid var(--border-color);
+  border-radius: var(--glow-radius);
+  overflow: hidden;
+  margin-top: 1rem;
+  box-shadow: var(--shadow-card);
+}
+
+.tactical-table {
+  width: 100%;
+  border-collapse: collapse;
+  text-align: left;
+}
+
+.tactical-table th {
+  background: #0f172a; /* slate-900 */
+  padding: 1rem;
+  font-family: var(--font-display);
+  font-weight: 600;
+  font-size: 0.85rem;
+  color: var(--text-secondary);
+  border-bottom: 1px solid var(--border-color);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.tactical-table td {
+  padding: 1rem;
+  font-size: 0.9rem;
+  border-bottom: 1px solid var(--border-color);
+  color: var(--text-primary);
+}
+
+.tactical-table tbody tr:hover {
+  background: rgba(255, 255, 255, 0.02);
+}
+
+/* 모던 인풋 */
+.tactical-input {
+  background: var(--bg-primary);
+  border: 1px solid var(--border-color);
+  border-radius: 8px;
+  padding: 0.6rem 1rem;
+  color: var(--text-primary);
+  font-family: var(--font-main);
+  transition: all 0.2s ease;
+  width: 100%;
+}
+
+.tactical-input:focus {
+  outline: none;
+  border-color: var(--accent-cyan);
+  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.2);
+}
+
+/* Leaflet Popup 슬레이트 다크 테마 커스터마이징 */
+.leaflet-popup-content-wrapper {
+  background: var(--bg-secondary) !important;
+  color: var(--text-primary) !important;
+  border: 1px solid var(--border-color) !important;
+  box-shadow: var(--shadow-card) !important;
+  border-radius: 6px !important;
+}
+
+.leaflet-popup-tip {
+  background: var(--bg-secondary) !important;
+  border: 1px solid var(--border-color) !important;
+}
+
+.leaflet-popup-content {
+  margin: 10px 12px !important;
+}
+
+.leaflet-popup-close-button {
+  color: var(--text-muted) !important;
+}
+
+.leaflet-popup-close-button:hover {
+  color: var(--accent-cyan) !important;
+}
