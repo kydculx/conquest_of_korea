@@ -9,11 +9,14 @@ import {
   Bell,
   Terminal,
   Cpu,
-  Trophy
+  Trophy,
+  Menu,
+  X
 } from 'lucide-react';
 
 export default function App() {
   const [activeTab, setActiveTab] = useState('dashboard');
+  const [isSidebarOpen, setIsSidebarOpen] = useState(false);
 
   const menuItems = [
     { id: 'dashboard', label: '대시보드', icon: Cpu },
@@ -44,19 +47,33 @@ export default function App() {
 
   return (
     <div className="app-container">
+      {/* 모바일 화면에서 사이드바가 열렸을 때 뒷배경 오버레이 클릭 시 닫기 */}
+      {isSidebarOpen && (
+        <div className="sidebar-backdrop" onClick={() => setIsSidebarOpen(false)} />
+      )}
+
       {/* 1. 사이드바 내비게이션 */}
-      <aside className="sidebar">
-        {/* 로고 */}
-        <div style={{ display: 'flex', alignItems: 'center', gap: '0.8rem', paddingBottom: '1rem', borderBottom: '1px solid var(--border-color)' }}>
-          <Terminal size={24} style={{ color: 'var(--accent-cyan)' }} />
-          <div>
-            <h1 style={{ fontSize: '1.1rem', fontWeight: 800, fontFamily: 'var(--font-display)', letterSpacing: '0.05em' }}>
-              찜! 대모험
-            </h1>
-            <span style={{ fontSize: '0.65rem', color: 'var(--text-muted)', fontWeight: 'bold', fontFamily: 'monospace' }}>
-              관리자 시스템 v1.0
-            </span>
+      <aside className={`sidebar ${isSidebarOpen ? 'open' : ''}`}>
+        {/* 로고 및 모바일 닫기 버튼 */}
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', paddingBottom: '1rem', borderBottom: '1px solid var(--border-color)' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '0.8rem' }}>
+            <Terminal size={24} style={{ color: 'var(--accent-cyan)' }} />
+            <div>
+              <h1 style={{ fontSize: '1.1rem', fontWeight: 800, fontFamily: 'var(--font-display)', letterSpacing: '0.05em' }}>
+                찜! 대모험
+              </h1>
+              <span style={{ fontSize: '0.65rem', color: 'var(--text-muted)', fontWeight: 'bold', fontFamily: 'monospace' }}>
+                관리자 시스템 v1.0
+              </span>
+            </div>
           </div>
+          <button 
+            className="mobile-only" 
+            onClick={() => setIsSidebarOpen(false)}
+            style={{ background: 'none', border: 'none', color: 'var(--text-secondary)', cursor: 'pointer', display: 'flex', alignItems: 'center' }}
+          >
+            <X size={20} />
+          </button>
         </div>
 
         {/* 내비게이션 메뉴 */}
@@ -67,7 +84,10 @@ export default function App() {
             return (
               <button
                 key={item.id}
-                onClick={() => setActiveTab(item.id)}
+                onClick={() => {
+                  setActiveTab(item.id);
+                  setIsSidebarOpen(false); // 이동 후 사이드바 자동으로 닫기
+                }}
                 style={{
                   display: 'flex',
                   alignItems: 'center',
@@ -103,16 +123,25 @@ export default function App() {
         </div>
       </aside>
 
-      {/* 2. 메인 콘텐츠 콘텐츠 */}
+      {/* 2. 메인 콘텐츠 */}
       <main className="main-content">
         <header className="page-header">
-          <div>
-            <h2 className="page-title">{getPageTitle()}</h2>
-            <p style={{ fontSize: '0.8rem', color: 'var(--text-muted)', marginTop: '0.2rem', fontFamily: 'monospace' }}>
-              시스템 제어 게이트웨이
-            </p>
-          </div>
           <div style={{ display: 'flex', alignItems: 'center', gap: '0.8rem' }}>
+            <button 
+              className="menu-toggle-btn" 
+              onClick={() => setIsSidebarOpen(true)}
+              style={{ display: 'flex', alignItems: 'center', justifyContent: 'center' }}
+            >
+              <Menu size={20} />
+            </button>
+            <div>
+              <h2 className="page-title">{getPageTitle()}</h2>
+              <p style={{ fontSize: '0.8rem', color: 'var(--text-muted)', marginTop: '0.2rem', fontFamily: 'monospace' }}>
+                시스템 제어 게이트웨이
+              </p>
+            </div>
+          </div>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '0.8rem' }} className="desktop-only">
             <span style={{ width: '8px', height: '8px', borderRadius: '50%', backgroundColor: 'var(--accent-cyan)', display: 'inline-block' }} />
             <span style={{ fontSize: '0.75rem', fontFamily: 'monospace', color: 'var(--text-secondary)' }}>
               시스템 상태: 정상

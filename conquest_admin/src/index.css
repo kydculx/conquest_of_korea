@@ -293,3 +293,269 @@ h1, h2, h3, h4, h5 {
 .leaflet-popup-close-button:hover {
   color: var(--accent-cyan) !important;
 }
+
+/* 햄버거 토글 버튼 */
+.menu-toggle-btn {
+  display: none;
+}
+
+/* 유틸리티 */
+.desktop-only {
+  display: block;
+}
+.mobile-only {
+  display: none;
+}
+
+/* 반응형 모바일 대응 미디어 쿼리 */
+@media (max-width: 768px) {
+  .sidebar {
+    position: fixed;
+    top: 0;
+    left: -260px;
+    height: 100vh;
+    width: 260px;
+    transition: left 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+    box-shadow: 10px 0 30px rgba(0, 0, 0, 0.5);
+    z-index: 100;
+  }
+
+  .sidebar.open {
+    left: 0;
+  }
+
+  /* 사이드바 오픈 시 뒷배경 암전 효과 */
+  .sidebar-backdrop {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: 100vh;
+    background: rgba(0, 0, 0, 0.6);
+    backdrop-filter: blur(2px);
+    z-index: 90;
+  }
+
+  .main-content {
+    padding: 1rem;
+    width: 100%;
+  }
+
+  .page-header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 0.8rem;
+    padding-bottom: 0.8rem;
+  }
+
+  .menu-toggle-btn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: var(--bg-secondary);
+    border: 1px solid var(--border-color);
+    border-radius: 8px;
+    padding: 0.5rem;
+    cursor: pointer;
+    color: var(--text-primary);
+  }
+
+  /* 데이터 테이블이 잘리지 않고 터치로 가로 스크롤되도록 지원 */
+  .tactical-table-container {
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  .tactical-table {
+    min-width: 650px; /* 테이블 요소가 최소 가로폭을 유지하게 함 */
+  }
+
+  .desktop-only {
+    display: none;
+  }
+  .mobile-only {
+    display: block;
+  }
+}
+
+/* 대시보드 지도 전용 반응형 스타일 */
+.map-card {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  min-height: 660px;
+}
+.map-wrapper {
+  flex: 1;
+  position: relative;
+  min-height: 600px;
+}
+.map-element {
+  height: 600px;
+  width: 100%;
+  border-radius: 8px;
+  overflow: hidden;
+  border: 1px solid var(--border-color);
+  position: relative;
+  background-color: #0a0c10;
+  z-index: 0;
+}
+.map-overlay-btn-satellite {
+  position: absolute;
+  top: 12px;
+  right: 110px;
+  z-index: 1000;
+  box-shadow: var(--shadow-card);
+  background: var(--bg-secondary);
+  border: 1px solid var(--border-color);
+  color: var(--text-secondary);
+  padding: 0.5rem 0.8rem;
+  font-size: 0.8rem;
+  font-weight: 600;
+  border-radius: 6px;
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+.map-overlay-btn-satellite:hover {
+  background: var(--bg-card-hover);
+  color: var(--text-primary);
+}
+.map-overlay-btn-satellite.active {
+  color: var(--accent-cyan);
+  background: rgba(59, 130, 246, 0.1);
+  border-color: var(--accent-cyan);
+}
+.map-overlay-btn-location {
+  position: absolute;
+  top: 12px;
+  right: 12px;
+  z-index: 1000;
+  box-shadow: var(--shadow-card);
+  background: var(--bg-secondary);
+  border: 1px solid var(--border-color);
+  color: var(--accent-cyan);
+  padding: 0.5rem 0.8rem;
+  font-size: 0.8rem;
+  font-weight: 600;
+  border-radius: 6px;
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+.map-overlay-btn-location:hover {
+  background: var(--bg-card-hover);
+}
+
+@media (max-width: 768px) {
+  .map-card {
+    min-height: 510px;
+  }
+  .map-wrapper {
+    min-height: 450px;
+  }
+  .map-element {
+    height: 450px;
+  }
+  .map-overlay-btn-satellite {
+    top: 8px;
+    right: 96px;
+    padding: 0.4rem 0.6rem;
+    font-size: 0.75rem;
+  }
+  .map-overlay-btn-location {
+    top: 8px;
+    right: 8px;
+    padding: 0.4rem 0.6rem;
+    font-size: 0.75rem;
+  }
+}
+
+/* 공통 컨트롤 헤더 및 필터 그룹 반응형 */
+.tab-controls-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 1rem;
+  flex-wrap: wrap;
+}
+.tab-filter-group {
+  display: flex;
+  gap: 0.8rem;
+}
+.tab-search-group {
+  display: flex;
+  gap: 1rem;
+  align-items: center;
+}
+.tab-search-input-wrapper {
+  position: relative;
+  width: 280px;
+}
+
+@media (max-width: 768px) {
+  .tab-controls-header {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 1rem;
+  }
+  .tab-filter-group {
+    flex-direction: column;
+    gap: 0.5rem;
+    width: 100%;
+  }
+  .tab-filter-group button {
+    width: 100%;
+    justify-content: center;
+  }
+  .tab-search-group {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 0.5rem;
+    width: 100%;
+  }
+  .tab-search-input-wrapper {
+    width: 100% !important;
+  }
+  .tab-search-group button {
+    width: 100%;
+    justify-content: center;
+  }
+}
+
+/* FCM 알림 폼 반응형 */
+.notifications-form-container {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+  width: 100%;
+  max-width: 600px;
+}
+.notifications-radio-group {
+  display: flex;
+  gap: 2rem;
+  padding: 0.5rem 0;
+}
+.notifications-submit-wrapper {
+  display: flex;
+  justify-content: flex-end;
+  margin-top: 0.5rem;
+}
+
+@media (max-width: 768px) {
+  .notifications-radio-group {
+    flex-direction: column;
+    gap: 0.8rem;
+  }
+  .notifications-submit-wrapper {
+    width: 100%;
+  }
+  .notifications-submit-wrapper button {
+    width: 100%;
+    justify-content: center;
+  }
+}

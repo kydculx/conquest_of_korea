@@ -279,7 +279,7 @@ export default function DashboardTab() {
       <div style={{ display: 'grid', gridTemplateColumns: '1fr', gap: '1.5rem' }}>
 
         {/* Leaflet 실시간 점령 지도 */}
-        <div className="tactical-card" style={{ display: 'flex', flexDirection: 'column', gap: '1rem', minHeight: '660px' }}>
+        <div className="tactical-card map-card">
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
             <h3 style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', fontSize: '1.1rem', color: 'var(--text-primary)' }}>
               <Radio size={18} style={{ color: 'var(--accent-cyan)' }} />
@@ -289,67 +289,22 @@ export default function DashboardTab() {
               REALTIME DATA FEED
             </span>
           </div>
-          <div style={{ flex: 1, position: 'relative', minHeight: '600px' }}>
+          <div className="map-wrapper">
             <button 
               onClick={() => setIsSatellite(!isSatellite)}
-              className={`tactical-btn ${isSatellite ? 'active' : ''}`}
-              style={{
-                position: 'absolute',
-                top: '12px',
-                right: '110px',
-                zIndex: 1000,
-                boxShadow: 'var(--shadow-card)',
-                background: 'var(--bg-secondary)',
-                border: '1px solid var(--border-color)',
-                color: isSatellite ? 'var(--accent-cyan)' : 'var(--text-secondary)',
-                padding: '0.5rem 0.8rem',
-                fontSize: '0.8rem',
-                fontWeight: 600,
-                borderRadius: '6px',
-                display: 'flex',
-                alignItems: 'center',
-                gap: '0.4rem',
-                cursor: 'pointer'
-              }}
+              className={`map-overlay-btn-satellite ${isSatellite ? 'active' : ''}`}
             >
               <Layers size={14} /> {isSatellite ? '일반 맵' : '위성 맵'}
             </button>
             <button
               onClick={handleGoToMyLocation}
-              className="tactical-btn"
-              style={{
-                position: 'absolute',
-                top: '12px',
-                right: '12px',
-                zIndex: 1000,
-                boxShadow: 'var(--shadow-card)',
-                background: 'var(--bg-secondary)',
-                border: '1px solid var(--border-color)',
-                color: 'var(--accent-cyan)',
-                padding: '0.5rem 0.8rem',
-                fontSize: '0.8rem',
-                fontWeight: 600,
-                borderRadius: '6px',
-                display: 'flex',
-                alignItems: 'center',
-                gap: '0.4rem',
-                cursor: 'pointer'
-              }}
+              className="map-overlay-btn-location"
             >
               <Compass size={14} /> 내 위치로
             </button>
             <div
               ref={mapRef}
-              style={{
-                height: '600px',
-                width: '100%',
-                borderRadius: '8px',
-                overflow: 'hidden',
-                border: '1px solid var(--border-color)',
-                position: 'relative',
-                backgroundColor: '#0a0c10',
-                zIndex: 0
-              }}
+              className="map-element"
             />
             {loading && (
               <div style={{

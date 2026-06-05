@@ -49,9 +49,9 @@ export default function RankingTab() {
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
       {/* 랭킹 컨트롤 패널 */}
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '1rem', flexWrap: 'wrap' }}>
+      <div className="tab-controls-header">
         {/* 정렬 필터 버튼 그룹 */}
-        <div style={{ display: 'flex', gap: '0.8rem' }}>
+        <div className="tab-filter-group">
           <button 
             onClick={() => setSortBy('captured_tiles_count')}
             className={`tactical-btn ${sortBy === 'captured_tiles_count' ? 'active' : ''}`}
@@ -73,8 +73,8 @@ export default function RankingTab() {
         </div>
 
         {/* 검색 및 새로고침 */}
-        <div style={{ display: 'flex', gap: '1rem', alignItems: 'center' }}>
-          <div style={{ position: 'relative', width: '280px' }}>
+        <div className="tab-search-group">
+          <div className="tab-search-input-wrapper">
             <Search size={16} style={{ position: 'absolute', left: '12px', top: '50%', transform: 'translateY(-50%)', color: 'var(--text-muted)' }} />
             <input 
               type="text"

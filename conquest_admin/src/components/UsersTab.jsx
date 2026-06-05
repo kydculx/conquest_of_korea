@@ -89,21 +89,23 @@ export default function UsersTab() {
     <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
       
       {/* 상단 툴 바 */}
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '1rem' }}>
-        <div style={{ position: 'relative', width: '320px' }}>
-          <Search size={18} style={{ position: 'absolute', left: '12px', top: '50%', transform: 'translateY(-50%)', color: 'var(--text-muted)' }} />
-          <input 
-            type="text"
-            className="tactical-input"
-            style={{ paddingLeft: '2.5rem' }}
-            placeholder="사용자명 또는 UUID 검색..."
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-          />
+      <div className="tab-controls-header">
+        <div className="tab-search-group" style={{ width: '100%', justifyContent: 'space-between' }}>
+          <div className="tab-search-input-wrapper">
+            <Search size={18} style={{ position: 'absolute', left: '12px', top: '50%', transform: 'translateY(-50%)', color: 'var(--text-muted)' }} />
+            <input 
+              type="text"
+              className="tactical-input"
+              style={{ paddingLeft: '2.5rem' }}
+              placeholder="사용자명 또는 UUID 검색..."
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+            />
+          </div>
+          <button className="tactical-btn" onClick={loadUsers}>
+            <RotateCcw size={16} /> 새로고침
+          </button>
         </div>
-        <button className="tactical-btn" onClick={loadUsers}>
-          <RotateCcw size={16} /> 새로고침
-        </button>
       </div>
 
       {error && <div style={{ color: 'var(--accent-red)' }}>{error}</div>}
@@ -191,7 +193,7 @@ export default function UsersTab() {
           background: 'rgba(0,0,0,0.7)', backdropFilter: 'blur(4px)',
           display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000
         }}>
-          <div className="tactical-card" style={{ width: '400px', display: 'flex', flexDirection: 'column', gap: '1.5rem', position: 'relative' }}>
+          <div className="tactical-card" style={{ width: '100%', maxWidth: '400px', margin: '0 1rem', display: 'flex', flexDirection: 'column', gap: '1.5rem', position: 'relative' }}>
             <button 
               style={{ position: 'absolute', top: '16px', right: '16px', background: 'none', border: 'none', color: 'var(--text-secondary)', cursor: 'pointer' }}
               onClick={() => setEditingUser(null)}

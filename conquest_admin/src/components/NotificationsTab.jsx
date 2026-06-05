@@ -60,7 +60,7 @@ export default function NotificationsTab() {
   };
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem', maxWidth: '600px' }}>
+    <div className="notifications-form-container">
       
       <div className="tactical-card" style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
         <h3 style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', fontSize: '1.2rem', color: 'var(--accent-cyan)' }}>
@@ -71,7 +71,7 @@ export default function NotificationsTab() {
         <form onSubmit={handleSend} style={{ display: 'flex', flexDirection: 'column', gap: '1.2rem' }}>
           
           {/* 발송 타겟 유형 라디오 */}
-          <div style={{ display: 'flex', gap: '2rem', padding: '0.5rem 0' }}>
+          <div className="notifications-radio-group">
             <label style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', cursor: 'pointer', fontWeight: 'bold', fontSize: '0.9rem' }}>
               <input 
                 type="radio" 
@@ -162,7 +162,7 @@ export default function NotificationsTab() {
           </div>
 
           {/* 전송 버튼 */}
-          <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: '0.5rem' }}>
+          <div className="notifications-submit-wrapper">
             <button type="submit" className="tactical-btn" disabled={sending}>
               <Send size={16} /> {sending ? '공지 발송 중...' : '긴급 공지 발송'}
             </button>
