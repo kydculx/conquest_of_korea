@@ -7,7 +7,7 @@
     "dev": "vite",
     "build": "vite build",
     "predeploy": "npm run build",
-    "deploy": "gh-pages -d dist",
+    "deploy": "cd dist && git init && git checkout -b gh-pages && git add -A && git commit -m 'deploy' && git push -f https://github.com/kydculx/conquest_of_korea.git gh-pages",
     "lint": "eslint .",
     "preview": "vite preview"
   },
