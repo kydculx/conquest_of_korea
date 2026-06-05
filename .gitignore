@@ -56,8 +56,8 @@ ios/Runner/GoogleService-Info.plist
 
 # Custom project rules
 scratch/
+build/
 android/build/
-*.html
 
 # Supabase Secrets & Temp files
 supabase/conquest-of-korea-*.json
