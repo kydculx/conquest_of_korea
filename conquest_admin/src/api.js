@@ -158,31 +158,38 @@ export async function updateGoldRate(newValue) {
  * 5. FCM 알림 전송 (시뮬레이션 혹은 Edge Function 트리거용)
  */
 export async function sendFcmNotification(title, body, targetTopic) {
-  // 실제 Firebase Service Account 키를 프론트엔드 브라우저에 임베드하는 것은 보안 취약점이므로,
-  // 관리자가 Supabase Edge Function을 호출하여 백그라운드 발송 처리를 대리 수행하거나,
-  // 혹은 DB 내 공지사항 테이블(system_notices)에 레코드를 추가하여 백그라운드 DB Trigger/FCM 연동이 작동하도록 유도합니다.
-  
-  // 여기서는 로컬 대시보드 시뮬레이션 및 데이터 연동을 위해 임시 알림 이력 저장을 수행하도록 하겠습니다.
-  // DB 스키마에 notices 등의 테이블이 있다면 저장이 가능하며, 없더라도 Edge function 목업 API를 연동합니다.
+  const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
+  const supabaseKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
+
+  if (!supabaseUrl || !supabaseKey) {
+    throw new Error('Supabase URL or Anon Key is missing.');
+  }
+
   console.log(`[FCM 발송 요청] 토픽: ${targetTopic}, 제목: ${title}, 본문: ${body}`);
   
-  // 관리 운영 툴 기록용 (Supabase에 notices 테이블이 있다고 가정하고 insert 시도 후 실패 시 로그 대체)
-  try {
-    const { data, error } = await supabase
-      .from('system_notices')
-      .insert([
-        {
-          title,
-          body,
-          topic: targetTopic,
-          created_at: new Date().toISOString()
-        }
-      ])
-      .select();
-    if (error) throw error;
-    return data;
-  } catch (e) {
-    console.warn('⚠️ system_notices 테이블이 DB에 부재하거나 저장이 실패하여 로컬 로그로 대체합니다.', e);
-    return { mockSuccess: true, title, body, topic: targetTopic };
+  const response = await fetch(`${supabaseUrl}/functions/v1/send-push`, {
+    method: 'POST',
+    headers: {
+      'Authorization': `Bearer ${supabaseKey}`,
+      'apikey': supabaseKey,
+      'Content-Type': 'application/json'
+    },
+    body: JSON.stringify({
+      topic: targetTopic,
+      title: title,
+      body: body,
+      data_payload: {
+        type: 'system_notice',
+        tile_id: ''
+      }
+    })
+  });
+
+  const resData = await response.json();
+  
+  if (!response.ok) {
+    throw new Error(resData.error || `HTTP 에러 status: ${response.status}`);
   }
+
+  return resData;
 }
