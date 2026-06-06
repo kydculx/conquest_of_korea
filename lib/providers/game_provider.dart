@@ -331,6 +331,7 @@ class GameProvider extends ChangeNotifier with WidgetsBindingObserver {
       supabase: supabase,
       onAlert: addAlert,
       onTileCaptured: (id, tile, {required bool wasEnemyTile}) {
+        final oldOwnerId = _capturedTiles[id]?.userId;
         _capturedTiles[id] = tile;
         if (_isNotificationEnabled) {
           NotificationService().showLocalNotification(
@@ -339,6 +340,36 @@ class GameProvider extends ChangeNotifier with WidgetsBindingObserver {
             body: GameStrings.notificationCaptureEmptyBody,
           );
         }
+
+        // 상대방 구역 침탈 시 침탈 푸시 알림 발송
+        final myId = _authProvider?.user?.id;
+        if (wasEnemyTile &&
+            oldOwnerId != null &&
+            oldOwnerId != 'none' &&
+            oldOwnerId != myId) {
+          try {
+            debugPrint('📡 침탈 푸시 알림 발송 요청 시작 (target: $oldOwnerId)');
+            _supabase.client.functions.invoke(
+              'send-push',
+              body: {
+                'topic': 'user_$oldOwnerId',
+                'title': GameStrings.notificationInvasionTitle,
+                'body': GameStrings.notificationInvasionBody,
+                'data_payload': {
+                  'type': 'territory_attack',
+                  'tile_id': id,
+                },
+              },
+            ).then((response) {
+              debugPrint('🎯 침탈 푸시 알림 발송 결과: ${response.status}');
+            }).catchError((e) {
+              debugPrint('⚠️ 침탈 푸시 알림 발송 중 에러 발생: $e');
+            });
+          } catch (e) {
+            debugPrint('⚠️ 침탈 푸시 알림 발송 예외 발생: $e');
+          }
+        }
+
         _goldManager.syncWithServer();
         notifyListeners();
       },
@@ -554,6 +585,12 @@ class GameProvider extends ChangeNotifier with WidgetsBindingObserver {
         id: 999,
         title: GameStrings.notificationInvasionTitle,
         body: GameStrings.notificationInvasionBody,
+      );
+
+      // 인게임 화면 내 노티 배너 띄우기
+      addAlert(
+        '[${GameStrings.notificationInvasionTitle}] ${GameStrings.notificationInvasionBody}',
+        AlertType.error,
       );
 
       // 만약 내가 그 자리에 있다면 즉시 반격 시작
@@ -933,6 +970,9 @@ class GameProvider extends ChangeNotifier with WidgetsBindingObserver {
 
   /// 화면 상단에 표시될 새 경고/알림 팝업 메시지를 발행하고 3초 경과 후 자동 페이드아웃 되도록 타이머를 연동합니다.
   void addAlert(String message, AlertType type) {
+    // ⚠️ 중복 알림 방지: 동일한 메시지가 이미 알림 목록에 존재하면 추가하지 않음
+    if (_alerts.any((a) => a.message == message)) return;
+
     final alert = GameAlert.create(message: message, type: type);
     _alerts.insert(0, alert);
     if (_alerts.length > 5) _alerts.removeLast();
