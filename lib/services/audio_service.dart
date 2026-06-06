@@ -15,7 +15,7 @@ class AudioService {
     _initAudioContext();
   }
 
-  /// 기기의 무음 스위치 및 진동 모드 상태를 존중하며 항상 메인 스피커로 출력되도록 설정
+  /// 기기의 무음 스위치 및 진동 모드 상태를 존중하도록 설정
   void _initAudioContext() {
     try {
       _player.setAudioContext(AudioContext(
@@ -28,13 +28,9 @@ class AudioService {
         ),
         iOS: AudioContextIOS(
           category: AVAudioSessionCategory.ambient,
-          options: const {
-            AVAudioSessionOptions.mixWithOthers,
-            AVAudioSessionOptions.defaultToSpeaker,
-          },
         ),
       ));
-      debugPrint('✅ AudioPlayer 세션 컨텍스트(ambient + defaultToSpeaker) 설정 완료');
+      debugPrint('✅ AudioPlayer 세션 컨텍스트(ambient) 설정 완료');
     } catch (e) {
       debugPrint('⚠️ AudioPlayer 세션 컨텍스트 설정 실패: $e');
     }
