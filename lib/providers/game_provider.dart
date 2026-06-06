@@ -405,9 +405,14 @@ class GameProvider extends ChangeNotifier with WidgetsBindingObserver {
       cancelPhysicalCapture: () => _captureController.cancelCapture(),
     );
     NotificationService().onForegroundMessageReceived = (title, body, type) {
+      // ⚠️ 포그라운드 상태일 때 침탈 및 위성 성공은 이미 로컬(스트림/콜백)에서 배너를 띄우므로 FCM 포그라운드 노출 중복을 차단합니다.
+      if (type == 'territory_attack' || type == 'satellite_complete') {
+        debugPrint('🔔 [포그라운드 FCM 중복 차단] $type 타입의 알림은 로컬 화면에 이미 표시되었으므로 배너 생성을 무시합니다.');
+        return;
+      }
+
       final alertType = switch (type) {
-        'territory_attack' => AlertType.error,
-        'satellite_complete' => AlertType.success,
+        'system_notice' => AlertType.info,
         _ => AlertType.info,
       };
       _addAlertInternal('[$title] $body', alertType);
