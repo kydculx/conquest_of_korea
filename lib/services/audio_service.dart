@@ -11,33 +11,7 @@ class AudioService {
 
   final AudioPlayer _player = AudioPlayer();
 
-  AudioService._internal() {
-    _initAudioContext();
-  }
-
-  /// 기기의 무음 스위치 및 진동 모드 상태를 존중하며 다른 오디오와 믹싱되도록 설정
-  void _initAudioContext() {
-    try {
-      _player.setAudioContext(AudioContext(
-        android: const AudioContextAndroid(
-          isSpeakerphoneOn: false,
-          stayAwake: false,
-          contentType: AndroidContentType.sonification,
-          usageType: AndroidUsageType.notification,
-          audioFocus: AndroidAudioFocus.gainTransientMayDuck,
-        ),
-        iOS: AudioContextIOS(
-          category: AVAudioSessionCategory.ambient,
-          options: const {
-            AVAudioSessionOptions.mixWithOthers,
-          },
-        ),
-      ));
-      debugPrint('✅ AudioPlayer 세션 컨텍스트(ambient 카테고리) 설정 완료');
-    } catch (e) {
-      debugPrint('⚠️ AudioPlayer 세션 컨텍스트 설정 실패: $e');
-    }
-  }
+  AudioService._internal();
 
   /// 공통 알림 효과음을 재생합니다. (assets/sounds/notification.mp3)
   Future<void> playNotification() async {
