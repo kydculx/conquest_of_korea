@@ -11,27 +11,54 @@ class AudioService {
 
   final AudioPlayer _player = AudioPlayer();
 
-  AudioService._internal();
+  AudioService._internal() {
+    _initAudioContext();
+  }
+
+  /// 기기의 무음 스위치 및 진동 모드 상태를 존중하며 항상 메인 스피커로 출력되도록 설정
+  void _initAudioContext() {
+    try {
+      _player.setAudioContext(AudioContext(
+        android: const AudioContextAndroid(
+          isSpeakerphoneOn: true,
+          stayAwake: false,
+          contentType: AndroidContentType.sonification,
+          usageType: AndroidUsageType.notification,
+          audioFocus: AndroidAudioFocus.gainTransientMayDuck,
+        ),
+        iOS: AudioContextIOS(
+          category: AVAudioSessionCategory.ambient,
+          options: const {
+            AVAudioSessionOptions.mixWithOthers,
+            AVAudioSessionOptions.defaultToSpeaker,
+          },
+        ),
+      ));
+      debugPrint('✅ AudioPlayer 세션 컨텍스트(ambient + defaultToSpeaker) 설정 완료');
+    } catch (e) {
+      debugPrint('⚠️ AudioPlayer 세션 컨텍스트 설정 실패: $e');
+    }
+  }
 
   /// 공통 알림 효과음을 재생합니다. (assets/sounds/notification.mp3)
   Future<void> playNotification() async {
     try {
+      // 재생 상태 초기화
       await _player.stop();
 
-      // Flutter 에셋 번들 탐색 검증 및 경로 바인딩
-      String assetPath = 'sounds/notification.mp3';
+      // Flutter 에셋 번들 탐색 검증
+      const String assetPath = 'sounds/notification.mp3';
       try {
-        // assets/sounds/notification.mp3 로드가 정상인지 확인
         await rootBundle.load('assets/sounds/notification.mp3');
       } catch (loadErr) {
-        debugPrint('⚠️ assets/sounds/notification.mp3 로드 실패(일부 환경 폴백 적용): $loadErr');
+        debugPrint('⚠️ assets/sounds/notification.mp3 로드 실패: $loadErr');
       }
 
-      await _player.setSource(AssetSource(assetPath));
-      await _player.resume();
+      // audioplayers 표준 재생 API 단일 호출로 네이티브 재생 오류 방지
+      await _player.play(AssetSource(assetPath));
       debugPrint('🎵 알림 효과음 재생 완료 (경로: $assetPath)');
-    } catch (e) {
-      debugPrint('⚠️ 알림 효과음 재생 실패: $e');
+    } catch (e, stack) {
+      debugPrint('⚠️ 알림 효과음 재생 실패 예외: $e\n$stack');
     }
   }
 }
