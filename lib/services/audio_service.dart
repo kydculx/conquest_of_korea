@@ -1,7 +1,7 @@
 import 'package:audioplayers/audioplayers.dart';
 import 'package:flutter/foundation.dart';
 
-/// 게임 내 점령 성공 및 피탈(영토 침공) 등 다양한 이벤트에 따른 효과음 재생을 담당하는 서비스 클래스
+/// 게임 내 알림 및 점령 이벤트 시 공통 효과음 재생을 담당하는 서비스 클래스
 class AudioService {
   static final AudioService _instance = AudioService._internal();
 
@@ -12,25 +12,14 @@ class AudioService {
 
   final AudioPlayer _player = AudioPlayer();
 
-  /// 점령 성공 효과음을 재생합니다. (assets/sounds/capture_success.mp3)
-  Future<void> playCaptureSuccess() async {
+  /// 공통 알림 효과음을 재생합니다. (assets/sounds/notification.mp3)
+  Future<void> playNotification() async {
     try {
       await _player.stop();
-      await _player.play(AssetSource('sounds/capture_success.mp3'));
-      debugPrint('🎵 점령 성공 효과음 재생 완료');
+      await _player.play(AssetSource('sounds/notification.mp3'));
+      debugPrint('🎵 알림 효과음 재생 완료');
     } catch (e) {
-      debugPrint('⚠️ 점령 성공 효과음 재생 실패: $e');
-    }
-  }
-
-  /// 피탈(영토 침공당함) 효과음을 재생합니다. (assets/sounds/territory_attack.mp3)
-  Future<void> playTerritoryAttack() async {
-    try {
-      await _player.stop();
-      await _player.play(AssetSource('sounds/territory_attack.mp3'));
-      debugPrint('🎵 영토 피탈 효과음 재생 완료');
-    } catch (e) {
-      debugPrint('⚠️ 영토 피탈 효과음 재생 실패: $e');
+      debugPrint('⚠️ 알림 효과음 재생 실패: $e');
     }
   }
 }

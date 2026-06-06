@@ -342,8 +342,8 @@ class GameProvider extends ChangeNotifier with WidgetsBindingObserver {
           );
         }
 
-        // 🎵 점령 성공 효과음 재생
-        AudioService().playCaptureSuccess();
+        // 🎵 공통 알림 효과음 재생
+        AudioService().playNotification();
 
         // 상대방 구역 침탈 시 침탈 푸시 알림 발송
         final myId = _authProvider?.user?.id;
@@ -387,8 +387,8 @@ class GameProvider extends ChangeNotifier with WidgetsBindingObserver {
         _selectedScanTileId = null;
         _selectedScanTileLatLng = null;
 
-        // 🎵 점령 성공 효과음 재생
-        AudioService().playCaptureSuccess();
+        // 🎵 공통 알림 효과음 재생
+        AudioService().playNotification();
 
         notifyListeners();
       },
@@ -410,14 +410,7 @@ class GameProvider extends ChangeNotifier with WidgetsBindingObserver {
         'satellite_complete' => AlertType.success,
         _ => AlertType.info,
       };
-      final isNew = _addAlertInternal('[$title] $body', alertType);
-      if (isNew) {
-        if (type == 'territory_attack') {
-          AudioService().playTerritoryAttack();
-        } else if (type == 'satellite_complete') {
-          AudioService().playCaptureSuccess();
-        }
-      }
+      _addAlertInternal('[$title] $body', alertType);
     };
     _init();
   }
@@ -603,15 +596,10 @@ class GameProvider extends ChangeNotifier with WidgetsBindingObserver {
       );
 
       // 인게임 화면 내 노티 배너 띄우기
-      final isNew = _addAlertInternal(
+      _addAlertInternal(
         '[${GameStrings.notificationInvasionTitle}] ${GameStrings.notificationInvasionBody}',
         AlertType.error,
       );
-
-      if (isNew) {
-        // 🎵 영토 피탈 효과음 재생
-        AudioService().playTerritoryAttack();
-      }
 
       // 만약 내가 그 자리에 있다면 즉시 반격 시작
       if (_isAutoCapture) {
@@ -1002,6 +990,10 @@ class GameProvider extends ChangeNotifier with WidgetsBindingObserver {
     _alerts.insert(0, alert);
     if (_alerts.length > 5) _alerts.removeLast();
     notifyListeners();
+
+    // 🎵 공통 알림 효과음 재생
+    AudioService().playNotification();
+
     Timer(const Duration(seconds: GameConfig.alertDismissDurationSeconds),
         () => _removeAlert(alert.id));
     return true;
