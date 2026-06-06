@@ -6,7 +6,7 @@ export default function RankingTab() {
   const [agents, setAgents] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
-  const [sortBy, setSortBy] = useState('captured_tiles_count'); // captured_tiles_count, gold, total_distance
+  const [sortBy, setSortBy] = useState('captured_tiles_count'); // captured_tiles_count, gold
   const [searchTerm, setSearchTerm] = useState('');
 
   const loadRankings = async () => {
@@ -16,7 +16,7 @@ export default function RankingTab() {
       
       const { data, error: err } = await supabase
         .from('profiles')
-        .select('id, nickname, color_hex, captured_tiles_count, gold, total_distance, created_at')
+        .select('id, nickname, color_hex, captured_tiles_count, gold, created_at')
         .order(sortBy, { ascending: false });
 
       if (err) throw err;
@@ -64,12 +64,6 @@ export default function RankingTab() {
           >
             <Coins size={16} /> 보유 재화 순
           </button>
-          <button 
-            onClick={() => setSortBy('total_distance')}
-            className={`tactical-btn ${sortBy === 'total_distance' ? 'active' : ''}`}
-          >
-            <Compass size={16} /> 누적 이동 거리 순
-          </button>
         </div>
 
         {/* 검색 및 새로고침 */}
@@ -107,14 +101,13 @@ export default function RankingTab() {
                 <th>사용자</th>
                 <th style={{ textAlign: 'right' }}>점령 영토</th>
                 <th style={{ textAlign: 'right' }}>보유 재화</th>
-                <th style={{ textAlign: 'right' }}>누적 이동 거리</th>
                 <th style={{ textAlign: 'center' }}>활동 개시일</th>
               </tr>
             </thead>
             <tbody>
               {filteredAgents.length === 0 ? (
                 <tr>
-                  <td colSpan="6" style={{ textAlign: 'center', color: 'var(--text-muted)', padding: '3rem' }}>
+                  <td colSpan="5" style={{ textAlign: 'center', color: 'var(--text-muted)', padding: '3rem' }}>
                     등록된 사용자 정보가 없거나 검색 결과가 존재하지 않습니다.
                   </td>
                 </tr>
@@ -182,14 +175,6 @@ export default function RankingTab() {
                         fontSize: sortBy === 'gold' ? '1.05rem' : '0.95rem'
                       }}>
                         {Math.round((agent.gold || 0) * 10) / 10} <span style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', fontWeight: 'normal' }}>G</span>
-                      </td>
-                      <td style={{ 
-                        textAlign: 'right', 
-                        fontWeight: 'bold', 
-                        color: sortBy === 'total_distance' ? 'var(--accent-cyan)' : 'var(--text-primary)',
-                        fontSize: sortBy === 'total_distance' ? '1.05rem' : '0.95rem'
-                      }}>
-                        {((agent.total_distance || 0) / 1000).toFixed(2)} <span style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', fontWeight: 'normal' }}>km</span>
                       </td>
                       <td style={{ textAlign: 'center', fontSize: '0.8rem', color: 'var(--text-muted)', fontFamily: 'monospace' }}>
                         {agent.created_at ? new Date(agent.created_at).toLocaleDateString('ko-KR', {
