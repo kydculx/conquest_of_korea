@@ -15,26 +15,25 @@ class AudioService {
     _initAudioContext();
   }
 
-  /// 매너 모드/무음 스위치 상태에서도 사운드가 스피커로 출력되도록 오디오 컨텍스트 설정
+  /// 기기의 무음 스위치 및 진동 모드 상태를 존중하며 다른 오디오와 믹싱되도록 설정
   void _initAudioContext() {
     try {
       _player.setAudioContext(AudioContext(
         android: const AudioContextAndroid(
-          isSpeakerphoneOn: true,
-          stayAwake: true,
-          contentType: AndroidContentType.music,
-          usageType: AndroidUsageType.assistanceSonification,
+          isSpeakerphoneOn: false,
+          stayAwake: false,
+          contentType: AndroidContentType.sonification,
+          usageType: AndroidUsageType.notification,
           audioFocus: AndroidAudioFocus.gainTransientMayDuck,
         ),
         iOS: AudioContextIOS(
-          category: AVAudioSessionCategory.playback,
+          category: AVAudioSessionCategory.ambient,
           options: const {
             AVAudioSessionOptions.mixWithOthers,
-            AVAudioSessionOptions.defaultToSpeaker,
           },
         ),
       ));
-      debugPrint('✅ AudioPlayer 세션 컨텍스트(playback 카테고리) 설정 완료');
+      debugPrint('✅ AudioPlayer 세션 컨텍스트(ambient 카테고리) 설정 완료');
     } catch (e) {
       debugPrint('⚠️ AudioPlayer 세션 컨텍스트 설정 실패: $e');
     }
