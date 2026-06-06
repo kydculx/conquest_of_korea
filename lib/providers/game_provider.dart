@@ -11,6 +11,7 @@ import '../providers/auth_provider.dart';
 import '../services/hex_service.dart';
 import '../services/supabase_service.dart';
 import '../services/notification_service.dart';
+import '../services/audio_service.dart';
 import '../controllers/gold_manager.dart';
 import '../core/constants/game_config.dart';
 import '../core/constants/map_config.dart';
@@ -341,6 +342,9 @@ class GameProvider extends ChangeNotifier with WidgetsBindingObserver {
           );
         }
 
+        // 🎵 점령 성공 효과음 재생
+        AudioService().playCaptureSuccess();
+
         // 상대방 구역 침탈 시 침탈 푸시 알림 발송
         final myId = _authProvider?.user?.id;
         if (wasEnemyTile &&
@@ -382,6 +386,10 @@ class GameProvider extends ChangeNotifier with WidgetsBindingObserver {
         _capturedTiles[tileId] = tile;
         _selectedScanTileId = null;
         _selectedScanTileLatLng = null;
+
+        // 🎵 점령 성공 효과음 재생
+        AudioService().playCaptureSuccess();
+
         notifyListeners();
       },
       onStateChanged: notifyListeners,
@@ -402,7 +410,14 @@ class GameProvider extends ChangeNotifier with WidgetsBindingObserver {
         'satellite_complete' => AlertType.success,
         _ => AlertType.info,
       };
-      addAlert('[$title] $body', alertType);
+      final isNew = _addAlertInternal('[$title] $body', alertType);
+      if (isNew) {
+        if (type == 'territory_attack') {
+          AudioService().playTerritoryAttack();
+        } else if (type == 'satellite_complete') {
+          AudioService().playCaptureSuccess();
+        }
+      }
     };
     _init();
   }
@@ -588,10 +603,15 @@ class GameProvider extends ChangeNotifier with WidgetsBindingObserver {
       );
 
       // 인게임 화면 내 노티 배너 띄우기
-      addAlert(
+      final isNew = _addAlertInternal(
         '[${GameStrings.notificationInvasionTitle}] ${GameStrings.notificationInvasionBody}',
         AlertType.error,
       );
+
+      if (isNew) {
+        // 🎵 영토 피탈 효과음 재생
+        AudioService().playTerritoryAttack();
+      }
 
       // 만약 내가 그 자리에 있다면 즉시 반격 시작
       if (_isAutoCapture) {
@@ -970,8 +990,13 @@ class GameProvider extends ChangeNotifier with WidgetsBindingObserver {
 
   /// 화면 상단에 표시될 새 경고/알림 팝업 메시지를 발행하고 3초 경과 후 자동 페이드아웃 되도록 타이머를 연동합니다.
   void addAlert(String message, AlertType type) {
+    _addAlertInternal(message, type);
+  }
+
+  /// 내부 알림 등록 메서드. 중복 추가되지 않았을 경우 true를 반환합니다.
+  bool _addAlertInternal(String message, AlertType type) {
     // ⚠️ 중복 알림 방지: 동일한 메시지가 이미 알림 목록에 존재하면 추가하지 않음
-    if (_alerts.any((a) => a.message == message)) return;
+    if (_alerts.any((a) => a.message == message)) return false;
 
     final alert = GameAlert.create(message: message, type: type);
     _alerts.insert(0, alert);
@@ -979,6 +1004,7 @@ class GameProvider extends ChangeNotifier with WidgetsBindingObserver {
     notifyListeners();
     Timer(const Duration(seconds: GameConfig.alertDismissDurationSeconds),
         () => _removeAlert(alert.id));
+    return true;
   }
 
   /// 알림 목록에서 특정 ID의 경고 알림을 제거하고 화면을 갱신합니다.
