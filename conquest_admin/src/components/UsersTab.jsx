@@ -97,7 +97,7 @@ export default function UsersTab() {
               type="text"
               className="tactical-input"
               style={{ paddingLeft: '2.5rem' }}
-              placeholder="사용자명 또는 UUID 검색..."
+              placeholder="사용자명 검색..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
             />
@@ -138,7 +138,6 @@ export default function UsersTab() {
                       <div style={{ width: '12px', height: '12px', borderRadius: '50%', backgroundColor: user.color_hex || 'var(--accent-cyan)' }} />
                       <div>
                         <div style={{ fontWeight: 'bold' }}>{user.nickname}</div>
-                        <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>UUID: {user.id}</div>
                       </div>
                     </div>
                   </td>

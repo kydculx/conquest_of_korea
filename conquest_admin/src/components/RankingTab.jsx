@@ -164,7 +164,6 @@ export default function RankingTab() {
                             <div style={{ fontWeight: 'bold' }}>
                               {agent.nickname || '미등록 사용자'}
                             </div>
-                            <div style={{ fontSize: '0.7rem', color: 'var(--text-muted)', fontFamily: 'monospace' }}>UUID: {agent.id}</div>
                           </div>
                         </div>
                       </td>
