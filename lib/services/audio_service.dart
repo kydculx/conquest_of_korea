@@ -1,5 +1,6 @@
 import 'package:audioplayers/audioplayers.dart';
 import 'package:flutter/foundation.dart';
+import 'package:flutter/services.dart';
 
 /// 게임 내 알림 및 점령 이벤트 시 공통 효과음 재생을 담당하는 서비스 클래스
 class AudioService {
@@ -43,9 +44,19 @@ class AudioService {
   Future<void> playNotification() async {
     try {
       await _player.stop();
-      await _player.setSource(AssetSource('sounds/notification.mp3'));
+
+      // Flutter 에셋 번들 탐색 검증 및 경로 바인딩
+      String assetPath = 'sounds/notification.mp3';
+      try {
+        // assets/sounds/notification.mp3 로드가 정상인지 확인
+        await rootBundle.load('assets/sounds/notification.mp3');
+      } catch (loadErr) {
+        debugPrint('⚠️ assets/sounds/notification.mp3 로드 실패(일부 환경 폴백 적용): $loadErr');
+      }
+
+      await _player.setSource(AssetSource(assetPath));
       await _player.resume();
-      debugPrint('🎵 알림 효과음 재생 완료');
+      debugPrint('🎵 알림 효과음 재생 완료 (경로: $assetPath)');
     } catch (e) {
       debugPrint('⚠️ 알림 효과음 재생 실패: $e');
     }
