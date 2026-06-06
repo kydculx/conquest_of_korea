@@ -157,7 +157,7 @@ export async function updateGoldRate(newValue) {
 /**
  * 5. FCM 알림 전송 (시뮬레이션 혹은 Edge Function 트리거용)
  */
-export async function sendFcmNotification(title, body, targetTopic) {
+export async function sendFcmNotification(title, body, targetTopic, notifType = 'system_notice', tileId = '') {
   const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
   const supabaseKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
 
@@ -165,7 +165,7 @@ export async function sendFcmNotification(title, body, targetTopic) {
     throw new Error('Supabase URL or Anon Key is missing.');
   }
 
-  console.log(`[FCM 발송 요청] 토픽: ${targetTopic}, 제목: ${title}, 본문: ${body}`);
+  console.log(`[FCM 발송 요청] 토픽: ${targetTopic}, 제목: ${title}, 본문: ${body} | 타입: ${notifType} | 타일ID: ${tileId}`);
   
   const response = await fetch(`${supabaseUrl}/functions/v1/send-push`, {
     method: 'POST',
@@ -179,8 +179,8 @@ export async function sendFcmNotification(title, body, targetTopic) {
       title: title,
       body: body,
       data_payload: {
-        type: 'system_notice',
-        tile_id: ''
+        type: notifType,
+        tile_id: tileId
       }
     })
   });

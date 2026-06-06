@@ -10,6 +10,22 @@ export default function NotificationsTab() {
   const [users, setUsers] = useState([]);
   const [loadingUsers, setLoadingUsers] = useState(false);
   const [sending, setSending] = useState(false);
+  const [notifType, setNotifType] = useState('system_notice');
+  const [tileId, setTileId] = useState('');
+
+  const handleNotifTypeChange = (type) => {
+    setNotifType(type);
+    if (type === 'satellite_complete') {
+      setTitle('📡 영토 점령 완료');
+      setBody('플레이어님, 타깃 구역에 대한 영토 점령이 성공적으로 완료되었습니다.');
+    } else if (type === 'territory_attack') {
+      setTitle('⚠️ 영토 피탈 감지');
+      setBody('플레이어님, 소유하고 계신 영토가 적에게 공격받거나 피탈당했습니다. 즉시 상황을 파악하십시오.');
+    } else if (type === 'system_notice') {
+      setTitle('📢 시스템 공지사항');
+      setBody('시스템 공지사항이 등록되었습니다. 최신 패치 및 공지 세부 사항을 파악하십시오.');
+    }
+  };
 
   useEffect(() => {
     const loadUsers = async () => {
@@ -27,6 +43,10 @@ export default function NotificationsTab() {
       }
     };
     loadUsers();
+    
+    // 최초 렌더링 시 system_notice 기본값 로드
+    setTitle('📢 시스템 공지사항');
+    setBody('시스템 공지사항이 등록되었습니다. 최신 패치 및 공지 세부 사항을 파악하십시오.');
   }, []);
 
   const handleSend = async (e) => {
@@ -47,10 +67,11 @@ export default function NotificationsTab() {
 
     try {
       setSending(true);
-      await sendFcmNotification(title, body, topic);
-      alert(`[FCM 전송 성공]\n대상 토픽: ${topic}\n\n알림 메시지가 성공적으로 발송되었습니다.`);
+      await sendFcmNotification(title, body, topic, notifType, tileId);
+      alert(`[FCM 전송 성공]\n대상 토픽: ${topic}\n알림 타입: ${notifType}\n\n알림 메시지가 성공적으로 발송되었습니다.`);
       setTitle('');
       setBody('');
+      setTileId('');
     } catch (err) {
       console.error(err);
       alert('푸시 알림 발송 중 에러가 발생했습니다.');
@@ -123,6 +144,43 @@ export default function NotificationsTab() {
               )}
             </div>
           )}
+
+          {/* 알림 타입 및 타일 ID */}
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }} className="tab-controls-header">
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '0.4rem' }}>
+              <label style={{ color: 'var(--text-secondary)', fontSize: '0.85rem' }}>
+                알림 타입 (Type)
+              </label>
+              <select 
+                className="tactical-input"
+                value={notifType}
+                onChange={(e) => handleNotifTypeChange(e.target.value)}
+                style={{
+                  backgroundColor: 'var(--bg-secondary)',
+                  color: 'var(--text-primary)',
+                  cursor: 'pointer'
+                }}
+              >
+                <option value="system_notice">공지사항 (system_notice)</option>
+                <option value="satellite_complete">영토 점령 (satellite_complete)</option>
+                <option value="territory_attack">영토 피탈 (territory_attack)</option>
+              </select>
+            </div>
+
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '0.4rem' }}>
+              <label style={{ color: 'var(--text-secondary)', fontSize: '0.85rem' }}>
+                임의 타일 ID (Tile ID)
+              </label>
+              <input 
+                type="text" 
+                className="tactical-input"
+                placeholder="예: hex_46_-123"
+                value={tileId}
+                onChange={(e) => setTileId(e.target.value)}
+                disabled={notifType === 'system_notice'}
+              />
+            </div>
+          </div>
 
           {/* 제목 */}
           <div style={{ display: 'flex', flexDirection: 'column', gap: '0.4rem' }}>
