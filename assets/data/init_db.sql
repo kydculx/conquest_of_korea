@@ -70,6 +70,7 @@ DROP FUNCTION IF EXISTS public.safe_capture_tile(text, int, int, uuid, text, jso
 DROP FUNCTION IF EXISTS public.safe_capture_tile(text, int, int, uuid, text, int, int);
 DROP FUNCTION IF EXISTS public.sync_user_gold_and_count(uuid, int);
 DROP FUNCTION IF EXISTS public.on_captured_tile_change();
+DROP FUNCTION IF EXISTS public.update_user_gold_admin(uuid, numeric);
 
 -- [신규] 동시 점령 경합 및 쉴드 선점 제어를 위한 원자적 저장 프로시저(RPC) 정의
 CREATE OR REPLACE FUNCTION safe_capture_tile(
@@ -111,6 +112,22 @@ BEGIN
       capture_count = EXCLUDED.capture_count;
 
   RETURN true;
+END;
+$$ LANGUAGE plpgsql;
+
+-- [신규] 관리자용 골드 업데이트 RPC 함수 (RLS 우회)
+CREATE OR REPLACE FUNCTION public.update_user_gold_admin(
+  p_user_id uuid,
+  p_gold_amount numeric
+) RETURNS void
+  SECURITY DEFINER
+  SET search_path = public
+AS $$
+BEGIN
+  UPDATE public.profiles
+  SET gold = p_gold_amount,
+      last_gold_updated_at = now()
+  WHERE id = p_user_id;
 END;
 $$ LANGUAGE plpgsql;
 

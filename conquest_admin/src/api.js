@@ -62,13 +62,10 @@ export async function fetchUsers() {
 
 export async function updateUserGold(userId, goldAmount) {
   const { data, error } = await supabase
-    .from('profiles')
-    .update({ 
-      gold: goldAmount, 
-      last_gold_updated_at: new Date().toISOString() 
-    })
-    .eq('id', userId)
-    .select();
+    .rpc('update_user_gold_admin', {
+      p_user_id: userId,
+      p_gold_amount: goldAmount
+    });
   if (error) throw error;
   return data;
 }
