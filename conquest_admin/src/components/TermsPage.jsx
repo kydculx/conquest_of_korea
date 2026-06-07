@@ -18,7 +18,7 @@ export default function TermsPage() {
           <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
             <Shield size={18} style={{ color: '#3b82f6' }} />
             <span style={{ fontSize: '0.85rem', color: '#64748b', fontWeight: 600, fontFamily: 'var(--font-display)' }}>
-              CONQUEST OF WORLD
+              찜! 대모험
             </span>
           </div>
         </div>
@@ -36,7 +36,7 @@ export default function TermsPage() {
             <section>
               <h3 style={{ fontSize: '1.15rem', color: '#3b82f6', marginBottom: '0.6rem' }}>제 1 조 (목적)</h3>
               <p style={{ color: '#d1d5db' }}>
-                본 약관은 "Conquest of World" 프로젝트(이하 "회사" 또는 "서비스")가 제공하는 위치 기반 실시간 점령 모바일 게임 및 제반 서비스의 이용에 관한 조건 및 절차, 회사와 회원 간의 권리, 의무 및 책임 사항을 규정함을 목적으로 합니다.
+                본 약관은 "찜! 대모험" 프로젝트(이하 "회사" 또는 "서비스")가 제공하는 위치 기반 실시간 점령 모바일 게임 및 제반 서비스의 이용에 관한 조건 및 절차, 회사와 회원 간의 권리, 의무 및 책임 사항을 규정함을 목적으로 합니다.
               </p>
             </section>
 
