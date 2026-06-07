@@ -323,7 +323,8 @@ class GameStrings {
   static String get rankingHeaderRank => 'rankingHeaderRank'.tr();
 
   /// 랭킹 헤더 구역수 라벨
-  static String get rankingHeaderCapturedTiles => 'rankingHeaderCapturedTiles'.tr();
+  static String get rankingHeaderCapturedTiles =>
+      'rankingHeaderCapturedTiles'.tr();
 
   /// 점령 영토 탭 레이블
   static String get capturedTerritory => 'capturedTerritory'.tr();
@@ -529,22 +530,19 @@ class GameStrings {
     required String tileId,
     required String cost,
     required String currentGold,
-  }) =>
-      'rebaseConfirmContent'.tr(namedArgs: {
-        'tileId': tileId,
-        'cost': cost,
-        'currentGold': currentGold,
-      });
+  }) => 'rebaseConfirmContent'.tr(
+    namedArgs: {'tileId': tileId, 'cost': cost, 'currentGold': currentGold},
+  );
 
   /// 본진 이전 재화 부족 경고 메시지 포맷팅 함수
   static String rebaseGoldShortageMessage(String cost, String currentGold) =>
-      'rebaseGoldShortageMessage'.tr(namedArgs: {
-        'cost': cost,
-        'currentGold': currentGold,
-      });
+      'rebaseGoldShortageMessage'.tr(
+        namedArgs: {'cost': cost, 'currentGold': currentGold},
+      );
 
   /// 본진 이전 동일 위치 오류 메시지
-  static String get rebaseSameLocationMessage => 'rebaseSameLocationMessage'.tr();
+  static String get rebaseSameLocationMessage =>
+      'rebaseSameLocationMessage'.tr();
 
   /// 기지 이전 버튼 라벨
   static String get rebaseButton => 'rebaseButton'.tr();
@@ -868,17 +866,22 @@ class GameStrings {
   static String get satSecurityDecryptFailed => 'satSecurityDecryptFailed'.tr();
 
   /// 보안 해제 성공 알림
-  static String get satSecurityDecryptSuccess => 'satSecurityDecryptSuccess'.tr();
+  static String get satSecurityDecryptSuccess =>
+      'satSecurityDecryptSuccess'.tr();
 
   /// 위성 점령 골드 부족 상세 정보 (required, current 인자)
   static String satGoldShortageDetail(String required, String current) =>
-      'satGoldShortageDetail'.tr(namedArgs: {'required': required, 'current': current});
+      'satGoldShortageDetail'.tr(
+        namedArgs: {'required': required, 'current': current},
+      );
 
   /// 약관 기록 없음 알림
-  static String get termsAgreementRecordNotFound => 'termsAgreementRecordNotFound'.tr();
+  static String get termsAgreementRecordNotFound =>
+      'termsAgreementRecordNotFound'.tr();
 
   /// 필수 동의 누락 알림
-  static String get requiredPolicyAgreementMissing => 'requiredPolicyAgreementMissing'.tr();
+  static String get requiredPolicyAgreementMissing =>
+      'requiredPolicyAgreementMissing'.tr();
 
   /// '필수' 라벨
   static String get requiredLabel => 'requiredLabel'.tr();
@@ -987,6 +990,6 @@ class GameStrings {
 }
 
 class GameUrls {
-  static const String termsOfService = 'https://example.com/terms';
-  static const String privacyPolicy = 'https://example.com/privacy';
+  static const String termsOfService = 'https://jjim.vercel.app/terms';
+  static const String privacyPolicy = 'https://jjim.vercel.app/privacy';
 }

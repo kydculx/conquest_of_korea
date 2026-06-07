@@ -1,10 +1,7 @@
 import React from 'react';
-import { useNavigate } from 'react-router-dom';
-import { ArrowLeft, Shield } from 'lucide-react';
+import { Shield } from 'lucide-react';
 
 export default function PrivacyPage() {
-  const navigate = useNavigate();
-
   return (
     <div style={{
       backgroundColor: '#0b0f19',
@@ -17,35 +14,7 @@ export default function PrivacyPage() {
     }}>
       <div style={{ maxWidth: '800px', width: '100%', margin: '0 auto' }}>
         {/* 상단 네비게이션 */}
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '3rem' }}>
-          <button 
-            onClick={() => navigate('/')}
-            style={{
-              background: 'rgba(255, 255, 255, 0.03)',
-              border: '1px solid rgba(255, 255, 255, 0.08)',
-              padding: '0.6rem 1.2rem',
-              borderRadius: '20px',
-              color: '#94a3b8',
-              fontSize: '0.85rem',
-              fontWeight: 600,
-              cursor: 'pointer',
-              display: 'flex',
-              alignItems: 'center',
-              gap: '0.5rem',
-              transition: 'all 0.2s ease'
-            }}
-            onMouseEnter={(e) => {
-              e.currentTarget.style.background = 'rgba(255, 255, 255, 0.08)';
-              e.currentTarget.style.color = '#f8fafc';
-            }}
-            onMouseLeave={(e) => {
-              e.currentTarget.style.background = 'rgba(255, 255, 255, 0.03)';
-              e.currentTarget.style.color = '#94a3b8';
-            }}
-          >
-            <ArrowLeft size={16} />
-            홈으로 이동
-          </button>
+        <div style={{ display: 'flex', justifyContent: 'flex-end', alignItems: 'center', marginBottom: '3rem' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
             <Shield size={18} style={{ color: '#8b5cf6' }} />
             <span style={{ fontSize: '0.85rem', color: '#64748b', fontWeight: 600, fontFamily: 'var(--font-display)' }}>
