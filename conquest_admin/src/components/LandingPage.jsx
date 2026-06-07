@@ -1,8 +1,8 @@
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
-import { 
-  MapPin, 
-  Zap, 
+import {
+  MapPin,
+  Zap,
   Shield,
   Globe,
   Coins,
@@ -63,7 +63,7 @@ export default function LandingPage() {
           </span>
         </div>
         <nav style={{ display: 'flex', alignItems: 'center', gap: '1.5rem' }}>
-          <button 
+          <button
             onClick={() => navigate('/admin')}
             style={{
               background: 'rgba(255, 255, 255, 0.03)',
@@ -145,37 +145,37 @@ export default function LandingPage() {
             maxWidth: '540px',
             margin: 0
           }}>
-            '찜! 대모험'은 전 세계 실제 지도 기반의 실시간 점령 전술 게임입니다. 
-            내가 딛는 실제 발자국이 영토가 되고, 실시간 지도에서 다른 플레이어들과 
+            '찜! 대모험'은 전 세계 실제 지도 기반의 실시간 점령 전술 게임입니다.
+            내가 딛는 실제 발자국이 영토가 되고, 실시간 지도에서 다른 플레이어들과
             영토를 빼앗고 지키는 긴박한 전투를 경험하세요.
           </p>
 
           {/* 앱 다운로드 배지 시뮬레이션 */}
           <div style={{ display: 'flex', gap: '1rem', marginTop: '1.5rem', flexWrap: 'wrap', alignItems: 'center' }}>
-            <a 
-              href="#googleplay" 
-              onClick={(e) => e.preventDefault()} 
+            <a
+              href="#googleplay"
+              onClick={(e) => e.preventDefault()}
               style={{ display: 'inline-block', transition: 'transform 0.2s ease' }}
               onMouseEnter={(e) => e.currentTarget.style.transform = 'scale(1.04)'}
               onMouseLeave={(e) => e.currentTarget.style.transform = 'scale(1)'}
             >
-              <img 
-                src="https://upload.wikimedia.org/wikipedia/commons/7/78/Google_Play_Store_badge_EN.svg" 
-                alt="Get it on Google Play" 
+              <img
+                src="https://upload.wikimedia.org/wikipedia/commons/7/78/Google_Play_Store_badge_EN.svg"
+                alt="Get it on Google Play"
                 style={{ height: '48px', display: 'block' }}
               />
             </a>
 
-            <a 
-              href="#appstore" 
-              onClick={(e) => e.preventDefault()} 
+            <a
+              href="#appstore"
+              onClick={(e) => e.preventDefault()}
               style={{ display: 'inline-block', transition: 'transform 0.2s ease' }}
               onMouseEnter={(e) => e.currentTarget.style.transform = 'scale(1.04)'}
               onMouseLeave={(e) => e.currentTarget.style.transform = 'scale(1)'}
             >
-              <img 
-                src="https://upload.wikimedia.org/wikipedia/commons/3/3c/Download_on_the_App_Store_Badge.svg" 
-                alt="Download on the App Store" 
+              <img
+                src="https://upload.wikimedia.org/wikipedia/commons/3/3c/Download_on_the_App_Store_Badge.svg"
+                alt="Download on the App Store"
                 style={{ height: '48px', display: 'block' }}
               />
             </a>
@@ -234,14 +234,14 @@ export default function LandingPage() {
               alignItems: 'center',
               justifyContent: 'center'
             }}>
-              <img 
-                src="/game_screen.png" 
-                alt="Conquest Ingame Screen" 
+              <img
+                src="/game_screen.png"
+                alt="Conquest Ingame Screen"
                 style={{
                   width: '100%',
                   height: '100%',
                   objectFit: 'cover'
-                }} 
+                }}
               />
             </div>
           </div>
@@ -383,11 +383,11 @@ export default function LandingPage() {
               <span style={{ fontWeight: 800, fontSize: '1.1rem', fontFamily: 'var(--font-display)' }}>찜! 대모험</span>
             </div>
             <p style={{ fontSize: '0.8rem', color: '#64748b', margin: 0 }}>
-              &copy; {new Date().getFullYear()} Conquest of World Project. All rights reserved.
+              &copy; {new Date().getFullYear()} 찜! 대모험 Project. All rights reserved.
             </p>
           </div>
           <div style={{ display: 'flex', gap: '1.5rem', flexWrap: 'wrap' }}>
-            <span 
+            <span
               onClick={() => navigate('/terms')}
               style={{
                 fontSize: '0.85rem',
@@ -400,7 +400,7 @@ export default function LandingPage() {
             >
               서비스 이용약관
             </span>
-            <span 
+            <span
               onClick={() => navigate('/privacy')}
               style={{
                 fontSize: '0.85rem',
@@ -413,7 +413,7 @@ export default function LandingPage() {
             >
               개인정보 처리방침
             </span>
-            <span 
+            <span
               onClick={() => navigate('/admin')}
               style={{
                 fontSize: '0.85rem',
@@ -431,7 +431,8 @@ export default function LandingPage() {
       </footer>
 
       {/* 애니메이션용 가상 스타일 태그 삽입 */}
-      <style dangerouslySetInnerHTML={{__html: `
+      <style dangerouslySetInnerHTML={{
+        __html: `
         @keyframes pulseGlow {
           0% { transform: scale(0.9); opacity: 0.2; }
           50% { opacity: 0.6; }
