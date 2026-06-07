@@ -1,8 +1,12 @@
 import React, { useState } from 'react';
+import { Routes, Route, Navigate, useNavigate, useLocation, Outlet } from 'react-router-dom';
 import DashboardTab from './components/DashboardTab';
 import RankingTab from './components/RankingTab';
 import UsersTab from './components/UsersTab';
 import NotificationsTab from './components/NotificationsTab';
+import LandingPage from './components/LandingPage';
+import TermsPage from './components/TermsPage';
+import PrivacyPage from './components/PrivacyPage';
 import {
   ShieldAlert,
   Users,
@@ -14,35 +18,24 @@ import {
   X
 } from 'lucide-react';
 
-export default function App() {
-  const [activeTab, setActiveTab] = useState('dashboard');
+function AdminLayout() {
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
+  const location = useLocation();
+  const navigate = useNavigate();
 
   const menuItems = [
-    { id: 'dashboard', label: '대시보드', icon: Cpu },
-    { id: 'ranking', label: '사용자 랭킹', icon: Trophy },
-    { id: 'users', label: '사용자 관리', icon: Users },
-    { id: 'notifications', label: '푸시 알림', icon: Bell },
+    { id: 'dashboard', label: '대시보드', icon: Cpu, path: '/admin/dashboard' },
+    { id: 'ranking', label: '사용자 랭킹', icon: Trophy, path: '/admin/ranking' },
+    { id: 'users', label: '사용자 관리', icon: Users, path: '/admin/users' },
+    { id: 'notifications', label: '푸시 알림', icon: Bell, path: '/admin/notifications' },
   ];
 
-  const renderContent = () => {
-    switch (activeTab) {
-      case 'dashboard':
-        return <DashboardTab />;
-      case 'ranking':
-        return <RankingTab />;
-      case 'users':
-        return <UsersTab />;
-      case 'notifications':
-        return <NotificationsTab />;
-      default:
-        return <DashboardTab />;
-    }
-  };
-
   const getPageTitle = () => {
-    const item = menuItems.find(m => m.id === activeTab);
-    return item ? item.label : 'ADMIN CONSOLE';
+    const currentPath = location.pathname;
+    const item = menuItems.find(m => currentPath.startsWith(m.path));
+    if (item) return item.label;
+    if (currentPath === '/admin') return '대시보드';
+    return 'ADMIN CONSOLE';
   };
 
   return (
@@ -80,12 +73,12 @@ export default function App() {
         <nav style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem', flex: 1, marginTop: '1rem' }}>
           {menuItems.map(item => {
             const Icon = item.icon;
-            const isActive = activeTab === item.id;
+            const isActive = location.pathname === item.path || (item.id === 'dashboard' && location.pathname === '/admin');
             return (
               <button
                 key={item.id}
                 onClick={() => {
-                  setActiveTab(item.id);
+                  navigate(item.path);
                   setIsSidebarOpen(false); // 이동 후 사이드바 자동으로 닫기
                 }}
                 style={{
@@ -151,9 +144,33 @@ export default function App() {
 
         {/* 탭 페이지 마운트 */}
         <section style={{ position: 'relative', zIndex: 1 }}>
-          {renderContent()}
+          <Outlet />
         </section>
       </main>
     </div>
+  );
+}
+
+export default function App() {
+  return (
+    <Routes>
+      {/* 1. 메인 홈페이지 게임 소개 랜딩페이지 */}
+      <Route path="/" element={<LandingPage />} />
+      <Route path="/terms" element={<TermsPage />} />
+      <Route path="/privacy" element={<PrivacyPage />} />
+
+      {/* 2. 관리자 페이지 하위 주소 분리 */}
+      <Route path="/admin" element={<AdminLayout />}>
+        {/* /admin 접속 시 /admin/dashboard로 리다이렉트 */}
+        <Route index element={<Navigate to="dashboard" replace />} />
+        <Route path="dashboard" element={<DashboardTab />} />
+        <Route path="ranking" element={<RankingTab />} />
+        <Route path="users" element={<UsersTab />} />
+        <Route path="notifications" element={<NotificationsTab />} />
+      </Route>
+
+      {/* 정의되지 않은 주소는 메인 홈페이지로 리다이렉트 */}
+      <Route path="*" element={<Navigate to="/" replace />} />
+    </Routes>
   );
 }
