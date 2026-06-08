@@ -1,7 +1,7 @@
 import React, { useEffect, useState, useRef } from 'react';
-import { fetchDashboardStats, fetchTiles, fetchUsers } from '../api';
+import { fetchTiles, fetchUsers } from '../api';
 import { supabase } from '../supabase';
-import { Users, Landmark, Radio, Compass, Layers } from 'lucide-react';
+import { Radio, Compass, Layers } from 'lucide-react';
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css'; // Leaflet 기본 레이아웃 스타일 직접 로드
 
@@ -40,7 +40,7 @@ function getHexCorners(q, r) {
 }
 
 export default function DashboardTab() {
-  const [stats, setStats] = useState(null);
+
   const [tiles, setTiles] = useState([]);
   const [users, setUsers] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -92,12 +92,10 @@ export default function DashboardTab() {
   // 데이터 통합 로딩 함수
   const loadData = async () => {
     try {
-      const [statsData, tilesData, usersData] = await Promise.all([
-        fetchDashboardStats(),
+      const [tilesData, usersData] = await Promise.all([
         fetchTiles(),
         fetchUsers()
       ]);
-      setStats(statsData);
       setTiles(tilesData);
       setUsers(usersData);
     } catch (err) {
@@ -196,7 +194,7 @@ export default function DashboardTab() {
       const corners = getHexCorners(tile.q, tile.r);
       const user = users.find(u => u.id === tile.user_id);
       const ownerName = user ? user.nickname : '미등록 사용자';
-      const color = tile.color_hex || '#00e5ff';
+      const color = '#00e5ff';
 
       const polygon = L.polygon(corners, {
         color: color,
@@ -235,35 +233,8 @@ export default function DashboardTab() {
   }
 
   // 데이터 로드 완료 전 가드 정의
-  const currentUsersCount = stats ? stats.usersCount : 0;
-  const currentTilesCount = stats ? stats.tilesCount : 0;
-  const currentTotalGold = stats ? stats.totalGold : 0;
-
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
-
-      {/* KPI 통계 정보 상단 배치 */}
-      <div className="stats-grid">
-        <div className="tactical-card" style={{ display: 'flex', alignItems: 'center', gap: '1.2rem' }}>
-          <div style={{ padding: '0.8rem', background: 'rgba(0, 229, 255, 0.1)', borderRadius: '8px', color: 'var(--accent-cyan)' }}>
-            <Users size={28} />
-          </div>
-          <div>
-            <div style={{ color: 'var(--text-secondary)', fontSize: '0.85rem', fontWeight: 600 }}>총 활성 사용자</div>
-            <div className="stat-value" style={{ color: 'var(--accent-cyan)' }}>{currentUsersCount}</div>
-          </div>
-        </div>
-
-        <div className="tactical-card" style={{ display: 'flex', alignItems: 'center', gap: '1.2rem' }}>
-          <div style={{ padding: '0.8rem', background: 'rgba(255, 213, 79, 0.1)', borderRadius: '8px', color: 'var(--accent-gold)' }}>
-            <Landmark size={28} />
-          </div>
-          <div>
-            <div style={{ color: 'var(--text-secondary)', fontSize: '0.85rem', fontWeight: 600 }}>점령 영토 (타일)</div>
-            <div className="stat-value" style={{ color: 'var(--accent-gold)' }}>{currentTilesCount}</div>
-          </div>
-        </div>
-      </div>
 
       {/* 상황판 맵 모니터 그리드 */}
       <div style={{ display: 'grid', gridTemplateColumns: '1fr', gap: '1.5rem' }}>
