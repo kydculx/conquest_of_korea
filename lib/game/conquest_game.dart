@@ -120,6 +120,18 @@ class ConquestGame extends FlameGame {
     if (_mapController != null) _updateAllPositions();
   }
 
+  /// 이전 프레임의 지도 중심좌표 캐시 (동기화 감시용)
+  LatLng? _prevCameraCenter;
+
+  /// 이전 프레임의 지도 줌 레벨 캐시 (동기화 감시용)
+  double? _prevCameraZoom;
+
+  /// 이전 프레임의 지도 회전각 캐시 (동기화 감시용)
+  double? _prevCameraRotation;
+
+  /// 이전 프레임의 지도 뷰포트 크기 캐시 (동기화 감시용)
+  Size? _prevCameraSize;
+
   /// 프레임 갱신 주기를 제어하기 위해 누적 보관하는 델타 타임 합산 값
   double _dtSum = 0.0;
 
@@ -133,6 +145,39 @@ class ConquestGame extends FlameGame {
     if (_dtSum >= _fixedDeltaTime) {
       super.updateTree(_fixedDeltaTime);
       _dtSum -= _fixedDeltaTime;
+    }
+  }
+
+  /// Flame 게임 루프의 매 프레임 업데이트 콜백. 지도의 미세한 카메라 변경을 실시간 감시하여 타일 매핑 분리를 방지합니다.
+  @override
+  void update(double dt) {
+    super.update(dt);
+
+    if (_mapController != null) {
+      final camera = _mapController!.camera;
+      final currentCenter = camera.center;
+      final currentZoom = camera.zoom;
+      final currentRotation = camera.rotation;
+      final currentSize = camera.nonRotatedSize;
+
+      // 카메라 상태(중심, 줌, 회전, 크기 중 하나라도)가 변경되었는지 확인
+      final bool isCameraDirty = _prevCameraCenter == null ||
+          _prevCameraCenter != currentCenter ||
+          _prevCameraZoom != currentZoom ||
+          _prevCameraRotation != currentRotation ||
+          _prevCameraSize == null ||
+          _prevCameraSize!.width != currentSize.width ||
+          _prevCameraSize!.height != currentSize.height;
+
+      if (isCameraDirty) {
+        _prevCameraCenter = currentCenter;
+        _prevCameraZoom = currentZoom;
+        _prevCameraRotation = currentRotation;
+        _prevCameraSize = currentSize;
+
+        // 지리 좌표와 화면 픽셀 좌표 투영 재계산 및 헥사곤 좌표 즉각 갱신
+        _updateAllPositions();
+      }
     }
   }
 
