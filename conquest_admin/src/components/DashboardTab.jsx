@@ -1,7 +1,7 @@
 import React, { useEffect, useState, useRef } from 'react';
 import { fetchDashboardStats, fetchTiles, fetchUsers } from '../api';
 import { supabase } from '../supabase';
-import { Users, Landmark, Coins, Radio, Compass, Layers } from 'lucide-react';
+import { Users, Landmark, Radio, Compass, Layers } from 'lucide-react';
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css'; // Leaflet 기본 레이아웃 스타일 직접 로드
 
@@ -261,16 +261,6 @@ export default function DashboardTab() {
           <div>
             <div style={{ color: 'var(--text-secondary)', fontSize: '0.85rem', fontWeight: 600 }}>점령 영토 (타일)</div>
             <div className="stat-value" style={{ color: 'var(--accent-gold)' }}>{currentTilesCount}</div>
-          </div>
-        </div>
-
-        <div className="tactical-card" style={{ display: 'flex', alignItems: 'center', gap: '1.2rem' }}>
-          <div style={{ padding: '0.8rem', background: 'rgba(0, 229, 255, 0.1)', borderRadius: '8px', color: 'var(--accent-cyan)' }}>
-            <Coins size={28} />
-          </div>
-          <div>
-            <div style={{ color: 'var(--text-secondary)', fontSize: '0.85rem', fontWeight: 600 }}>총 유통 재화 (Gold)</div>
-            <div className="stat-value" style={{ color: 'var(--text-primary)' }}>{currentTotalGold}</div>
           </div>
         </div>
       </div>
