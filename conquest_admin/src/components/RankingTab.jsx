@@ -58,12 +58,6 @@ export default function RankingTab() {
           >
             <Trophy size={16} /> 점령 영토 순
           </button>
-          <button 
-            onClick={() => setSortBy('gold')}
-            className={`tactical-btn ${sortBy === 'gold' ? 'active' : ''}`}
-          >
-            <Coins size={16} /> 보유 재화 순
-          </button>
         </div>
 
         {/* 검색 및 새로고침 */}
@@ -100,14 +94,12 @@ export default function RankingTab() {
                 <th style={{ width: '80px', textAlign: 'center' }}>순위</th>
                 <th>사용자</th>
                 <th style={{ textAlign: 'right' }}>점령 영토</th>
-                <th style={{ textAlign: 'right' }}>보유 재화</th>
-                <th style={{ textAlign: 'center' }}>활동 개시일</th>
               </tr>
             </thead>
             <tbody>
               {filteredAgents.length === 0 ? (
                 <tr>
-                  <td colSpan="5" style={{ textAlign: 'center', color: 'var(--text-muted)', padding: '3rem' }}>
+                  <td colSpan="3" style={{ textAlign: 'center', color: 'var(--text-muted)', padding: '3rem' }}>
                     등록된 사용자 정보가 없거나 검색 결과가 존재하지 않습니다.
                   </td>
                 </tr>
@@ -167,21 +159,6 @@ export default function RankingTab() {
                         fontSize: sortBy === 'captured_tiles_count' ? '1.05rem' : '0.95rem'
                       }}>
                         {agent.captured_tiles_count || 0} <span style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', fontWeight: 'normal' }}>구역</span>
-                      </td>
-                      <td style={{ 
-                        textAlign: 'right', 
-                        fontWeight: 'bold', 
-                        color: sortBy === 'gold' ? 'var(--accent-gold)' : 'var(--text-primary)',
-                        fontSize: sortBy === 'gold' ? '1.05rem' : '0.95rem'
-                      }}>
-                        {Math.round((agent.gold || 0) * 10) / 10} <span style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', fontWeight: 'normal' }}>G</span>
-                      </td>
-                      <td style={{ textAlign: 'center', fontSize: '0.8rem', color: 'var(--text-muted)', fontFamily: 'monospace' }}>
-                        {agent.created_at ? new Date(agent.created_at).toLocaleDateString('ko-KR', {
-                          year: 'numeric',
-                          month: '2-digit',
-                          day: '2-digit'
-                        }) : '-'}
                       </td>
                     </tr>
                   );
