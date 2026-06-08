@@ -507,22 +507,33 @@ class ConquestGame extends FlameGame {
         progress: progress,
         capturingColorHex: colorHex,
       );
+      // 타일 고유의 격자 크기 획득 (LOD 줌 레벨과 무관하게 고정 위치 유지)
+      final parsed = HexService.parseTileId(tileId);
+      final double targetHexSize = (parsed != null && parsed['size'] != null)
+          ? (parsed['size'] as num).toDouble()
+          : GameConfig.lodSize0;
+
       // 지도가 이동했거나 줌이 변경되었을 때를 위해 포지션 실시간 갱신
-      final centerLatLng = _getTileCenter(tile.q, tile.r, tileId, hexSize);
+      final centerLatLng = _getTileCenter(tile.q, tile.r, tileId, targetHexSize);
       final screenOffset = _mapController!.camera.latLngToScreenOffset(centerLatLng);
       tile.position = Vector2(screenOffset.dx, screenOffset.dy);
     } else {
       // 맵에 존재하지 않는 중립 구역인 경우
       int? q;
       int? r;
+      double targetHexSize = GameConfig.lodSize0;
       final parsed = HexService.parseTileId(tileId);
       if (parsed != null) {
         q = parsed['q'];
         r = parsed['r'];
+        targetHexSize = (parsed['size'] != null)
+            ? (parsed['size'] as num).toDouble()
+            : GameConfig.lodSize0;
       } else if (fallbackLocation != null) {
         final hex = HexService.latLngToHex(fallbackLocation, hexSize: hexSize);
         q = hex['q'];
         r = hex['r'];
+        targetHexSize = hexSize;
       }
 
       if (q != null && r != null) {
@@ -533,14 +544,14 @@ class ConquestGame extends FlameGame {
         final double minLng = bounds.southWest.longitude - 0.02;
         final double maxLng = bounds.northEast.longitude + 0.02;
 
-        final centerLatLng = _getTileCenter(q, r, tileId, hexSize);
+        final centerLatLng = _getTileCenter(q, r, tileId, targetHexSize);
         final double lat = centerLatLng.latitude;
         final double lng = centerLatLng.longitude;
         final bool isGeographicallyVisible =
             lat >= minLat && lat <= maxLat && lng >= minLng && lng <= maxLng;
 
         if (isGeographicallyVisible) {
-          final cornerLatLngs = _getTileCorners(q, r, tileId, hexSize);
+          final cornerLatLngs = _getTileCorners(q, r, tileId, targetHexSize);
           final screenOffset = _mapController!.camera.latLngToScreenOffset(centerLatLng);
 
           final tempTile = HexTileComponent(
@@ -549,7 +560,7 @@ class ConquestGame extends FlameGame {
             centerLatLng: centerLatLng,
             cornerLatLngs: cornerLatLngs,
             colorHex: null, // 점령 진행 중인 중립 구역은 채우기 색상 null
-            hexSize: hexSize,
+            hexSize: targetHexSize,
             isCapturing: isCapturing,
             progress: progress,
             capturingColorHex: colorHex,
@@ -588,12 +599,18 @@ class ConquestGame extends FlameGame {
     );
 
     // 점령 중인 모든 타일(중립 포함)의 스크린 포지션도 최신 카메라 상태에 맞게 실시간 갱신
-    final double dynamicHexSize = _getHexSizeForZoom(_mapController!.camera.zoom);
     for (final entry in _tileMap.entries) {
       if (entry.value.isCapturing) {
         final tileId = entry.key;
         final component = entry.value;
-        final centerLatLng = _getTileCenter(component.q, component.r, tileId, dynamicHexSize);
+
+        // 타일 고유의 격자 크기 획득 (LOD 줌 레벨과 무관하게 고정 위치 유지)
+        final parsed = HexService.parseTileId(tileId);
+        final double targetHexSize = (parsed != null && parsed['size'] != null)
+            ? (parsed['size'] as num).toDouble()
+            : GameConfig.lodSize0;
+
+        final centerLatLng = _getTileCenter(component.q, component.r, tileId, targetHexSize);
         final screenOffset = _mapController!.camera.latLngToScreenOffset(centerLatLng);
         component.position = Vector2(screenOffset.dx, screenOffset.dy);
       }
