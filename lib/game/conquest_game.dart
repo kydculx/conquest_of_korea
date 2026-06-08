@@ -501,11 +501,16 @@ class ConquestGame extends FlameGame {
     required double hexSize,
   }) {
     if (_tileMap.containsKey(tileId)) {
-      _tileMap[tileId]!.updateData(
+      final tile = _tileMap[tileId]!;
+      tile.updateData(
         isCapturing: isCapturing,
         progress: progress,
         capturingColorHex: colorHex,
       );
+      // 지도가 이동했거나 줌이 변경되었을 때를 위해 포지션 실시간 갱신
+      final centerLatLng = _getTileCenter(tile.q, tile.r, tileId, hexSize);
+      final screenOffset = _mapController!.camera.latLngToScreenOffset(centerLatLng);
+      tile.position = Vector2(screenOffset.dx, screenOffset.dy);
     } else {
       // 맵에 존재하지 않는 중립 구역인 경우
       int? q;
@@ -581,6 +586,18 @@ class ConquestGame extends FlameGame {
       capturingTileId: capturingTileId,
       satelliteCapturingTileId: satelliteCapturingId,
     );
+
+    // 점령 중인 모든 타일(중립 포함)의 스크린 포지션도 최신 카메라 상태에 맞게 실시간 갱신
+    final double dynamicHexSize = _getHexSizeForZoom(_mapController!.camera.zoom);
+    for (final entry in _tileMap.entries) {
+      if (entry.value.isCapturing) {
+        final tileId = entry.key;
+        final component = entry.value;
+        final centerLatLng = _getTileCenter(component.q, component.r, tileId, dynamicHexSize);
+        final screenOffset = _mapController!.camera.latLngToScreenOffset(centerLatLng);
+        component.position = Vector2(screenOffset.dx, screenOffset.dy);
+      }
+    }
 
     // 플레이어 위치 갱신
     if (isLoaded) {
