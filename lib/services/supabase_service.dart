@@ -164,7 +164,9 @@ class SupabaseService {
     dynamic myValue,
   ) async {
     try {
-      final queryVal = rankType == 'captured_tiles_count'
+      final queryVal = (rankType == 'captured_tiles_count' ||
+              rankType == 'daily_moved_tiles_count' ||
+              rankType == 'total_moved_tiles_count')
           ? (myValue as num).toInt()
           : myValue;
 
@@ -178,6 +180,21 @@ class SupabaseService {
     } catch (e) {
       debugPrint('❌ 내 순위 조회 실패 ($rankType): $e');
       return 0;
+    }
+  }
+
+  /// 에이전트의 타일 이동 횟수(일일/누적)를 1씩 증가시키는 RPC 트랜잭션 함수를 호출합니다.
+  Future<bool> incrementMovedTiles(String userId) async {
+    try {
+      lastError = null;
+      final params = {'p_user_id': userId};
+      debugPrint('🏹 RPC 타일 이동 수 증가 전송 중: $userId');
+      final response = await _client.rpc('increment_moved_tiles', params: params);
+      return response as bool? ?? false;
+    } catch (e) {
+      lastError = e.toString();
+      debugPrint('❌ RPC 타일 이동 수 증가 전송 실패: $e');
+      return false;
     }
   }
 }

@@ -106,4 +106,29 @@ class PreferencesService {
     final prefs = await SharedPreferences.getInstance();
     await prefs.setString(_lastSatelliteCaptureTimeKey, v);
   }
+
+  // --- 편법 방지 방문 타일 기록 (game_provider) ---
+
+  static const _lastTileIdKey = 'conquest_last_visited_tile_id';
+  static const _secondLastTileIdKey = 'conquest_second_last_visited_tile_id';
+
+  static Future<String?> getLastVisitedTileId() async {
+    final prefs = await SharedPreferences.getInstance();
+    return prefs.getString(_lastTileIdKey);
+  }
+
+  static Future<void> setLastVisitedTileId(String v) async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setString(_lastTileIdKey, v);
+  }
+
+  static Future<String?> getSecondLastVisitedTileId() async {
+    final prefs = await SharedPreferences.getInstance();
+    return prefs.getString(_secondLastTileIdKey);
+  }
+
+  static Future<void> setSecondLastVisitedTileId(String v) async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setString(_secondLastTileIdKey, v);
+  }
 }

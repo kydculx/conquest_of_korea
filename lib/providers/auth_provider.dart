@@ -453,4 +453,10 @@ class AuthProvider extends ChangeNotifier {
       _setLoading(false);
     }
   }
+
+  /// [신규] 로컬에서 프로필 캐시 상태를 즉시 갱신하고 알림을 전파합니다.
+  void updateProfileCache(UserProfile updated) {
+    _profile = updated;
+    notifyListeners();
+  }
 }

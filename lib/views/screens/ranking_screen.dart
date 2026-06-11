@@ -28,10 +28,87 @@ class _RankingScreenState extends State<RankingScreen> {
     });
   }
 
-  Widget _buildHeaderRow() {
+  Widget _buildTabSelector(RankingProvider ranking) {
+    return Container(
+      margin: const EdgeInsets.only(left: 16, right: 16, top: 12, bottom: 4),
+      padding: const EdgeInsets.all(4),
+      decoration: BoxDecoration(
+        color: GameColors.backgroundMedium.withValues(alpha: 0.3),
+        borderRadius: BorderRadius.circular(14),
+        border: Border.all(
+          color: const Color(0xFF00E5FF).withValues(alpha: 0.15),
+          width: 1.0,
+        ),
+      ),
+      child: Row(
+        children: [
+          _buildTabItem(
+            label: GameStrings.capturedTerritory,
+            type: RankingType.capturedTiles,
+            activeType: ranking.currentType,
+            onTap: () => ranking.loadRankings(type: RankingType.capturedTiles),
+          ),
+          _buildTabItem(
+            label: GameStrings.rankingHeaderDailyMovedTiles,
+            type: RankingType.dailyMovedTiles,
+            activeType: ranking.currentType,
+            onTap: () => ranking.loadRankings(type: RankingType.dailyMovedTiles),
+          ),
+          _buildTabItem(
+            label: GameStrings.rankingHeaderTotalMovedTiles,
+            type: RankingType.totalMovedTiles,
+            activeType: ranking.currentType,
+            onTap: () => ranking.loadRankings(type: RankingType.totalMovedTiles),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildTabItem({
+    required String label,
+    required String type,
+    required String activeType,
+    required VoidCallback onTap,
+  }) {
+    final isActive = type == activeType;
+    return Expanded(
+      child: GestureDetector(
+        onTap: onTap,
+        child: Container(
+          padding: const EdgeInsets.symmetric(vertical: 10),
+          decoration: BoxDecoration(
+            color: isActive
+                ? const Color(0xFF00E5FF).withValues(alpha: 0.15)
+                : Colors.transparent,
+            borderRadius: BorderRadius.circular(10),
+          ),
+          child: Center(
+            child: Text(
+              label,
+              style: TextStyle(
+                color: isActive ? const Color(0xFF00E5FF) : GameColors.textSecondary,
+                fontSize: 12.0,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildHeaderRow(String currentType) {
+    String rightText = GameStrings.rankingHeaderCapturedTiles;
+    if (currentType == RankingType.dailyMovedTiles) {
+      rightText = GameStrings.rankingHeaderDailyMovedTiles;
+    } else if (currentType == RankingType.totalMovedTiles) {
+      rightText = GameStrings.rankingHeaderTotalMovedTiles;
+    }
+
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-      margin: const EdgeInsets.only(left: 16, right: 16, top: 12, bottom: 4),
+      margin: const EdgeInsets.only(left: 16, right: 16, top: 8, bottom: 4),
       decoration: BoxDecoration(
         color: GameColors.backgroundMedium.withValues(alpha: 0.2),
         borderRadius: BorderRadius.circular(12),
@@ -67,7 +144,7 @@ class _RankingScreenState extends State<RankingScreen> {
             ),
           ),
           Text(
-            GameStrings.rankingHeaderCapturedTiles,
+            rightText,
             style: const TextStyle(
               color: Color(0xFF00E5FF),
               fontSize: 12,
@@ -112,7 +189,8 @@ class _RankingScreenState extends State<RankingScreen> {
                   )
                 : Column(
                     children: [
-                      _buildHeaderRow(),
+                      _buildTabSelector(ranking),
+                      _buildHeaderRow(ranking.currentType),
                       Expanded(
                         child: _RankingListView(
                           ranking: ranking,
@@ -364,7 +442,13 @@ class _RankingListTile extends StatelessWidget {
 
   /// 랭킹 타입에 맞추어 유저 데이터를 가독성 높게 포맷팅
   String _formatRankingValue(String type, UserProfile profile) {
-    return GameStrings.territoryUnit(profile.capturedTilesCount);
+    if (type == RankingType.capturedTiles) {
+      return GameStrings.territoryUnit(profile.capturedTilesCount);
+    } else if (type == RankingType.dailyMovedTiles) {
+      return GameStrings.tileUnit(profile.dailyMovedTilesCount);
+    } else {
+      return GameStrings.tileUnit(profile.totalMovedTilesCount);
+    }
   }
 }
 
@@ -465,6 +549,12 @@ class _MyRankingFloatingBanner extends StatelessWidget {
 
   /// 랭킹 타입에 대칭되는 내 프로필 데이터 가독화 출력
   String _formatMyValue(String type) {
-    return GameStrings.territoryUnit(myProfile.capturedTilesCount);
+    if (type == RankingType.capturedTiles) {
+      return GameStrings.territoryUnit(myProfile.capturedTilesCount);
+    } else if (type == RankingType.dailyMovedTiles) {
+      return GameStrings.tileUnit(myProfile.dailyMovedTilesCount);
+    } else {
+      return GameStrings.tileUnit(myProfile.totalMovedTilesCount);
+    }
   }
 }

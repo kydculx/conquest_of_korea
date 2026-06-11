@@ -326,8 +326,20 @@ class GameStrings {
   static String get rankingHeaderCapturedTiles =>
       'rankingHeaderCapturedTiles'.tr();
 
+  /// 랭킹 헤더 일일 이동 라벨
+  static String get rankingHeaderDailyMovedTiles =>
+      'rankingHeaderDailyMovedTiles'.tr();
+
+  /// 랭킹 헤더 누적 이동 라벨
+  static String get rankingHeaderTotalMovedTiles =>
+      'rankingHeaderTotalMovedTiles'.tr();
+
   /// 점령 영토 탭 레이블
   static String get capturedTerritory => 'capturedTerritory'.tr();
+
+  /// 타일 단위 매핑 함수
+  static String tileUnit(int count) =>
+      'tileUnit'.tr(namedArgs: {'count': count.toString()});
 
   /// 랭킹 데이터 부재 안내 문구
   static String get noRankingData => 'noRankingData'.tr();

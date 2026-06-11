@@ -16,7 +16,7 @@ export default function RankingTab() {
       
       const { data, error: err } = await supabase
         .from('profiles')
-        .select('id, nickname, color_hex, captured_tiles_count, gold, created_at')
+        .select('id, nickname, color_hex, captured_tiles_count, daily_moved_tiles_count, total_moved_tiles_count, gold, created_at')
         .order(sortBy, { ascending: false });
 
       if (err) throw err;
@@ -58,6 +58,18 @@ export default function RankingTab() {
           >
             <Trophy size={16} /> 점령 영토 순
           </button>
+          <button 
+            onClick={() => setSortBy('daily_moved_tiles_count')}
+            className={`tactical-btn ${sortBy === 'daily_moved_tiles_count' ? 'active' : ''}`}
+          >
+            <Compass size={16} /> 일일 이동 순
+          </button>
+          <button 
+            onClick={() => setSortBy('total_moved_tiles_count')}
+            className={`tactical-btn ${sortBy === 'total_moved_tiles_count' ? 'active' : ''}`}
+          >
+            <Award size={16} /> 누적 이동 순
+          </button>
         </div>
 
         {/* 검색 및 새로고침 */}
@@ -93,7 +105,10 @@ export default function RankingTab() {
               <tr>
                 <th style={{ width: '80px', textAlign: 'center' }}>순위</th>
                 <th>사용자</th>
-                <th style={{ textAlign: 'right' }}>점령 영토</th>
+                <th style={{ textAlign: 'right' }}>
+                  {sortBy === 'captured_tiles_count' ? '점령 영토' : 
+                   sortBy === 'daily_moved_tiles_count' ? '일일 이동' : '누적 이동'}
+                </th>
               </tr>
             </thead>
             <tbody>
@@ -155,10 +170,22 @@ export default function RankingTab() {
                       <td style={{ 
                         textAlign: 'right', 
                         fontWeight: 'bold', 
-                        color: sortBy === 'captured_tiles_count' ? 'var(--accent-cyan)' : 'var(--text-primary)',
-                        fontSize: sortBy === 'captured_tiles_count' ? '1.05rem' : '0.95rem'
+                        color: 'var(--accent-cyan)',
+                        fontSize: '1.05rem'
                       }}>
-                        {agent.captured_tiles_count || 0} <span style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', fontWeight: 'normal' }}>구역</span>
+                        {sortBy === 'captured_tiles_count' ? (
+                          <>
+                            {agent.captured_tiles_count || 0} <span style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', fontWeight: 'normal' }}>구역</span>
+                          </>
+                        ) : sortBy === 'daily_moved_tiles_count' ? (
+                          <>
+                            {agent.daily_moved_tiles_count || 0} <span style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', fontWeight: 'normal' }}>타일</span>
+                          </>
+                        ) : (
+                          <>
+                            {agent.total_moved_tiles_count || 0} <span style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', fontWeight: 'normal' }}>타일</span>
+                          </>
+                        )}
                       </td>
                     </tr>
                   );

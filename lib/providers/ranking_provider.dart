@@ -7,6 +7,12 @@ import 'auth_provider.dart';
 class RankingType {
   /// 점령 영토 수 기준 랭킹 키
   static const String capturedTiles = 'captured_tiles_count';
+
+  /// 일일 타일 이동 횟수 기준 랭킹 키
+  static const String dailyMovedTiles = 'daily_moved_tiles_count';
+
+  /// 누적 타일 이동 횟수 기준 랭킹 키
+  static const String totalMovedTiles = 'total_moved_tiles_count';
 }
 
 /// 요원들의 전술적 랭킹 상태 및 내 순위를 로딩하고 관리하는 상태 관리 프로바이더 클래스
@@ -66,7 +72,14 @@ class RankingProvider extends ChangeNotifier {
       final userId = _authProvider?.user?.id;
 
       if (profile != null && userId != null) {
-        final double myValue = profile.capturedTilesCount.toDouble();
+        double myValue = 0.0;
+        if (_currentType == RankingType.capturedTiles) {
+          myValue = profile.capturedTilesCount.toDouble();
+        } else if (_currentType == RankingType.dailyMovedTiles) {
+          myValue = profile.dailyMovedTilesCount.toDouble();
+        } else if (_currentType == RankingType.totalMovedTiles) {
+          myValue = profile.totalMovedTilesCount.toDouble();
+        }
         myRankingFuture = _supabase.fetchMyRanking(
           userId,
           _currentType,

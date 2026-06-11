@@ -30,6 +30,12 @@ class UserProfile {
   /// 요원이 현재 점령 중인 타일의 총 개수
   final int capturedTilesCount;
 
+  /// 하루 동안 이동한 헥사곤 타일 수
+  final int dailyMovedTilesCount;
+
+  /// 누적 전체 이동한 헥사곤 타일 수
+  final int totalMovedTilesCount;
+
   /// 골드가 마지막으로 계산 및 갱신된 일시
   final DateTime? lastGoldUpdatedAt;
 
@@ -80,6 +86,8 @@ class UserProfile {
     this.notifSystemNotice = true,
     this.gold = 0.0,
     this.capturedTilesCount = 0,
+    this.dailyMovedTilesCount = 0,
+    this.totalMovedTilesCount = 0,
     this.lastGoldUpdatedAt,
     this.lastSessionId,
   });
@@ -97,6 +105,8 @@ class UserProfile {
       dailyDistance: (json['daily_distance'] as num?)?.toDouble() ?? 0.0,
       gold: (json['gold'] as num?)?.toDouble() ?? 0.0,
       capturedTilesCount: (json['captured_tiles_count'] as num?)?.toInt() ?? 0,
+      dailyMovedTilesCount: (json['daily_moved_tiles_count'] as num?)?.toInt() ?? 0,
+      totalMovedTilesCount: (json['total_moved_tiles_count'] as num?)?.toInt() ?? 0,
       lastGoldUpdatedAt: json['last_gold_updated_at'] != null
           ? DateTime.parse(json['last_gold_updated_at'] as String)
           : null,
@@ -131,6 +141,8 @@ class UserProfile {
       'main_base_tile_id': mainBaseTileId,
       'gold': gold,
       'captured_tiles_count': capturedTilesCount,
+      'daily_moved_tiles_count': dailyMovedTilesCount,
+      'total_moved_tiles_count': totalMovedTilesCount,
       'last_gold_updated_at': lastGoldUpdatedAt?.toIso8601String(),
       'terms_agreed_at': termsAgreedAt?.toIso8601String(),
       'privacy_agreed_at': privacyAgreedAt?.toIso8601String(),
@@ -184,6 +196,8 @@ class UserProfile {
     bool? notifSystemNotice,
     double? gold,
     int? capturedTilesCount,
+    int? dailyMovedTilesCount,
+    int? totalMovedTilesCount,
     DateTime? lastGoldUpdatedAt,
     String? lastSessionId,
   }) {
@@ -208,6 +222,8 @@ class UserProfile {
       notifSystemNotice: notifSystemNotice ?? this.notifSystemNotice,
       gold: gold ?? this.gold,
       capturedTilesCount: capturedTilesCount ?? this.capturedTilesCount,
+      dailyMovedTilesCount: dailyMovedTilesCount ?? this.dailyMovedTilesCount,
+      totalMovedTilesCount: totalMovedTilesCount ?? this.totalMovedTilesCount,
       lastGoldUpdatedAt: lastGoldUpdatedAt ?? this.lastGoldUpdatedAt,
       lastSessionId: lastSessionId ?? this.lastSessionId,
     );

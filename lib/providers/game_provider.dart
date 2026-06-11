@@ -79,6 +79,10 @@ class GameProvider extends ChangeNotifier with WidgetsBindingObserver {
   /// 서버 부하 방지를 위해 마지막으로 위치 상태를 조정한 일시
   DateTime? _lastServerCheckTime;
 
+  // --- 편법 방지용 최근 방문한 2개 타일 ID 캐시 ---
+  String? _lastTileId;
+  String? _secondLastTileId;
+
   // --- 재화(골드) 상태 관리자 ---
   late final GoldManager _goldManager;
 
@@ -506,6 +510,8 @@ class GameProvider extends ChangeNotifier with WidgetsBindingObserver {
   Future<void> _init() async {
     try {
       _isMapRotationMode = await PreferencesService.isMapRotationMode();
+      _lastTileId = await PreferencesService.getLastVisitedTileId();
+      _secondLastTileId = await PreferencesService.getSecondLastVisitedTileId();
 
       // 알림 설정 로드 및 FCM 구독 동기화
       await _notificationController.loadFromPrefs();
@@ -656,6 +662,41 @@ class GameProvider extends ChangeNotifier with WidgetsBindingObserver {
 
     final hex = HexService.latLngToHex(loc.currentLocation!);
     final tileId = HexService.tileId(hex['q']!, hex['r']!);
+
+    // --- [신규] 편법 방지 타일 이동 카운팅 및 랭킹 반영 로직 ---
+    if (_lastTileId == null) {
+      _lastTileId = tileId;
+      PreferencesService.setLastVisitedTileId(tileId);
+    } else if (_lastTileId != tileId) {
+      if (tileId != _secondLastTileId) {
+        final String oldLastTileId = _lastTileId!;
+        _secondLastTileId = oldLastTileId;
+        _lastTileId = tileId;
+
+        PreferencesService.setLastVisitedTileId(tileId);
+        PreferencesService.setSecondLastVisitedTileId(oldLastTileId);
+
+        _supabase.incrementMovedTiles(auth.profile!.id).then((success) {
+          if (success) {
+            final updatedProfile = auth.profile!.copyWith(
+              dailyMovedTilesCount: auth.profile!.dailyMovedTilesCount + 1,
+              totalMovedTilesCount: auth.profile!.totalMovedTilesCount + 1,
+            );
+            auth.updateProfileCache(updatedProfile);
+            notifyListeners();
+          }
+        }).catchError((e) {
+          debugPrint('⚠️ 타일 이동 횟수 DB 증가 실패: $e');
+        });
+      } else {
+        final String oldLastTileId = _lastTileId!;
+        _secondLastTileId = oldLastTileId;
+        _lastTileId = tileId;
+
+        PreferencesService.setLastVisitedTileId(tileId);
+        PreferencesService.setSecondLastVisitedTileId(oldLastTileId);
+      }
+    }
 
     // 1. 상태 체크 (백그라운드 타이머 보정 + 실시간 구역 이탈 체크)
     _captureController.checkCaptureStatus(loc.currentLocation);
