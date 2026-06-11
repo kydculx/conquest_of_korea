@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
+import '../../core/constants/app_routes.dart';
 import '../../core/constants/colors.dart';
 import '../../core/constants/strings.dart';
 
@@ -70,7 +71,7 @@ class ProfileLoginPromptCard extends StatelessWidget {
             width: double.infinity,
             height: 48,
             child: ElevatedButton(
-              onPressed: onLoginTap ?? () => Navigator.pushNamed(context, '/login'),
+              onPressed: onLoginTap ?? () => Navigator.pushNamed(context, AppRoutes.login),
               style: ElevatedButton.styleFrom(
                 backgroundColor: GameColors.accentNeon,
                 foregroundColor: GameColors.tacticalBlack,

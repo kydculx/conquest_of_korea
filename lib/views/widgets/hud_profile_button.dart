@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../core/constants/app_routes.dart';
 import '../../providers/auth_provider.dart';
 import 'tactical_press_button.dart';
 
@@ -23,7 +24,7 @@ class ProfileFloatingButton extends StatelessWidget {
 
     return TacticalPressButton(
       size: 44,
-      onTap: () => Navigator.pushNamed(context, '/profile'),
+      onTap: () => Navigator.pushNamed(context, AppRoutes.profile),
       gradientColors: gradientColors,
       shadowColor: shadowColor,
       shadowBlur: isAuth ? 10 : 4,

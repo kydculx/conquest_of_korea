@@ -8,6 +8,7 @@ import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
 import 'services/notification_service.dart';
 import 'core/theme.dart';
+import 'core/constants/app_routes.dart';
 import 'core/constants/strings.dart';
 import 'game/conquest_game.dart';
 import 'providers/game_provider.dart';
@@ -120,11 +121,11 @@ class _ConquestApp extends StatelessWidget {
       locale: context.locale,
       home: const AuthWrapper(),
       routes: {
-        '/login': (context) => const LoginScreen(),
-        '/profile': (context) => const ProfileScreen(),
-        '/terms-agreement': (context) => const TermsAgreementScreen(),
-        '/signup': (context) => const SignupScreen(),
-        '/ranking': (context) => const RankingScreen(),
+        AppRoutes.login: (context) => const LoginScreen(),
+        AppRoutes.profile: (context) => const ProfileScreen(),
+        AppRoutes.termsAgreement: (context) => const TermsAgreementScreen(),
+        AppRoutes.signup: (context) => const SignupScreen(),
+        AppRoutes.ranking: (context) => const RankingScreen(),
       },
     );
   }

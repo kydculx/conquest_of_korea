@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../core/constants/app_routes.dart';
 import 'tactical_press_button.dart';
 
 /// 상단 우측 랭킹 버튼 (트로피 아이콘)
@@ -11,7 +12,7 @@ class RankingActionButton extends StatelessWidget {
   Widget build(BuildContext context) {
     return TacticalPressButton(
       size: size,
-      onTap: () => Navigator.pushNamed(context, '/ranking'),
+      onTap: () => Navigator.pushNamed(context, AppRoutes.ranking),
       child: const Icon(
         Icons.emoji_events_rounded,
         color: Colors.white,

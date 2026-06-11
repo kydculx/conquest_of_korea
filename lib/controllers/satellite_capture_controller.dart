@@ -1,8 +1,8 @@
 import 'dart:async';
 import 'dart:collection';
 import 'package:flutter/foundation.dart';
-import 'package:shared_preferences/shared_preferences.dart';
 import '../models/alert_model.dart';
+import '../services/preferences_service.dart';
 import '../models/tile_model.dart';
 import '../services/supabase_service.dart';
 import '../services/hex_service.dart';
@@ -351,14 +351,11 @@ class SatelliteCaptureController {
       _lastCaptureTime = DateTime.now();
 
       // 쿨타임 저장은 백그라운드 비동기로 처리
-      SharedPreferences.getInstance().then((prefs) {
-        prefs.setString(
-          'hq_last_satellite_capture_time',
-          _lastCaptureTime!.toIso8601String(),
-        );
-      }).catchError((e) {
-        debugPrint('SharedPreferences 쿨타임 저장 실패: $e');
-      });
+    PreferencesService.setLastSatelliteCaptureTime(
+      _lastCaptureTime!.toIso8601String(),
+    ).catchError((e) {
+      debugPrint('PreferencesService 쿨타임 저장 실패: $e');
+    });
 
       // 위성 점령에 소모된 거리 비례 골드 차감
       try {
@@ -384,7 +381,7 @@ class SatelliteCaptureController {
 
       // 위성 원격 점령 성공 시 푸시 알림 발송
       try {
-        debugPrint('📡 위성 원격 점령 성공 푸시 알림 발송 요청 시작 (user: $myId)');
+        debugPrint('📡 위성 원격 점령 성공 푸시 알림 발송 요청 시작');
         _supabase.client.functions.invoke(
           'send-push',
           body: {

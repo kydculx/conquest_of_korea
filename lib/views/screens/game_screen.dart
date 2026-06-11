@@ -2,7 +2,8 @@ import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:provider/provider.dart';
-import 'package:shared_preferences/shared_preferences.dart';
+import '../../core/constants/app_routes.dart';
+import '../../services/preferences_service.dart';
 import '../../core/constants/colors.dart';
 import '../../core/constants/map_config.dart';
 import '../../core/constants/strings.dart';
@@ -51,8 +52,7 @@ class _GameScreenState extends State<GameScreen> {
           if (Platform.isAndroid) {
             final permission = await Geolocator.checkPermission();
             if (permission == LocationPermission.whileInUse && mounted) {
-              final prefs = await SharedPreferences.getInstance();
-              final isDismissed = prefs.getBool('bg_location_prompt_dismissed') ?? false;
+              final isDismissed = await PreferencesService.isBgLocationDismissed();
               if (!isDismissed && mounted) {
                 _showBackgroundLocationDialog();
               }
@@ -131,7 +131,7 @@ class _GameScreenState extends State<GameScreen> {
                 _isDuplicateDialogShowing = false;
                 Navigator.pushNamedAndRemoveUntil(
                   context,
-                  '/login',
+                  AppRoutes.login,
                   (route) => false,
                 );
               },
@@ -238,8 +238,7 @@ class _GameScreenState extends State<GameScreen> {
             TextButton(
               onPressed: () async {
                 Navigator.pop(context);
-                final prefs = await SharedPreferences.getInstance();
-                await prefs.setBool('bg_location_prompt_dismissed', true);
+                await PreferencesService.setBgLocationDismissed();
               },
               style: TextButton.styleFrom(
                 padding: const EdgeInsets.symmetric(
@@ -295,8 +294,7 @@ class _GameScreenState extends State<GameScreen> {
   Future<void> _checkAndPromptBatteryOptimization(GeoService geo) async {
     final bool isIgnoring = await geo.isIgnoringBatteryOptimizations();
     if (!isIgnoring && mounted) {
-      final prefs = await SharedPreferences.getInstance();
-      final isDismissed = prefs.getBool('bg_battery_prompt_dismissed') ?? false;
+      final isDismissed = await PreferencesService.isBgBatteryDismissed();
       if (!isDismissed && mounted) {
         _showBatteryOptimizationDialog(geo);
       }
@@ -326,8 +324,7 @@ class _GameScreenState extends State<GameScreen> {
             TextButton(
               onPressed: () async {
                 Navigator.pop(context);
-                final prefs = await SharedPreferences.getInstance();
-                await prefs.setBool('bg_battery_prompt_dismissed', true);
+                await PreferencesService.setBgBatteryDismissed();
               },
               style: TextButton.styleFrom(
                 padding: const EdgeInsets.symmetric(

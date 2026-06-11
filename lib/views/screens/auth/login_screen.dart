@@ -6,6 +6,7 @@ import 'package:google_fonts/google_fonts.dart';
 import '../../../core/constants/colors.dart';
 import '../../../core/constants/strings.dart';
 import '../../../core/utils/error_translator.dart';
+import '../../../core/constants/app_routes.dart';
 import '../../../core/utils/toast_helper.dart';
 import '../../../providers/auth_provider.dart';
 import '../game_screen.dart';
@@ -384,7 +385,7 @@ class _LoginScreenState extends State<LoginScreen> {
                     // Register Link
                     TextButton(
                       onPressed: () =>
-                          Navigator.pushNamed(context, '/terms-agreement'),
+                          Navigator.pushNamed(context, AppRoutes.termsAgreement),
                       style: TextButton.styleFrom(
                         foregroundColor: GameColors.textMuted,
                       ),

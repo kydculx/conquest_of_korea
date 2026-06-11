@@ -6,6 +6,7 @@ import 'components/player_component.dart';
 import 'components/hex_tile_component.dart';
 import 'components/hq_base_marker.dart';
 import 'components/scan_target_marker.dart';
+import 'components/tile_cluster_helper.dart';
 import '../services/hex_service.dart';
 import '../models/tile_model.dart';
 import '../controllers/satellite_capture_controller.dart';
@@ -33,14 +34,11 @@ class ConquestGame extends FlameGame {
   /// 최근에 렌더링을 감지했던 카메라 지리적 중심좌표 캐시 (순간이동 Culling 가드용)
   LatLng? _lastCameraCenter;
 
+  /// 줌 레벨별 LOD / 클러스터링 / 좌표 캐싱 헬퍼
+  final TileClusterHelper _clusterHelper = TileClusterHelper();
+
   /// 렌더링에 사용 중인 Flame 개별 컴포넌트 맵 (Key: 타일 ID, Value: 헥사곤 컴포넌트)
   final Map<String, HexTileComponent> _tileMap = {};
-
-  /// 타일 ID 기준 중심점 LatLng 지리적 불변 캐싱 맵 (중복 삼각함수 연산 차단)
-  final Map<String, LatLng> _tileCenterCache = {};
-
-  /// 타일 ID 기준 6개 꼭짓점 LatLng 지리적 불변 캐싱 맵 (중복 꼭짓점 산출 차단)
-  final Map<String, List<LatLng>> _tileCornersCache = {};
 
   /// 본부 기지(HQ) 아이콘 및 링 반경 연출을 시각화하는 마커 컴포넌트
   HQBaseMarker? _hqMarker;
@@ -204,99 +202,6 @@ class ConquestGame extends FlameGame {
     }
   }
 
-  /// 현재 줌 레벨에 맞는 헥사곤 미터 규격(Size) 반환
-  double _getHexSizeForZoom(double zoom) {
-    if (zoom >= GameConfig.lodZoomThreshold0) return GameConfig.lodSize0;
-    if (zoom >= GameConfig.lodZoomThreshold1) return GameConfig.lodSize1;
-    if (zoom >= GameConfig.lodZoomThreshold2) return GameConfig.lodSize2;
-    if (zoom >= GameConfig.lodZoomThreshold3) return GameConfig.lodSize3;
-    return GameConfig.lodSize4;
-  }
-
-  /// 현재 줌 레벨에 맞는 LOD 레벨(0 ~ 4) 반환
-  int _getLodLevelForZoom(double zoom) {
-    if (zoom >= GameConfig.lodZoomThreshold0) return 0;
-    if (zoom >= GameConfig.lodZoomThreshold1) return 1;
-    if (zoom >= GameConfig.lodZoomThreshold2) return 2;
-    if (zoom >= GameConfig.lodZoomThreshold3) return 3;
-    return 4;
-  }
-
-  /// 줌 레벨 스케일(LOD)에 맞춘 고유 타일 ID 생성
-  String _getTileId(int q, int r, double hexSize) =>
-      HexService.tileId(q, r, hexSize: hexSize);
-
-  /// 소형 100m 기준의 타일 데이터를 현재 LOD dynamicSize 규격에 맞게 실시간 뭉뚱그려(Clustering) 병합
-  void _rebuildClusteredTiles(
-    Map<String, HexTile> capturedTiles,
-    double dynamicSize,
-  ) {
-    if (dynamicSize == GameConfig.lodSize0) {
-      _lastClusteredTiles = Map.from(capturedTiles);
-      return;
-    }
-
-    final Map<String, HexTile> clustered = {};
-    capturedTiles.forEach((id, tile) {
-      // 100m 소형 기준의 지리 중심 획득
-      final smallCenter = _getTileCenter(
-        tile.q,
-        tile.r,
-        id,
-        GameConfig.lodSize0,
-      );
-
-      // dynamicHexSize 기준의 q, r 헥사 좌표 역산
-      final dynamicHex = HexService.latLngToHex(
-        smallCenter,
-        hexSize: dynamicSize,
-      );
-      final dq = dynamicHex['q']!;
-      final dr = dynamicHex['r']!;
-      final String clusterId = _getTileId(dq, dr, dynamicSize);
-
-      final existing = clustered[clusterId];
-      if (existing == null) {
-        clustered[clusterId] = HexTile(
-          id: clusterId,
-          q: dq,
-          r: dr,
-          userId: tile.userId,
-          capturedAt: tile.capturedAt,
-        );
-      } else {
-        // 대표 영토 지배권: 내 영토가 하나라도 뭉쳐있다면 내 진영색으로 마킹
-        if (tile.userId == _currentUserId) {
-          clustered[clusterId] = HexTile(
-            id: clusterId,
-            q: dq,
-            r: dr,
-            userId: _currentUserId!,
-            capturedAt: tile.capturedAt,
-          );
-        }
-      }
-    });
-
-    _lastClusteredTiles = clustered;
-  }
-
-  /// 타일 ID에 상응하는 지리적 중심점 캐시 반환
-  LatLng _getTileCenter(int q, int r, String id, double hexSize) {
-    return _tileCenterCache.putIfAbsent(
-      id,
-      () => HexService.hexToLatLng(q, r, hexSize: hexSize),
-    );
-  }
-
-  /// 타일 ID에 상응하는 지리적 6개 꼭짓점 캐시 반환
-  List<LatLng> _getTileCorners(int q, int r, String id, double hexSize) {
-    return _tileCornersCache.putIfAbsent(
-      id,
-      () => HexService.getHexCorners(q, r, hexSize: hexSize),
-    );
-  }
-
   /// 공통 렌더링 로직: 카메라 점프 가드 + LOD 체크 + 클러스터 리빌드 + Frustum Culling + 타일 생성/업데이트
   /// [capturedTilesSource]: 클러스터링에 사용할 타일 데이터 소스
   /// [capturingTileId], [satelliteCapturingTileId]: 점령 중인 타일은 culling에서 제외
@@ -322,8 +227,8 @@ class ConquestGame extends FlameGame {
 
     // 현재 LOD 레벨 및 규격 파악
     final double currentZoom = _mapController!.camera.zoom;
-    final int currentLod = _getLodLevelForZoom(currentZoom);
-    final double dynamicHexSize = _getHexSizeForZoom(currentZoom);
+    final int currentLod = _clusterHelper.getLodLevelForZoom(currentZoom);
+    final double dynamicHexSize = _clusterHelper.getHexSizeForZoom(currentZoom);
 
     // 줌 레벨(LOD) 스케일이 실제로 바뀌었을 경우 기존 컴포넌트들을 강제로 일괄 파기하여 무대 청소
     if (_lastLodLevel != currentLod || _lastClusteredTiles.isEmpty) {
@@ -333,7 +238,11 @@ class ConquestGame extends FlameGame {
       _lastLodLevel = currentLod;
     }
 
-    _rebuildClusteredTiles(capturedTilesSource, dynamicHexSize);
+    _lastClusteredTiles = _clusterHelper.rebuildClusteredTiles(
+      capturedTilesSource,
+      dynamicHexSize,
+      _currentUserId,
+    );
 
     // [초최적화 위경도 Frustum Culling] 뷰포트 지리지형 경계선 획득 및 안전 마진 정의
     final bounds = _mapController!.camera.visibleBounds;
@@ -353,7 +262,7 @@ class ConquestGame extends FlameGame {
     final List<HexTile> visibleTiles = [];
 
     _lastClusteredTiles.forEach((id, tile) {
-      final centerLatLng = _getTileCenter(tile.q, tile.r, id, dynamicHexSize);
+      final centerLatLng = _clusterHelper.getTileCenter(tile.q, tile.r, id, dynamicHexSize);
       final double lat = centerLatLng.latitude;
       final double lng = centerLatLng.longitude;
 
@@ -384,8 +293,8 @@ class ConquestGame extends FlameGame {
       final int q = tileData.q;
       final int r = tileData.r;
 
-      final centerLatLng = _getTileCenter(q, r, id, dynamicHexSize);
-      final cornerLatLngs = _getTileCorners(q, r, id, dynamicHexSize);
+      final centerLatLng = _clusterHelper.getTileCenter(q, r, id, dynamicHexSize);
+      final cornerLatLngs = _clusterHelper.getTileCorners(q, r, id, dynamicHexSize);
       final screenOffset = _mapController!.camera.latLngToScreenOffset(centerLatLng);
 
       final targetTileColorHex = (tileData.userId == _currentUserId)
@@ -445,7 +354,7 @@ class ConquestGame extends FlameGame {
     _updateScanTargetMarker(selectedScanTileId, isScanMode);
     if (_mapController == null) return;
 
-    final double dynamicHexSize = _getHexSizeForZoom(_mapController!.camera.zoom);
+    final double dynamicHexSize = _clusterHelper.getHexSizeForZoom(_mapController!.camera.zoom);
 
     // 공통 타일 렌더링
     _renderVisibleTiles(
@@ -514,7 +423,7 @@ class ConquestGame extends FlameGame {
           : GameConfig.lodSize0;
 
       // 지도가 이동했거나 줌이 변경되었을 때를 위해 포지션 실시간 갱신
-      final centerLatLng = _getTileCenter(tile.q, tile.r, tileId, targetHexSize);
+      final centerLatLng = _clusterHelper.getTileCenter(tile.q, tile.r, tileId, targetHexSize);
       final screenOffset = _mapController!.camera.latLngToScreenOffset(centerLatLng);
       tile.position = Vector2(screenOffset.dx, screenOffset.dy);
     } else {
@@ -544,14 +453,14 @@ class ConquestGame extends FlameGame {
         final double minLng = bounds.southWest.longitude - 0.02;
         final double maxLng = bounds.northEast.longitude + 0.02;
 
-        final centerLatLng = _getTileCenter(q, r, tileId, targetHexSize);
+        final centerLatLng = _clusterHelper.getTileCenter(q, r, tileId, targetHexSize);
         final double lat = centerLatLng.latitude;
         final double lng = centerLatLng.longitude;
         final bool isGeographicallyVisible =
             lat >= minLat && lat <= maxLat && lng >= minLng && lng <= maxLng;
 
         if (isGeographicallyVisible) {
-          final cornerLatLngs = _getTileCorners(q, r, tileId, targetHexSize);
+          final cornerLatLngs = _clusterHelper.getTileCorners(q, r, tileId, targetHexSize);
           final screenOffset = _mapController!.camera.latLngToScreenOffset(centerLatLng);
 
           final tempTile = HexTileComponent(
@@ -610,7 +519,7 @@ class ConquestGame extends FlameGame {
             ? (parsed['size'] as num).toDouble()
             : GameConfig.lodSize0;
 
-        final centerLatLng = _getTileCenter(component.q, component.r, tileId, targetHexSize);
+        final centerLatLng = _clusterHelper.getTileCenter(component.q, component.r, tileId, targetHexSize);
         final screenOffset = _mapController!.camera.latLngToScreenOffset(centerLatLng);
         component.position = Vector2(screenOffset.dx, screenOffset.dy);
       }

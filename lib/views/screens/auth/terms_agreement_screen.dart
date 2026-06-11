@@ -4,6 +4,7 @@ import 'package:google_fonts/google_fonts.dart';
 import '../../../providers/auth_provider.dart';
 import '../../../core/constants/colors.dart';
 import '../../../core/constants/strings.dart';
+import '../../../core/constants/app_routes.dart';
 import 'social_profile_setup_screen.dart';
 import '../../widgets/tactical_app_bar.dart';
 
@@ -150,7 +151,7 @@ class _TermsAgreementScreenState extends State<TermsAgreementScreen> {
       // 이메일 가입일 경우, 기존 이메일 정보 입력 화면으로 라우팅
       Navigator.pushNamed(
         context,
-        '/signup',
+        AppRoutes.signup,
         arguments: {
           'termsAgreedAt': now,
           'privacyAgreedAt': now,
@@ -166,7 +167,7 @@ class _TermsAgreementScreenState extends State<TermsAgreementScreen> {
     final authProvider = context.read<AuthProvider>();
     // unmounted 에러 및 Navigator 스킵 방지를 위해 화면 전환을 선제적으로 실행합니다.
     if (mounted) {
-      Navigator.of(context).pushReplacementNamed('/login');
+      Navigator.of(context).pushReplacementNamed(AppRoutes.login);
     }
     // 그 후 백그라운드에서 임시 SNS 세션을 안전하게 해제합니다.
     await authProvider.signOut();

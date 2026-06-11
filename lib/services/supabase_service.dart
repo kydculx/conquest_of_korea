@@ -67,7 +67,7 @@ class SupabaseService {
         'p_target_capture_count': tile.captureCount,
         'p_shield_duration_seconds': 0,
       };
-      debugPrint('🏹 RPC 점령 안전 트랜잭션 전송 중: ${tile.id}, 파라미터: $params');
+      debugPrint('🏹 RPC 점령 안전 트랜잭션 전송 중: ${tile.id}');
 
       final response = await _client.rpc('safe_capture_tile', params: params);
 

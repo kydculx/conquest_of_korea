@@ -1,11 +1,13 @@
 import 'dart:async';
 import 'package:flutter/widgets.dart';
 import 'package:latlong2/latlong.dart';
-import 'package:shared_preferences/shared_preferences.dart';
 import '../controllers/capture_controller.dart';
+import '../controllers/notification_controller.dart';
+import '../services/preferences_service.dart';
 import '../controllers/satellite_capture_controller.dart';
 import '../models/alert_model.dart';
 import '../models/tile_model.dart';
+import '../models/user_profile.dart';
 import '../providers/location_provider.dart';
 import '../providers/auth_provider.dart';
 import '../services/hex_service.dart';
@@ -19,23 +21,6 @@ import '../core/constants/strings.dart';
 
 /// 게임의 핵심 인게임 비즈니스 상태 및 점령 로직을 관리하고 UI에 변경을 전파하는 메인 프로바이더 클래스
 class GameProvider extends ChangeNotifier with WidgetsBindingObserver {
-  /// 로컬 저장소에 저장될 알림 설정 키
-  static const String _notifKey = 'conquest_notifications_enabled';
-
-  /// 로컬 저장소에 저장될 영토 침공 알림 키
-  static const String _notifTerritoryAttackKey =
-      'conquest_notif_territory_attack';
-
-  /// 로컬 저장소에 저장될 위성 점령 완료 알림 키
-  static const String _notifSatelliteCompleteKey =
-      'conquest_notif_satellite_complete';
-
-  /// 로컬 저장소에 저장될 시스템 공지 알림 키
-  static const String _notifSystemNoticeKey = 'conquest_notif_system_notice';
-
-  /// 로컬 저장소에 저장될 지도 회전 설정 키
-  static const String _rotationModeKey = 'conquest_map_rotation_enabled';
-
   /// Supabase 데이터베이스 서비스 인스턴스
   final SupabaseService _supabase;
 
@@ -67,18 +52,6 @@ class GameProvider extends ChangeNotifier with WidgetsBindingObserver {
   /// 현재 적용 중인 지도 스타일 인덱스
   int _currentMapStyleIndex = 0;
 
-  /// 알림 수신 동의 여부
-  bool _isNotificationEnabled = true;
-
-  /// 영토 침공 알림 여부
-  bool _isNotifTerritoryAttack = true;
-
-  /// 위성 점령 완료 알림 여부
-  bool _isNotifSatelliteComplete = true;
-
-  /// 시스템 공지 알림 여부
-  bool _isNotifSystemNotice = true;
-
   /// 지도 회전 모드(나침반 정렬) 사용 여부
   bool _isMapRotationMode = false;
 
@@ -99,6 +72,9 @@ class GameProvider extends ChangeNotifier with WidgetsBindingObserver {
   /// 위성 원격 점령 프로세스를 전담 제어하는 컨트롤러
   late final SatelliteCaptureController _satelliteController;
 
+  /// 알림 설정(FCM 구독 + 원격 동기화)을 전담 제어하는 컨트롤러
+  late final NotificationController _notificationController;
+
   // --- 위치 변경 감지 시 서버 부하 방지용 3초 딜레이 타이머 ---
   /// 서버 부하 방지를 위해 마지막으로 위치 상태를 조정한 일시
   DateTime? _lastServerCheckTime;
@@ -113,15 +89,34 @@ class GameProvider extends ChangeNotifier with WidgetsBindingObserver {
   /// 사용자 인증 상태 정보를 공유하는 AuthProvider 인스턴스
   AuthProvider? _authProvider;
 
-  // --- Getters ---
+  // --- 데이터 접근자 (Provider 참조 캡슐화) ---
+  /// 현재 로그인된 요원의 ID
+  String? get _userId => _authProvider?.user?.id;
+
+  /// 요원 인증 완료 여부
+  bool get _isAuthenticated => _authProvider?.isAuthenticated ?? false;
+
+  /// 요원의 프로필 객체
+  UserProfile? get _profile => _authProvider?.profile;
+
+  /// 요원 메인 기지 타일 ID
+  String? get _userMainBaseTileId => _profile?.mainBaseTileId;
+
+  /// 요원 전술 색상 (Hex)
+  String? get _userColorHex => _profile?.colorHex;
+
+  /// 요원 닉네임
+  String? get _userNickname => _profile?.nickname;
+
+  // --- Getters (public API) ---
   /// 실시간 점령된 타일 정보를 담은 불변 Map을 반환합니다.
   /// 내 메인 기지는 가상으로 내 땅으로 강제 주입(빈 타일이 아닌 내 땅으로 확실히 렌더링)하여 반환합니다.
   Map<String, HexTile> get capturedTiles {
     final Map<String, HexTile> copy = Map<String, HexTile>.from(_capturedTiles);
 
-    final myMainBaseId = _authProvider?.profile?.mainBaseTileId;
-    final myId = _authProvider?.user?.id;
-    final myColor = _authProvider?.profile?.colorHex;
+    final myMainBaseId = _userMainBaseTileId;
+    final myId = _userId;
+    final myColor = _userColorHex;
 
     // 내 메인 기지는 내 맵 상에서 가상으로 내 땅으로 강제 주입 (빈 타일이 아닌 내 땅으로 확실히 렌더링)
     if (myMainBaseId != null &&
@@ -204,16 +199,20 @@ class GameProvider extends ChangeNotifier with WidgetsBindingObserver {
   int get currentMapStyleIndex => _currentMapStyleIndex;
 
   /// 로컬 푸시 알림 허용 여부
-  bool get isNotificationEnabled => _isNotificationEnabled;
+  bool get isNotificationEnabled =>
+      _notificationController.isNotificationEnabled;
 
   /// 영토 침공 알림 수신 여부
-  bool get isNotifTerritoryAttack => _isNotifTerritoryAttack;
+  bool get isNotifTerritoryAttack =>
+      _notificationController.isNotifTerritoryAttack;
 
   /// 위성 점령 완료 알림 수신 여부
-  bool get isNotifSatelliteComplete => _isNotifSatelliteComplete;
+  bool get isNotifSatelliteComplete =>
+      _notificationController.isNotifSatelliteComplete;
 
   /// 시스템 공지 알림 수신 여부
-  bool get isNotifSystemNotice => _isNotifSystemNotice;
+  bool get isNotifSystemNotice =>
+      _notificationController.isNotifSystemNotice;
 
   /// 지도 회전 모드(나침반 방향에 연동) 활성화 여부
   bool get isMapRotationMode => _isMapRotationMode; // 추가: 맵 회전 여부 getter
@@ -243,14 +242,14 @@ class GameProvider extends ChangeNotifier with WidgetsBindingObserver {
 
   /// 본인 요원(계정)이 획득한 영토(타일)의 총 개수
   int get myCapturedCount {
-    if (_authProvider?.user?.id == null) return 0;
-    final myId = _authProvider!.user!.id;
+    if (_userId == null) return 0;
+    final myId = _userId!;
     final baseCount = _capturedTiles.values
         .where((t) => t.userId == myId)
         .length;
 
     // 본진(mainBaseTileId)이 설정되어 있다면 무조건 영토 개수는 1개 이상이 되도록 보장
-    final myMainBaseId = _authProvider?.profile?.mainBaseTileId;
+    final myMainBaseId = _userMainBaseTileId;
     if (myMainBaseId != null && myMainBaseId.isNotEmpty) {
       return baseCount < 1 ? 1 : baseCount;
     }
@@ -334,7 +333,7 @@ class GameProvider extends ChangeNotifier with WidgetsBindingObserver {
       onTileCaptured: (id, tile, {required bool wasEnemyTile}) {
         final oldOwnerId = _capturedTiles[id]?.userId;
         _capturedTiles[id] = tile;
-        if (_isNotificationEnabled) {
+        if (_notificationController.isNotificationEnabled) {
           NotificationService().showLocalNotification(
             id: id.hashCode,
             title: GameStrings.notificationCaptureEmptyTitle,
@@ -346,7 +345,7 @@ class GameProvider extends ChangeNotifier with WidgetsBindingObserver {
         AudioService().playNotification();
 
         // 상대방 구역 침탈 시 침탈 푸시 알림 발송
-        final myId = _authProvider?.user?.id;
+        final myId = _userId;
         if (wasEnemyTile &&
             oldOwnerId != null &&
             oldOwnerId != 'none' &&
@@ -394,15 +393,38 @@ class GameProvider extends ChangeNotifier with WidgetsBindingObserver {
       },
       onStateChanged: notifyListeners,
       getCapturedTiles: () => _capturedTiles,
-      getUserId: () => _authProvider?.user?.id,
-      getColorHex: () => _authProvider?.profile?.colorHex,
-      getMainBaseTileId: () => _authProvider?.profile?.mainBaseTileId,
+      getUserId: () => _userId,
+      getColorHex: () => _userColorHex,
+      getMainBaseTileId: () => _userMainBaseTileId,
       getCurrentGold: () => _goldManager.currentGold,
       deductGold: (amount) => _goldManager.deductOptimistic(amount),
-      getCurrentUserId: () => _authProvider?.user?.id ?? '',
+      getCurrentUserId: () => _userId ?? '',
       refreshProfile: () async => _authProvider?.refreshProfile(),
       isPhysicalCapturing: () => _captureController.isCapturing,
       cancelPhysicalCapture: () => _captureController.cancelCapture(),
+    );
+    _notificationController = NotificationController(
+      onStateChanged: notifyListeners,
+      getUserId: () => _userId,
+      onSyncToRemote: ({
+        required bool isMasterEnabled,
+        required bool territoryAttack,
+        required bool satelliteComplete,
+        required bool systemNotice,
+      }) async {
+        if (_isAuthenticated) {
+          try {
+            await _authProvider!.updateGranularNotifications(
+              isMasterEnabled: isMasterEnabled,
+              territoryAttack: territoryAttack,
+              satelliteComplete: satelliteComplete,
+              systemNotice: systemNotice,
+            );
+          } catch (e) {
+            debugPrint('⚠️ 원격 DB 프로필 알림 일괄 동기화 실패: $e');
+          }
+        }
+      },
     );
     NotificationService().onForegroundMessageReceived = (title, body, type) {
       // ⚠️ 포그라운드 상태일 때 침탈 및 위성 성공은 이미 로컬(스트림/콜백)에서 배너를 띄우므로 FCM 포그라운드 노출 중복을 차단합니다.
@@ -437,7 +459,7 @@ class GameProvider extends ChangeNotifier with WidgetsBindingObserver {
 
   /// 사용자 인증 관리 프로바이더([AuthProvider])를 설정하고 로그인 세션 여부에 따라 골드 생산 타이머를 가동/종료합니다.
   void setAuthProvider(AuthProvider auth) {
-    final oldProfile = _authProvider?.profile;
+    final oldProfile = _profile;
     _authProvider = auth;
 
     if (auth.isAuthenticated) {
@@ -483,20 +505,13 @@ class GameProvider extends ChangeNotifier with WidgetsBindingObserver {
   /// 초기 설정을 불러오고, 기점령 타일 정보 획득 및 Supabase 실시간 타일 스트림을 연결합니다.
   Future<void> _init() async {
     try {
-      final prefs = await SharedPreferences.getInstance();
-      _isNotificationEnabled = prefs.getBool(_notifKey) ?? true;
-      _isNotifTerritoryAttack = prefs.getBool(_notifTerritoryAttackKey) ?? true;
-      _isNotifSatelliteComplete =
-          prefs.getBool(_notifSatelliteCompleteKey) ?? true;
-      _isNotifSystemNotice = prefs.getBool(_notifSystemNoticeKey) ?? true;
-      _isMapRotationMode = prefs.getBool(_rotationModeKey) ?? false;
+      _isMapRotationMode = await PreferencesService.isMapRotationMode();
 
-      // FCM 알림 구독 동기화 기동
-      _updateFcmSubscriptions();
+      // 알림 설정 로드 및 FCM 구독 동기화
+      await _notificationController.loadFromPrefs();
 
-      final lastSatCapTimeStr = prefs.getString(
-        'hq_last_satellite_capture_time',
-      );
+      final lastSatCapTimeStr =
+          await PreferencesService.getLastSatelliteCaptureTime();
       _satelliteController.loadLastCaptureTime(lastSatCapTimeStr);
 
       final tiles = await _supabase.fetchAllCapturedTiles();
@@ -508,7 +523,7 @@ class GameProvider extends ChangeNotifier with WidgetsBindingObserver {
     } finally {
       _isInitialized = true;
       if (!_initCompleter.isCompleted) _initCompleter.complete();
-      if (_authProvider?.isAuthenticated == true) {
+      if (_isAuthenticated == true) {
         _goldManager.syncWithServer();
       }
       notifyListeners();
@@ -792,7 +807,7 @@ class GameProvider extends ChangeNotifier with WidgetsBindingObserver {
   /// 자동 점령 작전의 활성/비활성 여부를 토글합니다.
   /// 인증된 상태에서는 항상 자동 점령이 강제로 유지되므로 토글 효과가 없습니다(항상 true).
   void toggleAutoCapture() {
-    if (_authProvider?.isAuthenticated == true) {
+    if (_isAuthenticated == true) {
       _isAutoCapture = true;
     } else {
       _isAutoCapture = !_isAutoCapture;
@@ -807,14 +822,12 @@ class GameProvider extends ChangeNotifier with WidgetsBindingObserver {
     notifyListeners();
   }
 
-  /// 지도 회전 모드(나침반 헤딩 동기화)를 활성화/비활성화하고 내부 설정을 SharedPreferences에 유지합니다.
+  /// 지도 회전 모드(나침반 헤딩 동기화)를 활성화/비활성화하고 내부 설정을 저장합니다.
   Future<void> toggleMapRotationMode() async {
     _isMapRotationMode = !_isMapRotationMode;
     notifyListeners();
-    // SharedPreferences IO는 백그라운드 비동기 처리 — UI 반응성 확보
-    SharedPreferences.getInstance().then((prefs) {
-      prefs.setBool(_rotationModeKey, _isMapRotationMode);
-    }).catchError((e) {
+    // PreferencesService IO는 백그라운드 비동기 처리 — UI 반응성 확보
+    PreferencesService.setMapRotationMode(_isMapRotationMode).catchError((e) {
       debugPrint('⚠️ 회전 모드 설정 저장 실패: $e');
     });
   }
@@ -870,116 +883,21 @@ class GameProvider extends ChangeNotifier with WidgetsBindingObserver {
     return status;
   }
 
-  /// 4대 알림 동의 상태를 원격 DB 프로필에 실시간 동기화합니다.
-  Future<void> _syncNotificationsToRemote() async {
-    if (_authProvider != null && _authProvider!.isAuthenticated) {
-      try {
-        await _authProvider!.updateGranularNotifications(
-          isMasterEnabled: _isNotificationEnabled,
-          territoryAttack: _isNotifTerritoryAttack,
-          satelliteComplete: _isNotifSatelliteComplete,
-          systemNotice: _isNotifSystemNotice,
-        );
-      } catch (e) {
-        debugPrint('⚠️ 원격 DB 프로필 알림 일괄 동기화 실패: $e');
-      }
-    }
-  }
-
-  /// 알림 수신 동의 여부를 전환하고 변경 설정을 디바이스 로컬 저장소 및 원격 DB 프로필에 보관합니다.
-  Future<void> toggleNotifications() async {
-    _isNotificationEnabled = !_isNotificationEnabled;
-    final prefs = await SharedPreferences.getInstance();
-    await prefs.setBool(_notifKey, _isNotificationEnabled);
-    notifyListeners();
-    await _syncNotificationsToRemote();
-    await _updateFcmSubscriptions();
-  }
+  /// 알림 수신 동의 여부를 전환하고 변경 설정을 로컬 저장소 및 원격 DB 프로필에 보관합니다.
+  Future<void> toggleNotifications() =>
+      _notificationController.toggleNotifications();
 
   /// 영토 침공 알림 여부를 토글합니다.
-  Future<void> toggleNotifTerritoryAttack() async {
-    _isNotifTerritoryAttack = !_isNotifTerritoryAttack;
-    final prefs = await SharedPreferences.getInstance();
-    await prefs.setBool(_notifTerritoryAttackKey, _isNotifTerritoryAttack);
-    notifyListeners();
-    await _syncNotificationsToRemote();
-    await _updateFcmSubscriptions();
-  }
+  Future<void> toggleNotifTerritoryAttack() =>
+      _notificationController.toggleNotifTerritoryAttack();
 
   /// 위성 점령 완료 알림 여부를 토글합니다.
-  Future<void> toggleNotifSatelliteComplete() async {
-    _isNotifSatelliteComplete = !_isNotifSatelliteComplete;
-    final prefs = await SharedPreferences.getInstance();
-    await prefs.setBool(_notifSatelliteCompleteKey, _isNotifSatelliteComplete);
-    notifyListeners();
-    await _syncNotificationsToRemote();
-    await _updateFcmSubscriptions();
-  }
+  Future<void> toggleNotifSatelliteComplete() =>
+      _notificationController.toggleNotifSatelliteComplete();
 
   /// 시스템 공지 알림 여부를 토글합니다.
-  Future<void> toggleNotifSystemNotice() async {
-    _isNotifSystemNotice = !_isNotifSystemNotice;
-    final prefs = await SharedPreferences.getInstance();
-    await prefs.setBool(_notifSystemNoticeKey, _isNotifSystemNotice);
-    notifyListeners();
-    await _syncNotificationsToRemote();
-    await _updateFcmSubscriptions();
-  }
-
-  /// SharedPreferences 상태 및 마스터 알림 여부에 맞춰 FCM 구독 토픽을 최신화합니다.
-  Future<void> _updateFcmSubscriptions() async {
-    final ns = NotificationService();
-    if (!ns.isInitialized) {
-      await ns.initialize();
-    }
-
-    const String topicTerritory = 'conquest_territory_attack';
-    const String topicSatellite = 'conquest_satellite_complete';
-    const String topicNotice = 'conquest_system_notice';
-    final userId = _authProvider?.user?.id;
-    final String? topicPersonal = userId != null ? 'user_$userId' : null;
-
-    if (!_isNotificationEnabled) {
-      // 마스터 알림이 꺼진 경우 모든 개별 및 개인 토픽 일제 구독 해제
-      await ns.unsubscribeFromTopic(topicTerritory);
-      await ns.unsubscribeFromTopic(topicSatellite);
-      await ns.unsubscribeFromTopic(topicNotice);
-      if (topicPersonal != null) {
-        await ns.unsubscribeFromTopic(topicPersonal);
-      }
-      debugPrint('🔔 [FCM 구독 통제] 마스터 해제로 인한 모든 토픽 구독 해제 완료.');
-      return;
-    }
-
-    // 마스터 알림이 켜져 있는 경우 개인 토픽 다시 구독
-    if (topicPersonal != null) {
-      await ns.subscribeToTopic(topicPersonal);
-    }
-
-    // 영토 침공 알림
-    if (_isNotifTerritoryAttack) {
-      await ns.subscribeToTopic(topicTerritory);
-    } else {
-      await ns.unsubscribeFromTopic(topicTerritory);
-    }
-
-    // 위성 점령 완료 알림
-    if (_isNotifSatelliteComplete) {
-      await ns.subscribeToTopic(topicSatellite);
-    } else {
-      await ns.unsubscribeFromTopic(topicSatellite);
-    }
-
-    // 시스템 공지 알림
-    if (_isNotifSystemNotice) {
-      await ns.subscribeToTopic(topicNotice);
-    } else {
-      await ns.unsubscribeFromTopic(topicNotice);
-    }
-    debugPrint(
-      '🔔 [FCM 구독 통제] 개별 설정 최신화 완료 (영토: $_isNotifTerritoryAttack, 위성: $_isNotifSatelliteComplete, 공지: $_isNotifSystemNotice)',
-    );
-  }
+  Future<void> toggleNotifSystemNotice() =>
+      _notificationController.toggleNotifSystemNotice();
 
   /// 화면 상단에 표시될 새 경고/알림 팝업 메시지를 발행하고 3초 경과 후 자동 페이드아웃 되도록 타이머를 연동합니다.
   void addAlert(String message, AlertType type) {
@@ -1017,8 +935,8 @@ class GameProvider extends ChangeNotifier with WidgetsBindingObserver {
   /// 만약 로그인된 본인의 ID라면 캐시/DB 조회 없이 즉시 본인 프로필의 닉네임을 반환합니다.
   /// 캐시에 없으면 Supabase에서 즉시 조회 후 캐싱하여 반환합니다.
   Future<String> getAgentNickname(String userId) async {
-    final myId = _authProvider?.user?.id;
-    final myNick = _authProvider?.profile?.nickname;
+    final myId = _userId;
+    final myNick = _userNickname;
 
     if (myId == userId && myNick != null && myNick.isNotEmpty) {
       return myNick;
@@ -1060,12 +978,12 @@ class GameProvider extends ChangeNotifier with WidgetsBindingObserver {
   /// 본인 타일이거나 중립(점령자 없음) 타일인 경우 항상 상시 노출(true)됩니다.
   /// 상대 타일인 경우, 해제 일시로부터 10분(GameConfig.tileRevealDurationSeconds)이 지나지 않았는지 판별합니다.
   bool isTileInfoRevealed(String tileId) {
-    final myMainBaseId = _authProvider?.profile?.mainBaseTileId;
+    final myMainBaseId = _userMainBaseTileId;
     if (myMainBaseId != null && myMainBaseId.isNotEmpty && tileId == myMainBaseId) {
       return true; // 내 본진 타일은 상시 보안 해제 상태로 모든 정보 노출
     }
 
-    final myId = _authProvider?.user?.id;
+    final myId = _userId;
     final tile = capturedTiles[tileId]; // 게터 호출로 안전하게 가상 주입본 사용
     final isOwnTile = tile != null && tile.userId == myId;
     final isNeutral = tile == null || tile.userId == null || tile.userId == 'none';
@@ -1115,7 +1033,7 @@ class GameProvider extends ChangeNotifier with WidgetsBindingObserver {
     _revealedTileTimes[tileId] = nowUtc;
     notifyListeners(); // 즉각적인 UI 갱신 유도
 
-    final myId = _authProvider?.user?.id;
+    final myId = _userId;
     if (myId != null) {
       // 백엔드 API 요청은 await 하지 않고 백그라운드 비동기 처리하여 화면 멈춤(랙) 현상 완벽 방지
       _supabase.client
@@ -1144,7 +1062,7 @@ class GameProvider extends ChangeNotifier with WidgetsBindingObserver {
 
   /// 본진을 새로운 위치로 이전(재설정)하고 해당 거리에 따른 비용(재화)을 차감합니다.
   Future<bool> rebaseMainBase(String tileId, double cost) async {
-    final myId = _authProvider?.user?.id;
+    final myId = _userId;
     if (myId == null) return false;
 
     if (_goldManager.currentGold < cost) {
@@ -1207,7 +1125,7 @@ class GameProvider extends ChangeNotifier with WidgetsBindingObserver {
   /// 위성 스캔 화면 상에서 조준점으로 지정할 대상 헥사곤 타일을 선택 조준합니다.
   /// 이미 선택된 타일을 다시 선택하는 경우 조준을 해제합니다.
   void selectScanTile(String tileId) {
-    if (_authProvider == null || !_authProvider!.isAuthenticated) {
+    if (!_isAuthenticated) {
       return;
     }
     if (_selectedScanTileId == tileId) {
@@ -1266,13 +1184,13 @@ class GameProvider extends ChangeNotifier with WidgetsBindingObserver {
   @override
   void didChangeAppLifecycleState(AppLifecycleState state) {
     if (state == AppLifecycleState.resumed) {
-      if (_authProvider?.isAuthenticated == true) {
+      if (_isAuthenticated == true) {
         _goldManager.syncWithServer();
       }
     } else if (state == AppLifecycleState.paused ||
         state == AppLifecycleState.inactive) {
       // [신규] 사용자가 홈 화면으로 나가거나 앱을 끌 때 즉시 모인 실시간 재화를 DB에 저장하여 증발 유실 완벽 차단
-      if (_authProvider?.isAuthenticated == true) {
+      if (_isAuthenticated == true) {
         _goldManager.persistToServer();
       }
     }

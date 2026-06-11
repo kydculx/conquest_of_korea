@@ -4,8 +4,8 @@ import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:app_badge_plus/app_badge_plus.dart';
-import 'package:shared_preferences/shared_preferences.dart';
 import '../core/constants/strings.dart';
+import 'preferences_service.dart';
 
 /// 포그라운드 FCM 메시지 수신 시 인게임 알림 UI로 라우팅 처리하기 위한 커스텀 콜백 핸들러 타입
 typedef ForegroundMessageCallback =
@@ -97,40 +97,27 @@ class NotificationService {
 
       FirebaseMessaging.onMessage.listen((RemoteMessage message) async {
         try {
-          final prefs = await SharedPreferences.getInstance();
-          final isNotificationEnabled =
-              prefs.getBool('conquest_notifications_enabled') ?? true;
-
-          if (!isNotificationEnabled) {
+          if (!await PreferencesService.isNotificationEnabled()) {
             debugPrint('🔔 [알림 차단] 마스터 알림이 비활성화 상태이므로 포그라운드 노출 스킵.');
             return;
           }
 
           // 개별 알림 항목별 수신 동의 여부 필터링
           final String? type = message.data['type'] as String?;
-          if (type != null) {
-            if (type == 'territory_attack') {
-              final isTerritoryEnabled =
-                  prefs.getBool('conquest_notif_territory_attack') ?? true;
-              if (!isTerritoryEnabled) {
-                debugPrint('🔔 [알림 차단] 영토 침공 알림이 비활성화 상태이므로 노출 스킵.');
-                return;
-              }
-            } else if (type == 'satellite_complete') {
-              final isSatelliteEnabled =
-                  prefs.getBool('conquest_notif_satellite_complete') ?? true;
-              if (!isSatelliteEnabled) {
-                debugPrint('🔔 [알림 차단] 위성 점령 완료 알림이 비활성화 상태이므로 노출 스킵.');
-                return;
-              }
-            } else if (type == 'system_notice') {
-              final isNoticeEnabled =
-                  prefs.getBool('conquest_notif_system_notice') ?? true;
-              if (!isNoticeEnabled) {
-                debugPrint('🔔 [알림 차단] 시스템 공지 알림이 비활성화 상태이므로 노출 스킵.');
-                return;
-              }
-            }
+          if (type == 'territory_attack' &&
+              !await PreferencesService.isNotifTerritoryAttackEnabled()) {
+            debugPrint('🔔 [알림 차단] 영토 침공 알림이 비활성화 상태이므로 노출 스킵.');
+            return;
+          }
+          if (type == 'satellite_complete' &&
+              !await PreferencesService.isNotifSatelliteCompleteEnabled()) {
+            debugPrint('🔔 [알림 차단] 위성 점령 완료 알림이 비활성화 상태이므로 노출 스킵.');
+            return;
+          }
+          if (type == 'system_notice' &&
+              !await PreferencesService.isNotifSystemNoticeEnabled()) {
+            debugPrint('🔔 [알림 차단] 시스템 공지 알림이 비활성화 상태이므로 노출 스킵.');
+            return;
           }
 
           RemoteNotification? notification = message.notification;
@@ -153,7 +140,7 @@ class NotificationService {
 
       // FCM 토큰이 갱신되거나 최초 발급되는 시점에 토픽 자동 재구독 연동
       _fcm?.onTokenRefresh.listen((token) {
-        debugPrint('🔑 FCM 토큰 최초/갱신 취득 완료: $token');
+        debugPrint('🔑 FCM 토큰 최초/갱신 취득 완료 (길이: ${token.length})');
         if (_currentUserId != null) {
           subscribeToTopic('user_$_currentUserId');
         }
@@ -181,15 +168,12 @@ class NotificationService {
     required String body,
   }) async {
     try {
-      final prefs = await SharedPreferences.getInstance();
-      final isNotificationEnabled =
-          prefs.getBool('conquest_notifications_enabled') ?? true;
-      if (!isNotificationEnabled) {
+      if (!await PreferencesService.isNotificationEnabled()) {
         debugPrint('🔔 [알림 차단] 마스터 알림이 비활성화 상태이므로 로컬 알림 노출 스킵.');
         return;
       }
     } catch (e) {
-      debugPrint('⚠️ SharedPreferences 알림 설정 조회 실패: $e');
+      debugPrint('⚠️ PreferencesService 알림 설정 조회 실패: $e');
     }
 
     await _localNotifications.show(
