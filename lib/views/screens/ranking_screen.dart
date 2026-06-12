@@ -297,6 +297,16 @@ class _RankingListView extends StatelessWidget {
 
   const _RankingListView({required this.ranking, required this.currentUserId});
 
+  int _getValueForProfile(String type, UserProfile profile) {
+    if (type == RankingType.capturedTiles) {
+      return profile.capturedTilesCount;
+    } else if (type == RankingType.dailyMovedTiles) {
+      return profile.dailyMovedTilesCount;
+    } else {
+      return profile.totalMovedTilesCount;
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final list = ranking.topRankings;
@@ -319,8 +329,17 @@ class _RankingListView extends StatelessWidget {
       itemCount: list.length,
       itemBuilder: (context, index) {
         final profile = list[index];
-        final rank = index + 1;
         final isMe = profile.id == currentUserId;
+
+        // 공동 순위(Standard Competition Ranking) 계산
+        int rank = 1;
+        final myVal = _getValueForProfile(ranking.currentType, profile);
+        for (int i = 0; i < index; i++) {
+          final otherVal = _getValueForProfile(ranking.currentType, list[i]);
+          if (otherVal > myVal) {
+            rank++;
+          }
+        }
 
         return _RankingListTile(
           rank: rank,
