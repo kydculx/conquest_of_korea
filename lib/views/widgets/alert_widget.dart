@@ -4,7 +4,7 @@ import '../../models/alert_model.dart';
 import '../../core/constants/colors.dart';
 import '../../core/constants/strings.dart';
 
-/// 전술 알림 아이템 위젯
+/// 알림 아이템 위젯
 class AlertWidget extends StatelessWidget {
   final GameAlert alert;
 
@@ -64,7 +64,7 @@ class AlertWidget extends StatelessWidget {
               ),
             ),
             const SizedBox(width: 12),
-            // 전술 타입 아이콘
+            // 알림 타입 아이콘
             Padding(
               padding: const EdgeInsets.symmetric(vertical: 8.0),
               child: Icon(icon, color: color, size: 18),

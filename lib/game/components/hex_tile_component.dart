@@ -23,16 +23,16 @@ class HexTileComponent extends PositionComponent
   /// 이 헥사곤이 현재 렌더링되고 있는 줌 레벨 스케일의 LOD 픽셀 크기
   final double hexSize;
 
-  /// 타일이 점령되었을 때 칠해질 요원의 진영 색상 (Hex)
+  /// 타일이 점령되었을 때 칠해질 플레이어의 진영 색상 (Hex)
   String? colorHex;
 
-  /// 현재 이 타일이 요원(물리/위성)에 의해 점령 시도 중인지 여부
+  /// 현재 이 타일이 플레이어(물리/위성)에 의해 점령 시도 중인지 여부
   bool isCapturing;
 
   /// 점령 시도의 진행 진척도 (0.0 ~ 1.0)
   double progress;
 
-  /// 현재 이 타일을 점령 시도 중인 요원의 진영 색상 (Hex)
+  /// 현재 이 타일을 점령 시도 중인 플레이어의 진영 색상 (Hex)
   String? capturingColorHex;
 
   /// 로컬 꼭짓점 6개의 픽셀 상대 좌표 리스트 (중심 (0, 0) 기준)
@@ -72,7 +72,7 @@ class HexTileComponent extends PositionComponent
     this.capturingColorHex,
   });
 
-  /// 점령 요원의 식별 색상, 점령 진행도 상태가 갱신되었을 때 해당 상태를 반영하고 화면 갱신을 준비합니다.
+  /// 점령 플레이어의 식별 색상, 점령 진행도 상태가 갱신되었을 때 해당 상태를 반영하고 화면 갱신을 준비합니다.
   void updateData({
     String? colorHex,
     bool? isCapturing,

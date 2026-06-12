@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 
-/// 게임 전반에서 사용되는 공용 전술 컬러 클래스 (외부 제어 및 동적 갱신 가능)
+/// 게임 전반에서 사용되는 공용 컬러 클래스 (외부 제어 및 동적 갱신 가능)
 class GameColors {
   /// 내 영토(타일)용 화사한 비비드 네온 핑크 마젠타 (시인성과 화사함 대폭 보강)
   static Color myTileColor = const Color(0xFFFF17AB);
@@ -37,7 +37,7 @@ class GameColors {
   /// 완전 투명 색상
   static Color transparent = const Color(0x00000000);
 
-  /// 전술 화이트 컬러
+  /// 공용 화이트 컬러
   static Color tacticalWhite = const Color(0xFFFFFFFF);
 
   /// 화사하고 부드러운 우유빛 반투명 크림 배경 컬러 -> 92% 불투명 다크 딥 인디고 젤리

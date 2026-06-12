@@ -61,7 +61,7 @@ void main() {
           print('⚠️ 중복 좌표 검출: $coord');
           for (var i = 0; i < list.length; i++) {
             final t = list[i];
-            print('   [$i] ID: ${t['id']}, 요원(User): ${t['user_id']}, 점령시점: ${t['captured_at']}');
+            print('   [$i] ID: ${t['id']}, 플레이어(User): ${t['user_id']}, 점령시점: ${t['captured_at']}');
           }
           print('---------------------------------------------');
         }

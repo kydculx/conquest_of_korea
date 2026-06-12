@@ -3,8 +3,8 @@ import 'package:webview_flutter/webview_flutter.dart';
 import '../../core/constants/colors.dart';
 import '../widgets/tactical_app_bar.dart';
 
-/// 나중에 요원이 기입할 외부 정책/약관 URL을 모바일 브라우저 렌더러로
-/// 실시간 연동해 보여주는 하이테크 스타일 공통 전술 웹뷰 스크린 컴포넌트입니다.
+/// 나중에 플레이어가 기입할 외부 정책/약관 URL을 모바일 브라우저 렌더러로
+/// 실시간 연동해 보여주는 하이테크 스타일 공통 웹뷰 스크린 컴포넌트입니다.
 class PolicyWebviewScreen extends StatefulWidget {
   final String title;
   final String url;

@@ -132,7 +132,7 @@ class _TermsAgreementScreenState extends State<TermsAgreementScreen> {
 
     final now = DateTime.now();
     if (widget.isSocial) {
-      // 소셜 가입일 경우, 닉네임 및 전술색 설정 화면으로 라우팅 (약관 동의 화면으로 이전 pop이 가능하게 push 처리)
+      // 소셜 가입일 경우, 닉네임 및 테마색 설정 화면으로 라우팅 (약관 동의 화면으로 이전 pop이 가능하게 push 처리)
       Navigator.push(
         context,
         MaterialPageRoute(

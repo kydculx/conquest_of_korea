@@ -6,15 +6,15 @@ import 'package:latlong2/latlong.dart';
 import '../../core/constants/colors.dart';
 import '../../core/constants/map_config.dart';
 
-/// 지도 상에서 요원의 물리 위치를 가리키며, 디바이스 나침반 센서 각도에 연동해 정밀 회전하고 펄싱 애니메이션을 연출하는 제트 전투기 스타일의 전술 커서 컴포넌트
+/// 지도 상에서 플레이어의 물리 위치를 가리키며, 디바이스 나침반 센서 각도에 연동해 정밀 회전하고 펄싱 애니메이션을 연출하는 심플한 커서 컴포넌트
 class PlayerComponent extends PositionComponent {
-  /// 요원의 현재 실제 GPS 지리적 위치 좌표
+  /// 플레이어의 현재 실제 GPS 지리적 위치 좌표
   LatLng _location = MapConfig.defaultPosition;
 
-  /// 요원의 현재 지리적 위치 좌표 반환
+  /// 플레이어의 현재 지리적 위치 좌표 반환
   LatLng get location => _location;
 
-  /// 나침반 센서로부터 계산된 요원의 주시 방향 각도 (라디안 단위)
+  /// 나침반 센서로부터 계산된 플레이어의 주시 방향 각도 (라디안 단위)
   double _heading = 0.0;
 
   /// 플레이어 커서 컴포넌트의 가시성(화면 렌더링) 여부
@@ -30,12 +30,12 @@ class PlayerComponent extends PositionComponent {
     anchor = Anchor.center;
   }
 
-  /// 요원의 지리적 위치(LatLng)를 동기화합니다.
+  /// 플레이어의 지리적 위치(LatLng)를 동기화합니다.
   void updateLocation(LatLng newLocation) {
     _location = newLocation;
   }
 
-  /// 나침반 각도(Degrees)를 기반으로 변환하여 요원의 방향(Heading)을 라디안 단위로 갱신합니다.
+  /// 나침반 각도(Degrees)를 기반으로 변환하여 플레이어의 방향(Heading)을 라디안 단위로 갱신합니다.
   void updateHeading(double degrees) {
     // 도(degree)를 라디안(radian)으로 변환
     _heading = degrees * (math.pi / 180.0);
@@ -67,7 +67,7 @@ class PlayerComponent extends PositionComponent {
     final compassRadius = baseRadius * 2.7; // 약 38.0 반경
     canvas.drawCircle(center, compassRadius, compassPaint);
 
-    // 1-1. 전술 나침반 정밀 조준 눈금선 (Ticks) - 4방위에 짧은 돌출선 렌더
+    // 1-1. 나침반 정밀 조준 눈금선 (Ticks) - 4방위에 짧은 돌출선 렌더
     final tickPaint = Paint()
       ..style = PaintingStyle.stroke
       ..strokeWidth = 1.2
@@ -236,7 +236,7 @@ class PlayerComponent extends PositionComponent {
     canvas.restore();
   }
 
-  /// 4방위 지시 문자를 극극미니멀한 전술 폰트 스타일로 렌더링하는 헬퍼 메서드
+  /// 4방위 지시 문자를 극극미니멀한 폰트 스타일로 렌더링하는 헬퍼 메서드
   void _drawMiniDirText(
     Canvas canvas,
     Offset center,
@@ -253,7 +253,7 @@ class PlayerComponent extends PositionComponent {
           fontWeight: FontWeight.bold,
           fontFamily: 'Fredoka',
           shadows: [
-            // 밝은 배경 맵 타일 위에서도 또렷이 분리되는 전술 다크 섀도 드롭
+            // 밝은 배경 맵 타일 위에서도 또렷이 분리되는 다크 섀도 드롭
             Shadow(
               color: const Color(0xFF121212).withValues(alpha: 0.85),
               offset: const Offset(0.5, 0.5),

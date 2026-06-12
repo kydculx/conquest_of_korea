@@ -4,7 +4,7 @@ import 'package:flutter/material.dart';
 import '../conquest_game.dart';
 import '../../services/hex_service.dart';
 
-/// 요원의 본부 기지(HQ) 지리적 좌표 상에 홈(Home) 모양 아이콘 마커를 렌더링하여 전술 본부를 시각화하는 Flame 컴포넌트
+/// 플레이어의 본부 기지(HQ) 지리적 좌표 상에 홈(Home) 모양 아이콘 마커를 렌더링하여 본부를 시각화하는 Flame 컴포넌트
 class HQBaseMarker extends PositionComponent
     with HasGameReference<ConquestGame> {
   /// 본부 기지 타일의 H3 q축 좌표값
@@ -13,7 +13,7 @@ class HQBaseMarker extends PositionComponent
   /// 본부 기지 타일의 H3 r축 좌표값
   final int r;
 
-  /// 본부 기지 요원의 식별 색상 코드 (Hex)
+  /// 본부 기지 플레이어의 식별 색상 코드 (Hex)
   String? colorHex;
 
   /// 스크린 기준으로 투영된 본진 중심 좌표
@@ -27,7 +27,7 @@ class HQBaseMarker extends PositionComponent
     priority = 15; // 플레이어(20)보다는 아래, 일반 타일(0)보다는 위
   }
 
-  /// 본부 기지 요원의 전술 식별 색상 정보를 외부에서 갱신합니다.
+  /// 본부 기지 플레이어의 테마 식별 색상 정보를 외부에서 갱신합니다.
   void updateColor(String? newColorHex) {
     if (colorHex != newColorHex) {
       colorHex = newColorHex;
@@ -65,7 +65,7 @@ class HQBaseMarker extends PositionComponent
         _screenCenter!.dy <= gameSize.y + 100;
     if (!isVisible) return;
 
-    // 🚩 전술 2D 벡터 깃발 정밀 렌더링 (이모지 대비 높은 시인성과 전술 컬러 일치화 확보)
+    // 🚩 2D 벡터 깃발 정밀 렌더링 (이모지 대비 높은 시인성과 테마 컬러 일치화 확보)
     _drawVectorHQFlag(
       canvas,
       _screenCenter!.dx,

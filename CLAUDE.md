@@ -41,3 +41,8 @@ ConquestGame (Flame, standalone)
 **Environment:** Credentials live in `.env` (loaded via `flutter_dotenv`). `AppConfig` reads them. The `.env` file is listed as a Flutter asset.
 
 **Hex grid:** Axial coordinate system. `HexService.latLngToHex()` maps GPS coords to `(q, r)` hex. Tile IDs are `hex_{q}_{r}`. Tile size is ~400m.
+
+## Tone & Vocabulary Restrictions
+- **No Military/Tactical Jargon**: Do NOT use words like "Tactical", "Agent", "Commander", "Operation", "Invasion", "Attack" (or their Korean equivalents: 전술, 요원, 사령관, 작전, 침략, 피탈 등) in Korean translations, source comments, console logs, and user responses.
+- **Alternatives**: Use clean, standard gaming terms instead: "Player" (플레이어), "Theme" (테마), "Map" (지도), "Capture" (점령), "Territory" (영토), "Alert/Notification" (알림).
+

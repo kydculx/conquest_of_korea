@@ -1,4 +1,4 @@
-/// 인게임 비즈니스 로직 및 전술 시스템의 수치 상수를 관리하는 설정 클래스
+/// 인게임 비즈니스 로직 및 시스템의 수치 상수를 관리하는 설정 클래스
 class GameConfig {
   /// 애플리케이션 시스템 공식 명칭
   static const String appName = '찜! 대모험 (Dibs Adventure)';
@@ -72,7 +72,7 @@ class GameConfig {
   /// 점령 완료 후 해당 타일이 적의 침공으로부터 보호(쉴드)를 유지하는 지속 시간 (초)
   static const int tileShieldDurationSeconds = 5;
 
-  /// 작전 개시 시 최초 점령에 소요되는 기준 시간 (초 단위)
+  /// 점령 시작 시 최초 점령에 소요되는 기준 시간 (초 단위)
   static const int initialCaptureDurationSeconds = 1;
 
   /// 상대 타일 정보 보안 해제(Reveal) 유효 지속 시간 (초 단위 - 10분)

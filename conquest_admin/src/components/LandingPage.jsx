@@ -145,9 +145,9 @@ export default function LandingPage() {
             maxWidth: '540px',
             margin: 0
           }}>
-            '찜! 대모험'은 전 세계 실제 지도 기반의 실시간 점령 전술 게임입니다.
+            '찜! 대모험'은 전 세계 실제 지도 기반의 실시간 영토 점령 게임입니다.
             내가 딛는 실제 발자국이 영토가 되고, 실시간 지도에서 다른 플레이어들과
-            영토를 빼앗고 지키는 긴박한 전투를 경험하세요.
+            영토를 빼앗고 지키는 긴박한 플레이를 경험하세요.
           </p>
 
           {/* 앱 다운로드 배지 시뮬레이션 */}
@@ -268,7 +268,7 @@ export default function LandingPage() {
             </h2>
             <p style={{ color: '#94a3b8', fontSize: '1.05rem', maxWidth: '600px', margin: '0 auto' }}>
               전 세계 실제 지도 위에서 나만의 영토를 구축하세요.
-              실시간 전술 플레이와 전략 자원 관리로 세계 최정상 랭킹에 오를 수 있습니다.
+              실시간 점령 플레이와 자원 관리로 세계 최정상 랭킹에 오를 수 있습니다.
             </p>
           </div>
 
@@ -353,7 +353,7 @@ export default function LandingPage() {
               </div>
               <h3 style={{ fontSize: '1.25rem', fontWeight: 700 }}>원격 타일 점령</h3>
               <p style={{ color: '#94a3b8', fontSize: '0.9rem', lineHeight: 1.6, margin: 0 }}>
-                직접 방문하지 않고도 게임에서 획득한 골드를 사용해 원거리 타일을 즉각 지배할 수 있습니다. 전술의 기동성과 커버리지를 대폭 확장해 보세요.
+                직접 방문하지 않고도 게임에서 획득한 골드를 사용해 원거리 타일을 즉각 지배할 수 있습니다. 점령 기동성과 커버리지를 대폭 확장해 보세요.
               </p>
             </div>
           </div>

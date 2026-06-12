@@ -9,7 +9,7 @@ import '../../providers/ranking_provider.dart';
 import '../../models/user_profile.dart';
 import '../widgets/tactical_app_bar.dart';
 
-/// 요원들의 전술적 활약상과 지배력을 시각화하고 대조 분석할 수 있는 메인 전술 랭킹 화면 클래스
+/// 플레이어들의 활약상과 지배력을 시각화하고 조회할 수 있는 메인 랭킹 화면 클래스
 class RankingScreen extends StatefulWidget {
   /// RankingScreen 생성자
   const RankingScreen({super.key});
@@ -170,7 +170,7 @@ class _RankingScreenState extends State<RankingScreen> {
       ),
       body: Stack(
         children: [
-          // 배경 은은한 전술 격자 라인 데코레이션 (Premium Tactical aesthetic)
+          // 배경 은은한 격자 라인 데코레이션 (Premium aesthetic)
           Positioned.fill(
             child: IgnorePointer(
               child: CustomPaint(
@@ -452,7 +452,7 @@ class _RankingListTile extends StatelessWidget {
   }
 }
 
-/// 하단 플로팅 형태로 항시 고정되는 나의 전술 순위 패널
+/// 하단 플로팅 형태로 항시 고정되는 나의 순위 패널
 class _MyRankingFloatingBanner extends StatelessWidget {
   final RankingProvider ranking;
   final UserProfile myProfile;

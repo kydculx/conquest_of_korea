@@ -6,7 +6,7 @@ class GameStrings {
   /// 앱 이름 번역 문자열
   static String get appName => 'appName'.tr();
 
-  /// 전술 미션 개시 번역 문자열
+  /// 미션 개시 번역 문자열
   static String get tacticalMissionStart => 'tacticalMissionStart'.tr();
 
   // --- 공통 버튼 및 라벨 ---
@@ -87,7 +87,7 @@ class GameStrings {
   /// 닉네임 설정 메뉴 타이틀
   static String get nicknameSettings => 'nicknameSettings'.tr();
 
-  /// 랭킹/계급 라벨
+  /// 랭킹 라벨
   static String get rank => 'rank'.tr();
 
   /// 영토(타일) 소유 개수 라벨
@@ -189,7 +189,7 @@ class GameStrings {
   /// 비밀번호 설정 조건 힌트 메시지
   static String get passwordHint => 'passwordHint'.tr();
 
-  /// 전술 컬러 선택 타이틀
+  /// 테마 컬러 선택 타이틀
   static String get selectTacticalColor => 'selectTacticalColor'.tr();
 
   /// 컬러 변경 버튼 라벨
@@ -201,7 +201,7 @@ class GameStrings {
   /// 프로필 설정 부가 안내 메시지
   static String get setupProfileSub => 'setupProfileSub'.tr();
 
-  /// 내 전술 컬러 명칭 라벨
+  /// 내 테마 컬러 명칭 라벨
   static String get myTacticalColor => 'myTacticalColor'.tr();
 
   /// 새로운 컬러 무작위 생성 버튼 라벨
@@ -226,7 +226,7 @@ class GameStrings {
   /// 이전 화면으로 이동 버튼 라벨
   static String get goBack => 'goBack'.tr();
 
-  /// 요원 프로필 타이틀
+  /// 플레이어 프로필 타이틀
   static String get agentProfile => 'agentProfile'.tr();
 
   /// 소속 팀 명칭 라벨
@@ -238,10 +238,10 @@ class GameStrings {
   /// 작전 설정 메뉴 타이틀
   static String get operationSettings => 'operationSettings'.tr();
 
-  /// 전술 컬러 변경 버튼 라벨
+  /// 테마 컬러 변경 버튼 라벨
   static String get changeTacticalColor => 'changeTacticalColor'.tr();
 
-  /// 전술 컬러 변경 안내 문구
+  /// 테마 컬러 변경 안내 문구
   static String get changeTacticalColorSub => 'changeTacticalColorSub'.tr();
 
   /// 푸시 알림 수신 설정 버튼 라벨
@@ -271,32 +271,32 @@ class GameStrings {
   /// 계정 관리 메뉴 타이틀
   static String get accountManagement => 'accountManagement'.tr();
 
-  /// 작전 종료(계정 탈퇴) 버튼 라벨
+  /// 계정 탈퇴 버튼 라벨
   static String get terminateOperation => 'terminateOperation'.tr();
 
   /// 로그아웃 확인 팝업 안내 메시지
   static String get logoutConfirmMessage => 'logoutConfirmMessage'.tr();
 
-  /// 커스텀 전술 컬러 라벨
+  /// 커스텀 테마 컬러 라벨
   static String get customTacticalColor => 'customTacticalColor'.tr();
 
-  /// 전술 컬러 변경 완료 안내 메시지
+  /// 테마 컬러 변경 완료 안내 메시지
   static String get tacticalColorChanged => 'tacticalColorChanged'.tr();
 
   /// 로그아웃 확인 팝업 타이틀
   static String get logoutConfirmTitle => 'logoutConfirmTitle'.tr();
 
-  /// 전술 색상 설정 팝업 타이틀
+  /// 테마 색상 설정 팝업 타이틀
   static String get tacticalColorSetupTitle => 'tacticalColorSetupTitle'.tr();
 
   /// 신호 스펙트럼 믹서 부제
   static String get signalSpectrumMixer => 'signalSpectrumMixer'.tr();
 
-  /// 영토 침공 알림 타이틀
+  /// 영토 변경 알림 타이틀
   static String get notifTerritoryAttackTitle =>
       'notifTerritoryAttackTitle'.tr();
 
-  /// 영토 침공 알림 부제
+  /// 영토 변경 알림 부제
   static String get notifTerritoryAttackSub => 'notifTerritoryAttackSub'.tr();
 
   /// 원격 모드 완료 알림 타이틀
@@ -307,16 +307,16 @@ class GameStrings {
   static String get notifSatelliteCompleteSub =>
       'notifSatelliteCompleteSub'.tr();
 
-  /// 시스템 긴급 전술 지령 타이틀
+  /// 시스템 긴급 공지 타이틀
   static String get notifSystemNoticeTitle => 'notifSystemNoticeTitle'.tr();
 
-  /// 시스템 긴급 전술 지령 부제
+  /// 시스템 긴급 공지 부제
   static String get notifSystemNoticeSub => 'notifSystemNoticeSub'.tr();
 
   /// 적용하기 버튼 라벨
   static String get apply => 'apply'.tr();
 
-  /// 전술 상황 랭킹판 타이틀
+  /// 랭킹판 타이틀
   static String get tacticalRankingBoard => 'tacticalRankingBoard'.tr();
 
   /// 랭킹 헤더 순위 라벨
@@ -344,7 +344,7 @@ class GameStrings {
   /// 랭킹 데이터 부재 안내 문구
   static String get noRankingData => 'noRankingData'.tr();
 
-  /// 요원(나) 표시
+  /// 플레이어(나) 표시
   static String get agentMe => 'agentMe'.tr();
 
   /// 닉네임과 (나) 매핑 함수
@@ -366,10 +366,10 @@ class GameStrings {
   static String get top100Stats => 'top100Stats'.tr();
 
   // --- 게임 화면 및 오버레이 UI 텍스트 ---
-  /// 원격 모드 신호 조율 진행 상태 문구
+  /// 원격 모드 신호 연결 진행 상태 문구
   static String get tacticalSatelliteSync => 'tacticalSatelliteSync'.tr();
 
-  /// 작전 구역 점령 시도 안내 문구
+  /// 영토 점령 시도 안내 문구
   static String get capturingZone => 'capturingZone'.tr();
 
   /// GPS 좌표 오차 보정 버튼 라벨
@@ -381,10 +381,10 @@ class GameStrings {
   /// 수동 모드 상태 라벨
   static String get manual => 'manual'.tr();
 
-  /// 점령 작전 모드 개시 버튼 라벨
+  /// 점령 모드 개시 버튼 라벨
   static String get startCaptureMode => 'startCaptureMode'.tr();
 
-  /// 점령 작전 모드 중단 버튼 라벨
+  /// 점령 모드 중단 버튼 라벨
   static String get stopCaptureMode => 'stopCaptureMode'.tr();
 
   /// 점령 불가 안내 메시지
@@ -394,7 +394,7 @@ class GameStrings {
   static String get gpsInaccurateCannotCapture =>
       'gpsInaccurateCannotCapture'.tr();
 
-  /// 작전 수행을 위한 로그인 필요 메시지
+  /// 플레이를 위한 로그인 필요 메시지
   static String get loginRequiredOperation => 'loginRequiredOperation'.tr();
 
   /// 이미 본인이 점령한 구역 안내 메시지
@@ -406,7 +406,7 @@ class GameStrings {
   /// 점령 불가 상태 라벨
   static String get cannotCaptureLabel => 'cannotCaptureLabel'.tr();
 
-  /// 전술 데이터 분석 진행 중 안내 메시지
+  /// 게임 데이터 분석 진행 중 안내 메시지
   static String get analyzingTacticalData => 'analyzingTacticalData'.tr();
 
   // --- 백그라운드 및 외부 시스템 연동 UI ---
@@ -420,7 +420,7 @@ class GameStrings {
   static String get captureCanceledOutOfBoundary =>
       'captureCanceledOutOfBoundary'.tr();
 
-  /// 타 요원의 선점령으로 인한 실패 안내 메시지
+  /// 타 플레이어의 선점령으로 인한 실패 안내 메시지
   static String get captureFailedPreempted => 'captureFailedPreempted'.tr();
 
   /// 개수/개소 수량 단위 문자열 ("개")
@@ -457,22 +457,22 @@ class GameStrings {
   static String get notificationCaptureEmptyBody =>
       'notificationCaptureEmptyBody'.tr();
 
-  /// 적군 영토 침공 시도 알림 타이틀
+  /// 타 영토 확보 시도 알림 타이틀
   static String get notificationCaptureEnemyTitle =>
       'notificationCaptureEnemyTitle'.tr();
 
-  /// 적군 영토 침공 시도 알림 상세 본문
+  /// 타 영토 확보 시도 알림 상세 본문
   static String get notificationCaptureEnemyBody =>
       'notificationCaptureEnemyBody'.tr();
 
-  /// 영토 침공(피격) 경고 알림 타이틀
+  /// 영토 변경 경고 알림 타이틀
   static String get notificationInvasionTitle =>
       'notificationInvasionTitle'.tr();
 
-  /// 영토 침공(피격) 경고 알림 상세 본문
+  /// 영토 변경 경고 알림 상세 본문
   static String get notificationInvasionBody => 'notificationInvasionBody'.tr();
 
-  // --- HUD 및 전술 상태 라벨 ---
+  // --- HUD 및 점령 상태 라벨 ---
   /// 초 단위 스캔 주기 라벨
   static String get hudSecScan => 'hudSecScan'.tr();
 
@@ -495,7 +495,7 @@ class GameStrings {
   /// 위성 사진 맵 스타일 명칭
   static String get mapStyleSatellite => 'mapStyleSatellite'.tr();
 
-  // --- 메인 기지 및 원격 모드 점령 추가 다국어 ---
+  // --- 본진 및 원격 모드 점령 추가 다국어 ---
   /// 본진 설정 완료 안내 팝업 문구
   static String get baseSetupCompleteAlert => 'baseSetupCompleteAlert'.tr();
 
@@ -525,10 +525,10 @@ class GameStrings {
   /// 본진 설정 최종 확인 버튼 라벨
   static String get baseSetupConfirmButton => 'baseSetupConfirmButton'.tr();
 
-  /// 프로필 작전 기지 이전(Rebase) 타이틀
+  /// 프로필 본진 이전(Rebase) 타이틀
   static String get profileRebaseTitle => 'profileRebaseTitle'.tr();
 
-  /// 프로필 작전 기지 이전 상세 부제
+  /// 프로필 본진 이전 상세 부제
   static String get profileRebaseSubtitle => 'profileRebaseSubtitle'.tr();
 
   /// GPS 신호 오차 경고 메시지
@@ -593,7 +593,7 @@ class GameStrings {
   static String satLockOnTile(String tileId) =>
       'satLockOnTile'.tr(namedArgs: {'tileId': tileId});
 
-  /// 원격 모드 점령 작전 타이틀
+  /// 원격 모드 점령 타이틀
   static String get satCaptureTitle => 'satCaptureTitle'.tr();
 
   /// 대문자 형태 점령 지시어
@@ -602,13 +602,13 @@ class GameStrings {
   /// 원격 모드 통신 활성화 상태 라벨
   static String get satelliteLinkActive => 'satelliteLinkActive'.tr();
 
-  /// 본진 침공 위험 알림 타이틀
+  /// 본진 변경 위험 알림 타이틀
   static String get hqInvasionNotifTitle => 'hqInvasionNotifTitle'.tr();
 
-  /// 본진 침공 위험 알림 상세 본문
+  /// 본진 변경 위험 알림 상세 본문
   static String get hqInvasionNotifBody => 'hqInvasionNotifBody'.tr();
 
-  /// 본진 침공 실시간 인게임 알림 문구
+  /// 본진 변경 실시간 인게임 알림 문구
   static String get hqInvasionAlert => 'hqInvasionAlert'.tr();
 
   /// 원격 모드 대기 미경과 경고 문구
@@ -628,11 +628,11 @@ class GameStrings {
   /// 원격 모드 타겟 좌표 확인 오류 경고 문구
   static String get satelliteCoordError => 'satelliteCoordError'.tr();
 
-  /// 원격 모드 점령 작전 개시 포맷팅 함수
+  /// 원격 모드 점령 개시 포맷팅 함수
   static String satelliteCaptureStart(String seconds) =>
       'satelliteCaptureStart'.tr(namedArgs: {'seconds': seconds});
 
-  /// 유효하지 않은 요원 정보 경고 문구
+  /// 유효하지 않은 플레이어 정보 경고 문구
   static String get satelliteUserInvalid => 'satelliteUserInvalid'.tr();
 
   /// 원격 모드 점령 성공 완료 안내 문구
@@ -641,16 +641,16 @@ class GameStrings {
   /// 원격 모드 점령 실패 경고 문구
   static String get satelliteCaptureFail => 'satelliteCaptureFail'.tr();
 
-  /// 원격 모드 작전 강제 중단 타이틀
+  /// 원격 모드 점령 강제 중단 타이틀
   static String get satelliteAbortTitle => 'satelliteAbortTitle'.tr();
 
-  /// 원격 모드 작전 취소 확인 질문 문구
+  /// 원격 모드 점령 취소 확인 질문 문구
   static String get satelliteAbortConfirm => 'satelliteAbortConfirm'.tr();
 
-  /// 작전 계속 수행 버튼 라벨
+  /// 점령 계속 수행 버튼 라벨
   static String get satelliteKeepOperation => 'satelliteKeepOperation'.tr();
 
-  /// 작전 중단 철회 버튼 라벨
+  /// 점령 중단 철회 버튼 라벨
   static String get satelliteCancelOperation => 'satelliteCancelOperation'.tr();
 
   /// HUD 골드 수치 표시 라벨
@@ -781,7 +781,7 @@ class GameStrings {
   /// 계정 삭제 완료 알림 문구
   static String get deleteAccountSuccess => 'deleteAccountSuccess'.tr();
 
-  /// 작전 지령 변경 팝업 타이틀
+  /// 점령 모드 변경 팝업 타이틀
   static String get modeChangeDialogTitle => 'modeChangeDialogTitle'.tr();
 
   /// 이동 모드 설명 타이틀
@@ -999,6 +999,93 @@ class GameStrings {
 
   /// 중복 로그인 다이얼로그 본문
   static String get duplicateLoginMessage => 'duplicateLoginMessage'.tr();
+
+  // --- 업적 관련 (Achievements) ---
+  static String get achievementBoardTitle => 'achievementBoardTitle'.tr();
+  static String get achievements => 'achievements'.tr();
+  static String get achievementUnlockedAlert => 'achievementUnlockedAlert'.tr();
+  static String get unlocked => 'unlocked'.tr();
+  static String get locked => 'locked'.tr();
+
+  // 1. 누적 점령 타일
+  static String get achCapT1Title => 'achCapT1Title'.tr();
+  static String get achCapT1Desc => 'achCapT1Desc'.tr();
+  static String get achCapT2Title => 'achCapT2Title'.tr();
+  static String get achCapT2Desc => 'achCapT2Desc'.tr();
+  static String get achCapT3Title => 'achCapT3Title'.tr();
+  static String get achCapT3Desc => 'achCapT3Desc'.tr();
+  static String get achCapT4Title => 'achCapT4Title'.tr();
+  static String get achCapT4Desc => 'achCapT4Desc'.tr();
+
+  // 2. 적 진영 점령 타일
+  static String get achInvT1Title => 'achInvT1Title'.tr();
+  static String get achInvT1Desc => 'achInvT1Desc'.tr();
+  static String get achInvT2Title => 'achInvT2Title'.tr();
+  static String get achInvT2Desc => 'achInvT2Desc'.tr();
+  static String get achInvT3Title => 'achInvT3Title'.tr();
+  static String get achInvT3Desc => 'achInvT3Desc'.tr();
+  static String get achInvT4Title => 'achInvT4Title'.tr();
+  static String get achInvT4Desc => 'achInvT4Desc'.tr();
+
+  // 3. 누적 이동 타일 수
+  static String get achMovT1Title => 'achMovT1Title'.tr();
+  static String get achMovT1Desc => 'achMovT1Desc'.tr();
+  static String get achMovT2Title => 'achMovT2Title'.tr();
+  static String get achMovT2Desc => 'achMovT2Desc'.tr();
+  static String get achMovT3Title => 'achMovT3Title'.tr();
+  static String get achMovT3Desc => 'achMovT3Desc'.tr();
+  static String get achMovT4Title => 'achMovT4Title'.tr();
+  static String get achMovT4Desc => 'achMovT4Desc'.tr();
+
+  // 4. 일일 최고 이동 타일 수
+  static String get achDmovT1Title => 'achDmovT1Title'.tr();
+  static String get achDmovT1Desc => 'achDmovT1Desc'.tr();
+  static String get achDmovT2Title => 'achDmovT2Title'.tr();
+  static String get achDmovT2Desc => 'achDmovT2Desc'.tr();
+  static String get achDmovT3Title => 'achDmovT3Title'.tr();
+  static String get achDmovT3Desc => 'achDmovT3Desc'.tr();
+  static String get achDmovT4Title => 'achDmovT4Title'.tr();
+  static String get achDmovT4Desc => 'achDmovT4Desc'.tr();
+
+  // 5. 위성 스캔 점령
+  static String get achSatCapT1Title => 'achSatCapT1Title'.tr();
+  static String get achSatCapT1Desc => 'achSatCapT1Desc'.tr();
+  static String get achSatCapT2Title => 'achSatCapT2Title'.tr();
+  static String get achSatCapT2Desc => 'achSatCapT2Desc'.tr();
+  static String get achSatCapT3Title => 'achSatCapT3Title'.tr();
+  static String get achSatCapT3Desc => 'achSatCapT3Desc'.tr();
+  static String get achSatCapT4Title => 'achSatCapT4Title'.tr();
+  static String get achSatCapT4Desc => 'achSatCapT4Desc'.tr();
+
+  // 6. 위성 스캔 정보 조회
+  static String get achSatInfT1Title => 'achSatInfT1Title'.tr();
+  static String get achSatInfT1Desc => 'achSatInfT1Desc'.tr();
+  static String get achSatInfT2Title => 'achSatInfT2Title'.tr();
+  static String get achSatInfT2Desc => 'achSatInfT2Desc'.tr();
+  static String get achSatInfT3Title => 'achSatInfT3Title'.tr();
+  static String get achSatInfT3Desc => 'achSatInfT3Desc'.tr();
+  static String get achSatInfT4Title => 'achSatInfT4Title'.tr();
+  static String get achSatInfT4Desc => 'achSatInfT4Desc'.tr();
+
+  // 7. 본부 기지(HQ) 중심 요새화
+  static String get achHqFortT1Title => 'achHqFortT1Title'.tr();
+  static String get achHqFortT1Desc => 'achHqFortT1Desc'.tr();
+  static String get achHqFortT2Title => 'achHqFortT2Title'.tr();
+  static String get achHqFortT2Desc => 'achHqFortT2Desc'.tr();
+  static String get achHqFortT3Title => 'achHqFortT3Title'.tr();
+  static String get achHqFortT3Desc => 'achHqFortT3Desc'.tr();
+  static String get achHqFortT4Title => 'achHqFortT4Title'.tr();
+  static String get achHqFortT4Desc => 'achHqFortT4Desc'.tr();
+
+  // 8. 보유 골드 재화량
+  static String get achGoldT1Title => 'achGoldT1Title'.tr();
+  static String get achGoldT1Desc => 'achGoldT1Desc'.tr();
+  static String get achGoldT2Title => 'achGoldT2Title'.tr();
+  static String get achGoldT2Desc => 'achGoldT2Desc'.tr();
+  static String get achGoldT3Title => 'achGoldT3Title'.tr();
+  static String get achGoldT3Desc => 'achGoldT3Desc'.tr();
+  static String get achGoldT4Title => 'achGoldT4Title'.tr();
+  static String get achGoldT4Desc => 'achGoldT4Desc'.tr();
 }
 
 class GameUrls {

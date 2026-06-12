@@ -40,13 +40,13 @@ class SatelliteCaptureController {
   /// 현재 점령된 타일 맵을 반환하는 접근자
   final Map<String, HexTile> Function() getCapturedTiles;
 
-  /// 현재 로그인된 요원의 ID를 반환하는 접근자
+  /// 현재 로그인된 플레이어의 ID를 반환하는 접근자
   final String? Function() getUserId;
 
-  /// 현재 로그인된 요원의 전술 색상 Hex 코드를 반환하는 접근자
+  /// 현재 로그인된 플레이어의 테마 색상 Hex 코드를 반환하는 접근자
   final String? Function() getColorHex;
 
-  /// 현재 로그인된 요원의 본진 타일 ID를 반환하는 접근자
+  /// 현재 로그인된 플레이어의 본진 타일 ID를 반환하는 접근자
   final String? Function() getMainBaseTileId;
 
   /// 현재 보유 골드를 반환하는 접근자
@@ -55,7 +55,7 @@ class SatelliteCaptureController {
   /// 낙관적 업데이트용 골드 차감 함수
   final double Function(double amount) deductGold;
 
-  /// 현재 로그인된 요원의 ID를 반환하는 접근자 (getUserId와 동일하나 편의 제공)
+  /// 현재 로그인된 플레이어의 ID를 반환하는 접근자 (getUserId와 동일하나 편의 제공)
   final String Function() getCurrentUserId;
 
   /// 프로필 정보를 서버에서 다시 로드하는 함수
@@ -516,7 +516,7 @@ class SatelliteCaptureController {
     return HexService.hexDistance(bq, br, tq, tr);
   }
 
-  /// 본진 기지를 시발점으로 하여 요원이 지배 중인 타일 그리드를 거쳐 대상 영토까지
+  /// 본진 기지를 시발점으로 하여 플레이어가 지배 중인 타일 그리드를 거쳐 대상 영토까지
   /// 끊어짐 없이 헥사 결합되어 연결되는지 BFS로 무결성을 검증합니다.
   bool checkConnectivity(String targetTileId) {
     final mainBaseId = getMainBaseTileId();

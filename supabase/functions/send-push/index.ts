@@ -47,7 +47,7 @@ Deno.serve(async (req: Request) => {
           } else if (profile) {
             // 마스터 알림 스위치 꺼짐 여부
             if (profile.is_notifications_enabled === false) {
-              console.log(`🔔 [알림 마스터 차단] 요원(${userId})의 마스터 알림 비활성화로 푸시 취소`);
+              console.log(`🔔 [알림 마스터 차단] 플레이어(${userId})의 마스터 알림 비활성화로 푸시 취소`);
               return new Response(JSON.stringify({ success: true, filtered: true, reason: "master_disabled" }), {
                 headers: {
                   "Content-Type": "application/json",
@@ -74,7 +74,7 @@ Deno.serve(async (req: Request) => {
               }
 
               if (shouldFilter) {
-                console.log(`🔔 [알림 세부 차단] 요원(${userId})의 '${notificationType}' 알림 비활성화로 푸시 취소 (${filterReason})`);
+                console.log(`🔔 [알림 세부 차단] 플레이어(${userId})의 '${notificationType}' 알림 비활성화로 푸시 취소 (${filterReason})`);
                 return new Response(JSON.stringify({ success: true, filtered: true, reason: filterReason }), {
                   headers: {
                     "Content-Type": "application/json",
@@ -126,8 +126,8 @@ Deno.serve(async (req: Request) => {
         message: {
           ...messageTarget,
           notification: {
-            title: title || "전술 경보",
-            body: body || "새로운 작전 명령이 도착했습니다.",
+            title: title || "점령 알림",
+            body: body || "새로운 소식이 도착했습니다.",
           },
           data: data_payload || {},
           android: {
@@ -137,8 +137,8 @@ Deno.serve(async (req: Request) => {
             payload: {
               aps: {
                 alert: {
-                  title: title || "전술 경보",
-                  body: body || "새로운 작전 명령이 도착했습니다.",
+                  title: title || "점령 알림",
+                  body: body || "새로운 소식이 도착했습니다.",
                 },
                 contentAvailable: true,
                 sound: "default",

@@ -139,7 +139,7 @@ class SupabaseService {
     }
   }
 
-  /// 지정한 랭킹 타입에 따라 상위 100위까지의 요원 프로필 목록을 조회합니다.
+  /// 지정한 랭킹 타입에 따라 상위 100위까지의 플레이어 프로필 목록을 조회합니다.
   Future<List<UserProfile>> fetchTopRankings(String rankType) async {
     try {
       final response = await _client
@@ -157,7 +157,7 @@ class SupabaseService {
     }
   }
 
-  /// 특정 요원의 현재 랭킹 순위 숫자를 연산하여 반환합니다. (1부터 시작)
+  /// 특정 플레이어의 현재 랭킹 순위 숫자를 연산하여 반환합니다. (1부터 시작)
   Future<int> fetchMyRanking(
     String userId,
     String rankType,
@@ -194,6 +194,40 @@ class SupabaseService {
     } catch (e) {
       lastError = e.toString();
       debugPrint('❌ RPC 타일 이동 수 증가 전송 실패: $e');
+      return false;
+    }
+  }
+
+  /// 특정 플레이어가 획득한 업적 목록을 데이터베이스(user_achievements)로부터 조회하여 반환합니다.
+  Future<List<String>> fetchUserAchievements(String userId) async {
+    try {
+      final response = await _client
+          .from('user_achievements')
+          .select('achievement_id')
+          .eq('user_id', userId);
+
+      return (response as List)
+          .map((e) => e['achievement_id'] as String)
+          .toList();
+    } catch (e) {
+      debugPrint('❌ 업적 목록 조회 실패: $e');
+      return [];
+    }
+  }
+
+  /// 특정 플레이어의 신규 업적 획득(해금) 기록을 데이터베이스에 등록합니다.
+  Future<bool> unlockAchievement(String userId, String achievementId) async {
+    try {
+      lastError = null;
+      await _client.from('user_achievements').insert({
+        'user_id': userId,
+        'achievement_id': achievementId,
+      });
+      debugPrint('🏆 업적 해금 등록 완료: $achievementId');
+      return true;
+    } catch (e) {
+      lastError = e.toString();
+      debugPrint('❌ 업적 해금 등록 실패 ($achievementId): $e');
       return false;
     }
   }

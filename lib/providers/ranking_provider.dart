@@ -15,7 +15,7 @@ class RankingType {
   static const String totalMovedTiles = 'total_moved_tiles_count';
 }
 
-/// 요원들의 전술적 랭킹 상태 및 내 순위를 로딩하고 관리하는 상태 관리 프로바이더 클래스
+/// 플레이어들의 랭킹 상태 및 내 순위를 로딩하고 관리하는 상태 관리 프로바이더 클래스
 class RankingProvider extends ChangeNotifier {
   final SupabaseService _supabase;
   AuthProvider? _authProvider;
@@ -27,10 +27,10 @@ class RankingProvider extends ChangeNotifier {
   String _currentType = RankingType.capturedTiles;
 
   // --- Getters ---
-  /// 상위 100위까지의 요원 프로필 목록
+  /// 상위 100위까지의 플레이어 프로필 목록
   List<UserProfile> get topRankings => List.unmodifiable(_topRankings);
 
-  /// 현재 인증된 요원의 전체 랭킹 순위
+  /// 현재 인증된 플레이어의 전체 랭킹 순위
   int get myRanking => _myRanking;
 
   /// 랭킹 정보 조회 진행 중 여부

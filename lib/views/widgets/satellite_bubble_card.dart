@@ -212,7 +212,7 @@ class BubbleBodyState extends State<BubbleBody> {
                       ],
                     ),
                   ],
-                  // 하단 전술 행동 버튼 (All-In-One 통합)
+                  // 하단 행동 버튼 (All-In-One 통합)
                   if (widget.showActionButton &&
                       widget.onActionPressed != null) ...[
                     const SizedBox(height: 10),

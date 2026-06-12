@@ -86,7 +86,7 @@ export default function NotificationsTab() {
       <div className="tactical-card" style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
         <h3 style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', fontSize: '1.2rem', color: 'var(--accent-cyan)' }}>
           <Bell size={20} />
-          긴급 전술 공지 발송 통제 (FCM)
+          긴급 공지 발송 제어 (FCM)
         </h3>
 
         <form onSubmit={handleSend} style={{ display: 'flex', flexDirection: 'column', gap: '1.2rem' }}>
@@ -214,8 +214,8 @@ export default function NotificationsTab() {
           <div style={{ display: 'flex', gap: '0.4rem', alignItems: 'flex-start', color: 'var(--text-secondary)', fontSize: '0.75rem', padding: '0.8rem', background: 'rgba(0, 229, 255, 0.03)', borderRadius: '6px', border: '1px solid rgba(0, 229, 255, 0.1)' }}>
             <Info size={16} style={{ color: 'var(--accent-cyan)', flexShrink: 0, marginTop: '1px' }} />
             <p>
-              이 전술 공지는 Firebase Cloud Messaging 서비스를 경유하여 사용자의 기기에 직접 노출됩니다. 
-              수신자 기기의 앱 마스터 알림 설정 및 OS 설정 권한 상태에 따라 푸시 수신 여부가 결정됩니다.
+              이 공지 메시지는 Firebase Cloud Messaging 서비스를 경유하여 사용자의 기기에 직접 노출됩니다. 
+              수신자 기기의 앱 알림 설정 및 OS 설정 권한 상태에 따라 푸시 수신 여부가 결정됩니다.
             </p>
           </div>
 

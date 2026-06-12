@@ -62,7 +62,7 @@ class HudOverlay extends StatelessWidget {
           child: const MapFollowRotationButton(size: 42, iconSize: 20),
         ),
 
-        // [하단 중앙] 콤팩트해진 점령 전술 조작 버튼 (항상 자동 기동되므로 버튼 미노출)
+        // [하단 중앙] 콤팩트해진 점령 조작 버튼 (항상 자동 기동되므로 버튼 미노출)
         const SizedBox.shrink(),
 
         // [하단 우측 - 테마 순환 버튼] 접이식 메뉴를 걷어내고 기존 메뉴 버튼 자리에 독립형 젤리 단추로 배치 (44x44)

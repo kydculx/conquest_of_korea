@@ -1,33 +1,33 @@
-/// 사용자 에이전트의 프로필 및 전술 상태 정보를 담는 데이터 모델 클래스
+/// 플레이어의 프로필 및 점령 상태 정보를 담는 데이터 모델 클래스
 class UserProfile {
-  /// 요원의 고유 UUID 식별자
+  /// 플레이어의 고유 UUID 식별자
   final String id;
 
-  /// 요원의 고유 닉네임
+  /// 플레이어의 고유 닉네임
   final String nickname;
 
-  /// 요원의 고유 전술 컬러 코드 (HEX 형태)
+  /// 플레이어의 고유 테마 컬러 코드 (HEX 형태)
   final String colorHex;
 
-  /// 요원의 소속 팀 식별자
+  /// 플레이어의 소속 팀 식별자
   final String teamId;
 
   /// 계정 생성 일시
   final DateTime createdAt;
 
-  /// 요원의 본진(작전 본부)으로 지정된 H3 헥사곤 타일 인덱스
+  /// 플레이어의 본진(본부)으로 지정된 H3 헥사곤 타일 인덱스
   final String? mainBaseTileId;
 
-  /// 요원의 누적 이동 거리 (단위: 미터)
+  /// 플레이어의 누적 이동 거리 (단위: 미터)
   final double totalDistance;
 
-  /// 요원의 일일 이동 거리 (단위: 미터)
+  /// 플레이어의 일일 이동 거리 (단위: 미터)
   final double dailyDistance;
 
-  /// 요원의 현재 보유 골드 재화
+  /// 플레이어의 현재 보유 골드 재화
   final double gold;
 
-  /// 요원이 현재 점령 중인 타일의 총 개수
+  /// 플레이어가 현재 점령 중인 타일의 총 개수
   final int capturedTilesCount;
 
   /// 하루 동안 이동한 헥사곤 타일 수
@@ -35,6 +35,15 @@ class UserProfile {
 
   /// 누적 전체 이동한 헥사곤 타일 수
   final int totalMovedTilesCount;
+
+  /// 누적 적 영토 탈취 타일 수
+  final int enemyCapturedTilesCount;
+
+  /// 누적 위성 원격 점령 성공 횟수
+  final int satelliteCaptureCount;
+
+  /// 누적 위성 상세 정보 스캔 횟수
+  final int satelliteScanCount;
 
   /// 골드가 마지막으로 계산 및 갱신된 일시
   final DateTime? lastGoldUpdatedAt;
@@ -54,7 +63,7 @@ class UserProfile {
   /// 알림 동의 활성화 여부
   final bool isNotificationsEnabled;
 
-  /// 영토 침공 알림 동의 여부
+  /// 영토 변경 알림 동의 여부
   final bool notifTerritoryAttack;
 
   /// 위성 점령 완료 알림 동의 여부
@@ -63,7 +72,7 @@ class UserProfile {
   /// 시스템 공지 알림 동의 여부
   final bool notifSystemNotice;
 
-  /// 요원의 마지막 로그인 세션 식별자
+  /// 플레이어의 마지막 로그인 세션 식별자
   final String? lastSessionId;
 
   /// UserProfile 생성자
@@ -88,6 +97,9 @@ class UserProfile {
     this.capturedTilesCount = 0,
     this.dailyMovedTilesCount = 0,
     this.totalMovedTilesCount = 0,
+    this.enemyCapturedTilesCount = 0,
+    this.satelliteCaptureCount = 0,
+    this.satelliteScanCount = 0,
     this.lastGoldUpdatedAt,
     this.lastSessionId,
   });
@@ -107,6 +119,9 @@ class UserProfile {
       capturedTilesCount: (json['captured_tiles_count'] as num?)?.toInt() ?? 0,
       dailyMovedTilesCount: (json['daily_moved_tiles_count'] as num?)?.toInt() ?? 0,
       totalMovedTilesCount: (json['total_moved_tiles_count'] as num?)?.toInt() ?? 0,
+      enemyCapturedTilesCount: (json['enemy_captured_tiles_count'] as num?)?.toInt() ?? 0,
+      satelliteCaptureCount: (json['satellite_capture_count'] as num?)?.toInt() ?? 0,
+      satelliteScanCount: (json['satellite_scan_count'] as num?)?.toInt() ?? 0,
       lastGoldUpdatedAt: json['last_gold_updated_at'] != null
           ? DateTime.parse(json['last_gold_updated_at'] as String)
           : null,
@@ -143,6 +158,9 @@ class UserProfile {
       'captured_tiles_count': capturedTilesCount,
       'daily_moved_tiles_count': dailyMovedTilesCount,
       'total_moved_tiles_count': totalMovedTilesCount,
+      'enemy_captured_tiles_count': enemyCapturedTilesCount,
+      'satellite_capture_count': satelliteCaptureCount,
+      'satellite_scan_count': satelliteScanCount,
       'last_gold_updated_at': lastGoldUpdatedAt?.toIso8601String(),
       'terms_agreed_at': termsAgreedAt?.toIso8601String(),
       'privacy_agreed_at': privacyAgreedAt?.toIso8601String(),
@@ -198,6 +216,9 @@ class UserProfile {
     int? capturedTilesCount,
     int? dailyMovedTilesCount,
     int? totalMovedTilesCount,
+    int? enemyCapturedTilesCount,
+    int? satelliteCaptureCount,
+    int? satelliteScanCount,
     DateTime? lastGoldUpdatedAt,
     String? lastSessionId,
   }) {
@@ -224,6 +245,9 @@ class UserProfile {
       capturedTilesCount: capturedTilesCount ?? this.capturedTilesCount,
       dailyMovedTilesCount: dailyMovedTilesCount ?? this.dailyMovedTilesCount,
       totalMovedTilesCount: totalMovedTilesCount ?? this.totalMovedTilesCount,
+      enemyCapturedTilesCount: enemyCapturedTilesCount ?? this.enemyCapturedTilesCount,
+      satelliteCaptureCount: satelliteCaptureCount ?? this.satelliteCaptureCount,
+      satelliteScanCount: satelliteScanCount ?? this.satelliteScanCount,
       lastGoldUpdatedAt: lastGoldUpdatedAt ?? this.lastGoldUpdatedAt,
       lastSessionId: lastSessionId ?? this.lastSessionId,
     );

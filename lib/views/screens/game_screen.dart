@@ -1,4 +1,5 @@
 import 'dart:io';
+import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:provider/provider.dart';
@@ -11,6 +12,9 @@ import '../../game/conquest_game.dart';
 import '../../providers/game_provider.dart';
 import '../../providers/auth_provider.dart';
 import '../../providers/location_provider.dart';
+import '../../providers/achievement_provider.dart';
+import '../../models/achievement_model.dart';
+import '../widgets/achievement_toast.dart';
 import '../../services/geo_service.dart';
 import '../screens/auth/terms_agreement_screen.dart';
 import '../widgets/tactical_alert_list.dart';
@@ -22,7 +26,7 @@ import '../../models/tile_model.dart';
 import '../../models/alert_model.dart';
 
 /// 메인 게임 화면
-/// 실시간 헥사곤 전술 지도와 요원의 실시간 GPS 위치를 화면 상에 시각화하고,
+/// 실시간 헥사곤 지도와 플레이어의 실시간 GPS 위치를 화면 상에 시각화하고,
 /// 알림(Alerts) 및 HUD 레이어를 동기화하여 인게임 루프를 조율하는 메인 게임 화면 클래스입니다.
 class GameScreen extends StatefulWidget {
   /// 게임 화면의 생성자입니다.
@@ -38,6 +42,8 @@ class _GameScreenState extends State<GameScreen> {
   AuthProvider? _authProvider;
   LocationProvider? _locationProvider;
   ConquestGame? _flameGame;
+  AchievementProvider? _achievementProvider;
+  StreamSubscription<Achievement>? _achievementSubscription;
 
   @override
   void initState() {
@@ -76,25 +82,35 @@ class _GameScreenState extends State<GameScreen> {
     final newAuthProvider = Provider.of<AuthProvider>(context, listen: false);
     final newLocationProvider = Provider.of<LocationProvider>(context, listen: false);
     final newFlameGame = Provider.of<ConquestGame>(context, listen: false);
+    final newAchProvider = Provider.of<AchievementProvider>(context, listen: false);
 
     // 2. 참조가 변경되었을 때만 기존 리스너 해제 및 신규 등록
     if (_gameProvider != newGameProvider ||
         _authProvider != newAuthProvider ||
         _locationProvider != newLocationProvider ||
-        _flameGame != newFlameGame) {
+        _flameGame != newFlameGame ||
+        _achievementProvider != newAchProvider) {
       
       _gameProvider?.removeListener(_onStateChanged);
       _authProvider?.removeListener(_onStateChanged);
       _locationProvider?.removeListener(_onStateChanged);
+      _achievementSubscription?.cancel();
 
       _gameProvider = newGameProvider;
       _authProvider = newAuthProvider;
       _locationProvider = newLocationProvider;
       _flameGame = newFlameGame;
+      _achievementProvider = newAchProvider;
 
       _gameProvider?.addListener(_onStateChanged);
       _authProvider?.addListener(_onStateChanged);
       _locationProvider?.addListener(_onStateChanged);
+
+      _achievementSubscription = _achievementProvider!.onAchievementUnlocked.listen((ach) {
+        if (mounted) {
+          AchievementToast.show(context, ach);
+        }
+      });
 
       // 최초 수동 동기화 트리거
       _onStateChanged();
@@ -212,6 +228,7 @@ class _GameScreenState extends State<GameScreen> {
     _gameProvider?.removeListener(_onStateChanged);
     _authProvider?.removeListener(_onStateChanged);
     _locationProvider?.removeListener(_onStateChanged);
+    _achievementSubscription?.cancel();
     super.dispose();
   }
 
@@ -403,7 +420,7 @@ class _GameScreenState extends State<GameScreen> {
           // HUD 레이어 (내부에 Selector 처리를 장착하여 독립 렌더링)
           const HudOverlay(),
 
-          // 전술 알림 레이어 (알림 리스트 변동 시에만 국한 리빌드)
+          // 알림 레이어 (알림 리스트 변동 시에만 국한 리빌드)
           Positioned(
             top: topOffset + 90.0,
             left: 20,

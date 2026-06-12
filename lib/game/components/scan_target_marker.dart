@@ -10,7 +10,7 @@ import 'tactical_path_renderer.dart';
 import 'scan_crosshair.dart';
 
 /// 위성 스캔 모드에서 사용자가 선택한 타일의 조준선 프리뷰를 렌더링하는 컴포넌트
-/// 위성 궤도 정밀 조준 스캔 및 위성 원격 점령 모드에서 조준선, 본부로부터의 전술적 BFS 최단 경로 안내선, 점령 완료 시 보간 화살표 이동 애니메이션을 그리는 Flame 컴포넌트
+/// 위성 궤도 정밀 조준 스캔 및 위성 원격 점령 모드에서 조준선, 본부로부터의 연결 경로 안내선, 점령 완료 시 보간 화살표 이동 애니메이션을 그리는 Flame 컴포넌트
 class ScanTargetMarker extends PositionComponent
     with HasGameReference<ConquestGame> {
   /// 스캔 조준된 대상 타일의 H3 q축 좌표값
@@ -31,7 +31,7 @@ class ScanTargetMarker extends PositionComponent
   /// 계단식 점령 진행률을 매끄러운 60 FPS 흐름으로 표현하기 위해 보간 가미한 진행률 변수
   double _smoothProgress = 0.0;
 
-  /// 전술 경로(BFS + 점선/화살표) 렌더러
+  /// 연결 경로(BFS + 점선/화살표) 렌더러
   late final TacticalPathRenderer _pathRenderer;
 
   /// ScanTargetMarker 생성자로 조준 대상 좌표를 설정받고 렌더링 우선순위(Priority)를 조율합니다.
@@ -164,7 +164,7 @@ class ScanTargetMarker extends PositionComponent
       _drawDestinationBorder(canvas, path, themeColor);
     }
 
-    // 3. 본진에서 타겟 타일까지의 전술 경로(점선/화살표) 그리기
+    // 3. 본진에서 타겟 타일까지의 연결 경로(점선/화살표) 그리기
     if (game.mapController != null) {
       _pathRenderer.draw(
         canvas,

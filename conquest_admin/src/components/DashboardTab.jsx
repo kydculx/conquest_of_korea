@@ -100,7 +100,7 @@ export default function DashboardTab() {
       setUsers(usersData);
     } catch (err) {
       console.error(err);
-      setError('실시간 전술 맵 데이터를 불러오는 중 에러가 발생했습니다.');
+      setError('실시간 지도 데이터를 불러오는 중 에러가 발생했습니다.');
     } finally {
       setLoading(false);
     }

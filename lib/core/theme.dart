@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'constants/colors.dart';
 
-/// 전술 테마 및 공통 UI 스타일 메타데이터를 관리하는 테마 설정 클래스
+/// 게임 테마 및 공통 UI 스타일 메타데이터를 관리하는 테마 설정 클래스
 class TacticalTheme {
   /// 다크 테마 설정 정의 데이터를 반환하는 게터 메서드
   static ThemeData get darkTheme {

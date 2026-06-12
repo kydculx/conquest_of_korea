@@ -9,7 +9,7 @@ import '../core/constants/game_config.dart';
 import '../core/constants/strings.dart';
 import '../models/alert_model.dart';
 
-/// 요원이 특정 헥사곤 타일 영역에 물리적으로 머물며 점령을 시도하는 프로세스를 감시 및 제어하는 컨트롤러 클래스
+/// 플레이어가 특정 헥사곤 타일 영역에 물리적으로 머물며 점령을 시도하는 프로세스를 감시 및 제어하는 컨트롤러 클래스
 class CaptureController {
   /// DB 처리를 위한 Supabase 서비스 인스턴스
   final SupabaseService _supabase;
@@ -30,13 +30,13 @@ class CaptureController {
   /// 현재 점령 작전을 수행 중인 대상 타일 ID
   String? _capturingTileId;
 
-  /// 점령을 시도하고 있는 요원 ID
+  /// 점령을 시도하고 있는 플레이어 ID
   String? _userId;
 
   /// 점령 개시 시점의 물리적 GPS 위치
   LatLng? _startLocation;
 
-  /// 요원의 전술 식별 색상 코드 (Hex)
+  /// 플레이어의 테마 식별 색상 코드 (Hex)
   String? _colorHex;
 
   /// 점령이 시작된 일시
@@ -63,13 +63,13 @@ class CaptureController {
   /// 현재 물리 점령을 시도 중인 타일 ID를 반환합니다.
   String? get capturingTileId => _capturingTileId;
 
-  /// 점령 중인 요원의 전술 식별 색상 코드
+  /// 점령 중인 플레이어의 테마 식별 색상 코드
   String? get capturingColorHex => _colorHex;
 
   /// 물리 점령 진척도를 반환합니다. (0.0 ~ 1.0)
   double get captureProgress => _captureProgress;
 
-  /// 현재 물리 점령 작전이 진행 중인지 여부를 반환합니다.
+  /// 현재 물리 점령이 진행 중인지 여부를 반환합니다.
   bool get isCapturing => _capturingTileId != null;
 
   /// CaptureController 생성자로 서비스 의존성 및 콜백 리스너들을 주입받습니다.
@@ -81,7 +81,7 @@ class CaptureController {
     this.onPreCapture,
   }) : _supabase = supabase;
 
-  /// 요원이 획득하고자 하는 특정 타일에 진입하여 점령 작전을 개시하고 주기 감시 타이머를 시작합니다.
+  /// 플레이어가 획득하고자 하는 특정 타일에 진입하여 점령을 개시하고 주기 감시 타이머를 시작합니다.
   void startCapture({
     required String tileId,
     required LatLng location,
@@ -204,7 +204,7 @@ class CaptureController {
     onStateChanged();
   }
 
-  /// 디바이스 진동 모터를 동작시켜 영토 전술 피드백을 전달합니다.
+  /// 디바이스 진동 모터를 동작시켜 영토 점령 피드백을 전달합니다.
   void _vibrate(dynamic pattern) {
     try {
       Vibration.hasVibrator().then((has) {

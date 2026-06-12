@@ -39,7 +39,7 @@ class AuthProvider extends ChangeNotifier {
   /// 현재 로그인된 Supabase User 객체를 반환합니다.
   User? get user => _user;
 
-  /// 현재 사용자의 요원 프로필 상세 정보를 반환합니다.
+  /// 현재 사용자의 프로필 상세 정보를 반환합니다.
   UserProfile? get profile => _profile;
 
   /// 현재 작업이 진행 중(로딩)인지 여부를 반환합니다.
@@ -160,7 +160,7 @@ class AuthProvider extends ChangeNotifier {
             // [추가] 외부(관리자 대시보드 등)의 조작에 의해 프로필 데이터가 변경된 경우 실시간 동기화
             if (_profile != null) {
               final double diff = (updatedProfile.gold - _profile!.gold).abs();
-              // 골드 잔액이 변경되었거나, 전술 색상, 본진 설정 등이 수정되었을 때
+              // 골드 잔액이 변경되었거나, 테마 색상, 본진 설정 등이 수정되었을 때
               if (diff > 0.05 ||
                   updatedProfile.colorHex != _profile!.colorHex ||
                   updatedProfile.mainBaseTileId != _profile!.mainBaseTileId) {

@@ -5,8 +5,8 @@ import '../../core/constants/colors.dart';
 import '../../core/constants/game_config.dart';
 import '../../providers/location_provider.dart';
 
-/// 전술 나침반(Tactical Compass) UI 위젯
-/// - [디자인 리뉴얼] 투박한 군사용 계기판 디자인을 걷어내고, 모던하고 심플한 글래스모피즘 네온 다이아몬드 핀 지침으로 전면 개편했습니다.
+/// 나침반(Compass) UI 위젯
+/// - [디자인 리뉴얼] 모던하고 심플한 글래스모피즘 네온 다이아몬드 핀 지침으로 전면 개편했습니다.
 /// - [성능 최적화] watch를 Selector로 전면 전환하여, 1초에 50번씩 회전할 때 상위 HUD나 UI 전체가 불필요하게 갱신되는 병목을 원천 격리했습니다.
 class TacticalCompass extends StatefulWidget {
   final double size;

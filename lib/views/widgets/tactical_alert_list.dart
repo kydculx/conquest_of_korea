@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import '../../models/alert_model.dart';
 import 'alert_widget.dart';
 
-/// 전술 알림 리스트 위젯
+/// 인게임 알림 리스트 위젯
 /// 개별 알림들이 유입되고 사라질 때 부드러운 Size, Slide, Fade 애니메이션 효과를 부여합니다.
 class TacticalAlertList extends StatefulWidget {
   final List<GameAlert> alerts;

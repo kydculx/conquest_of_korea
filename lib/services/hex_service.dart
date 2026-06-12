@@ -2,7 +2,7 @@ import 'dart:math' as math;
 import 'package:latlong2/latlong.dart';
 import '../core/constants/game_config.dart';
 
-/// 지리 좌표(위도, 경도)와 전술 맵의 타일 시스템(Hex Grid) 간의 변환 및 헥사곤 좌표 연산을 담당하는 서비스 클래스
+/// 지리 좌표(위도, 경도)와 지도상의 타일 시스템(Hex Grid) 간의 변환 및 헥사곤 좌표 연산을 담당하는 서비스 클래스
 /// Flat-top 헥사곤 그리드 알고리즘을 준수합니다.
 class HexService {
   /// 그리드 변환 시 기준점으로 삼는 기준 위도 (서울 중심부)
@@ -61,7 +61,7 @@ class HexService {
     return {'x': rx, 'y': ry, 'z': rz};
   }
 
-  /// 물리 위도/경도 좌표를 전술 맵의 정수 헥사곤 좌표(q, r) 쌍으로 계산 변환합니다.
+  /// 물리 위도/경도 좌표를 지도상의 정수 헥사곤 좌표(q, r) 쌍으로 계산 변환합니다.
   static Map<String, int> latLngToHex(
     LatLng location, {
     double hexSize = GameConfig.tileSize,

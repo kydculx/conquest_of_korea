@@ -4,6 +4,7 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:package_info_plus/package_info_plus.dart';
 import '../../core/constants/colors.dart';
 import '../../core/constants/strings.dart';
+import '../../core/constants/app_routes.dart';
 import '../../core/utils/toast_helper.dart';
 import '../../core/utils/error_translator.dart';
 import '../../providers/auth_provider.dart';
@@ -17,8 +18,8 @@ import 'language_settings_screen.dart';
 import 'policy_webview_screen.dart';
 import 'game_guide_screen.dart';
 
-/// 로그인한 요원의 상세 프로필 상태(소속 전술 색상, 점령한 총 영토 수)를
-/// 검토하고, 전술 색상 수정 및 본진 이전(Rebase), 로그아웃 등 작전 설정을 관리하는 프로필 화면 클래스입니다.
+/// 로그인한 플레이어의 상세 프로필 상태(소속 테마 색상, 점령한 총 영토 수)를
+/// 검토하고, 테마 색상 수정 및 본진 이전(Rebase), 로그아웃 등 설정을 관리하는 프로필 화면 클래스입니다.
 class ProfileScreen extends StatelessWidget {
   const ProfileScreen({super.key});
 
@@ -185,7 +186,18 @@ class ProfileScreen extends StatelessWidget {
                 ),
                 const ProfileMenuDivider(),
 
-                // [로그인 요원 전용] 알림 설정
+                // [로그인 플레이어 전용] 업적 보드
+                if (isAuth) ...[
+                  ProfileMenuItem(
+                    icon: Icons.emoji_events_rounded,
+                    title: GameStrings.achievementBoardTitle,
+                    subtitle: '플레이어의 업적 획득 현황을 확인합니다.',
+                    onTap: () => Navigator.pushNamed(context, AppRoutes.achievement),
+                  ),
+                  const ProfileMenuDivider(),
+                ],
+
+                // [로그인 플레이어 전용] 알림 설정
                 if (isAuth) ...[
                   ProfileMenuItem(
                     icon: Icons.notifications_active,

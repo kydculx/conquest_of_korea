@@ -6,7 +6,7 @@ import '../../models/tile_model.dart';
 import '../../services/hex_service.dart';
 import '../conquest_game.dart';
 
-/// 본진에서 조준 타겟까지의 전술 경로(BFS + 점선/화살표) 렌더링을 전담하는 클래스.
+/// 본진에서 조준 타겟까지의 연결 경로(BFS + 점선/화살표) 렌더링을 전담하는 클래스.
 /// ScanTargetMarker에서 경로 탐색 및 드로잉 로직을 분리합니다.
 class TacticalPathRenderer {
   final ConquestGame game;
@@ -28,7 +28,7 @@ class TacticalPathRenderer {
   /// 캐시 기준이 되는 점령 영토 맵
   Map<String, HexTile>? _cachedCapturedTiles;
 
-  /// 본진에서 타겟 타일까지의 전술적 최단 경로를 렌더링합니다.
+  /// 본진에서 타겟 타일까지의 최단 연결 경로를 렌더링합니다.
   void draw(
     Canvas canvas,
     Color themeColor,
@@ -69,7 +69,7 @@ class TacticalPathRenderer {
       }
     }
 
-    // 위성 점령 대기 상태 → 전술 점선
+    // 위성 점령 대기 상태 → 연결 점선
     if (!isSatelliteCapturing) {
       _drawDashedPath(canvas, path, themeColor, timer);
     }
@@ -163,7 +163,7 @@ class TacticalPathRenderer {
     return resultPath;
   }
 
-  /// 흐르는 전술 점선 렌더링
+  /// 흐르는 연결 점선 렌더링
   void _drawDashedPath(
     Canvas canvas,
     Path path,
@@ -205,7 +205,7 @@ class TacticalPathRenderer {
     }
   }
 
-  /// 전술 경로를 따라 이동하는 삼각형 레이저 화살표 렌더링
+  /// 연결 경로를 따라 이동하는 삼각형 레이저 화살표 렌더링
   void _drawArrowAlongPath(
     Canvas canvas,
     Path path,

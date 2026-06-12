@@ -13,10 +13,10 @@ import '../controllers/satellite_capture_controller.dart';
 import '../core/constants/colors.dart';
 import '../core/constants/game_config.dart';
 
-/// Flame 게임 엔진을 상속받아 인게임 전술 지도상에 헥사곤 타일 영역, 요원의 물리 위치 마커, 본부 기지(HQ), 위성 조준 마커 등을 렌더링하고 업데이트를 감시하는 커스텀 게임 엔진 클래스
+/// Flame 게임 엔진을 상속받아 인게임 지도상에 헥사곤 타일 영역, 플레이어의 물리 위치 마커, 본부 기지(HQ), 위성 조준 마커 등을 렌더링하고 업데이트를 감시하는 커스텀 게임 엔진 클래스
 /// 줌 레벨별 동적 LOD(Level of Detail) 타일 규격 계층화 및 실시간 영토 병합(Clustering) 시스템을 이식받아 60 FPS 드래그 및 전국구 줌아웃 성능을 완벽 보장합니다.
 class ConquestGame extends FlameGame {
-  /// 요원 본인을 지도 상에 나타내는 2D 방향 컴포넌트
+  /// 플레이어 본인을 지도 상에 나타내는 2D 방향 컴포넌트
   late PlayerComponent player;
 
   /// 화면 좌표와 지도 좌표 간 변환(투영)을 수행하는 FlutterMap 지도 컨트롤러 캐시 객체
@@ -46,16 +46,16 @@ class ConquestGame extends FlameGame {
   /// 위성 궤도 스캔 시 락온(Lock-on) 연출 및 게이지를 그리는 조준마커 컴포넌트
   ScanTargetMarker? _scanTargetMarker;
 
-  /// 현재 설정된 요원의 본부 기지(HQ) 타일 ID
+  /// 현재 설정된 플레이어의 본부 기지(HQ) 타일 ID
   String? _currentHQTileId;
 
-  /// 최근에 점령 시도에 사용된 전술 식별 색상 코드
+  /// 최근에 점령 시도에 사용된 테마 식별 색상 코드
   String? _lastCapturingColorHex;
 
   /// 현재 위성 궤도 스캔 조준 장치 활성화 여부 상태 캐시
   bool _isScanMode = false;
 
-  /// 현재 로그인된 요원의 ID 정보 캐시
+  /// 현재 로그인된 플레이어의 ID 정보 캐시
   String? _currentUserId;
 
   /// 현재 위성 원격 타일 점령이 진행 중인지 여부 상태 캐시
@@ -103,7 +103,7 @@ class ConquestGame extends FlameGame {
   /// 위성 궤도 조준경 모드 사용 여부
   bool get isScanMode => _isScanMode;
 
-  /// 최근에 점령 시도에 사용된 전술 식별 색상 코드
+  /// 최근에 점령 시도에 사용된 테마 식별 색상 코드
   String? get lastCapturingColorHex => _lastCapturingColorHex;
 
   @override
@@ -543,7 +543,7 @@ class ConquestGame extends FlameGame {
     if (isLoaded) player.updateHeading(heading);
   }
 
-  /// 요원의 현재 지도 GPS 위치(LatLng)를 기반으로 하여 디바이스 화면 상의 픽셀 좌표값으로 최종 정렬시킵니다.
+  /// 플레이어의 현재 지도 GPS 위치(LatLng)를 기반으로 하여 디바이스 화면 상의 픽셀 좌표값으로 최종 정렬시킵니다.
   void _updatePlayerScreenPosition() {
     if (_mapController != null) {
       final offset = _mapController!.camera.latLngToScreenOffset(

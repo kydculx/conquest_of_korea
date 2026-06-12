@@ -57,7 +57,7 @@ class NotificationService {
         debugPrint('푸시 알림 권한 승인됨');
       }
 
-      // iOS/macOS 포그라운드 상태에서는 시스템 OS 알림 팝업 배너 노출 차단 (인게임 전술 UI 위젯으로 우회 노출)
+      // iOS/macOS 포그라운드 상태에서는 시스템 OS 알림 팝업 배너 노출 차단 (인게임 알림 UI 위젯으로 우회 노출)
       await _fcm?.setForegroundNotificationPresentationOptions(
         alert: false,
         badge: true,
@@ -106,7 +106,7 @@ class NotificationService {
           final String? type = message.data['type'] as String?;
           if (type == 'territory_attack' &&
               !await PreferencesService.isNotifTerritoryAttackEnabled()) {
-            debugPrint('🔔 [알림 차단] 영토 침공 알림이 비활성화 상태이므로 노출 스킵.');
+            debugPrint('🔔 [알림 차단] 영토 변경 알림이 비활성화 상태이므로 노출 스킵.');
             return;
           }
           if (type == 'satellite_complete' &&
@@ -122,7 +122,7 @@ class NotificationService {
 
           RemoteNotification? notification = message.notification;
           if (notification != null && !kIsWeb) {
-            // 포그라운드 상태에서는 OS 단말기 시스템 상단 알림 배너를 띄우지 않고, 인게임 전술 UI 알림 팝업으로 라우팅
+            // 포그라운드 상태에서는 OS 단말기 시스템 상단 알림 배너를 띄우지 않고, 인게임 알림 UI 팝업으로 라우팅
             onForegroundMessageReceived?.call(
               notification.title ?? '',
               notification.body ?? '',

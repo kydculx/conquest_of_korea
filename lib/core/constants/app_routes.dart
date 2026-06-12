@@ -16,4 +16,7 @@ class AppRoutes {
 
   /// 회원가입 화면
   static const String signup = '/signup';
+
+  /// 업적 화면
+  static const String achievement = '/achievement';
 }

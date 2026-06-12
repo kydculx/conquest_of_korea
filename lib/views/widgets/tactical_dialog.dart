@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import '../../core/constants/colors.dart';
 
-/// 하이테크 전술 테마용 미세 격자 백그라운드 페인터 (다이얼로그 전용)
+/// 하이테크 테마용 미세 격자 백그라운드 페인터 (다이얼로그 전용)
 class TacticalDialogGridPainter extends CustomPainter {
   @override
   void paint(Canvas canvas, Size size) {
@@ -23,7 +23,7 @@ class TacticalDialogGridPainter extends CustomPainter {
   bool shouldRepaint(covariant CustomPainter oldDelegate) => false;
 }
 
-/// 하이테크 전술 다크 테마 공통 다이얼로그 위젯
+/// 하이테크 다크 테마 공통 다이얼로그 위젯
 class TacticalDialog extends StatelessWidget {
   final String title;
   final IconData? icon;

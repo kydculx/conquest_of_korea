@@ -10,6 +10,7 @@ import '../models/tile_model.dart';
 import '../models/user_profile.dart';
 import '../providers/location_provider.dart';
 import '../providers/auth_provider.dart';
+import '../providers/achievement_provider.dart';
 import '../services/hex_service.dart';
 import '../services/supabase_service.dart';
 import '../services/notification_service.dart';
@@ -40,7 +41,7 @@ class GameProvider extends ChangeNotifier with WidgetsBindingObserver {
   /// 점령된 타일 목록 (Key: 타일 ID, Value: 타일 상세 모델)
   final Map<String, HexTile> _capturedTiles = {};
 
-  /// 화면 상단에 표시될 전술 알림/경고 목록
+  /// 화면 상단에 표시될 인게임 알림/경고 목록
   final List<GameAlert> _alerts = [];
 
   /// 프로바이더 내부 데이터 초기화 완료 여부
@@ -55,7 +56,7 @@ class GameProvider extends ChangeNotifier with WidgetsBindingObserver {
   /// 지도 회전 모드(나침반 정렬) 사용 여부
   bool _isMapRotationMode = false;
 
-  /// 지도 카메라가 요원의 GPS 실시간 위치를 추적(Following)하고 있는지 여부
+  /// 지도 카메라가 플레이어의 GPS 실시간 위치를 추적(Following)하고 있는지 여부
   bool _isFollowingUser = true;
 
   // --- 위성 스캔 상태 ---
@@ -93,23 +94,26 @@ class GameProvider extends ChangeNotifier with WidgetsBindingObserver {
   /// 사용자 인증 상태 정보를 공유하는 AuthProvider 인스턴스
   AuthProvider? _authProvider;
 
+  /// 업적 상태 감시 및 해금을 관리하는 AchievementProvider 인스턴스
+  AchievementProvider? _achievementProvider;
+
   // --- 데이터 접근자 (Provider 참조 캡슐화) ---
-  /// 현재 로그인된 요원의 ID
+  /// 현재 로그인된 플레이어의 ID
   String? get _userId => _authProvider?.user?.id;
 
-  /// 요원 인증 완료 여부
+  /// 플레이어 인증 완료 여부
   bool get _isAuthenticated => _authProvider?.isAuthenticated ?? false;
 
-  /// 요원의 프로필 객체
+  /// 플레이어의 프로필 객체
   UserProfile? get _profile => _authProvider?.profile;
 
-  /// 요원 메인 기지 타일 ID
+  /// 플레이어 메인 기지 타일 ID
   String? get _userMainBaseTileId => _profile?.mainBaseTileId;
 
-  /// 요원 전술 색상 (Hex)
+  /// 플레이어 테마 색상 (Hex)
   String? get _userColorHex => _profile?.colorHex;
 
-  /// 요원 닉네임
+  /// 플레이어 닉네임
   String? get _userNickname => _profile?.nickname;
 
   // --- Getters (public API) ---
@@ -157,7 +161,7 @@ class GameProvider extends ChangeNotifier with WidgetsBindingObserver {
   /// 초당 골드 획득율 배율
   double get goldRate => _goldManager.goldRate;
 
-  /// 현재 전술 조준경(정보 카드) 활성화 여부 (조준된 타일이 있거나 원격 확보 작전이 진행 중일 때 참)
+  /// 현재 정보 조준경(정보 카드) 활성화 여부 (조준된 타일이 있거나 원격 확보 작업이 진행 중일 때 참)
   bool get isScanMode => _selectedScanTileId != null || _satelliteController.isCapturing;
 
   /// 위성 조준 스캔 상에서 선택된 타일 ID
@@ -190,7 +194,7 @@ class GameProvider extends ChangeNotifier with WidgetsBindingObserver {
   /// 위성 조준 장비의 재충전 쿨타임 남은 시간 (초)
   int get remainingSatelliteCaptureCoolSeconds => _satelliteController.remainingCoolSeconds;
 
-  /// 인게임 전술 상황판 알림 목록
+  /// 인게임 상황판 알림 목록
   List<GameAlert> get alerts => List.unmodifiable(_alerts);
 
   /// 로컬 및 서버 상태 초기화 완료 여부
@@ -221,7 +225,7 @@ class GameProvider extends ChangeNotifier with WidgetsBindingObserver {
   /// 지도 회전 모드(나침반 방향에 연동) 활성화 여부
   bool get isMapRotationMode => _isMapRotationMode; // 추가: 맵 회전 여부 getter
 
-  /// 지도 카메라가 요원의 GPS 실시간 위치를 추적(Following)하고 있는지 여부
+  /// 지도 카메라가 플레이어의 GPS 실시간 위치를 추적(Following)하고 있는지 여부
   bool get isFollowingUser => _isFollowingUser;
 
   /// 지도 카메라 추적 상태 명시적 업데이트
@@ -244,7 +248,7 @@ class GameProvider extends ChangeNotifier with WidgetsBindingObserver {
   /// 지도를 실제로 렌더링해야 하는지의 여부
   bool get showMap => currentMapStyle.url.isNotEmpty;
 
-  /// 본인 요원(계정)이 획득한 영토(타일)의 총 개수
+  /// 본인 플레이어(계정)가 획득한 영토(타일)의 총 개수
   int get myCapturedCount {
     if (_userId == null) return 0;
     final myId = _userId!;
@@ -263,16 +267,16 @@ class GameProvider extends ChangeNotifier with WidgetsBindingObserver {
   /// 현재 물리 GPS 점령을 시도 중인 타일 ID
   String? get capturingTileId => _captureController.capturingTileId;
 
-  /// 현재 점령 진행 중인 타일 요원의 전술 컬러 코드
+  /// 현재 점령 진행 중인 타일 플레이어의 테마 컬러 코드
   String? get capturingColorHex => _captureController.capturingColorHex;
 
   /// 물리 GPS 점령의 진행 진척도 (0.0 ~ 1.0)
   double get captureProgress => _captureController.captureProgress;
 
-  /// 물리 GPS 점령 작전이 실행 중인지 여부
+  /// 물리 GPS 점령이 실행 중인지 여부
   bool get isCapturing => _captureController.isCapturing;
 
-  /// 현재 요원의 상태와 GPS 수신 상태를 기반으로 점령 개시가 가능한 상태인지 판단합니다.
+  /// 현재 플레이어의 상태와 GPS 수신 상태를 기반으로 점령 개시가 가능한 상태인지 판단합니다.
   bool get canCapture {
     final loc = _locationProvider;
     final auth = _authProvider;
@@ -378,6 +382,7 @@ class GameProvider extends ChangeNotifier with WidgetsBindingObserver {
         }
 
         _goldManager.syncWithServer();
+        _achievementProvider?.checkAndUnlock(capturedTiles: _capturedTiles);
         notifyListeners();
       },
       onStateChanged: notifyListeners,
@@ -393,6 +398,7 @@ class GameProvider extends ChangeNotifier with WidgetsBindingObserver {
         // 🎵 공통 알림 효과음 재생
         AudioService().playNotification();
 
+        _achievementProvider?.checkAndUnlock(capturedTiles: _capturedTiles);
         notifyListeners();
       },
       onStateChanged: notifyListeners,
@@ -457,6 +463,14 @@ class GameProvider extends ChangeNotifier with WidgetsBindingObserver {
       // 새 리스너 등록 (UI 리빌드와 상관없이 실행됨)
       _locationProvider?.addListener(onLocationUpdated);
 
+      notifyListeners();
+    }
+  }
+
+  /// 업적 관리 프로바이더([AchievementProvider]) 인스턴스를 설정합니다.
+  void setAchievementProvider(AchievementProvider ach) {
+    if (_achievementProvider != ach) {
+      _achievementProvider = ach;
       notifyListeners();
     }
   }
@@ -683,6 +697,7 @@ class GameProvider extends ChangeNotifier with WidgetsBindingObserver {
               totalMovedTilesCount: auth.profile!.totalMovedTilesCount + 1,
             );
             auth.updateProfileCache(updatedProfile);
+            _achievementProvider?.checkAndUnlock(capturedTiles: _capturedTiles);
             notifyListeners();
           }
         }).catchError((e) {
@@ -713,6 +728,9 @@ class GameProvider extends ChangeNotifier with WidgetsBindingObserver {
         debugPrint('⚠️ 위치 기반 타일 상태 서버 조회 실패: $e');
       });
     }
+
+    // 업적 조건 체크 호출
+    _achievementProvider?.checkAndUnlock(capturedTiles: _capturedTiles);
   }
 
   /// 서버의 점령 상태 결과에 따라 점령 진행 여부를 판별하는 내부 로직

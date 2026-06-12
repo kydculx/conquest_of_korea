@@ -20,8 +20,10 @@ import 'views/screens/auth/terms_agreement_screen.dart';
 import 'views/screens/auth/signup_screen.dart';
 import 'views/screens/profile_screen.dart';
 import 'views/screens/ranking_screen.dart';
+import 'views/screens/achievement_screen.dart';
 import 'providers/auth_provider.dart';
 import 'providers/ranking_provider.dart';
+import 'providers/achievement_provider.dart';
 
 import 'package:easy_localization/easy_localization.dart';
 
@@ -74,22 +76,31 @@ void main() async {
             update: (_, geo, loc) => loc!..setGeoService(geo),
           ),
 
+          // Achievement Provider
+          ChangeNotifierProxyProvider<AuthProvider, AchievementProvider>(
+            create: (ctx) =>
+                AchievementProvider(supabase: ctx.read<SupabaseService>()),
+            update: (_, auth, ach) => ach!..setAuthProvider(auth),
+          ),
+
           // Game Provider — 게임 핵심 상태
-          ChangeNotifierProxyProvider2<
+          ChangeNotifierProxyProvider3<
             LocationProvider,
             AuthProvider,
+            AchievementProvider,
             GameProvider
           >(
             create: (ctx) =>
                 GameProvider(supabase: ctx.read<SupabaseService>()),
-            update: (_, loc, auth, game) {
+            update: (_, loc, auth, ach, game) {
               game!.setLocationProvider(loc);
               game.setAuthProvider(auth);
+              game.setAchievementProvider(ach);
               return game;
             },
           ),
 
-          // Ranking Provider — 요원 전술 랭킹 상태
+          // Ranking Provider — 플레이어 랭킹 상태
           ChangeNotifierProxyProvider<AuthProvider, RankingProvider>(
             create: (ctx) =>
                 RankingProvider(supabase: ctx.read<SupabaseService>()),
@@ -126,12 +137,13 @@ class _ConquestApp extends StatelessWidget {
         AppRoutes.termsAgreement: (context) => const TermsAgreementScreen(),
         AppRoutes.signup: (context) => const SignupScreen(),
         AppRoutes.ranking: (context) => const RankingScreen(),
+        AppRoutes.achievement: (context) => const AchievementScreen(),
       },
     );
   }
 }
 
-/// 요원의 로그인 세션 여부와 계정 등록 절차를 판정하기 전 최초의 인게임 전술 연출(스플래시 화면)을 실행하기 위한 Wrapper 위젯
+/// 플레이어의 로그인 세션 여부와 계정 등록 절차를 판정하기 전 최초의 인게임 연출(스플래시 화면)을 실행하기 위한 Wrapper 위젯
 class AuthWrapper extends StatelessWidget {
   /// AuthWrapper 생성자
   const AuthWrapper({super.key});

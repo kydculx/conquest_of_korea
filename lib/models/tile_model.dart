@@ -1,15 +1,15 @@
 import '../core/constants/game_config.dart';
 import '../services/hex_service.dart';
 
-/// 특정 에이전트 관점에서의 H3 헥사곤 타일 점령 소유 상태를 구분하는 열거형
+/// 특정 플레이어 관점에서의 H3 헥사곤 타일 점령 소유 상태를 구분하는 열거형
 enum TileStatus {
-  /// 로그인된 본인 에이전트가 점령한 상태
+  /// 로그인된 본인 플레이어가 점령한 상태
   mine,
 
   /// 아무도 점령하지 않아 공백인 상태 (중립 영토)
   empty,
 
-  /// 타 에이전트(적군)가 점령한 상태
+  /// 타 플레이어(적군)가 점령한 상태
   enemy,
 }
 
@@ -24,10 +24,10 @@ class HexTile {
   /// 헥사곤 타일 좌표계 축 2 (R축)
   final int r;
 
-  /// 타일을 점령한 요원(사용자)의 UUID 식별자 (중립 시 null)
+  /// 타일을 점령한 플레이어(사용자)의 UUID 식별자 (중립 시 null)
   final String? userId;
 
-  /// 타일을 지배하는 요원의 고유 헥사 네온 컬러 코드 (중립 시 null)
+  /// 타일을 지배하는 플레이어의 고유 헥사 네온 컬러 코드 (중립 시 null)
   final String? colorHex;
 
   /// 타일이 최종 점령(소유권 이전)된 일시 (UTC 기준)

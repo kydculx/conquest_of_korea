@@ -12,8 +12,8 @@ import '../../../services/hex_service.dart';
 import '../../../core/constants/map_config.dart';
 import '../../widgets/tactical_app_bar.dart';
 
-/// 소셜 로그인을 성공적으로 마친 후, 서비스 내부에서 사용할 요원의 고유 닉네임과
-/// 지도에 표시할 전술 컬러를 최초로 구성 및 등록하는 프로필 설정 화면 클래스입니다.
+/// 소셜 로그인을 성공적으로 마친 후, 서비스 내부에서 사용할 플레이어의 고유 닉네임과
+/// 지도에 표시할 테마 컬러를 최초로 구성 및 등록하는 프로필 설정 화면 클래스입니다.
 class SocialProfileSetupScreen extends StatefulWidget {
   /// 소셜 프로필 설정 화면의 생성자입니다.
   const SocialProfileSetupScreen({super.key});
@@ -25,7 +25,7 @@ class SocialProfileSetupScreen extends StatefulWidget {
 
 /// [SocialProfileSetupScreen]의 상태 및 사용자 입력 로직을 관리하는 상태 클래스입니다.
 class _SocialProfileSetupScreenState extends State<SocialProfileSetupScreen> {
-  /// 요원의 고유 닉네임 입력을 처리하는 텍스트 컨트롤러입니다.
+  /// 플레이어의 고유 닉네임 입력을 처리하는 텍스트 컨트롤러입니다.
   final _nicknameController = TextEditingController();
 
 
@@ -102,7 +102,7 @@ class _SocialProfileSetupScreenState extends State<SocialProfileSetupScreen> {
     }
   }
 
-  /// 닉네임 중복 확인 완료 후, 지정한 닉네임과 전술 색상 정보로 최종 프로필을 생성합니다.
+  /// 닉네임 중복 확인 완료 후, 지정한 닉네임과 테마 색상 정보로 최종 프로필을 생성합니다.
   Future<void> _handleSave() async {
     final nickname = _nicknameController.text.trim();
     if (nickname.isEmpty) {
@@ -198,7 +198,7 @@ class _SocialProfileSetupScreenState extends State<SocialProfileSetupScreen> {
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
                   const SizedBox(height: 20),
-                  // 상단 전술 레이더 아이콘
+                  // 상단 레이더 아이콘
                   Center(
                     child: Icon(
                       Icons.radar_outlined,

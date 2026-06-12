@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import '../constants/colors.dart';
 
-/// 어플리케이션 전반에서 일관된 스타일의 전술 토스트(SnackBar)를 띄우기 위한 유틸리티 클래스
+/// 어플리케이션 전반에서 일관된 스타일의 토스트(SnackBar)를 띄우기 위한 유틸리티 클래스
 class ToastHelper {
   /// 지정한 메시지와 상태(성공, 에러, 일반 등)에 따른 공통 플로팅 스낵바를 출력합니다.
   static void show({

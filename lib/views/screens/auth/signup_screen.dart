@@ -14,7 +14,7 @@ import '../../widgets/tactical_dialog.dart';
 import '../../widgets/tactical_app_bar.dart';
 
 /// 이메일과 비밀번호 기반의 자체 회원 계정을 생성하고, 서비스 내 고유 닉네임 및
-/// 전술 색상을 최초로 연동하여 신규 가입을 처리하는 회원가입 화면 클래스입니다.
+/// 테마 색상을 최초로 연동하여 신규 가입을 처리하는 회원가입 화면 클래스입니다.
 class SignupScreen extends StatefulWidget {
   /// 회원가입 화면의 생성자입니다.
   const SignupScreen({super.key});

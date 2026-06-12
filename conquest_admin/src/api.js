@@ -190,3 +190,16 @@ export async function sendFcmNotification(title, body, targetTopic, notifType = 
 
   return resData;
 }
+
+/**
+ * 6. 사용자 업적(Achievement) 모니터링 API
+ */
+export async function fetchUserAchievements(userId) {
+  const { data, error } = await supabase
+    .from('user_achievements')
+    .select('achievement_id, unlocked_at')
+    .eq('user_id', userId)
+    .order('unlocked_at', { ascending: true });
+  if (error) throw error;
+  return data || [];
+}

@@ -209,7 +209,7 @@ class AuthService {
     }
   }
 
-  /// 현재 로그인된 사용자의 요원 프로필과 계정을 영구 삭제(회원 탈퇴)합니다.
+  /// 현재 로그인된 사용자의 프로필과 계정을 영구 삭제(회원 탈퇴)합니다.
   Future<void> deleteAccount() async {
     final user = currentUser;
     if (user == null) return;

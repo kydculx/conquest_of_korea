@@ -10,7 +10,7 @@ import '../../core/constants/strings.dart';
 import '../../providers/game_provider.dart';
 import 'game_screen.dart';
 
-/// 현재 사이버펑크 솜사탕 요원 테마(네온 시안, 하이테크 위성 영토 점령)에 완벽 매칭된 프리미엄 스플래시 화면
+/// 현재 사이버펑크 솜사탕 테마(네온 시안, 하이테크 위성 영토 점령)에 완벽 매칭된 프리미엄 스플래시 화면
 class SplashScreen extends StatefulWidget {
   const SplashScreen({super.key});
 

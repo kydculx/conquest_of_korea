@@ -3,7 +3,7 @@ import 'package:flutter/foundation.dart';
 import '../services/preferences_service.dart';
 import '../services/notification_service.dart';
 
-/// 요원의 알림 수신 동의(FCM 구독 + 로컬 저장소 + 원격 동기화)를 전담 제어하는 컨트롤러 클래스.
+/// 플레이어의 알림 수신 동의(FCM 구독 + 로컬 저장소 + 원격 동기화)를 전담 제어하는 컨트롤러 클래스.
 /// GameProvider로부터 알림 설정 관련 상태와 로직을 분리합니다.
 class NotificationController {
   // --- 콜백 (GameProvider에서 주입) ---
@@ -11,7 +11,7 @@ class NotificationController {
   /// 상태 변경 시 UI 갱신을 지시하는 콜백
   final VoidCallback onStateChanged;
 
-  /// 현재 로그인된 요원의 ID를 반환하는 접근자 (개인 FCM 토픽 구독용)
+  /// 현재 로그인된 플레이어의 ID를 반환하는 접근자 (개인 FCM 토픽 구독용)
   final String? Function() getUserId;
 
   /// 4대 알림 동의 상태를 원격 DB 프로필에 동기화하는 콜백
@@ -64,7 +64,7 @@ class NotificationController {
     await _syncToRemoteAndUpdateFcm();
   }
 
-  /// 영토 침공 알림 여부를 토글합니다.
+  /// 영토 변경 알림 여부를 토글합니다.
   Future<void> toggleNotifTerritoryAttack() async {
     _isNotifTerritoryAttack = !_isNotifTerritoryAttack;
     await PreferencesService.setNotifTerritoryAttackEnabled(
@@ -139,7 +139,7 @@ class NotificationController {
       await ns.subscribeToTopic(topicPersonal);
     }
 
-    // 영토 침공 알림
+    // 영토 변경 알림
     if (_isNotifTerritoryAttack) {
       await ns.subscribeToTopic(topicTerritory);
     } else {

@@ -38,7 +38,7 @@ class LocationProvider extends ChangeNotifier with WidgetsBindingObserver {
   /// GPS 신호 수신이 실시간으로 원활하게 활성화되어 있는지 여부
   bool _isGpsActive = false;
 
-  /// 현재 획득한 요원의 지도상 좌표 정보 (LatLng)
+  /// 현재 획득한 플레이어의 지도상 좌표 정보 (LatLng)
   LatLng? get currentLocation => _currentLocation;
 
   /// 현재 GPS 수신의 오차 정확도 범위 값 (미터)

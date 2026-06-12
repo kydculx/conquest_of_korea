@@ -171,7 +171,7 @@ export default function TilesTab() {
               <th>확보 일시</th>
               <th>보호막 만료 시간</th>
               <th>점령 누적 횟수</th>
-              <th style={{ textAlign: 'center' }}>전술 개입</th>
+              <th style={{ textAlign: 'center' }}>관리 기능</th>
             </tr>
           </thead>
           <tbody>
