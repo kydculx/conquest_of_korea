@@ -11,6 +11,7 @@ import 'auth_provider.dart';
 class AchievementProvider extends ChangeNotifier {
   final SupabaseService _supabase;
   AuthProvider? _authProvider;
+  String? _currentUserId;
 
   List<String> _unlockedAchievementIds = [];
   bool _isLoading = false;
@@ -37,11 +38,17 @@ class AchievementProvider extends ChangeNotifier {
 
   /// AuthProvider 의존성을 바인딩하며 로그인 상태에 맞춰 플레이어의 해금 업적 데이터를 연동합니다.
   void setAuthProvider(AuthProvider auth) {
-    if (_authProvider != auth) {
-      _authProvider = auth;
-      if (auth.isAuthenticated && auth.profile != null) {
-        _loadUnlockedAchievements(auth.profile!.id);
-      } else {
+    _authProvider = auth;
+    if (auth.isAuthenticated && auth.profile != null) {
+      final String newUserId = auth.profile!.id;
+      // 인스턴스 참조가 아닌 실제 로그인된 유저 ID 변경 감지 방식으로 교정하여 프로필 갱신 완료 시의 로딩을 누락 없이 보장
+      if (_currentUserId != newUserId) {
+        _currentUserId = newUserId;
+        _loadUnlockedAchievements(newUserId);
+      }
+    } else {
+      if (_currentUserId != null) {
+        _currentUserId = null;
         _unlockedAchievementIds = [];
         notifyListeners();
       }
@@ -59,6 +66,8 @@ class AchievementProvider extends ChangeNotifier {
     } finally {
       _isLoading = false;
       notifyListeners();
+      // 기존 획득 업적 목록 조회가 끝난 직후, 이미 조건을 만족했으나 미등록 상태인 업적이 있다면 자가 즉시 판정/해금
+      checkAndUnlock();
     }
   }
 
@@ -102,9 +111,9 @@ class AchievementProvider extends ChangeNotifier {
     return maxRing;
   }
 
-  /// 에이전트의 최신 프로필 상태 및 실시간 점령 타일 데이터를 기준으로 미획득 업적의 임계값 충족 여부를 일괄 판정합니다.
+  /// 플레이어의 최신 프로필 상태 및 실시간 점령 타일 데이터를 기준으로 미획득 업적의 임계값 충족 여부를 일괄 판정합니다.
   Future<void> checkAndUnlock({
-    required Map<String, HexTile> capturedTiles,
+    Map<String, HexTile>? capturedTiles,
   }) async {
     final profile = _authProvider?.profile;
     final userId = _authProvider?.user?.id;
@@ -117,8 +126,10 @@ class AchievementProvider extends ChangeNotifier {
 
     if (pending.isEmpty) return;
 
-    // 본부 요새화 레벨 1회 한정 연산
-    final hqLevel = getHQFortificationLevel(profile.mainBaseTileId, userId, capturedTiles);
+    // 본부 요새화 레벨 1회 한정 연산 (타일 정보가 넘어왔을 때만 연산 가동)
+    final hqLevel = capturedTiles != null
+        ? getHQFortificationLevel(profile.mainBaseTileId, userId, capturedTiles)
+        : 0;
 
     for (final ach in pending) {
       bool shouldUnlock = false;
@@ -143,10 +154,16 @@ class AchievementProvider extends ChangeNotifier {
           shouldUnlock = profile.satelliteScanCount >= ach.threshold;
           break;
         case AchievementCategory.hqFortification:
-          shouldUnlock = hqLevel >= ach.threshold;
+          // 타일 정보가 넘어왔을 때만 본부 요새화 링 판정을 가동
+          if (capturedTiles != null) {
+            shouldUnlock = hqLevel >= ach.threshold;
+          }
           break;
         case AchievementCategory.goldAmount:
           shouldUnlock = profile.gold >= ach.threshold;
+          break;
+        case AchievementCategory.mainBaseMove:
+          shouldUnlock = profile.mainBaseMoveCount >= ach.threshold;
           break;
       }
 

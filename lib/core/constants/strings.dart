@@ -337,6 +337,11 @@ class GameStrings {
   /// 점령 영토 탭 레이블
   static String get capturedTerritory => 'capturedTerritory'.tr();
 
+  /// 랭킹별 설명 글 게터
+  static String get rankingDescCapturedTiles => 'rankingDescCapturedTiles'.tr();
+  static String get rankingDescDailyMovedTiles => 'rankingDescDailyMovedTiles'.tr();
+  static String get rankingDescTotalMovedTiles => 'rankingDescTotalMovedTiles'.tr();
+
   /// 타일 단위 매핑 함수
   static String tileUnit(int count) =>
       'tileUnit'.tr(namedArgs: {'count': count.toString()});

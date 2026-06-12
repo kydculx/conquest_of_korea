@@ -24,7 +24,13 @@ class ProfileFloatingButton extends StatelessWidget {
 
     return TacticalPressButton(
       size: 44,
-      onTap: () => Navigator.pushNamed(context, AppRoutes.profile),
+      onTap: () {
+        if (isAuth) {
+          Navigator.pushNamed(context, AppRoutes.profile);
+        } else {
+          Navigator.pushNamed(context, AppRoutes.login);
+        }
+      },
       gradientColors: gradientColors,
       shadowColor: shadowColor,
       shadowBlur: isAuth ? 10 : 4,

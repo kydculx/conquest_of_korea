@@ -28,6 +28,25 @@ create policy "Users can update their own profile."
   on profiles for update
   using ( auth.uid() = id );
 
+-- 획득한 업적 이력 테이블 생성
+create table if not exists public.user_achievements (
+  user_id uuid references auth.users(id) on delete cascade not null,
+  achievement_id text not null,
+  unlocked_at timestamptz default now(),
+  primary key (user_id, achievement_id)
+);
+
+-- user_achievements RLS 설정
+alter table public.user_achievements enable row level security;
+
+create policy "Users can view their own achievements."
+  on user_achievements for select
+  using ( auth.uid() = user_id );
+
+create policy "Users can insert their own achievements."
+  on user_achievements for insert
+  with check ( auth.uid() = user_id );
+
 -- 기존 captured_tiles 테이블 수정 (팀 시스템 -> 개인 시스템)
 -- 주의: 기존 데이터가 있다면 마이그레이션이 필요할 수 있습니다.
 -- 여기서는 기존 테이블이 있다고 가정하고 컬럼을 변경하거나 새로 생성하는 예시입니다.
@@ -177,7 +196,7 @@ BEGIN
       v_seconds_diff := 0;
     END IF;
 
-    v_earned_gold := FLOOR(v_seconds_diff::numeric / 3600.0) * v_current_count * v_gold_rate;
+    v_earned_gold := FLOOR(v_seconds_diff::numeric / 21600.0) * v_current_count * v_gold_rate;
 
     -- 4. 골드 및 타일 개수 갱신 (개수는 최소 0 보장, 골드는 정수로 가산)
     UPDATE public.profiles
@@ -213,6 +232,12 @@ BEGIN
       -- 새 소유자 타일 수 증가 및 골드 정산
       IF NEW.user_id IS NOT NULL THEN
         PERFORM public.sync_user_gold_and_count(NEW.user_id, 1);
+        -- [추가] 이전 소유자가 존재하는 타일(적 영토)을 점령했을 시 enemy_captured_tiles_count 1 가산
+        IF OLD.user_id IS NOT NULL THEN
+          UPDATE public.profiles
+          SET enemy_captured_tiles_count = COALESCE(enemy_captured_tiles_count, 0) + 1
+          WHERE id = NEW.user_id;
+        END IF;
       END IF;
     END IF;
     RETURN NEW;
@@ -252,3 +277,102 @@ SET captured_tiles_count = COALESCE((
   FROM public.captured_tiles c 
   WHERE c.user_id = p.id
 ), 0);
+
+-- [신규] 플레이어 일일/누적 이동 횟수 1씩 증가 RPC 함수
+CREATE OR REPLACE FUNCTION public.increment_moved_tiles(
+  p_user_id uuid
+) RETURNS boolean
+  SECURITY DEFINER
+  SET search_path = public
+AS $$
+BEGIN
+  UPDATE public.profiles
+  SET daily_moved_tiles_count = COALESCE(daily_moved_tiles_count, 0) + 1,
+      total_moved_tiles_count = COALESCE(total_moved_tiles_count, 0) + 1
+  WHERE id = p_user_id;
+
+  IF FOUND THEN
+    RETURN true;
+  ELSE
+    RETURN false;
+  END IF;
+END;
+$$ LANGUAGE plpgsql;
+
+-- [신규] profiles 테이블에 위성 관련 카운터 컬럼 안전 추가 DDL
+ALTER TABLE public.profiles 
+ADD COLUMN IF NOT EXISTS satellite_capture_count INT DEFAULT 0,
+ADD COLUMN IF NOT EXISTS satellite_scan_count INT DEFAULT 0;
+
+-- [신규] 위성 원격 점령 성공 횟수 1 증가 DDL
+CREATE OR REPLACE FUNCTION public.increment_satellite_capture(
+  p_user_id uuid
+) RETURNS boolean
+  SECURITY DEFINER
+  SET search_path = public
+AS $$
+BEGIN
+  UPDATE public.profiles
+  SET satellite_capture_count = COALESCE(satellite_capture_count, 0) + 1
+  WHERE id = p_user_id;
+
+  IF FOUND THEN
+    RETURN true;
+  ELSE
+    RETURN false;
+  END IF;
+END;
+$$ LANGUAGE plpgsql;
+
+-- [신규] 위성 상세 정보 조회 횟수 1 증가 DDL
+CREATE OR REPLACE FUNCTION public.increment_satellite_scan(
+  p_user_id uuid
+) RETURNS boolean
+  SECURITY DEFINER
+  SET search_path = public
+AS $$
+BEGIN
+  UPDATE public.profiles
+  SET satellite_scan_count = COALESCE(satellite_scan_count, 0) + 1
+  WHERE id = p_user_id;
+
+  IF FOUND THEN
+    RETURN true;
+  ELSE
+    RETURN false;
+  END IF;
+END;
+$$ LANGUAGE plpgsql;
+
+-- [신규] profiles 테이블에 다른 모든 업적 및 시스템 관리용 카운터/속성 컬럼 안전 추가 DDL
+ALTER TABLE public.profiles 
+ADD COLUMN IF NOT EXISTS gold NUMERIC DEFAULT 0.0,
+ADD COLUMN IF NOT EXISTS captured_tiles_count INT DEFAULT 0,
+ADD COLUMN IF NOT EXISTS last_gold_updated_at TIMESTAMPTZ,
+ADD COLUMN IF NOT EXISTS daily_moved_tiles_count INT DEFAULT 0,
+ADD COLUMN IF NOT EXISTS total_moved_tiles_count INT DEFAULT 0,
+ADD COLUMN IF NOT EXISTS enemy_captured_tiles_count INT DEFAULT 0,
+ADD COLUMN IF NOT EXISTS main_base_move_count INT DEFAULT 0;
+
+-- [신규] 본진 이동 횟수 1 증가 RPC 함수
+CREATE OR REPLACE FUNCTION public.increment_main_base_move(
+  p_user_id uuid
+) RETURNS boolean
+  SECURITY DEFINER
+  SET search_path = public
+AS $$
+BEGIN
+  UPDATE public.profiles
+  SET main_base_move_count = COALESCE(main_base_move_count, 0) + 1
+  WHERE id = p_user_id;
+
+  IF FOUND THEN
+    RETURN true;
+  ELSE
+    RETURN false;
+  END IF;
+END;
+$$ LANGUAGE plpgsql;
+
+
+

@@ -260,6 +260,8 @@ class _AchievementToastState extends State<AchievementToast>
         return Icons.security;
       case AchievementCategory.goldAmount:
         return Icons.monetization_on;
+      case AchievementCategory.mainBaseMove:
+        return Icons.home;
     }
   }
 }

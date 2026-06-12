@@ -7,6 +7,7 @@ enum AchievementCategory {
   satelliteInfo,
   hqFortification,
   goldAmount,
+  mainBaseMove,
 }
 
 /// 인게임 전체 업적 정보의 정적 규격을 정의하는 마스터 모델 클래스
@@ -76,6 +77,12 @@ class Achievement {
     Achievement(id: 'ACH_GOLD_T2', titleKey: 'achGoldT2Title', descriptionKey: 'achGoldT2Desc', category: AchievementCategory.goldAmount, threshold: 10000, tier: 2),
     Achievement(id: 'ACH_GOLD_T3', titleKey: 'achGoldT3Title', descriptionKey: 'achGoldT3Desc', category: AchievementCategory.goldAmount, threshold: 50000, tier: 3),
     Achievement(id: 'ACH_GOLD_T4', titleKey: 'achGoldT4Title', descriptionKey: 'achGoldT4Desc', category: AchievementCategory.goldAmount, threshold: 200000, tier: 4),
+
+    // 9. 본진 이동 횟수
+    Achievement(id: 'ACH_BASE_MOV_T1', titleKey: 'achBaseMovT1Title', descriptionKey: 'achBaseMovT1Desc', category: AchievementCategory.mainBaseMove, threshold: 1, tier: 1),
+    Achievement(id: 'ACH_BASE_MOV_T2', titleKey: 'achBaseMovT2Title', descriptionKey: 'achBaseMovT2Desc', category: AchievementCategory.mainBaseMove, threshold: 3, tier: 2),
+    Achievement(id: 'ACH_BASE_MOV_T3', titleKey: 'achBaseMovT3Title', descriptionKey: 'achBaseMovT3Desc', category: AchievementCategory.mainBaseMove, threshold: 10, tier: 3),
+    Achievement(id: 'ACH_BASE_MOV_T4', titleKey: 'achBaseMovT4Title', descriptionKey: 'achBaseMovT4Desc', category: AchievementCategory.mainBaseMove, threshold: 30, tier: 4),
   ];
 }
 

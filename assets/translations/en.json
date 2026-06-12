@@ -120,6 +120,9 @@
   "rankingHeaderDailyMovedTiles": "Daily Moves",
   "rankingHeaderTotalMovedTiles": "Total Moves",
   "capturedTerritory": "Captured Territory",
+  "rankingDescCapturedTiles": "Ranking based on the total number of map tiles currently captured as territory.",
+  "rankingDescDailyMovedTiles": "Ranking based on tiles moved today. (Resets daily at 00:00 UTC)",
+  "rankingDescTotalMovedTiles": "Ranking based on the cumulative number of tiles moved during adventure.",
   "agentMe": "Player (Me)",
   "nicknameWithMe": "{nickname} (Me)",
   "territoryUnit": "{count} Areas",
@@ -378,5 +381,13 @@
   "achGoldT3Title": "Wealth Accumulator",
   "achGoldT3Desc": "Accumulated over 50,000 Gold",
   "achGoldT4Title": "Interstellar Conglomerate",
-  "achGoldT4Desc": "Accumulated over 200,000 Gold"
+  "achGoldT4Desc": "Accumulated over 200,000 Gold",
+  "achBaseMovT1Title": "First Relocation",
+  "achBaseMovT1Desc": "Relocated your main base 1 time",
+  "achBaseMovT2Title": "Professional Mover",
+  "achBaseMovT2Desc": "Relocated your main base 3 times",
+  "achBaseMovT3Title": "Nomad Traveler",
+  "achBaseMovT3Desc": "Relocated your main base 10 times",
+  "achBaseMovT4Title": "Wanderer",
+  "achBaseMovT4Desc": "Relocated your main base 30 times"
 }

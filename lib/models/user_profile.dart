@@ -45,6 +45,9 @@ class UserProfile {
   /// 누적 위성 상세 정보 스캔 횟수
   final int satelliteScanCount;
 
+  /// 본진 이동 횟수
+  final int mainBaseMoveCount;
+
   /// 골드가 마지막으로 계산 및 갱신된 일시
   final DateTime? lastGoldUpdatedAt;
 
@@ -100,6 +103,7 @@ class UserProfile {
     this.enemyCapturedTilesCount = 0,
     this.satelliteCaptureCount = 0,
     this.satelliteScanCount = 0,
+    this.mainBaseMoveCount = 0,
     this.lastGoldUpdatedAt,
     this.lastSessionId,
   });
@@ -122,6 +126,7 @@ class UserProfile {
       enemyCapturedTilesCount: (json['enemy_captured_tiles_count'] as num?)?.toInt() ?? 0,
       satelliteCaptureCount: (json['satellite_capture_count'] as num?)?.toInt() ?? 0,
       satelliteScanCount: (json['satellite_scan_count'] as num?)?.toInt() ?? 0,
+      mainBaseMoveCount: (json['main_base_move_count'] as num?)?.toInt() ?? 0,
       lastGoldUpdatedAt: json['last_gold_updated_at'] != null
           ? DateTime.parse(json['last_gold_updated_at'] as String)
           : null,
@@ -161,6 +166,7 @@ class UserProfile {
       'enemy_captured_tiles_count': enemyCapturedTilesCount,
       'satellite_capture_count': satelliteCaptureCount,
       'satellite_scan_count': satelliteScanCount,
+      'main_base_move_count': mainBaseMoveCount,
       'last_gold_updated_at': lastGoldUpdatedAt?.toIso8601String(),
       'terms_agreed_at': termsAgreedAt?.toIso8601String(),
       'privacy_agreed_at': privacyAgreedAt?.toIso8601String(),
@@ -219,6 +225,7 @@ class UserProfile {
     int? enemyCapturedTilesCount,
     int? satelliteCaptureCount,
     int? satelliteScanCount,
+    int? mainBaseMoveCount,
     DateTime? lastGoldUpdatedAt,
     String? lastSessionId,
   }) {
@@ -248,6 +255,7 @@ class UserProfile {
       enemyCapturedTilesCount: enemyCapturedTilesCount ?? this.enemyCapturedTilesCount,
       satelliteCaptureCount: satelliteCaptureCount ?? this.satelliteCaptureCount,
       satelliteScanCount: satelliteScanCount ?? this.satelliteScanCount,
+      mainBaseMoveCount: mainBaseMoveCount ?? this.mainBaseMoveCount,
       lastGoldUpdatedAt: lastGoldUpdatedAt ?? this.lastGoldUpdatedAt,
       lastSessionId: lastSessionId ?? this.lastSessionId,
     );

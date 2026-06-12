@@ -156,6 +156,52 @@ class _RankingScreenState extends State<RankingScreen> {
     );
   }
 
+  String _getRankingDescription(String type) {
+    if (type == RankingType.dailyMovedTiles) {
+      return GameStrings.rankingDescDailyMovedTiles;
+    } else if (type == RankingType.totalMovedTiles) {
+      return GameStrings.rankingDescTotalMovedTiles;
+    } else {
+      return GameStrings.rankingDescCapturedTiles;
+    }
+  }
+
+  Widget _buildDescriptionCard(String currentType) {
+    return Container(
+      width: double.infinity,
+      margin: const EdgeInsets.only(left: 16, right: 16, top: 4, bottom: 4),
+      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+      decoration: BoxDecoration(
+        color: GameColors.backgroundMedium.withValues(alpha: 0.25),
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(
+          color: GameColors.borderNeon.withValues(alpha: 0.12),
+          width: 1.0,
+        ),
+      ),
+      child: Row(
+        children: [
+          Icon(
+            Icons.info_outline_rounded,
+            color: GameColors.accentNeon.withValues(alpha: 0.7),
+            size: 15,
+          ),
+          const SizedBox(width: 8),
+          Expanded(
+            child: Text(
+              _getRankingDescription(currentType),
+              style: TextStyle(
+                color: GameColors.textSecondary.withValues(alpha: 0.8),
+                fontSize: 11.0,
+                fontWeight: FontWeight.w500,
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final ranking = context.watch<RankingProvider>();
@@ -190,6 +236,7 @@ class _RankingScreenState extends State<RankingScreen> {
                 : Column(
                     children: [
                       _buildTabSelector(ranking),
+                      _buildDescriptionCard(ranking.currentType),
                       _buildHeaderRow(ranking.currentType),
                       Expanded(
                         child: _RankingListView(

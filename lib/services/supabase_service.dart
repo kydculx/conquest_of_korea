@@ -231,4 +231,46 @@ class SupabaseService {
       return false;
     }
   }
+
+  /// 플레이어의 위성 원격 점령 횟수를 1 증가시킵니다.
+  Future<bool> incrementSatelliteCapture(String userId) async {
+    try {
+      lastError = null;
+      final params = {'p_user_id': userId};
+      final response = await _client.rpc('increment_satellite_capture', params: params);
+      return response as bool? ?? false;
+    } catch (e) {
+      lastError = e.toString();
+      debugPrint('❌ 위성 원격 점령 카운트 증가 실패: $e');
+      return false;
+    }
+  }
+
+  /// 플레이어의 위성 상세 정보 조회 횟수를 1 증가시킵니다.
+  Future<bool> incrementSatelliteScan(String userId) async {
+    try {
+      lastError = null;
+      final params = {'p_user_id': userId};
+      final response = await _client.rpc('increment_satellite_scan', params: params);
+      return response as bool? ?? false;
+    } catch (e) {
+      lastError = e.toString();
+      debugPrint('❌ 위성 정보 조회 카운트 증가 실패: $e');
+      return false;
+    }
+  }
+
+  /// 플레이어의 본진 이동 횟수를 1 증가시킵니다.
+  Future<bool> incrementMainBaseMove(String userId) async {
+    try {
+      lastError = null;
+      final params = {'p_user_id': userId};
+      final response = await _client.rpc('increment_main_base_move', params: params);
+      return response as bool? ?? false;
+    } catch (e) {
+      lastError = e.toString();
+      debugPrint('❌ 본진 이동 카운트 증가 실패: $e');
+      return false;
+    }
+  }
 }

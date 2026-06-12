@@ -398,8 +398,26 @@ class GameProvider extends ChangeNotifier with WidgetsBindingObserver {
         // 🎵 공통 알림 효과음 재생
         AudioService().playNotification();
 
-        _achievementProvider?.checkAndUnlock(capturedTiles: _capturedTiles);
-        notifyListeners();
+        final String? currentUserId = _userId;
+        if (currentUserId != null && _authProvider != null && _authProvider!.profile != null) {
+          _supabase.incrementSatelliteCapture(currentUserId).then((success) {
+            if (success) {
+              final updatedProfile = _authProvider!.profile!.copyWith(
+                satelliteCaptureCount: _authProvider!.profile!.satelliteCaptureCount + 1,
+              );
+              _authProvider!.updateProfileCache(updatedProfile);
+              _achievementProvider?.checkAndUnlock(capturedTiles: _capturedTiles);
+              notifyListeners();
+            }
+          }).catchError((e) {
+            debugPrint('⚠️ 위성 점령 카운트 DB 증가 실패: $e');
+            _achievementProvider?.checkAndUnlock(capturedTiles: _capturedTiles);
+            notifyListeners();
+          });
+        } else {
+          _achievementProvider?.checkAndUnlock(capturedTiles: _capturedTiles);
+          notifyListeners();
+        }
       },
       onStateChanged: notifyListeners,
       getCapturedTiles: () => _capturedTiles,
@@ -1103,7 +1121,22 @@ class GameProvider extends ChangeNotifier with WidgetsBindingObserver {
           })
           .eq('id', myId)
           .then((_) {
-            _authProvider?.refreshProfile();
+            // 골드 저장 완료 후 위성 정보 조회 횟수 1 증가 실행
+            _supabase.incrementSatelliteScan(myId).then((success) {
+              if (success && _authProvider != null && _authProvider!.profile != null) {
+                final updatedProfile = _authProvider!.profile!.copyWith(
+                  satelliteScanCount: _authProvider!.profile!.satelliteScanCount + 1,
+                );
+                _authProvider!.updateProfileCache(updatedProfile);
+                _achievementProvider?.checkAndUnlock(capturedTiles: _capturedTiles);
+                notifyListeners();
+              } else {
+                _authProvider?.refreshProfile();
+              }
+            }).catchError((err) {
+              debugPrint('⚠️ 위성 조회 카운트 DB 증가 실패: $err');
+              _authProvider?.refreshProfile();
+            });
           })
           .catchError((e) {
             debugPrint('⚠️ 상대 타일 정보 백엔드 저장 실패: $e');

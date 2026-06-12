@@ -4,7 +4,6 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:package_info_plus/package_info_plus.dart';
 import '../../core/constants/colors.dart';
 import '../../core/constants/strings.dart';
-import '../../core/constants/app_routes.dart';
 import '../../core/utils/toast_helper.dart';
 import '../../core/utils/error_translator.dart';
 import '../../providers/auth_provider.dart';
@@ -186,16 +185,7 @@ class ProfileScreen extends StatelessWidget {
                 ),
                 const ProfileMenuDivider(),
 
-                // [로그인 플레이어 전용] 업적 보드
-                if (isAuth) ...[
-                  ProfileMenuItem(
-                    icon: Icons.emoji_events_rounded,
-                    title: GameStrings.achievementBoardTitle,
-                    subtitle: '플레이어의 업적 획득 현황을 확인합니다.',
-                    onTap: () => Navigator.pushNamed(context, AppRoutes.achievement),
-                  ),
-                  const ProfileMenuDivider(),
-                ],
+
 
                 // [로그인 플레이어 전용] 알림 설정
                 if (isAuth) ...[
@@ -292,8 +282,10 @@ class ProfileScreen extends StatelessWidget {
                     onTap: () async {
                       final confirm = await _showLogoutConfirm(context);
                       if (confirm == true) {
-                        if (context.mounted) Navigator.pop(context);
                         await auth.signOut();
+                        if (context.mounted) {
+                          Navigator.of(context).pop();
+                        }
                       }
                     },
                   ),
@@ -304,12 +296,12 @@ class ProfileScreen extends StatelessWidget {
                     onTap: () async {
                       final confirm = await _showDeleteAccountConfirm(context);
                       if (confirm == true) {
-                        if (context.mounted) Navigator.pop(context);
                         await auth.deleteAccount();
                         if (context.mounted) {
                           ScaffoldMessenger.of(context).showSnackBar(
                             SnackBar(content: Text(GameStrings.deleteAccountSuccess)),
                           );
+                          Navigator.of(context).pop();
                         }
                       }
                     },

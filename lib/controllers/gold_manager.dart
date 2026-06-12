@@ -93,7 +93,7 @@ class GoldManager {
         }
 
         final double offlineGold =
-            elapsed * effectiveTilesCount * (_goldRate / 3600.0);
+            elapsed * effectiveTilesCount * (_goldRate / 21600.0);
 
         if (offlineGold > 0.0) {
           final newGold = profile.gold + offlineGold;
@@ -163,7 +163,7 @@ class GoldManager {
       }
 
       final double earnedGoldPerSecond =
-          effectiveTilesCount * (_goldRate / 3600.0);
+          effectiveTilesCount * (_goldRate / 21600.0);
       _currentGold += earnedGoldPerSecond;
       _notifyListeners();
 

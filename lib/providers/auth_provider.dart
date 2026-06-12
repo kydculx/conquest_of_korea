@@ -396,6 +396,11 @@ class AuthProvider extends ChangeNotifier {
     final currentProfile = _profile;
     if (currentProfile == null) return;
 
+    // 기존 기지가 존재하고 새로운 기지 ID와 다른 경우 본진 이동으로 판정
+    final bool isRelocation = currentProfile.mainBaseTileId != null &&
+        currentProfile.mainBaseTileId!.isNotEmpty &&
+        currentProfile.mainBaseTileId != tileId;
+
     _setLoading(true);
     try {
       final updatedProfile = currentProfile.copyWith(
@@ -405,6 +410,16 @@ class AuthProvider extends ChangeNotifier {
       await _authService.updateProfile(updatedProfile);
       _profile = updatedProfile;
       notifyListeners();
+
+      if (isRelocation) {
+        final bool rpcSuccess = await _authService.incrementMainBaseMove(currentProfile.id);
+        if (rpcSuccess) {
+          _profile = _profile?.copyWith(
+            mainBaseMoveCount: (_profile?.mainBaseMoveCount ?? 0) + 1,
+          );
+          notifyListeners();
+        }
+      }
     } finally {
       _setLoading(false);
     }

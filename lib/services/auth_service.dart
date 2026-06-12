@@ -233,4 +233,15 @@ class AuthService {
       debugPrint('⚠️ delete_user_account RPC 호출 실패 (대체 트리거 가동 감지): $e');
     }
   }
+
+  /// 플레이어의 본진 이동 횟수를 1 증가시킵니다.
+  Future<bool> incrementMainBaseMove(String userId) async {
+    try {
+      final response = await _client.rpc('increment_main_base_move', params: {'p_user_id': userId});
+      return response as bool? ?? false;
+    } catch (e) {
+      debugPrint('❌ 본진 이동 카운트 증가 실패: $e');
+      return false;
+    }
+  }
 }

@@ -5,6 +5,7 @@ import '../../providers/auth_provider.dart';
 import 'hud_header_bar.dart';
 import 'hud_profile_button.dart';
 import 'hud_ranking_button.dart';
+import 'hud_achievement_button.dart';
 import 'hud_map_cycle_button.dart';
 import 'hud_map_follow_button.dart';
 import 'hud_satellite_bubble.dart';
@@ -39,7 +40,12 @@ class HudOverlay extends StatelessWidget {
           child: const CozyHeaderBar(),
         ),
 
-
+        // [상단 우측 - 업적 버튼] 랭킹 버튼 왼쪽에 1:1 대칭 정렬 나란히 배치 (44x44)
+        Positioned(
+          top: topOffset,
+          right: 20.0 + 44.0 + 10.0 + 44.0 + 10.0, // 프로필 44 + 랭킹 44 + 여백 20 오프셋 연산
+          child: const AchievementActionButton(size: 44),
+        ),
 
         // [상단 우측 - 랭킹 버튼] 유저 프로필 버튼 바로 왼쪽에 1:1 대칭 정렬 나란히 배치 (44x44)
         Positioned(

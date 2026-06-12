@@ -120,6 +120,9 @@
   "rankingHeaderDailyMovedTiles": "일일 이동",
   "rankingHeaderTotalMovedTiles": "누적 이동",
   "capturedTerritory": "점령 영토",
+  "rankingDescCapturedTiles": "현재 플레이어가 영토로 소유한 총 지도 타일 개수 기준 랭킹입니다.",
+  "rankingDescDailyMovedTiles": "오늘 하루 동안 이동한 타일 수 기준 랭킹입니다. (UTC 00:00에 매일 초기화)",
+  "rankingDescTotalMovedTiles": "모험 중 누적으로 거쳐 간 총 이동 타일 수 기준 랭킹입니다.",
   "agentMe": "플레이어 (본인)",
   "nicknameWithMe": "{nickname}",
   "territoryUnit": "{count} 구역",
@@ -378,5 +381,13 @@
   "achGoldT3Title": "자산가",
   "achGoldT3Desc": "보유 골드 50,000 Gold 돌파",
   "achGoldT4Title": "우주 대부호",
-  "achGoldT4Desc": "보유 골드 200,000 Gold 돌파"
+  "achGoldT4Desc": "보유 골드 200,000 Gold 돌파",
+  "achBaseMovT1Title": "첫 이사",
+  "achBaseMovT1Desc": "본진 이동 1회 완료",
+  "achBaseMovT2Title": "프로 이사러",
+  "achBaseMovT2Desc": "본진 이동 3회 완료",
+  "achBaseMovT3Title": "유목민",
+  "achBaseMovT3Desc": "본진 이동 10회 완료",
+  "achBaseMovT4Title": "역마살 모험가",
+  "achBaseMovT4Desc": "본진 이동 30회 완료"
 }
