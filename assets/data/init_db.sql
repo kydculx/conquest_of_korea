@@ -47,6 +47,10 @@ create policy "Users can insert their own achievements."
   on user_achievements for insert
   with check ( auth.uid() = user_id );
 
+create policy "Users can delete their own achievements."
+  on user_achievements for delete
+  using ( auth.uid() = user_id );
+
 -- 기존 captured_tiles 테이블 수정 (팀 시스템 -> 개인 시스템)
 -- 주의: 기존 데이터가 있다면 마이그레이션이 필요할 수 있습니다.
 -- 여기서는 기존 테이블이 있다고 가정하고 컬럼을 변경하거나 새로 생성하는 예시입니다.

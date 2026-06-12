@@ -222,6 +222,14 @@ class AuthService {
       debugPrint('⚠️ 점령 타일 삭제 중 오류 발생: $e');
     }
 
+    // [추가] 해당 사용자의 업적 이력(user_achievements) 영구 삭제
+    try {
+      await _client.from('user_achievements').delete().eq('user_id', user.id);
+      debugPrint('🏆 탈퇴 회원의 업적 데이터가 정상 삭제되었습니다.');
+    } catch (e) {
+      debugPrint('⚠️ 업적 데이터 삭제 중 오류 발생: $e');
+    }
+
     // 2. DB profiles 테이블에서 본인 데이터 삭제 시도
     // (보통 profiles 테이블에 ON DELETE CASCADE 트리거가 설정되어 auth.users까지 연동 소멸되도록 구성됩니다.)
     await _client.from('profiles').delete().eq('id', user.id);
