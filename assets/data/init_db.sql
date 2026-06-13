@@ -282,20 +282,40 @@ SET captured_tiles_count = COALESCE((
   WHERE c.user_id = p.id
 ), 0);
 
--- [신규] 플레이어 일일/누적 이동 횟수 1씩 증가 RPC 함수
+-- [신규] 플레이어 일일/누적 이동 횟수 1씩 증가 RPC 함수 (UTC 0시 자정 리셋 대응)
 CREATE OR REPLACE FUNCTION public.increment_moved_tiles(
   p_user_id uuid
 ) RETURNS boolean
   SECURITY DEFINER
   SET search_path = public
 AS $$
+DECLARE
+  v_last_moved timestamptz;
+  v_now timestamptz;
 BEGIN
-  UPDATE public.profiles
-  SET daily_moved_tiles_count = COALESCE(daily_moved_tiles_count, 0) + 1,
-      total_moved_tiles_count = COALESCE(total_moved_tiles_count, 0) + 1
-  WHERE id = p_user_id;
+  v_now := now();
+
+  SELECT last_moved_at INTO v_last_moved
+  FROM public.profiles
+  WHERE id = p_user_id
+  FOR UPDATE;
 
   IF FOUND THEN
+    -- 마지막 이동 시각의 UTC 날짜와 현재 UTC 날짜가 다르면 daily 카운터를 1로 리셋하고 갱신
+    IF v_last_moved IS NULL OR (v_last_moved::date <> v_now::date) THEN
+      UPDATE public.profiles
+      SET daily_moved_tiles_count = 1,
+          total_moved_tiles_count = COALESCE(total_moved_tiles_count, 0) + 1,
+          last_moved_at = v_now
+      WHERE id = p_user_id;
+    ELSE
+      -- 동일한 날짜이면 정상 가산
+      UPDATE public.profiles
+      SET daily_moved_tiles_count = COALESCE(daily_moved_tiles_count, 0) + 1,
+          total_moved_tiles_count = COALESCE(total_moved_tiles_count, 0) + 1,
+          last_moved_at = v_now
+      WHERE id = p_user_id;
+    END IF;
     RETURN true;
   ELSE
     RETURN false;
@@ -356,7 +376,8 @@ ADD COLUMN IF NOT EXISTS last_gold_updated_at TIMESTAMPTZ,
 ADD COLUMN IF NOT EXISTS daily_moved_tiles_count INT DEFAULT 0,
 ADD COLUMN IF NOT EXISTS total_moved_tiles_count INT DEFAULT 0,
 ADD COLUMN IF NOT EXISTS enemy_captured_tiles_count INT DEFAULT 0,
-ADD COLUMN IF NOT EXISTS main_base_move_count INT DEFAULT 0;
+ADD COLUMN IF NOT EXISTS main_base_move_count INT DEFAULT 0,
+ADD COLUMN IF NOT EXISTS last_moved_at TIMESTAMPTZ;
 
 -- [신규] 본진 이동 횟수 1 증가 RPC 함수
 CREATE OR REPLACE FUNCTION public.increment_main_base_move(
@@ -377,6 +398,16 @@ BEGIN
   END IF;
 END;
 $$ LANGUAGE plpgsql;
+
+-- [신규] pg_cron 확장을 이용해 매일 UTC 00:00에 일일 이동 횟수를 강제 초기화하는 스케줄러 등록
+CREATE EXTENSION IF NOT EXISTS pg_cron;
+
+SELECT cron.schedule(
+  'reset-daily-moved-tiles-at-midnight',
+  '0 0 * * *',
+  $$ UPDATE public.profiles SET daily_moved_tiles_count = 0 $$
+);
+
 
 
 

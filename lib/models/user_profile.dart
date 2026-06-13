@@ -51,6 +51,9 @@ class UserProfile {
   /// 골드가 마지막으로 계산 및 갱신된 일시
   final DateTime? lastGoldUpdatedAt;
 
+  /// 마지막으로 이동한 일시
+  final DateTime? lastMovedAt;
+
   /// 서비스 이용약관 동의 시각
   final DateTime? termsAgreedAt;
 
@@ -105,11 +108,27 @@ class UserProfile {
     this.satelliteScanCount = 0,
     this.mainBaseMoveCount = 0,
     this.lastGoldUpdatedAt,
+    this.lastMovedAt,
     this.lastSessionId,
   });
 
   /// Map 구조의 JSON 데이터로부터 UserProfile 인스턴스를 생성하는 팩토리 메서드
   factory UserProfile.fromJson(Map<String, dynamic> json) {
+    final lastMovedAtStr = json['last_moved_at'] as String?;
+    final lastMovedAt = lastMovedAtStr != null ? DateTime.parse(lastMovedAtStr) : null;
+
+    // UTC 자정 리셋 여부 판정
+    bool isNewDay = false;
+    if (lastMovedAt != null) {
+      final nowUtc = DateTime.now().toUtc();
+      final lastMovedUtc = lastMovedAt.toUtc();
+      if (lastMovedUtc.year != nowUtc.year ||
+          lastMovedUtc.month != nowUtc.month ||
+          lastMovedUtc.day != nowUtc.day) {
+        isNewDay = true;
+      }
+    }
+
     return UserProfile(
       id: json['id'] as String,
       nickname: json['nickname'] as String,
@@ -118,10 +137,10 @@ class UserProfile {
       createdAt: DateTime.parse(json['created_at'] as String),
       mainBaseTileId: json['main_base_tile_id'] as String?,
       totalDistance: (json['total_distance'] as num?)?.toDouble() ?? 0.0,
-      dailyDistance: (json['daily_distance'] as num?)?.toDouble() ?? 0.0,
+      dailyDistance: isNewDay ? 0.0 : ((json['daily_distance'] as num?)?.toDouble() ?? 0.0),
       gold: (json['gold'] as num?)?.toDouble() ?? 0.0,
       capturedTilesCount: (json['captured_tiles_count'] as num?)?.toInt() ?? 0,
-      dailyMovedTilesCount: (json['daily_moved_tiles_count'] as num?)?.toInt() ?? 0,
+      dailyMovedTilesCount: isNewDay ? 0 : ((json['daily_moved_tiles_count'] as num?)?.toInt() ?? 0),
       totalMovedTilesCount: (json['total_moved_tiles_count'] as num?)?.toInt() ?? 0,
       enemyCapturedTilesCount: (json['enemy_captured_tiles_count'] as num?)?.toInt() ?? 0,
       satelliteCaptureCount: (json['satellite_capture_count'] as num?)?.toInt() ?? 0,
@@ -130,6 +149,7 @@ class UserProfile {
       lastGoldUpdatedAt: json['last_gold_updated_at'] != null
           ? DateTime.parse(json['last_gold_updated_at'] as String)
           : null,
+      lastMovedAt: lastMovedAt,
       termsAgreedAt: json['terms_agreed_at'] != null
           ? DateTime.parse(json['terms_agreed_at'] as String)
           : null,
@@ -168,6 +188,7 @@ class UserProfile {
       'satellite_scan_count': satelliteScanCount,
       'main_base_move_count': mainBaseMoveCount,
       'last_gold_updated_at': lastGoldUpdatedAt?.toIso8601String(),
+      'last_moved_at': lastMovedAt?.toIso8601String(),
       'terms_agreed_at': termsAgreedAt?.toIso8601String(),
       'privacy_agreed_at': privacyAgreedAt?.toIso8601String(),
       'location_agreed_at': locationAgreedAt?.toIso8601String(),
@@ -227,6 +248,7 @@ class UserProfile {
     int? satelliteScanCount,
     int? mainBaseMoveCount,
     DateTime? lastGoldUpdatedAt,
+    DateTime? lastMovedAt,
     String? lastSessionId,
   }) {
     return UserProfile(
@@ -257,6 +279,7 @@ class UserProfile {
       satelliteScanCount: satelliteScanCount ?? this.satelliteScanCount,
       mainBaseMoveCount: mainBaseMoveCount ?? this.mainBaseMoveCount,
       lastGoldUpdatedAt: lastGoldUpdatedAt ?? this.lastGoldUpdatedAt,
+      lastMovedAt: lastMovedAt ?? this.lastMovedAt,
       lastSessionId: lastSessionId ?? this.lastSessionId,
     );
   }
