@@ -559,3 +559,305 @@ h1, h2, h3, h4, h5 {
     justify-content: center;
   }
 }
+
+/* ==========================================
+   맵 문자 에디터 (Map Letters Editor) 스타일
+   ========================================== */
+
+/* 맵 마커 디자인 (네온 스타일 원형 뱃지) */
+.editor-letter-badge {
+  width: 30px;
+  height: 30px;
+  background-color: #00e5ff; /* 네온 민트 */
+  color: #0f172a; /* 다크 네이비 */
+  border: 2px solid #ffffff;
+  border-radius: 50%;
+  font-family: var(--font-display);
+  font-weight: 800;
+  font-size: 14px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 0 10px rgba(0, 229, 255, 0.6), inset 0 0 4px rgba(255, 255, 255, 0.8);
+  transition: all 0.2s ease;
+  cursor: pointer;
+}
+
+.editor-letter-badge:hover {
+  transform: scale(1.15);
+  background-color: #f59e0b; /* 앰버 골드로 하이라이트 */
+  box-shadow: 0 0 15px rgba(245, 158, 11, 0.8);
+  color: #0f172a;
+}
+
+/* 에디터 사이드바 마커 목록 */
+.editor-markers-list-container {
+  max-height: 350px;
+  overflow-y: auto;
+  border: 1px solid var(--border-color);
+  border-radius: 8px;
+  background: var(--bg-primary);
+}
+
+.editor-marker-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0.75rem 1rem;
+  border-bottom: 1px solid var(--border-color);
+  transition: background 0.2s ease;
+}
+
+.editor-marker-item:last-child {
+  border-bottom: none;
+}
+
+.editor-marker-item:hover {
+  background: rgba(255, 255, 255, 0.02);
+}
+
+.editor-marker-info {
+  display: flex;
+  align-items: center;
+  gap: 0.8rem;
+}
+
+.editor-marker-avatar {
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  background: #00e5ff;
+  color: #0f172a;
+  font-weight: 800;
+  font-size: 0.75rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-family: var(--font-display);
+}
+
+.editor-marker-coords {
+  font-family: monospace;
+  font-size: 0.75rem;
+  color: var(--text-secondary);
+}
+
+.editor-marker-actions {
+  display: flex;
+  gap: 0.4rem;
+}
+
+/* 모달 오버레이 및 다이얼로그 */
+.editor-modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  background: rgba(10, 12, 16, 0.7);
+  backdrop-filter: blur(4px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 9999;
+}
+
+.editor-modal-content {
+  background: var(--bg-card);
+  border: 1px solid var(--border-color);
+  border-radius: var(--glow-radius);
+  width: 90%;
+  max-width: 420px;
+  padding: 1.5rem;
+  box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.5);
+  animation: modalSlideIn 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+@keyframes modalSlideIn {
+  from {
+    transform: translateY(20px);
+    opacity: 0;
+  }
+  to {
+    transform: translateY(0);
+    opacity: 1;
+  }
+}
+
+/* 문자 선택 버튼 그리드 */
+.editor-char-grid {
+  display: grid;
+  grid-template-columns: repeat(6, 1fr);
+  gap: 0.5rem;
+  margin: 1.2rem 0;
+}
+
+.editor-char-btn {
+  height: 42px;
+  background: var(--bg-primary);
+  border: 1px solid var(--border-color);
+  border-radius: 6px;
+  color: var(--text-primary);
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: 1.1rem;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.editor-char-btn:hover {
+  background: var(--accent-cyan);
+  border-color: var(--accent-cyan);
+  color: #ffffff;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 10px rgba(59, 130, 246, 0.3);
+}
+
+.editor-char-btn.active {
+  background: #00e5ff;
+  border-color: #00e5ff;
+  color: #0f172a;
+  box-shadow: 0 0 10px rgba(0, 229, 255, 0.4);
+}
+
+/* Leaflet 커스텀 팝업 스타일 수정 */
+.leaflet-div-icon {
+  background: transparent !important;
+  border: none !important;
+}
+
+/* 모드 선택 탭 */
+.editor-mode-tabs {
+  display: flex;
+  background: var(--bg-primary);
+  border: 1px solid var(--border-color);
+  border-radius: 8px;
+  padding: 0.25rem;
+  margin-bottom: 1.2rem;
+}
+
+.editor-mode-tab-btn {
+  flex: 1;
+  padding: 0.55rem;
+  background: transparent;
+  border: none;
+  color: var(--text-secondary);
+  font-family: var(--font-display);
+  font-weight: 600;
+  font-size: 0.85rem;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.4rem;
+}
+
+.editor-mode-tab-btn:hover {
+  color: var(--text-primary);
+  background: rgba(255, 255, 255, 0.02);
+}
+
+.editor-mode-tab-btn.active {
+  background: var(--bg-card-hover);
+  color: var(--accent-cyan);
+}
+
+/* 컬러 팔레트 */
+.color-palette-container {
+  display: flex;
+  flex-direction: column;
+  gap: 0.8rem;
+  margin-top: 1rem;
+}
+
+.color-palette-grid {
+  display: grid;
+  grid-template-columns: repeat(6, 1fr);
+  gap: 0.4rem;
+}
+
+.color-swatch {
+  height: 36px;
+  border-radius: 6px;
+  border: 2px solid transparent;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: inset 0 0 6px rgba(0, 0, 0, 0.6);
+}
+
+.color-swatch:hover {
+  transform: scale(1.1);
+}
+
+.color-swatch.active {
+  border-color: #ffffff;
+  box-shadow: 0 0 12px rgba(255, 255, 255, 0.6);
+  transform: scale(1.05);
+}
+
+.color-swatch.eraser {
+  background: #1e293b;
+  border: 1px dashed var(--text-muted);
+}
+
+.color-swatch.eraser:hover {
+  border-color: var(--accent-red);
+}
+
+.color-swatch.eraser.active {
+  border: 2px solid var(--accent-red);
+  box-shadow: 0 0 10px rgba(239, 68, 68, 0.4);
+}
+
+/* 포커싱된 마커 시각 효과 */
+.editor-letter-badge.focused {
+  background-color: #f59e0b !important; /* 앰버 골드 */
+  box-shadow: 0 0 15px #f59e0b, 0 0 0 4px rgba(245, 158, 11, 0.3) !important;
+  border-color: #ffffff !important;
+  transform: scale(1.1);
+  animation: markerFocusPulse 2s infinite ease-in-out;
+  color: #0f172a !important;
+}
+
+@keyframes markerFocusPulse {
+  0% { box-shadow: 0 0 15px #f59e0b, 0 0 0 2px rgba(245, 158, 11, 0.3); }
+  50% { box-shadow: 0 0 22px #f59e0b, 0 0 0 8px rgba(245, 158, 11, 0.5); }
+  100% { box-shadow: 0 0 15px #f59e0b, 0 0 0 2px rgba(245, 158, 11, 0.3); }
+}
+
+/* 포커싱된 문자 상세 수정 UI */
+.editor-focus-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding-bottom: 0.8rem;
+  border-bottom: 1px solid var(--border-color);
+  margin-bottom: 0.8rem;
+}
+
+.focus-char-badge {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  background: #f59e0b;
+  color: #0f172a;
+  font-family: var(--font-display);
+  font-weight: 800;
+  font-size: 1.1rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 0 8px rgba(245, 158, 11, 0.5);
+}
+
+
+

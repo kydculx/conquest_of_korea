@@ -4,6 +4,7 @@ import DashboardTab from './components/DashboardTab';
 import RankingTab from './components/RankingTab';
 import UsersTab from './components/UsersTab';
 import NotificationsTab from './components/NotificationsTab';
+import MapEditorTab from './components/MapEditorTab';
 import LandingPage from './components/LandingPage';
 import TermsPage from './components/TermsPage';
 import PrivacyPage from './components/PrivacyPage';
@@ -15,7 +16,8 @@ import {
   Cpu,
   Trophy,
   Menu,
-  X
+  X,
+  Map
 } from 'lucide-react';
 
 function AdminLayout() {
@@ -28,6 +30,7 @@ function AdminLayout() {
     { id: 'ranking', label: '사용자 랭킹', icon: Trophy, path: '/admin/ranking' },
     { id: 'users', label: '사용자 관리', icon: Users, path: '/admin/users' },
     { id: 'notifications', label: '푸시 알림', icon: Bell, path: '/admin/notifications' },
+    { id: 'map-editor', label: '맵 에디터', icon: Map, path: '/admin/map-editor' },
   ];
 
   const getPageTitle = () => {
@@ -167,6 +170,7 @@ export default function App() {
         <Route path="ranking" element={<RankingTab />} />
         <Route path="users" element={<UsersTab />} />
         <Route path="notifications" element={<NotificationsTab />} />
+        <Route path="map-editor" element={<MapEditorTab />} />
       </Route>
 
       {/* 정의되지 않은 주소는 메인 홈페이지로 리다이렉트 */}
