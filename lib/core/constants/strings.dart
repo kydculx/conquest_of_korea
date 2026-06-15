@@ -1091,6 +1091,12 @@ class GameStrings {
   static String get achGoldT3Desc => 'achGoldT3Desc'.tr();
   static String get achGoldT4Title => 'achGoldT4Title'.tr();
   static String get achGoldT4Desc => 'achGoldT4Desc'.tr();
+
+  // --- 패턴 매칭 도감 추가 ---
+  static String get patternGuideTitle => 'patternGuideTitle'.tr();
+  static String get patternGuideSubtitle => 'patternGuideSubtitle'.tr();
+  static String requiredTilesCount(int count) =>
+      'requiredTilesCount'.tr(namedArgs: {'count': count.toString()});
 }
 
 class GameUrls {

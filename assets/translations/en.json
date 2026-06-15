@@ -389,5 +389,10 @@
   "achBaseMovT3Title": "Nomad Traveler",
   "achBaseMovT3Desc": "Relocated your main base 10 times",
   "achBaseMovT4Title": "Wanderer",
-  "achBaseMovT4Desc": "Relocated your main base 30 times"
+  "achBaseMovT4Desc": "Relocated your main base 30 times",
+  "achPatternTitle": "Alphabet Conqueror: {char}",
+  "achPatternDesc": "Complete the capture pattern of letter '{char}' on the map.",
+  "patternGuideTitle": "Pattern Guide",
+  "patternGuideSubtitle": "Capture territories in specific shapes to unlock unique special achievements.",
+  "requiredTilesCount": "Required Tiles: {count}"
 }

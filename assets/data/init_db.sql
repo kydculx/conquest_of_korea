@@ -32,6 +32,7 @@ create policy "Users can update their own profile."
 create table if not exists public.user_achievements (
   user_id uuid references auth.users(id) on delete cascade not null,
   achievement_id text not null,
+  consumed_tile_ids text[] default '{}',
   unlocked_at timestamptz default now(),
   primary key (user_id, achievement_id)
 );

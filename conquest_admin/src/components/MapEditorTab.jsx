@@ -147,7 +147,9 @@ export default function MapEditorTab() {
         iconAnchor: [15, 15]
       });
 
-      const marker = L.marker([letter.lat, letter.lng], { icon: customIcon });
+      // 마커를 그리드 최상단 외곽(q: 0, r: 8) 좌표에 생성하여 타일 가림 방지
+      const markerLatLng = hexToLatLng(0, 8, letter.lat, letter.lng);
+      const marker = L.marker(markerLatLng, { icon: customIcon });
 
       // 문자 마커 클릭 시 해당 문자를 포커스하고 그 15x15 그리드를 띄운다.
       marker.on('click', (e) => {

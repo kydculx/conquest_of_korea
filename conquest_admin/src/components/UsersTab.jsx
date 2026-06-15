@@ -388,7 +388,7 @@ export default function UsersTab() {
   );
 }
 
-// 전체 28종 업적 마스터 정보 상수 정의
+// 전체 45종 업적 마스터 정보 상수 정의
 const MASTER_ACHIEVEMENTS = [
   { id: 'ACH_CAP_T1', title: '개척 플레이어', desc: '누적 점령 타일 10개 돌파', tier: 1, category: '누적 점령' },
   { id: 'ACH_CAP_T2', title: '지역 지배자', desc: '누적 점령 타일 100개 돌파', tier: 2, category: '누적 점령' },
@@ -428,6 +428,20 @@ const MASTER_ACHIEVEMENTS = [
   { id: 'ACH_GOLD_T1', title: '기초 보급 완료', desc: '보유 골드 1,000 Gold 돌파', tier: 1, category: '보유 골드' },
   { id: 'ACH_GOLD_T2', title: '자급자족 플레이어', desc: '보유 골드 10,000 Gold 돌파', tier: 2, category: '보유 골드' },
   { id: 'ACH_GOLD_T3', title: '자산가', desc: '보유 골드 50,000 Gold 돌파', tier: 3, category: '보유 골드' },
-  { id: 'ACH_GOLD_T4', title: '성간 연합 자산가', desc: '보유 골드 200,000 Gold 돌파', tier: 4, category: '보유 골드' }
+  { id: 'ACH_GOLD_T4', title: '성간 연합 자산가', desc: '보유 골드 200,000 Gold 돌파', tier: 4, category: '보유 골드' },
+  
+  { id: 'ACH_PATTERN_A', title: '문자 패턴 A', desc: '지도 상에 헥사곤 타일로 알파벳 A 모양 점령 달성', tier: 1, category: '패턴 매칭' },
+  { id: 'ACH_PATTERN_B', title: '문자 패턴 B', desc: '지도 상에 헥사곤 타일로 알파벳 B 모양 점령 달성', tier: 1, category: '패턴 매칭' },
+  { id: 'ACH_PATTERN_C', title: '문자 패턴 C', desc: '지도 상에 헥사곤 타일로 알파벳 C 모양 점령 달성', tier: 1, category: '패턴 매칭' },
+  { id: 'ACH_PATTERN_D', title: '문자 패턴 D', desc: '지도 상에 헥사곤 타일로 알파벳 D 모양 점령 달성', tier: 1, category: '패턴 매칭' },
+  { id: 'ACH_PATTERN_E', title: '문자 패턴 E', desc: '지도 상에 헥사곤 타일로 알파벳 E 모양 점령 달성', tier: 1, category: '패턴 매칭' },
+  { id: 'ACH_PATTERN_F', title: '문자 패턴 F', desc: '지도 상에 헥사곤 타일로 알파벳 F 모양 점령 달성', tier: 1, category: '패턴 매칭' },
+  { id: 'ACH_PATTERN_G', title: '문자 패턴 G', desc: '지도 상에 헥사곤 타일로 알파벳 G 모양 점령 달성', tier: 1, category: '패턴 매칭' },
+  { id: 'ACH_PATTERN_H', title: '문자 패턴 H', desc: '지도 상에 헥사곤 타일로 알파벳 H 모양 점령 달성', tier: 1, category: '패턴 매칭' },
+  { id: 'ACH_PATTERN_I', title: '문자 패턴 I', desc: '지도 상에 헥사곤 타일로 알파벳 I 모양 점령 달성', tier: 1, category: '패턴 매칭' },
+  { id: 'ACH_PATTERN_J', title: '문자 패턴 J', desc: '지도 상에 헥사곤 타일로 알파벳 J 모양 점령 달성', tier: 1, category: '패턴 매칭' },
+  { id: 'ACH_PATTERN_K', title: '문자 패턴 K', desc: '지도 상에 헥사곤 타일로 알파벳 K 모양 점령 달성', tier: 1, category: '패턴 매칭' },
+  { id: 'ACH_PATTERN_L', title: '문자 패턴 L', desc: '지도 상에 헥사곤 타일로 알파벳 L 모양 점령 달성', tier: 1, category: '패턴 매칭' },
+  { id: 'ACH_PATTERN_M', title: '문자 패턴 M', desc: '지도 상에 헥사곤 타일로 알파벳 M 모양 점령 달성', tier: 1, category: '패턴 매칭' }
 ];
 

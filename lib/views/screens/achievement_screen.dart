@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import 'package:easy_localization/easy_localization.dart';
 import 'package:google_fonts/google_fonts.dart';
 import '../../models/achievement_model.dart';
 import '../../providers/achievement_provider.dart';
@@ -40,7 +39,7 @@ class _AchievementScreenState extends State<AchievementScreen> {
     final profile = authProvider.profile;
 
     final unlockedIds = achProvider.unlockedAchievementIds;
-    const allAchievements = Achievement.masterAchievements;
+    final allAchievements = Achievement.masterAchievements;
 
     // 전체 달성 통계
     final totalCount = allAchievements.length;
@@ -204,7 +203,7 @@ class _AchievementScreenState extends State<AchievementScreen> {
         children: [
           // 1. 업적 제목
           Text(
-            tr(ach.titleKey),
+            ach.getLocalizedTitle(),
             style: TextStyle(
               color: isUnlocked ? GameColors.textPrimary : GameColors.textSecondary,
               fontSize: 15,
@@ -214,7 +213,7 @@ class _AchievementScreenState extends State<AchievementScreen> {
           const SizedBox(height: 6),
           // 2. 업적 설명
           Text(
-            tr(ach.descriptionKey),
+            ach.getLocalizedDescription(),
             style: TextStyle(
               color: GameColors.textMuted,
               fontSize: 12,
@@ -297,6 +296,8 @@ class _AchievementScreenState extends State<AchievementScreen> {
         return (profile.gold as num).toDouble();
       case AchievementCategory.mainBaseMove:
         return (profile.mainBaseMoveCount as num).toDouble();
+      case AchievementCategory.patternMatch:
+        return 0.0;
     }
   }
 }

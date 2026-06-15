@@ -382,7 +382,10 @@ class GameProvider extends ChangeNotifier with WidgetsBindingObserver {
         }
 
         _goldManager.syncWithServer();
-        _achievementProvider?.checkAndUnlock(capturedTiles: _capturedTiles);
+        _achievementProvider?.checkAndUnlock(
+          capturedTiles: _capturedTiles,
+          newlyCapturedTileId: id,
+        );
         notifyListeners();
       },
       onStateChanged: notifyListeners,
@@ -406,16 +409,25 @@ class GameProvider extends ChangeNotifier with WidgetsBindingObserver {
                 satelliteCaptureCount: _authProvider!.profile!.satelliteCaptureCount + 1,
               );
               _authProvider!.updateProfileCache(updatedProfile);
-              _achievementProvider?.checkAndUnlock(capturedTiles: _capturedTiles);
+              _achievementProvider?.checkAndUnlock(
+                capturedTiles: _capturedTiles,
+                newlyCapturedTileId: tileId,
+              );
               notifyListeners();
             }
           }).catchError((e) {
             debugPrint('⚠️ 위성 점령 카운트 DB 증가 실패: $e');
-            _achievementProvider?.checkAndUnlock(capturedTiles: _capturedTiles);
+            _achievementProvider?.checkAndUnlock(
+              capturedTiles: _capturedTiles,
+              newlyCapturedTileId: tileId,
+            );
             notifyListeners();
           });
         } else {
-          _achievementProvider?.checkAndUnlock(capturedTiles: _capturedTiles);
+          _achievementProvider?.checkAndUnlock(
+            capturedTiles: _capturedTiles,
+            newlyCapturedTileId: tileId,
+          );
           notifyListeners();
         }
       },

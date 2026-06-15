@@ -94,13 +94,13 @@ export default function RankingTab() {
       {error && <div style={{ color: 'var(--accent-red)', fontFamily: 'monospace' }}>{error}</div>}
 
       {/* 랭킹 뷰 보드 */}
-      <div className="tactical-table-container">
+      <div className="tactical-table-container ranking-container">
         {loading ? (
           <div style={{ display: 'flex', justifyContent: 'center', padding: '4rem' }}>
             <div className="tactical-spinner" />
           </div>
         ) : (
-          <table className="tactical-table">
+          <table className="tactical-table ranking-table">
             <thead>
               <tr>
                 <th style={{ width: '80px', textAlign: 'center' }}>순위</th>
@@ -160,8 +160,13 @@ export default function RankingTab() {
                               backgroundColor: agent.color_hex || 'var(--accent-cyan)'
                             }} 
                           />
-                          <div>
-                            <div style={{ fontWeight: 'bold' }}>
+                          <div style={{ minWidth: 0, flex: 1 }}>
+                            <div style={{ 
+                              fontWeight: 'bold',
+                              textOverflow: 'ellipsis',
+                              overflow: 'hidden',
+                              whiteSpace: 'nowrap'
+                            }}>
                               {agent.nickname || '미등록 사용자'}
                             </div>
                           </div>

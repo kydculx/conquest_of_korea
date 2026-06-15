@@ -6,6 +6,7 @@ import 'hud_header_bar.dart';
 import 'hud_profile_button.dart';
 import 'hud_ranking_button.dart';
 import 'hud_achievement_button.dart';
+import 'hud_pattern_guide_button.dart';
 import 'hud_map_cycle_button.dart';
 import 'hud_map_follow_button.dart';
 import 'hud_satellite_bubble.dart';
@@ -38,6 +39,13 @@ class HudOverlay extends StatelessWidget {
           top: topOffset + 3.0,
           left: 20.0,
           child: const CozyHeaderBar(),
+        ),
+
+        // [상단 우측 - 패턴 도감 버튼] 업적 버튼 왼쪽에 1:1 대칭 정렬 나란히 배치 (44x44)
+        Positioned(
+          top: topOffset,
+          right: 20.0 + 44.0 + 10.0 + 44.0 + 10.0 + 44.0 + 10.0, // 프로필 44 + 랭킹 44 + 업적 44 + 여백 30 오프셋 연산
+          child: const PatternGuideActionButton(size: 44),
         ),
 
         // [상단 우측 - 업적 버튼] 랭킹 버튼 왼쪽에 1:1 대칭 정렬 나란히 배치 (44x44)

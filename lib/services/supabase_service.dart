@@ -216,19 +216,50 @@ class SupabaseService {
   }
 
   /// 특정 플레이어의 신규 업적 획득(해금) 기록을 데이터베이스에 등록합니다.
-  Future<bool> unlockAchievement(String userId, String achievementId) async {
+  Future<bool> unlockAchievement(
+    String userId,
+    String achievementId, {
+    List<String>? consumedTileIds,
+  }) async {
     try {
       lastError = null;
-      await _client.from('user_achievements').insert({
+      final Map<String, dynamic> data = {
         'user_id': userId,
         'achievement_id': achievementId,
-      });
-      debugPrint('🏆 업적 해금 등록 완료: $achievementId');
+      };
+      if (consumedTileIds != null && consumedTileIds.isNotEmpty) {
+        data['consumed_tile_ids'] = consumedTileIds;
+      }
+
+      await _client.from('user_achievements').insert(data);
+      debugPrint('🏆 업적 해금 등록 완료: $achievementId (consumed: ${consumedTileIds?.length ?? 0} tiles)');
       return true;
     } catch (e) {
       lastError = e.toString();
       debugPrint('❌ 업적 해금 등록 실패 ($achievementId): $e');
       return false;
+    }
+  }
+
+  /// 특정 플레이어가 달성한 전체 패턴 업적에서 소비 완료 잠금된 타일 ID 리스트를 조회하여 반환합니다.
+  Future<List<String>> fetchConsumedTileIds(String userId) async {
+    try {
+      final response = await _client
+          .from('user_achievements')
+          .select('consumed_tile_ids')
+          .eq('user_id', userId);
+
+      final List<String> allConsumed = [];
+      for (final row in response as List) {
+        final List<dynamic>? ids = row['consumed_tile_ids'] as List<dynamic>?;
+        if (ids != null) {
+          allConsumed.addAll(ids.cast<String>());
+        }
+      }
+      return allConsumed;
+    } catch (e) {
+      debugPrint('❌ 소비 타일 목록 조회 실패: $e');
+      return [];
     }
   }
 

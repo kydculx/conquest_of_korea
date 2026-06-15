@@ -1,6 +1,5 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
-import 'package:easy_localization/easy_localization.dart';
 import '../../models/achievement_model.dart';
 
 /// 업적 해금 시 화면 상단에 표시되는 3D 네온 플로팅 토스트 연출 위젯
@@ -184,7 +183,7 @@ class _AchievementToastState extends State<AchievementToast>
                   ),
                   const SizedBox(height: 2),
                   Text(
-                    tr(widget.achievement.titleKey),
+                    widget.achievement.getLocalizedTitle(),
                     style: const TextStyle(
                       color: Colors.white,
                       fontSize: 16,
@@ -193,7 +192,7 @@ class _AchievementToastState extends State<AchievementToast>
                   ),
                   const SizedBox(height: 1),
                   Text(
-                    tr(widget.achievement.descriptionKey),
+                    widget.achievement.getLocalizedDescription(),
                     style: const TextStyle(
                       color: Colors.white70,
                       fontSize: 12,
@@ -262,6 +261,8 @@ class _AchievementToastState extends State<AchievementToast>
         return Icons.monetization_on;
       case AchievementCategory.mainBaseMove:
         return Icons.home;
+      case AchievementCategory.patternMatch:
+        return Icons.palette;
     }
   }
 }

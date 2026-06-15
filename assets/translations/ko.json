@@ -389,5 +389,10 @@
   "achBaseMovT3Title": "유목민",
   "achBaseMovT3Desc": "본진 이동 10회 완료",
   "achBaseMovT4Title": "역마살 모험가",
-  "achBaseMovT4Desc": "본진 이동 30회 완료"
+  "achBaseMovT4Desc": "본진 이동 30회 완료",
+  "achPatternTitle": "알파벳 정복자: {char}",
+  "achPatternDesc": "지도 위에 문자 '{char}' 모양의 점령 패턴을 완성하십시오.",
+  "patternGuideTitle": "패턴 매칭 도감",
+  "patternGuideSubtitle": "영토를 특정 모양으로 점령하여 신비로운 특수 업적을 획득해 보세요.",
+  "requiredTilesCount": "필요 타일 수: {count}개"
 }

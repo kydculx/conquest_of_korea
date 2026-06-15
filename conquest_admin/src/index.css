@@ -370,6 +370,22 @@ h1, h2, h3, h4, h5 {
     min-width: 650px; /* 테이블 요소가 최소 가로폭을 유지하게 함 */
   }
 
+  .tactical-table-container.ranking-container {
+    overflow-x: hidden; /* 랭킹 리스트 가로 스크롤 완전 차단 */
+  }
+
+  .tactical-table.ranking-table {
+    min-width: auto;
+    width: 100%;
+    table-layout: fixed; /* 가로 크기를 화면 폭에 완전 고정 */
+  }
+
+  /* 모바일 랭킹 열 너비 최적화 */
+  .tactical-table.ranking-table th:first-child,
+  .tactical-table.ranking-table td:first-child {
+    width: 60px !important;
+  }
+
   .desktop-only {
     display: none;
   }

@@ -19,4 +19,7 @@ class AppRoutes {
 
   /// 업적 화면
   static const String achievement = '/achievement';
+
+  /// 패턴 도감 화면
+  static const String patternGuide = '/pattern-guide';
 }
