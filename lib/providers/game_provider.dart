@@ -59,6 +59,9 @@ class GameProvider extends ChangeNotifier with WidgetsBindingObserver {
   /// 지도 카메라가 플레이어의 GPS 실시간 위치를 추적(Following)하고 있는지 여부
   bool _isFollowingUser = true;
 
+  /// 이미 매칭 완료하여 해금한 패턴의 소비 타일들을 맵 상에 하이라이트할지 여부
+  bool _showCompletedPatterns = false;
+
   // --- 위성 스캔 상태 ---
   /// 위성 궤도 정밀 스캔 모드 활성화 여부
   bool _isScanMode = false;
@@ -248,6 +251,15 @@ class GameProvider extends ChangeNotifier with WidgetsBindingObserver {
   /// 지도를 실제로 렌더링해야 하는지의 여부
   bool get showMap => currentMapStyle.url.isNotEmpty;
 
+  /// 완료된 패턴을 맵에서 활성화해서 보여줄지 여부
+  bool get showCompletedPatterns => _showCompletedPatterns;
+
+  /// 완료된 패턴 보기 상태 토글
+  void toggleCompletedPatternsView() {
+    _showCompletedPatterns = !_showCompletedPatterns;
+    notifyListeners();
+  }
+
   /// 본인 플레이어(계정)가 획득한 영토(타일)의 총 개수
   int get myCapturedCount {
     if (_userId == null) return 0;
@@ -383,7 +395,7 @@ class GameProvider extends ChangeNotifier with WidgetsBindingObserver {
 
         _goldManager.syncWithServer();
         _achievementProvider?.checkAndUnlock(
-          capturedTiles: _capturedTiles,
+          capturedTiles: capturedTiles,
           newlyCapturedTileId: id,
         );
         notifyListeners();
@@ -410,7 +422,7 @@ class GameProvider extends ChangeNotifier with WidgetsBindingObserver {
               );
               _authProvider!.updateProfileCache(updatedProfile);
               _achievementProvider?.checkAndUnlock(
-                capturedTiles: _capturedTiles,
+                capturedTiles: capturedTiles,
                 newlyCapturedTileId: tileId,
               );
               notifyListeners();
@@ -418,14 +430,14 @@ class GameProvider extends ChangeNotifier with WidgetsBindingObserver {
           }).catchError((e) {
             debugPrint('⚠️ 위성 점령 카운트 DB 증가 실패: $e');
             _achievementProvider?.checkAndUnlock(
-              capturedTiles: _capturedTiles,
+              capturedTiles: capturedTiles,
               newlyCapturedTileId: tileId,
             );
             notifyListeners();
           });
         } else {
           _achievementProvider?.checkAndUnlock(
-            capturedTiles: _capturedTiles,
+            capturedTiles: capturedTiles,
             newlyCapturedTileId: tileId,
           );
           notifyListeners();
@@ -727,7 +739,7 @@ class GameProvider extends ChangeNotifier with WidgetsBindingObserver {
               totalMovedTilesCount: auth.profile!.totalMovedTilesCount + 1,
             );
             auth.updateProfileCache(updatedProfile);
-            _achievementProvider?.checkAndUnlock(capturedTiles: _capturedTiles);
+            _achievementProvider?.checkAndUnlock(capturedTiles: capturedTiles);
             notifyListeners();
           }
         }).catchError((e) {
@@ -760,7 +772,7 @@ class GameProvider extends ChangeNotifier with WidgetsBindingObserver {
     }
 
     // 업적 조건 체크 호출
-    _achievementProvider?.checkAndUnlock(capturedTiles: _capturedTiles);
+    _achievementProvider?.checkAndUnlock(capturedTiles: capturedTiles);
   }
 
   /// 서버의 점령 상태 결과에 따라 점령 진행 여부를 판별하는 내부 로직
@@ -1140,7 +1152,7 @@ class GameProvider extends ChangeNotifier with WidgetsBindingObserver {
                   satelliteScanCount: _authProvider!.profile!.satelliteScanCount + 1,
                 );
                 _authProvider!.updateProfileCache(updatedProfile);
-                _achievementProvider?.checkAndUnlock(capturedTiles: _capturedTiles);
+                _achievementProvider?.checkAndUnlock(capturedTiles: capturedTiles);
                 notifyListeners();
               } else {
                 _authProvider?.refreshProfile();

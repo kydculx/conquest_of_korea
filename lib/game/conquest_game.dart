@@ -55,6 +55,12 @@ class ConquestGame extends FlameGame {
   /// 현재 위성 궤도 스캔 조준 장치 활성화 여부 상태 캐시
   bool _isScanMode = false;
 
+  /// 이미 매칭 완료하여 해금한 패턴의 소비 타일들을 맵 상에 하이라이트할지 여부
+  bool _showCompletedPatterns = false;
+
+  /// 해금된 패턴 업적에 소비된 타일 ID 목록 캐시
+  Set<String> _consumedTileIds = {};
+
   /// 현재 로그인된 플레이어의 ID 정보 캐시
   String? _currentUserId;
 
@@ -262,6 +268,10 @@ class ConquestGame extends FlameGame {
     final List<HexTile> visibleTiles = [];
 
     _lastClusteredTiles.forEach((id, tile) {
+      // 패턴 뷰 모드 활성화 시, 이미 소비된 타일은 일반 영토 렌더링에서 제외 (패턴 전용 하이라이트가 덮어씌움)
+      if (_showCompletedPatterns && _consumedTileIds.contains(id)) {
+        return;
+      }
       final centerLatLng = _clusterHelper.getTileCenter(tile.q, tile.r, id, dynamicHexSize);
       final double lat = centerLatLng.latitude;
       final double lng = centerLatLng.longitude;
@@ -275,6 +285,33 @@ class ConquestGame extends FlameGame {
         visibleTiles.add(tile);
       }
     });
+
+    // 패턴 뷰 모드 활성화 시 완료한 패턴 타일들을 가식 영역 체크 후 강제 렌더링 목록에 주입
+    if (_showCompletedPatterns) {
+      for (final tileId in _consumedTileIds) {
+        final parsed = HexService.parseTileId(tileId);
+        if (parsed != null) {
+          final int q = parsed['q'] as int;
+          final int r = parsed['r'] as int;
+          final centerLatLng = _clusterHelper.getTileCenter(q, r, tileId, dynamicHexSize);
+          final double lat = centerLatLng.latitude;
+          final double lng = centerLatLng.longitude;
+
+          if (lat >= minLat && lat <= maxLat && lng >= minLng && lng <= maxLng) {
+            visibleIds.add(tileId);
+            visibleTiles.add(HexTile(
+              id: tileId,
+              q: q,
+              r: r,
+              userId: 'pattern_consumed',
+              colorHex: '#0066FF', // 완료 패턴 타일용 특수 파란색
+              capturedAt: DateTime.now(),
+              captureCount: 1,
+            ));
+          }
+        }
+      }
+    }
 
     // 2. 화면 영역 밖으로 벗어났거나 실제 점령 데이터가 없는 기존 컴포넌트 타일들은 즉시 소멸시켜 CPU/메모리 부하 차단 (단, 현재 점령 진행 중인 타일은 예외 수호)
     final existingIds = _tileMap.keys.toSet();
@@ -297,9 +334,11 @@ class ConquestGame extends FlameGame {
       final cornerLatLngs = _clusterHelper.getTileCorners(q, r, id, dynamicHexSize);
       final screenOffset = _mapController!.camera.latLngToScreenOffset(centerLatLng);
 
-      final targetTileColorHex = (tileData.userId == _currentUserId)
-          ? GameColors.myTileColorHex
-          : GameColors.enemyTileColorHex;
+      final targetTileColorHex = (tileData.userId == 'pattern_consumed')
+          ? '#0066FF'
+          : ((tileData.userId == _currentUserId)
+              ? GameColors.myTileColorHex
+              : GameColors.enemyTileColorHex);
 
       if (_tileMap.containsKey(id)) {
         _tileMap[id]!.position = Vector2(screenOffset.dx, screenOffset.dy);
@@ -337,6 +376,8 @@ class ConquestGame extends FlameGame {
     double satelliteTravelProgress = 0.0,
     double satelliteCaptureProgress = 0.0,
     String? satelliteCapturingTileId,
+    bool showCompletedPatterns = false,
+    Set<String>? consumedTileIds,
   }) {
     _lastCapturedTiles = capturedTiles;
     _lastCapturingColorHex = capturingColorHex;
@@ -347,6 +388,8 @@ class ConquestGame extends FlameGame {
     _satelliteTravelProgress = satelliteTravelProgress;
     _satelliteCaptureProgress = satelliteCaptureProgress;
     _satelliteCapturingTileId = satelliteCapturingTileId;
+    _showCompletedPatterns = showCompletedPatterns;
+    _consumedTileIds = consumedTileIds ?? {};
     if (isLoaded) {
       player.isVisible = true;
     }

@@ -40,7 +40,7 @@ class HexPatternPainter extends CustomPainter {
     // 2. 15x15 그리드 고정 한계 범위 정의 (q: -7 ~ 7, r: -7 ~ 7)
     // 모든 알파벳 문자의 타일 크기를 일관성 있게 유지하고 캔버스 밖으로 나가지 않도록 고정 스펙 사용
     final double layoutWidth = 21.0 * math.sqrt(3);
-    final double layoutHeight = 21.0;
+    const double layoutHeight = 21.0;
 
     // 3. 캔버스 영역 내 여백(Padding)을 고려한 동적 스케일 크기(Hex Radius) 계산
     const double padding = 24.0; // 박스 테두리를 최대한 안 넘어가도록 조율된 여백

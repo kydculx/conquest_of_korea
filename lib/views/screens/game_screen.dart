@@ -220,6 +220,10 @@ class _GameScreenState extends State<GameScreen> {
       satelliteTravelProgress: _gameProvider!.satelliteTravelProgress,
       satelliteCaptureProgress: _gameProvider!.satelliteCaptureProgress,
       satelliteCapturingTileId: _gameProvider!.satelliteCapturingTileId,
+      showCompletedPatterns: _gameProvider!.showCompletedPatterns,
+      consumedTileIds: _gameProvider!.showCompletedPatterns
+          ? (_achievementProvider?.consumedTileIds ?? {})
+          : {},
     );
   }
 

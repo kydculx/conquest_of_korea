@@ -32,7 +32,6 @@ create policy "Users can update their own profile."
 create table if not exists public.user_achievements (
   user_id uuid references auth.users(id) on delete cascade not null,
   achievement_id text not null,
-  consumed_tile_ids text[] default '{}',
   unlocked_at timestamptz default now(),
   primary key (user_id, achievement_id)
 );
@@ -86,6 +85,29 @@ create policy "Authenticated users can update captured tiles."
 
 create policy "Authenticated users can delete their own captured tiles."
   on captured_tiles for delete
+  using ( auth.uid() = user_id );
+
+-- [신규] 패턴 업적 해금에 소비된 개별 타일 매핑 테이블 생성
+create table if not exists public.user_achievement_tiles (
+  user_id uuid references auth.users(id) on delete cascade not null,
+  achievement_id text not null,
+  tile_id text not null,
+  primary key (user_id, achievement_id, tile_id)
+);
+
+-- user_achievement_tiles RLS 설정 및 정책 추가
+alter table public.user_achievement_tiles enable row level security;
+
+create policy "Users can view their own achievement tiles."
+  on user_achievement_tiles for select
+  using ( auth.uid() = user_id );
+
+create policy "Users can insert their own achievement tiles."
+  on user_achievement_tiles for insert
+  with check ( auth.uid() = user_id );
+
+create policy "Users can delete their own achievement tiles."
+  on user_achievement_tiles for delete
   using ( auth.uid() = user_id );
 
 -- [신규] 구버전 충돌 방지를 위한 안전한 DROP 구문 선언

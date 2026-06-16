@@ -227,11 +227,30 @@ class SupabaseService {
         'user_id': userId,
         'achievement_id': achievementId,
       };
+
+      // 1. 업적 해금 기본 정보 인서트
+      await _client.from('user_achievements').insert(data);
+
+      // 2. 소비된 타일 정보 인서트 (있는 경우)
       if (consumedTileIds != null && consumedTileIds.isNotEmpty) {
-        data['consumed_tile_ids'] = consumedTileIds;
+        try {
+          final List<Map<String, dynamic>> tileData = consumedTileIds.map((tileId) => {
+            'user_id': userId,
+            'achievement_id': achievementId,
+            'tile_id': tileId,
+          }).toList();
+          await _client.from('user_achievement_tiles').insert(tileData);
+        } catch (tileErr) {
+          // 타일 인서트 실패 시 트랜잭션 수동 롤백을 위해 user_achievements 데이터 제거
+          await _client
+              .from('user_achievements')
+              .delete()
+              .eq('user_id', userId)
+              .eq('achievement_id', achievementId);
+          rethrow;
+        }
       }
 
-      await _client.from('user_achievements').insert(data);
       debugPrint('🏆 업적 해금 등록 완료: $achievementId (consumed: ${consumedTileIds?.length ?? 0} tiles)');
       return true;
     } catch (e) {
@@ -245,18 +264,13 @@ class SupabaseService {
   Future<List<String>> fetchConsumedTileIds(String userId) async {
     try {
       final response = await _client
-          .from('user_achievements')
-          .select('consumed_tile_ids')
+          .from('user_achievement_tiles')
+          .select('tile_id')
           .eq('user_id', userId);
 
-      final List<String> allConsumed = [];
-      for (final row in response as List) {
-        final List<dynamic>? ids = row['consumed_tile_ids'] as List<dynamic>?;
-        if (ids != null) {
-          allConsumed.addAll(ids.cast<String>());
-        }
-      }
-      return allConsumed;
+      return (response as List)
+          .map((e) => e['tile_id'] as String)
+          .toList();
     } catch (e) {
       debugPrint('❌ 소비 타일 목록 조회 실패: $e');
       return [];

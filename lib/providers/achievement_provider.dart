@@ -18,6 +18,7 @@ class AchievementProvider extends ChangeNotifier {
   List<String> _unlockedAchievementIds = [];
   bool _isLoading = false;
   bool _isChecking = false; // 연타 점령 시 비동기 경합(Race Condition)을 가드하는 락 플래그
+  bool _hasPendingCheck = false; // 진행 중인 판정이 있을 때 후속 판정 요청을 임시 기록하는 플래그
 
   // 패턴별 상대 좌표 목록 캐시 (key: 'A', value: [ {q: 0, r: 0}, ... ])
   final Map<String, List<Map<String, int>>> _loadedPatterns = {};
@@ -225,6 +226,9 @@ class AchievementProvider extends ChangeNotifier {
   /// 해금 완료된 업적 ID 목록 반환
   List<String> get unlockedAchievementIds => List.unmodifiable(_unlockedAchievementIds);
 
+  /// 업적 해금에 소비된 타일 ID 목록 반환
+  Set<String> get consumedTileIds => Set.unmodifiable(_consumedTileIds);
+
   /// 업적 데이터베이스 로딩 여부
   bool get isLoading => _isLoading;
 
@@ -323,91 +327,115 @@ class AchievementProvider extends ChangeNotifier {
   }) async {
     final profile = _authProvider?.profile;
     final userId = _authProvider?.user?.id;
-    if (profile == null || userId == null || _isLoading || _isChecking) return;
+    if (profile == null || userId == null || _isLoading) return;
+
+    if (_isChecking) {
+      _hasPendingCheck = true;
+      return;
+    }
 
     _isChecking = true;
+    _hasPendingCheck = false;
+
     try {
-      // 미획득 업적 목록만 추려 판정 대상 설정
-      final List<Achievement> pending = Achievement.masterAchievements
-          .where((a) => !_unlockedAchievementIds.contains(a.id))
-          .toList();
-
-      if (pending.isEmpty) return;
-
-      // 본부 요새화 레벨 1회 한정 연산 (타일 정보가 넘어왔을 때만 연산 가동)
-      final hqLevel = capturedTiles != null
-          ? getHQFortificationLevel(profile.mainBaseTileId, userId, capturedTiles)
-          : 0;
-
-      for (final ach in pending) {
-        bool shouldUnlock = false;
-        List<String>? currentMatchedIds;
-
-        switch (ach.category) {
-          case AchievementCategory.capturedTiles:
-            shouldUnlock = profile.capturedTilesCount >= ach.threshold;
-            break;
-          case AchievementCategory.enemyCapturedTiles:
-            shouldUnlock = profile.enemyCapturedTilesCount >= ach.threshold;
-            break;
-          case AchievementCategory.totalMovedTiles:
-            shouldUnlock = profile.totalMovedTilesCount >= ach.threshold;
-            break;
-          case AchievementCategory.dailyMovedTiles:
-            shouldUnlock = profile.dailyMovedTilesCount >= ach.threshold;
-            break;
-          case AchievementCategory.satelliteCapture:
-            shouldUnlock = profile.satelliteCaptureCount >= ach.threshold;
-            break;
-          case AchievementCategory.satelliteInfo:
-            shouldUnlock = profile.satelliteScanCount >= ach.threshold;
-            break;
-          case AchievementCategory.hqFortification:
-            // 타일 정보가 넘어왔을 때만 본부 요새화 링 판정을 가동
-            if (capturedTiles != null) {
-              shouldUnlock = hqLevel >= ach.threshold;
-            }
-            break;
-          case AchievementCategory.goldAmount:
-            shouldUnlock = profile.gold >= ach.threshold;
-            break;
-          case AchievementCategory.mainBaseMove:
-            shouldUnlock = profile.mainBaseMoveCount >= ach.threshold;
-            break;
-          case AchievementCategory.patternMatch:
-            if (capturedTiles != null) {
-              final String char = ach.id.replaceFirst('ACH_PATTERN_', '');
-              await _ensurePatternLoaded(char);
-              currentMatchedIds = _checkPatternMatch(
-                char,
-                capturedTiles,
-                userId,
-                newlyCapturedTileId: newlyCapturedTileId,
-              );
-              shouldUnlock = currentMatchedIds != null;
-            }
-            break;
-        }
-
-        if (shouldUnlock) {
-          // 백엔드 데이터 동기화 시도 (소비된 타일 목록 포함)
-          final success = await _supabase.unlockAchievement(
-            userId,
-            ach.id,
-            consumedTileIds: currentMatchedIds,
-          );
-          if (success) {
-            _unlockedAchievementIds.add(ach.id);
-            if (currentMatchedIds != null) {
-              _consumedTileIds.addAll(currentMatchedIds);
-            }
-            _unlockStreamController.add(ach); // 해금 완료 이벤트 중계
-            notifyListeners();
-          }
-        }
-      }
+      await _runCheckFlow(capturedTiles, newlyCapturedTileId, profile, userId);
     } finally {
       _isChecking = false;
+      if (_hasPendingCheck) {
+        _hasPendingCheck = false;
+        Future.microtask(() => checkAndUnlock(
+          capturedTiles: capturedTiles,
+          newlyCapturedTileId: newlyCapturedTileId,
+        ));
+      }
+    }
+  }
+
+  /// 실제 업적 검증 및 해금 API 동기화 플로우를 진행하는 비동기 내부 헬퍼 메서드
+  Future<void> _runCheckFlow(
+    Map<String, HexTile>? capturedTiles,
+    String? newlyCapturedTileId,
+    dynamic profile,
+    String userId,
+  ) async {
+    // 미획득 업적 목록만 추려 판정 대상 설정
+    final List<Achievement> pending = Achievement.masterAchievements
+        .where((a) => !_unlockedAchievementIds.contains(a.id))
+        .toList();
+
+    if (pending.isEmpty) return;
+
+    // 본부 요새화 레벨 1회 한정 연산 (타일 정보가 넘어왔을 때만 연산 가동)
+    final hqLevel = capturedTiles != null
+        ? getHQFortificationLevel(profile.mainBaseTileId, userId, capturedTiles)
+        : 0;
+
+    for (final ach in pending) {
+      bool shouldUnlock = false;
+      List<String>? currentMatchedIds;
+
+      switch (ach.category) {
+        case AchievementCategory.capturedTiles:
+          shouldUnlock = profile.capturedTilesCount >= ach.threshold;
+          break;
+        case AchievementCategory.enemyCapturedTiles:
+          shouldUnlock = profile.enemyCapturedTilesCount >= ach.threshold;
+          break;
+        case AchievementCategory.totalMovedTiles:
+          shouldUnlock = profile.totalMovedTilesCount >= ach.threshold;
+          break;
+        case AchievementCategory.dailyMovedTiles:
+          shouldUnlock = profile.dailyMovedTilesCount >= ach.threshold;
+          break;
+        case AchievementCategory.satelliteCapture:
+          shouldUnlock = profile.satelliteCaptureCount >= ach.threshold;
+          break;
+        case AchievementCategory.satelliteInfo:
+          shouldUnlock = profile.satelliteScanCount >= ach.threshold;
+          break;
+        case AchievementCategory.hqFortification:
+          // 타일 정보가 넘어왔을 때만 본부 요새화 링 판정을 가동
+          if (capturedTiles != null) {
+            shouldUnlock = hqLevel >= ach.threshold;
+          }
+          break;
+        case AchievementCategory.goldAmount:
+          shouldUnlock = profile.gold >= ach.threshold;
+          break;
+        case AchievementCategory.mainBaseMove:
+          shouldUnlock = profile.mainBaseMoveCount >= ach.threshold;
+          break;
+        case AchievementCategory.patternMatch:
+          if (capturedTiles != null) {
+            final String char = ach.id.replaceFirst('ACH_PATTERN_', '');
+            await _ensurePatternLoaded(char);
+            currentMatchedIds = _checkPatternMatch(
+              char,
+              capturedTiles,
+              userId,
+              newlyCapturedTileId: newlyCapturedTileId,
+            );
+            shouldUnlock = currentMatchedIds != null;
+          }
+          break;
+      }
+
+      if (shouldUnlock) {
+        // 백엔드 데이터 동기화 시도 (소비된 타일 목록 포함)
+        final success = await _supabase.unlockAchievement(
+          userId,
+          ach.id,
+          consumedTileIds: currentMatchedIds,
+        );
+        if (success) {
+          _unlockedAchievementIds.add(ach.id);
+          if (currentMatchedIds != null) {
+            _consumedTileIds.addAll(currentMatchedIds);
+          }
+          _unlockStreamController.add(ach); // 해금 완료 이벤트 중계
+          notifyListeners();
+        }
+      }
     }
   }
 }
