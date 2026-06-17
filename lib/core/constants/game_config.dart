@@ -107,4 +107,10 @@ class GameConfig {
 
   /// LOD 3 단계(800m 타일)가 활성화되는 최소 줌 레벨 임계치
   static const double lodZoomThreshold3 = 8.5;
+
+  /// 동전 획득 시 지급되는 기본 보상 골드 (수정이 용이한 전역변수)
+  static double coinGoldReward = 50.0;
+
+  /// 동전 스폰/탐색 반경 타일 범위
+  static const int coinSpawnRadius = 15;
 }

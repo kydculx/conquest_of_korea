@@ -3,6 +3,7 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 import '../core/app_config.dart';
 import '../models/tile_model.dart';
 import '../models/user_profile.dart';
+import '../models/user_coin.dart';
 
 /// Supabase 백엔드 데이터베이스 및 Realtime 데이터 처리를 담당하는 네트워크 통신 서비스 클래스
 class SupabaseService {
@@ -315,6 +316,71 @@ class SupabaseService {
     } catch (e) {
       lastError = e.toString();
       debugPrint('❌ 본진 이동 카운트 증가 실패: $e');
+      return false;
+    }
+  }
+
+  /// 특정 사용자의 활성화된 동전 목록을 조회합니다.
+  Future<List<UserCoin>> fetchUserCoins(String userId) async {
+    try {
+      final response = await _client
+          .from('user_coins')
+          .select('*')
+          .eq('user_id', userId);
+      return (response as List)
+          .map((e) => UserCoin.fromJson(_toMap(e)))
+          .toList();
+    } catch (e) {
+      debugPrint('❌ 동전 목록 조회 실패: $e');
+      return [];
+    }
+  }
+
+  /// 특정 사용자의 기존 동전 데이터를 모두 삭제합니다.
+  Future<bool> clearUserCoins(String userId) async {
+    try {
+      lastError = null;
+      await _client.from('user_coins').delete().eq('user_id', userId);
+      return true;
+    } catch (e) {
+      lastError = e.toString();
+      debugPrint('❌ 동전 데이터 초기화 실패: $e');
+      return false;
+    }
+  }
+
+  /// 생성된 신규 동전 목록을 벌크 삽입합니다.
+  Future<bool> insertUserCoins(List<UserCoin> coins) async {
+    try {
+      lastError = null;
+      final data = coins.map((e) => e.toJson()).toList();
+      await _client.from('user_coins').insert(data);
+      return true;
+    } catch (e) {
+      lastError = e.toString();
+      debugPrint('❌ 신규 동전 삽입 실패: $e');
+      return false;
+    }
+  }
+
+  /// 동전 획득 RPC 함수를 호출하여 안전하게 골드를 정산하고 획득 상태를 갱신합니다.
+  Future<bool> collectCoin(
+    String userId,
+    String tileId,
+    double rewardGold,
+  ) async {
+    try {
+      lastError = null;
+      final params = {
+        'p_user_id': userId,
+        'p_tile_id': tileId,
+        'p_reward_gold': rewardGold,
+      };
+      final response = await _client.rpc('collect_coin', params: params);
+      return response as bool? ?? false;
+    } catch (e) {
+      lastError = e.toString();
+      debugPrint('❌ 동전 획득 RPC 처리 실패: $e');
       return false;
     }
   }

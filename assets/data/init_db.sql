@@ -431,6 +431,75 @@ SELECT cron.schedule(
   $$ UPDATE public.profiles SET daily_moved_tiles_count = 0 $$
 );
 
+-- [신규] 동전(코인) 아이템 위치 및 획득 상태 기록 테이블 생성
+CREATE TABLE IF NOT EXISTS public.user_coins (
+  user_id UUID REFERENCES auth.users(id) ON DELETE CASCADE NOT NULL,
+  tile_id TEXT NOT NULL,
+  q INT NOT NULL,
+  r INT NOT NULL,
+  is_collected BOOLEAN DEFAULT false NOT NULL,
+  created_at TIMESTAMPTZ DEFAULT now() NOT NULL,
+  collected_at TIMESTAMPTZ,
+  PRIMARY KEY (user_id, tile_id)
+);
+
+-- user_coins RLS 설정 및 보안 정책 추가
+ALTER TABLE public.user_coins ENABLE ROW LEVEL SECURITY;
+
+CREATE POLICY "Users can view their own coins."
+  ON public.user_coins FOR SELECT
+  USING ( auth.uid() = user_id );
+
+CREATE POLICY "Users can insert their own coins."
+  ON public.user_coins FOR INSERT
+  WITH CHECK ( auth.uid() = user_id );
+
+CREATE POLICY "Users can update their own coins."
+  ON public.user_coins FOR UPDATE
+  USING ( auth.uid() = user_id );
+
+CREATE POLICY "Users can delete their own coins."
+  ON public.user_coins FOR DELETE
+  USING ( auth.uid() = user_id );
+
+-- [신규] 동전 획득 처리 RPC 함수 (동전 상태 갱신 + 골드 가산)
+CREATE OR REPLACE FUNCTION public.collect_coin(
+  p_user_id UUID,
+  p_tile_id TEXT,
+  p_reward_gold NUMERIC
+) RETURNS BOOLEAN
+  SECURITY DEFINER
+  SET search_path = public
+AS $$
+DECLARE
+  v_already_collected BOOLEAN;
+BEGIN
+  -- 1. 동시성 제어를 위해 행 락(Row Lock)을 걸어 조회
+  SELECT is_collected INTO v_already_collected
+  FROM public.user_coins
+  WHERE user_id = p_user_id AND tile_id = p_tile_id
+  FOR UPDATE;
+
+  IF NOT FOUND OR v_already_collected THEN
+    RETURN false; -- 동전이 없거나 이미 획득함
+  END IF;
+
+  -- 2. 동전 상태를 획득으로 변경
+  UPDATE public.user_coins
+  SET is_collected = true,
+      collected_at = now()
+  WHERE user_id = p_user_id AND tile_id = p_tile_id;
+
+  -- 3. 유저 프로필에 골드 가산
+  UPDATE public.profiles
+  SET gold = COALESCE(gold, 0) + p_reward_gold,
+      last_gold_updated_at = now()
+  WHERE id = p_user_id;
+
+  RETURN true;
+END;
+$$ LANGUAGE plpgsql;
+
 
 
 

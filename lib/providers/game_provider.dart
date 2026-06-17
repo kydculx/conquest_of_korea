@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:math' as math;
 import 'package:flutter/widgets.dart';
 import 'package:latlong2/latlong.dart';
 import '../controllers/capture_controller.dart';
@@ -8,6 +9,7 @@ import '../controllers/satellite_capture_controller.dart';
 import '../models/alert_model.dart';
 import '../models/tile_model.dart';
 import '../models/user_profile.dart';
+import '../models/user_coin.dart';
 import '../providers/location_provider.dart';
 import '../providers/auth_provider.dart';
 import '../providers/achievement_provider.dart';
@@ -33,6 +35,14 @@ class GameProvider extends ChangeNotifier with WidgetsBindingObserver {
 
   /// 백그라운드 점령 및 침공 상태 정기 검사를 수행하는 타이머
   Timer? _backgroundPollingTimer;
+
+  /// UTC 자정 카운트다운을 업데이트하는 1초 주기 타이머
+  Timer? _utcTimer;
+
+  /// UTC 00시까지 남은 시간 문자열 (HH:MM:SS)
+  String _utcTimeString = '00:00:00';
+
+  String get utcTimeString => _utcTimeString;
 
   /// 초기화 완료 처리를 조율하는 Completer 객체
   final Completer<void> _initCompleter = Completer<void>();
@@ -86,6 +96,13 @@ class GameProvider extends ChangeNotifier with WidgetsBindingObserver {
   // --- 편법 방지용 최근 방문한 2개 타일 ID 캐시 ---
   String? _lastTileId;
   String? _secondLastTileId;
+
+  // --- 동전 아이템 상태 ---
+  List<UserCoin> _coins = [];
+  List<UserCoin> get coins => List.unmodifiable(_coins);
+
+  /// 동전 재생성이 비동기적으로 중복 실행되는 것을 방지하는 뮤텍스 락 플래그
+  bool _isRegeneratingCoins = false;
 
   // --- 재화(골드) 상태 관리자 ---
   late final GoldManager _goldManager;
@@ -342,6 +359,7 @@ class GameProvider extends ChangeNotifier with WidgetsBindingObserver {
   /// GameProvider 생성자로 초기 점령 컨트롤러 설정 및 로컬 데이터 동기화를 지시합니다.
   GameProvider({required SupabaseService supabase}) : _supabase = supabase {
     WidgetsBinding.instance.addObserver(this);
+    _startUtcTimer();
     _goldManager = GoldManager(
       supabase: supabase,
       getAuthProvider: () => _authProvider,
@@ -409,6 +427,9 @@ class GameProvider extends ChangeNotifier with WidgetsBindingObserver {
         _capturedTiles[tileId] = tile;
         _selectedScanTileId = null;
         _selectedScanTileLatLng = null;
+
+        // 🪙 동전 원격 점령 획득 체크
+        _checkCoinCollection(tileId);
 
         // 🎵 공통 알림 효과음 재생
         AudioService().playNotification();
@@ -534,6 +555,9 @@ class GameProvider extends ChangeNotifier with WidgetsBindingObserver {
           _goldManager.setGold(serverGold);
         }
       }
+
+      // 동전 데이터 동기화 및 재생성 체크 수행
+      _checkAndSyncCoins();
 
       // 1. 프로필이 null이었다가 최초 로드(비동기 완료)된 시점
       // 2. 혹은 골드 타이머가 실행 중이지 않은 상태일 때 동기화 트리거
@@ -718,6 +742,10 @@ class GameProvider extends ChangeNotifier with WidgetsBindingObserver {
 
     final hex = HexService.latLngToHex(loc.currentLocation!);
     final tileId = HexService.tileId(hex['q']!, hex['r']!);
+
+    // --- [신규] 동전 자정 경과 체크 및 동전 획득 검사 ---
+    _checkAndSyncCoins();
+    _checkCoinCollection(tileId);
 
     // --- [신규] 편법 방지 타일 이동 카운팅 및 랭킹 반영 로직 ---
     if (_lastTileId == null) {
@@ -1221,6 +1249,7 @@ class GameProvider extends ChangeNotifier with WidgetsBindingObserver {
     _goldManager.dispose();
     _tilesStreamSub?.cancel();
     _backgroundPollingTimer?.cancel();
+    _utcTimer?.cancel();
     _satelliteController.dispose();
     _locationProvider?.removeListener(onLocationUpdated);
     _captureController.dispose();
@@ -1312,4 +1341,301 @@ class GameProvider extends ChangeNotifier with WidgetsBindingObserver {
     }
   }
 
+  /// 동전 데이터를 서버에서 가져오고, 자정이 경과했으면 새로 생성합니다.
+  Future<void> _checkAndSyncCoins() async {
+    final myId = _userId;
+    if (myId == null) return;
+    if (_isRegeneratingCoins) {
+      debugPrint('🪙 [동전 가드] 이미 동전 재생성이 진행 중이므로 중복 동기화 패치를 취소합니다.');
+      return;
+    }
+
+    try {
+      // 1. 오늘 날짜(UTC 기준 YYYY-MM-DD) 확인
+      final nowUtc = DateTime.now().toUtc();
+      final todayStr = "${nowUtc.year}-${nowUtc.month.toString().padLeft(2, '0')}-${nowUtc.day.toString().padLeft(2, '0')}";
+
+      // 2. 로컬에 저장된 마지막 동전 생성 날짜 조회
+      final lastDate = await PreferencesService.getLastCoinGeneratedDate();
+
+      // [최적화 & 레이스 컨디션 방지]
+      // 이미 로컬 메모리에 동전 목록이 로드되어 있고 생성 날짜가 오늘과 일치한다면,
+      // 매초 GPS 갱신 시마다 무차별적으로 서버에서 동전을 재조회하는 오버헤드를 막기 위해 즉시 얼리 리턴합니다.
+      if (_coins.isNotEmpty && lastDate == todayStr) {
+        return;
+      }
+
+      // 3. 서버에서 기존 동전 목록 조회
+      final existingCoins = await _supabase.fetchUserCoins(myId);
+
+      // 재생성 기준: 저장된 생성 날짜가 오늘(UTC)과 다르거나, DB에 활성화된 동전이 아예 없는 경우
+      if (lastDate != todayStr || existingCoins.isEmpty) {
+        debugPrint('🪙 자정 경과 또는 동전 없음 감지 ➔ 동전 재생성 시작 (UTC: $todayStr)');
+        await _regenerateCoins(myId, todayStr);
+      } else {
+        // 기존 동전 사용
+        _coins = existingCoins;
+        notifyListeners();
+      }
+    } catch (e) {
+      debugPrint('⚠️ 동전 상태 체크 및 동기화 실패: $e');
+    }
+  }
+
+  /// [디버그 전용] 현재 위치를 기준으로 자정 경과 여부와 상관없이 동전을 즉시 임의 재생성하여 초기화합니다.
+  Future<void> debugRegenerateCoins() async {
+    final myId = _userId;
+    if (myId == null) {
+      addAlert('로그인이 필요한 작업입니다.', AlertType.error);
+      return;
+    }
+    if (_isRegeneratingCoins) {
+      addAlert('이미 동전 재배치가 진행 중입니다. 잠시만 기다려주세요.', AlertType.error);
+      return;
+    }
+
+    // 통신 딜레이 동안 이전 동전이 지도에 계속 보이는 현상을 방지하기 위해 로컬 목록 즉각 소거
+    _coins = [];
+    notifyListeners();
+
+    final nowUtc = DateTime.now().toUtc();
+    final todayStr = "${nowUtc.year}-${nowUtc.month.toString().padLeft(2, '0')}-${nowUtc.day.toString().padLeft(2, '0')}";
+
+    addAlert('동전을 즉시 재배치하는 중...', AlertType.info);
+
+    try {
+      await _regenerateCoins(myId, todayStr);
+      addAlert('동전이 현재 위치 기준으로 성공적으로 초기화되었습니다!', AlertType.info);
+    } catch (e) {
+      addAlert('동전 초기화 실패: $e', AlertType.error);
+    }
+  }
+
+  /// 현재 위치 기준 15타일 반경 이내 무작위 10개 동전 생성
+  Future<void> _regenerateCoins(String userId, String todayStr) async {
+    if (_isRegeneratingCoins) return;
+    _isRegeneratingCoins = true; // 락 획득
+
+    final loc = _locationProvider;
+    final currLoc = loc?.currentLocation;
+    if (currLoc == null) {
+      debugPrint('⚠️ 위치 정보가 없어 동전을 재생성할 수 없습니다. 다음 위치 업데이트 시도 대기.');
+      _isRegeneratingCoins = false; // 위치 수신 실패 시 락 해제
+      return;
+    }
+
+    try {
+      final centerHex = HexService.latLngToHex(currLoc);
+      final int centerQ = centerHex['q']!;
+      final int centerR = centerHex['r']!;
+      const int radius = GameConfig.coinSpawnRadius;
+
+      // 1. 15타일 이내의 모든 axial 타일 후보 수집 (본인 위치 제외)
+      // 원형에 가까운 분포를 위해 기본적으로 거리가 8~11타일 사이인 곳을 우선 후보로 수집하고, 그 외는 백업으로 수집
+      final List<Map<String, dynamic>> candidates = [];
+      final List<Map<String, dynamic>> backupCandidates = [];
+      final centerLatLng = HexService.hexToLatLng(centerQ, centerR);
+
+      for (int q = -radius; q <= radius; q++) {
+        final int rMin = math.max(-radius, -q - radius);
+        final int rMax = math.min(radius, -q + radius);
+        for (int r = rMin; r <= rMax; r++) {
+          if (q == 0 && r == 0) continue; // 내 위치 제외
+          final targetQ = centerQ + q;
+          final targetR = centerR + r;
+          final targetLatLng = HexService.hexToLatLng(targetQ, targetR);
+
+          // 방위각(라디안) 계산: -pi ~ pi
+          final double dLat = targetLatLng.latitude - centerLatLng.latitude;
+          final double dLng = targetLatLng.longitude - centerLatLng.longitude;
+          final double angle = math.atan2(dLat, dLng);
+
+          // 헥사곤 격자 거리 계산
+          final int distance = ((q.abs() + r.abs() + (q + r).abs()) / 2).round();
+
+          final item = {
+            'q': targetQ,
+            'r': targetR,
+            'angle': angle,
+          };
+
+          if (distance >= 4 && distance <= 6) {
+            candidates.add(item);
+          } else {
+            backupCandidates.add(item);
+          }
+        }
+      }
+
+      if (candidates.isEmpty && backupCandidates.isEmpty) return;
+
+      // 2. 각도 기준(-pi ~ pi)으로 10개의 슬라이스 구역 분할 및 균등 무작위 추출 (기본 후보군인 4~6타일 범위 내에서 우선 진행)
+      final List<Map<String, int>> selected = [];
+      const int numSlices = 10;
+      const double sliceWidth = (2 * math.pi) / numSlices;
+
+      for (int i = 0; i < numSlices; i++) {
+        final double sliceMin = -math.pi + (i * sliceWidth);
+        final double sliceMax = sliceMin + sliceWidth;
+
+        // 해당 각도 범위에 속하는 기본 후보군 필터링
+        final sliceCandidates = candidates.where((c) {
+          final double angle = c['angle'] as double;
+          return angle >= sliceMin && angle < sliceMax;
+        }).toList();
+
+        if (sliceCandidates.isNotEmpty) {
+          sliceCandidates.shuffle();
+          final chosen = sliceCandidates.first;
+          selected.add({
+            'q': chosen['q'] as int,
+            'r': chosen['r'] as int,
+          });
+        }
+      }
+
+      // 3. 슬라이스 부족 시 기본 후보군(4~6타일) 중 남은 후보에서 중복 없이 채우기
+      if (selected.length < 10) {
+        candidates.shuffle();
+        for (final c in candidates) {
+          if (selected.length >= 10) break;
+          final targetQ = c['q'] as int;
+          final targetR = c['r'] as int;
+          final isDuplicate = selected.any((s) => s['q'] == targetQ && s['r'] == targetR);
+          if (!isDuplicate) {
+            selected.add({
+              'q': targetQ,
+              'r': targetR,
+            });
+          }
+        }
+      }
+
+      // 4. 그럼에도 부족하면 백업 후보군(1~15타일 중 4~6이 아닌 구역)에서 채우기
+      if (selected.length < 10) {
+        backupCandidates.shuffle();
+        for (final c in backupCandidates) {
+          if (selected.length >= 10) break;
+          final targetQ = c['q'] as int;
+          final targetR = c['r'] as int;
+          final isDuplicate = selected.any((s) => s['q'] == targetQ && s['r'] == targetR);
+          if (!isDuplicate) {
+            selected.add({
+              'q': targetQ,
+              'r': targetR,
+            });
+          }
+        }
+      }
+
+      // 3. UserCoin 리스트 작성
+      final List<UserCoin> newCoins = selected.map((c) {
+        final q = c['q']!;
+        final r = c['r']!;
+        final tileId = HexService.tileId(q, r);
+        return UserCoin(
+          userId: userId,
+          tileId: tileId,
+          q: q,
+          r: r,
+          isCollected: false,
+          createdAt: DateTime.now().toUtc(),
+        );
+      }).toList();
+
+      // 4. DB 업데이트: 기존 동전 삭제 후 신규 동전 삽입
+      await _supabase.clearUserCoins(userId);
+      final insertSuccess = await _supabase.insertUserCoins(newCoins);
+
+      if (insertSuccess) {
+        _coins = newCoins;
+        await PreferencesService.setLastCoinGeneratedDate(todayStr);
+        debugPrint('🪙 동전 10개 재생성 및 원격 DB 등록 완료.');
+        notifyListeners();
+      }
+    } catch (e) {
+      debugPrint('⚠️ 동전 생성 중 오류 발생: $e');
+    } finally {
+      _isRegeneratingCoins = false; // 재생성 완료/실패 시 반드시 락 해제
+    }
+  }
+
+  /// 특정 타일로 진입하거나 점령했을 때 동전 획득 조건을 확인하고 정산합니다.
+  Future<void> _checkCoinCollection(String tileId) async {
+    final myId = _userId;
+    if (myId == null) return;
+
+    // 미획득 동전 중 해당 타일 ID와 일치하는 동전 찾기
+    final coinIndex = _coins.indexWhere((c) => c.tileId == tileId && !c.isCollected);
+    if (coinIndex == -1) return;
+
+    final targetCoin = _coins[coinIndex];
+    debugPrint('🪙 동전 발견! 타일 ID: ${targetCoin.tileId}. 획득 시도 중...');
+
+    // 1. 낙관적 업데이트: 네트워크 요청 전 즉시 로컬 캐시를 획득으로 변경하여
+    // 중복 진입을 방지하고 화면에서 동전을 즉각적으로 소거(0ms)합니다.
+    final originalCoins = List<UserCoin>.from(_coins);
+    final updatedCoins = List<UserCoin>.from(_coins);
+    updatedCoins[coinIndex] = UserCoin(
+      userId: targetCoin.userId,
+      tileId: targetCoin.tileId,
+      q: targetCoin.q,
+      r: targetCoin.r,
+      isCollected: true,
+      createdAt: targetCoin.createdAt,
+      collectedAt: DateTime.now(),
+    );
+    _coins = updatedCoins;
+    notifyListeners();
+
+    // 2. RPC 호출하여 동전 획득 처리
+    try {
+      final success = await _supabase.collectCoin(myId, tileId, GameConfig.coinGoldReward);
+      if (success) {
+        // 획득 효과음 재생
+        AudioService().playNotification();
+
+        // 화면 알림 추가
+        addAlert(
+          '동전을 발견하여 ${GameConfig.coinGoldReward.toInt()}골드를 획득했습니다!',
+          AlertType.info,
+        );
+
+        // 골드 매니저 서버 동기화
+        await _goldManager.syncWithServer();
+      } else {
+        // DB 처리 실패 시 원래 상태로 복원(롤백)
+        debugPrint('⚠️ 동전 획득 DB 처리 실패 ➔ 롤백 수행');
+        _coins = originalCoins;
+        notifyListeners();
+      }
+    } catch (e) {
+      // 네트워크 예외 발생 시 원래 상태로 복원(롤백)
+      debugPrint('⚠️ 동전 획득 처리 중 예외 발생 ➔ 롤백 수행: $e');
+      _coins = originalCoins;
+      notifyListeners();
+    }
+  }
+
+  /// UTC 자정 카운트다운 타이머 기동
+  void _startUtcTimer() {
+    _updateUtcTimeString();
+    _utcTimer = Timer.periodic(const Duration(seconds: 1), (_) {
+      _updateUtcTimeString();
+    });
+  }
+
+  /// UTC 자정 리셋까지 남은 시간을 계산하여 상태를 업데이트합니다.
+  void _updateUtcTimeString() {
+    final nowUtc = DateTime.now().toUtc();
+    final targetUtc = DateTime.utc(nowUtc.year, nowUtc.month, nowUtc.day + 1);
+    final diff = targetUtc.difference(nowUtc);
+
+    final hours = diff.inHours.toString().padLeft(2, '0');
+    final minutes = (diff.inMinutes % 60).toString().padLeft(2, '0');
+    final seconds = (diff.inSeconds % 60).toString().padLeft(2, '0');
+
+    _utcTimeString = '$hours:$minutes:$seconds';
+    notifyListeners();
+  }
 }

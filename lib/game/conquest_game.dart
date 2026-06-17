@@ -9,6 +9,7 @@ import 'components/scan_target_marker.dart';
 import 'components/tile_cluster_helper.dart';
 import '../services/hex_service.dart';
 import '../models/tile_model.dart';
+import '../models/user_coin.dart';
 import '../controllers/satellite_capture_controller.dart';
 import '../core/constants/colors.dart';
 import '../core/constants/game_config.dart';
@@ -27,6 +28,9 @@ class ConquestGame extends FlameGame {
 
   /// 최근에 빌드 완료된 LOD 병합 영토 타일 맵 캐시
   Map<String, HexTile> _lastClusteredTiles = {};
+
+  /// 현재 활성화된 동전 목록 캐시
+  List<UserCoin> _coins = [];
 
   /// 최근 렌더링에 사용 중인 LOD 레벨 상태 캐시 (-1: 초기값, 0 ~ 3: LOD 레벨)
   int _lastLodLevel = -1;
@@ -313,6 +317,31 @@ class ConquestGame extends FlameGame {
       }
     }
 
+    // 미획득 상태의 동전이 위치한 타일들을 가식 영역 체크 후 강제 렌더링 목록에 주입 (중립 구역 동전 시각화 보장)
+    for (final coin in _coins) {
+      if (coin.isCollected) continue;
+      final String tileId = coin.tileId;
+      if (visibleIds.contains(tileId)) continue; // 이미 렌더링 목록에 있다면 스킵
+
+      // 동전은 항상 기본 격자 크기(LOD 0) 기준으로 절대 중심점을 구하여 줌 배율 변경 시 튕김 방지
+      final centerLatLng = _clusterHelper.getTileCenter(coin.q, coin.r, tileId, GameConfig.lodSize0);
+      final double lat = centerLatLng.latitude;
+      final double lng = centerLatLng.longitude;
+
+      if (lat >= minLat && lat <= maxLat && lng >= minLng && lng <= maxLng) {
+        visibleIds.add(tileId);
+        visibleTiles.add(HexTile(
+          id: tileId,
+          q: coin.q,
+          r: coin.r,
+          userId: 'coin_marker', // 동전 전용 마커 식별자 지정
+          colorHex: null, // 중립 상태
+          capturedAt: coin.createdAt,
+          captureCount: 0,
+        ));
+      }
+    }
+
     // 2. 화면 영역 밖으로 벗어났거나 실제 점령 데이터가 없는 기존 컴포넌트 타일들은 즉시 소멸시켜 CPU/메모리 부하 차단 (단, 현재 점령 진행 중인 타일은 예외 수호)
     final existingIds = _tileMap.keys.toSet();
     for (final id in existingIds) {
@@ -330,19 +359,31 @@ class ConquestGame extends FlameGame {
       final int q = tileData.q;
       final int r = tileData.r;
 
-      final centerLatLng = _clusterHelper.getTileCenter(q, r, id, dynamicHexSize);
-      final cornerLatLngs = _clusterHelper.getTileCorners(q, r, id, dynamicHexSize);
+      // 동전 타일은 줌 배율에 변동하지 않고 항상 고정 크기(LOD 0)로 중심점을 매핑하여 렌더 왜곡 방지
+      final double targetSize = (tileData.userId == 'coin_marker')
+          ? GameConfig.lodSize0
+          : dynamicHexSize;
+
+      final centerLatLng = _clusterHelper.getTileCenter(q, r, id, targetSize);
+      final cornerLatLngs = _clusterHelper.getTileCorners(q, r, id, targetSize);
       final screenOffset = _mapController!.camera.latLngToScreenOffset(centerLatLng);
 
-      final targetTileColorHex = (tileData.userId == 'pattern_consumed')
+      final String? targetTileColorHex = (tileData.userId == 'pattern_consumed')
           ? '#0066FF'
-          : ((tileData.userId == _currentUserId)
-              ? GameColors.myTileColorHex
-              : GameColors.enemyTileColorHex);
+          : ((tileData.userId == 'coin_marker' || tileData.userId == 'none' || tileData.userId == null)
+              ? null
+              : ((tileData.userId == _currentUserId)
+                  ? GameColors.myTileColorHex
+                  : GameColors.enemyTileColorHex));
+
+      final hasCoin = _coins.any((c) => c.tileId == id && !c.isCollected);
 
       if (_tileMap.containsKey(id)) {
         _tileMap[id]!.position = Vector2(screenOffset.dx, screenOffset.dy);
-        _tileMap[id]!.updateData(colorHex: targetTileColorHex);
+        _tileMap[id]!.updateData(
+          colorHex: targetTileColorHex,
+          hasCoin: hasCoin,
+        );
       } else {
         final component = HexTileComponent(
           q: q,
@@ -351,6 +392,7 @@ class ConquestGame extends FlameGame {
           cornerLatLngs: cornerLatLngs,
           colorHex: targetTileColorHex,
           hexSize: dynamicHexSize,
+          hasCoin: hasCoin,
         )
           ..position = Vector2(screenOffset.dx, screenOffset.dy)
           ..priority = 0;
@@ -378,6 +420,7 @@ class ConquestGame extends FlameGame {
     String? satelliteCapturingTileId,
     bool showCompletedPatterns = false,
     Set<String>? consumedTileIds,
+    List<UserCoin>? coins,
   }) {
     _lastCapturedTiles = capturedTiles;
     _lastCapturingColorHex = capturingColorHex;
@@ -390,6 +433,9 @@ class ConquestGame extends FlameGame {
     _satelliteCapturingTileId = satelliteCapturingTileId;
     _showCompletedPatterns = showCompletedPatterns;
     _consumedTileIds = consumedTileIds ?? {};
+    if (coins != null) {
+      _coins = coins;
+    }
     if (isLoaded) {
       player.isVisible = true;
     }

@@ -1,4 +1,5 @@
 import 'dart:ui';
+import 'package:flutter/material.dart' hide Gradient;
 import 'dart:math' as math;
 import 'package:flame/components.dart';
 import 'package:latlong2/latlong.dart' hide Path;
@@ -35,6 +36,9 @@ class HexTileComponent extends PositionComponent
   /// 현재 이 타일을 점령 시도 중인 플레이어의 진영 색상 (Hex)
   String? capturingColorHex;
 
+  /// 이 타일에 동전이 있는지 여부
+  bool hasCoin;
+
   /// 로컬 꼭짓점 6개의 픽셀 상대 좌표 리스트 (중심 (0, 0) 기준)
   List<Offset> localCorners = [];
 
@@ -56,6 +60,9 @@ class HexTileComponent extends PositionComponent
   /// 점령 외곽선 펄스 애니메이션 속도를 계산하기 위한 타임 누적 값
   double _timer = 0;
 
+  /// 동전의 제자리 회전 속도를 계산하기 위한 독립적인 타임 누적 값
+  double _coinTimer = 0;
+
   /// 헥사곤의 평균 반지름 (그라데이션 및 프러스텀 컬링 연산용)
   double _tileRadius = 0;
 
@@ -70,6 +77,7 @@ class HexTileComponent extends PositionComponent
     this.isCapturing = false,
     this.progress = 0.0,
     this.capturingColorHex,
+    this.hasCoin = false,
   });
 
   /// 점령 플레이어의 식별 색상, 점령 진행도 상태가 갱신되었을 때 해당 상태를 반영하고 화면 갱신을 준비합니다.
@@ -78,6 +86,7 @@ class HexTileComponent extends PositionComponent
     bool? isCapturing,
     double? progress,
     String? capturingColorHex,
+    bool? hasCoin,
   }) {
     if (colorHex != null && this.colorHex != colorHex) {
       this.colorHex = colorHex;
@@ -86,6 +95,7 @@ class HexTileComponent extends PositionComponent
     if (isCapturing != null) this.isCapturing = isCapturing;
     if (progress != null) this.progress = progress;
     if (capturingColorHex != null) this.capturingColorHex = capturingColorHex;
+    if (hasCoin != null) this.hasCoin = hasCoin;
   }
 
   @override
@@ -125,6 +135,8 @@ class HexTileComponent extends PositionComponent
   void update(double dt) {
     super.update(dt);
     if (isCapturing) _timer += dt * 5;
+    // 동전이 세워져서 조금씩 천천히 회전하는 느낌을 주기 위해 독립 타이머를 항상 업데이트
+    _coinTimer += dt * 1.5;
   }
 
   @override
@@ -305,6 +317,108 @@ class HexTileComponent extends PositionComponent
         ..style = PaintingStyle.fill;
 
       canvas.drawRect(fillRect, fillPaint);
+      canvas.restore();
+    }
+
+    // 5. 동전 아이템 렌더링 (미획득 상태의 동전이 있는 경우)
+    if (hasCoin) {
+      // 제자리 회전 각도 및 가로 축소 비율 계산 (회전 속도: _coinTimer rad/s)
+      final double angle = _coinTimer;
+      final double spinScale = math.cos(angle);
+      final bool isFront = spinScale >= 0;
+
+      // 맵 확대/축소(zoom)에 영향받지 않는 화면 기준 본진 깃발 크기의 2/3 수준인 고정 반지름 12.0 픽셀 유지
+      const double baseRadius = 12.0;
+      final double width = baseRadius * spinScale.abs(); // 회전에 따른 동적 가로 폭
+      const double height = baseRadius * 0.95; // 세워져 있는 느낌을 주는 고정 세로 비율
+
+      // 3D 입체 두께 (화면 기준 항상 1.5 픽셀 두께 유지)
+      const double thickness = 1.5;
+      final double offsetVal = thickness * math.sin(angle);
+
+      final Offset bodyCenter = Offset(isFront ? offsetVal : -offsetVal, 0);
+      final Offset edgeCenter = Offset(isFront ? -offsetVal : offsetVal, 0);
+
+      canvas.save();
+
+      // 1) 동전 그림자/외각 광채 (Glow)
+      final Paint coinGlow = Paint()
+        ..color = const Color(0xFFFFD700).withValues(alpha: 0.25)
+        ..style = PaintingStyle.fill
+        ..maskFilter = const MaskFilter.blur(BlurStyle.normal, baseRadius * 0.4);
+      final Rect glowRect = Rect.fromCenter(
+        center: const Offset(0, 3.0), // 화면 기준 항상 하단 3픽셀 오프셋
+        width: baseRadius * 1.4,
+        height: height * 0.5, // 바닥 그림자이므로 납작하게 표현
+      );
+      canvas.drawOval(glowRect, coinGlow);
+
+      // 2) 2.5D 두께 연출 (Side Edge) - 뒷면(Dark Edge)을 아래에 먼저 드로잉
+      final Paint coinEdge = Paint()
+        ..color = const Color(0xFFB8860B) // 어두운 황금/동색
+        ..style = PaintingStyle.fill;
+      final Rect edgeRect = Rect.fromCenter(
+        center: edgeCenter,
+        width: width,
+        height: height,
+      );
+      canvas.drawOval(edgeRect, coinEdge);
+
+      // 3) 금빛 코인 몸체 (Radial Gradient) - 앞면(Gold Body)을 위에 덮어 드로잉
+      final double gradCenterX = bodyCenter.dx + (3.0 * spinScale);
+      final Paint coinBody = Paint()
+        ..shader = Gradient.radial(
+          Offset(gradCenterX, -1.0),
+          baseRadius,
+          [
+            const Color(0xFFFFF7C2), // 밝은 금색 중심부
+            const Color(0xFFFFD700), // 선명한 골드
+            const Color(0xFFB8860B), // 어두운 테두리
+          ],
+          const [0.0, 0.7, 1.0],
+        )
+        ..style = PaintingStyle.fill;
+      final Rect bodyRect = Rect.fromCenter(
+        center: bodyCenter,
+        width: width,
+        height: height,
+      );
+      canvas.drawOval(bodyRect, coinBody);
+
+      // 4) 선명한 코인 테두리선 (화면 기준 항상 1.2 픽셀 두께 테두리)
+      final Paint coinBorder = Paint()
+        ..color = const Color(0xFFD4AF37)
+        ..style = PaintingStyle.stroke
+        ..strokeWidth = 1.2;
+      canvas.drawOval(bodyRect, coinBorder);
+
+      // 5) 코인 내부에 '$' 기호 렌더링 (가로 두께가 납작해질 때는 글씨 생략)
+      if (spinScale.abs() > 0.25) {
+        final textPainter = TextPainter(
+          text: const TextSpan(
+            text: '\$',
+            style: TextStyle(
+              color: Color(0xFF8B6508),
+              fontSize: height * 1.05,
+              fontWeight: FontWeight.bold,
+              fontFamily: 'Roboto',
+            ),
+          ),
+          textDirection: TextDirection.ltr,
+        );
+        textPainter.layout();
+
+        // 텍스트를 동전의 수평 회전 비율(spinScale)에 맞춰 가로 스케일링 변환 적용
+        canvas.save();
+        canvas.translate(bodyCenter.dx, bodyCenter.dy);
+        canvas.scale(spinScale, 1.0);
+        textPainter.paint(
+          canvas,
+          Offset(-textPainter.width / 2, -textPainter.height / 2),
+        );
+        canvas.restore();
+      }
+
       canvas.restore();
     }
   }

@@ -224,6 +224,7 @@ class _GameScreenState extends State<GameScreen> {
       consumedTileIds: _gameProvider!.showCompletedPatterns
           ? (_achievementProvider?.consumedTileIds ?? {})
           : {},
+      coins: _gameProvider!.coins,
     );
   }
 

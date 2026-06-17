@@ -131,4 +131,17 @@ class PreferencesService {
     final prefs = await SharedPreferences.getInstance();
     await prefs.setString(_secondLastTileIdKey, v);
   }
+
+  // --- 동전 생성 날짜 (game_provider) ---
+  static const _lastCoinGeneratedDateKey = 'conquest_last_coin_generated_date';
+
+  static Future<String?> getLastCoinGeneratedDate() async {
+    final prefs = await SharedPreferences.getInstance();
+    return prefs.getString(_lastCoinGeneratedDateKey);
+  }
+
+  static Future<void> setLastCoinGeneratedDate(String v) async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setString(_lastCoinGeneratedDateKey, v);
+  }
 }
