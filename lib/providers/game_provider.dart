@@ -13,6 +13,7 @@ import '../models/user_coin.dart';
 import '../providers/location_provider.dart';
 import '../providers/auth_provider.dart';
 import '../providers/achievement_provider.dart';
+import '../providers/game_tile_provider.dart';
 import '../services/hex_service.dart';
 import '../services/supabase_service.dart';
 import '../services/notification_service.dart';
@@ -22,17 +23,29 @@ import '../core/constants/game_config.dart';
 import '../core/constants/map_config.dart';
 import '../core/constants/strings.dart';
 
-/// 게임의 핵심 인게임 비즈니스 상태 및 점령 로직을 관리하고 UI에 변경을 전파하는 메인 프로바이더 클래스
+/// 게임의 핵심 인게임 비즈니스 상태 및 점령 로직을 관리하고 UI에 변경을 전파하는 메인 프로바이더.
+///
+/// 타일 데이터 저장소는 [GameTileProvider]로 분리되었으며,
+/// 본 클래스는 점령/위성/맵 상태/알림/재화 등 컨트롤러 간 오케스트레이션을 담당합니다.
 class GameProvider extends ChangeNotifier with WidgetsBindingObserver {
-  /// Supabase 데이터베이스 서비스 인스턴스
   final SupabaseService _supabase;
+
+  /// 타일 데이터 저장 및 실시간 동기화를 전담하는 프로바이더
+  final GameTileProvider _tileProvider;
 
   /// 영토 점령 과정을 제어하는 컨트롤러
   late final CaptureController _captureController;
 
-  /// 실시간 점령 타일 목록 스트림 구독 객체
-  StreamSubscription<List<HexTile>>? _tilesStreamSub;
+  /// 위성 원격 점령 프로세스를 전담 제어하는 컨트롤러
+  late final SatelliteCaptureController _satelliteController;
 
+  /// 알림 설정(FCM 구독 + 원격 동기화)을 전담 제어하는 컨트롤러
+  late final NotificationController _notificationController;
+
+  /// 재화(골드) 상태 관리자
+  late final GoldManager _goldManager;
+
+  // --- 백그라운드 타이머 ---
   /// 백그라운드 점령 및 침공 상태 정기 검사를 수행하는 타이머
   Timer? _backgroundPollingTimer;
 
@@ -44,18 +57,9 @@ class GameProvider extends ChangeNotifier with WidgetsBindingObserver {
 
   String get utcTimeString => _utcTimeString;
 
-  /// 초기화 완료 처리를 조율하는 Completer 객체
-  final Completer<void> _initCompleter = Completer<void>();
-
   // --- 상태 ---
-  /// 점령된 타일 목록 (Key: 타일 ID, Value: 타일 상세 모델)
-  final Map<String, HexTile> _capturedTiles = {};
-
   /// 화면 상단에 표시될 인게임 알림/경고 목록
   final List<GameAlert> _alerts = [];
-
-  /// 프로바이더 내부 데이터 초기화 완료 여부
-  bool _isInitialized = false;
 
   /// 자동 점령 모드 활성화 여부
   bool _isAutoCapture = false;
@@ -66,32 +70,16 @@ class GameProvider extends ChangeNotifier with WidgetsBindingObserver {
   /// 지도 회전 모드(나침반 정렬) 사용 여부
   bool _isMapRotationMode = false;
 
-  /// 지도 카메라가 플레이어의 GPS 실시간 위치를 추적(Following)하고 있는지 여부
+  /// 지도 카메라가 플레이어의 GPS 실시간 위치를 추적하고 있는지 여부
   bool _isFollowingUser = true;
 
   /// 이미 매칭 완료하여 해금한 패턴의 소비 타일들을 맵 상에 하이라이트할지 여부
   bool _showCompletedPatterns = false;
 
   // --- 위성 스캔 상태 ---
-  /// 위성 궤도 정밀 스캔 모드 활성화 여부
   bool _isScanMode = false;
-
-  /// 위성 스캔 조준 중인 대상 타일 ID
   String? _selectedScanTileId;
-
-  /// 위성 스캔 조준 타일의 중심 지리 좌표 (맭 스크롤 시 실시간 화면 좌표 변환에 사용)
   LatLng? _selectedScanTileLatLng;
-
-  // --- 위성 점령 컨트롤러 ---
-  /// 위성 원격 점령 프로세스를 전담 제어하는 컨트롤러
-  late final SatelliteCaptureController _satelliteController;
-
-  /// 알림 설정(FCM 구독 + 원격 동기화)을 전담 제어하는 컨트롤러
-  late final NotificationController _notificationController;
-
-  // --- 위치 변경 감지 시 서버 부하 방지용 3초 딜레이 타이머 ---
-  /// 서버 부하 방지를 위해 마지막으로 위치 상태를 조정한 일시
-  DateTime? _lastServerCheckTime;
 
   // --- 편법 방지용 최근 방문한 2개 타일 ID 캐시 ---
   String? _lastTileId;
@@ -104,20 +92,11 @@ class GameProvider extends ChangeNotifier with WidgetsBindingObserver {
   /// 동전 재생성이 비동기적으로 중복 실행되는 것을 방지하는 뮤텍스 락 플래그
   bool _isRegeneratingCoins = false;
 
-  // --- 재화(골드) 상태 관리자 ---
-  late final GoldManager _goldManager;
-
-  // 관련 Provider 참조
-  /// 사용자 위치 정보를 공유하는 LocationProvider 인스턴스
+  // --- 관련 Provider 참조 ---
   LocationProvider? _locationProvider;
-
-  /// 사용자 인증 상태 정보를 공유하는 AuthProvider 인스턴스
   AuthProvider? _authProvider;
-
-  /// 업적 상태 감시 및 해금을 관리하는 AchievementProvider 인스턴스
   AchievementProvider? _achievementProvider;
 
-  // --- 데이터 접근자 (Provider 참조 캡슐화) ---
   /// 현재 로그인된 플레이어의 ID
   String? get _userId => _authProvider?.user?.id;
 
@@ -130,179 +109,77 @@ class GameProvider extends ChangeNotifier with WidgetsBindingObserver {
   /// 플레이어 메인 기지 타일 ID
   String? get _userMainBaseTileId => _profile?.mainBaseTileId;
 
-  /// 플레이어 테마 색상 (Hex)
-  String? get _userColorHex => _profile?.colorHex;
+  // --- Public Getters (Tile — GameTileProvider 위임) ---
+  Map<String, HexTile> get capturedTiles => _tileProvider.capturedTiles;
 
-  /// 플레이어 닉네임
-  String? get _userNickname => _profile?.nickname;
+  int get myCapturedCount => _tileProvider.myCapturedCount;
 
-  // --- Getters (public API) ---
-  /// 실시간 점령된 타일 정보를 담은 불변 Map을 반환합니다.
-  /// 내 메인 기지는 가상으로 내 땅으로 강제 주입(빈 타일이 아닌 내 땅으로 확실히 렌더링)하여 반환합니다.
-  Map<String, HexTile> get capturedTiles {
-    final Map<String, HexTile> copy = Map<String, HexTile>.from(_capturedTiles);
+  int getRemainingShieldSeconds(String tileId) =>
+      _tileProvider.getRemainingShieldSeconds(tileId);
 
-    final myMainBaseId = _userMainBaseTileId;
-    final myId = _userId;
-    final myColor = _userColorHex;
+  bool isTileInfoRevealed(String tileId) =>
+      _tileProvider.isTileInfoRevealed(tileId);
 
-    // 내 메인 기지는 내 맵 상에서 가상으로 내 땅으로 강제 주입 (빈 타일이 아닌 내 땅으로 확실히 렌더링)
-    if (myMainBaseId != null &&
-        myMainBaseId.isNotEmpty &&
-        myId != null &&
-        myColor != null) {
-      try {
-        final parts = myMainBaseId.split('_');
-        if (parts.length == 3) {
-          final q = int.tryParse(parts[1]) ?? 0;
-          final r = int.tryParse(parts[2]) ?? 0;
-           final existing = _capturedTiles[myMainBaseId];
-          copy[myMainBaseId] = HexTile(
-            id: myMainBaseId,
-            q: q,
-            r: r,
-            userId: myId,
-            colorHex: myColor,
-            capturedAt: existing?.capturedAt ?? DateTime.now().toUtc(),
-            captureCount: existing?.captureCount ?? 1,
-          );
-        }
-      } catch (e) {
-        debugPrint('⚠️ 내 메인기지 가상 타일 주입 오류: $e');
-      }
-    }
+  DateTime? getTileRevealExpiration(String tileId) =>
+      _tileProvider.getTileRevealExpiration(tileId);
 
-    return Map.unmodifiable(copy);
-  }
+  Future<String> getAgentNickname(String userId) =>
+      _tileProvider.getAgentNickname(userId);
 
-  /// 현재 보유 중인 골드 재화 수량
+  // --- Public Getters (Gold) ---
   double get currentGold => _goldManager.currentGold;
-
-  /// 초당 골드 획득율 배율
   double get goldRate => _goldManager.goldRate;
 
-  /// 현재 정보 조준경(정보 카드) 활성화 여부 (조준된 타일이 있거나 원격 확보 작업이 진행 중일 때 참)
-  bool get isScanMode => _selectedScanTileId != null || _satelliteController.isCapturing;
-
-  /// 위성 조준 스캔 상에서 선택된 타일 ID
+  // --- Public Getters (Satellite) ---
+  bool get isScanMode =>
+      _selectedScanTileId != null || _satelliteController.isCapturing;
   String? get selectedScanTileId => _selectedScanTileId;
-
-  /// 선택된 위성 조준 타일의 중심 지리 좌표 (맵 스크롤 시 실시간 화면 좌표 변환에 사용)
   LatLng? get selectedScanTileLatLng => _selectedScanTileLatLng;
 
-  /// 현재 위성 점령의 상태 단계 반환 (SatelliteCaptureController에 위임)
-  SatelliteCapturePhase get satelliteCapturePhase => _satelliteController.phase;
-
-  /// 현재 위성 점령 진행 중인 타일 ID
+  SatelliteCapturePhase get satelliteCapturePhase =>
+      _satelliteController.phase;
   String? get satelliteCapturingTileId => _satelliteController.capturingTileId;
-
-  /// 위성 빔 비행 진행률 (0.0 ~ 1.0)
   double get satelliteTravelProgress => _satelliteController.travelProgress;
-
-  /// 위성 점령 진행률 (0.0 ~ 1.0)
   double get satelliteCaptureProgress => _satelliteController.captureProgress;
-
-  /// 위성 점령 시도가 활성화 중인지 여부
   bool get isSatelliteCapturing => _satelliteController.isCapturing;
+  DateTime? get lastSatelliteCaptureTime =>
+      _satelliteController.lastCaptureTime;
+  int get remainingSatelliteCaptureSeconds =>
+      _satelliteController.remainingSeconds;
+  int get remainingSatelliteCaptureCoolSeconds =>
+      _satelliteController.remainingCoolSeconds;
 
-  /// 마지막으로 위성 점령에 성공한 일시
-  DateTime? get lastSatelliteCaptureTime => _satelliteController.lastCaptureTime;
-
-  /// 위성 점령이 완료될 때까지 남은 초 단위 시간
-  int get remainingSatelliteCaptureSeconds => _satelliteController.remainingSeconds;
-
-  /// 위성 조준 장비의 재충전 쿨타임 남은 시간 (초)
-  int get remainingSatelliteCaptureCoolSeconds => _satelliteController.remainingCoolSeconds;
-
-  /// 인게임 상황판 알림 목록
+  // --- Public Getters (Alert) ---
   List<GameAlert> get alerts => List.unmodifiable(_alerts);
 
-  /// 로컬 및 서버 상태 초기화 완료 여부
-  bool get isInitialized => _isInitialized;
+  // --- Public Getters (Init / State) ---
+  bool get isInitialized => _tileProvider.isInitialized;
+  Future<void> get initializationFuture => _tileProvider.initializationFuture;
 
-  /// 자동 점령 모드 활성화 여부
   bool get isAutoCapture => _isAutoCapture;
-
-  /// 현재 활성화된 타일 지도 스타일의 인덱스
   int get currentMapStyleIndex => _currentMapStyleIndex;
 
-  /// 로컬 푸시 알림 허용 여부
+  // --- Public Getters (Notification — NotificationController 위임) ---
   bool get isNotificationEnabled =>
       _notificationController.isNotificationEnabled;
-
-  /// 영토 침공 알림 수신 여부
   bool get isNotifTerritoryAttack =>
       _notificationController.isNotifTerritoryAttack;
-
-  /// 위성 점령 완료 알림 수신 여부
   bool get isNotifSatelliteComplete =>
       _notificationController.isNotifSatelliteComplete;
+  bool get isNotifSystemNotice => _notificationController.isNotifSystemNotice;
 
-  /// 시스템 공지 알림 수신 여부
-  bool get isNotifSystemNotice =>
-      _notificationController.isNotifSystemNotice;
-
-  /// 지도 회전 모드(나침반 방향에 연동) 활성화 여부
-  bool get isMapRotationMode => _isMapRotationMode; // 추가: 맵 회전 여부 getter
-
-  /// 지도 카메라가 플레이어의 GPS 실시간 위치를 추적(Following)하고 있는지 여부
+  // --- Public Getters (Map) ---
+  bool get isMapRotationMode => _isMapRotationMode;
   bool get isFollowingUser => _isFollowingUser;
-
-  /// 지도 카메라 추적 상태 명시적 업데이트
-  void setFollowingUser(bool value) {
-    if (_isFollowingUser != value) {
-      _isFollowingUser = value;
-      notifyListeners();
-    }
-  }
-
-  /// 지도 카메라 추적 상태 토글
-  void toggleFollowingUser() {
-    _isFollowingUser = !_isFollowingUser;
-    notifyListeners();
-  }
-
-  /// 현재 지정된 지도 스타일 환경 설정
-  MapStyle get currentMapStyle => MapConfig.mapStyles[_currentMapStyleIndex];
-
-  /// 지도를 실제로 렌더링해야 하는지의 여부
   bool get showMap => currentMapStyle.url.isNotEmpty;
-
-  /// 완료된 패턴을 맵에서 활성화해서 보여줄지 여부
   bool get showCompletedPatterns => _showCompletedPatterns;
 
-  /// 완료된 패턴 보기 상태 토글
-  void toggleCompletedPatternsView() {
-    _showCompletedPatterns = !_showCompletedPatterns;
-    notifyListeners();
-  }
+  MapStyle get currentMapStyle => MapConfig.mapStyles[_currentMapStyleIndex];
 
-  /// 본인 플레이어(계정)가 획득한 영토(타일)의 총 개수
-  int get myCapturedCount {
-    if (_userId == null) return 0;
-    final myId = _userId!;
-    final baseCount = _capturedTiles.values
-        .where((t) => t.userId == myId)
-        .length;
-
-    // 본진(mainBaseTileId)이 설정되어 있다면 무조건 영토 개수는 1개 이상이 되도록 보장
-    final myMainBaseId = _userMainBaseTileId;
-    if (myMainBaseId != null && myMainBaseId.isNotEmpty) {
-      return baseCount < 1 ? 1 : baseCount;
-    }
-    return baseCount;
-  }
-
-  /// 현재 물리 GPS 점령을 시도 중인 타일 ID
+  // --- Capture Getters ---
   String? get capturingTileId => _captureController.capturingTileId;
-
-  /// 현재 점령 진행 중인 타일 플레이어의 테마 컬러 코드
   String? get capturingColorHex => _captureController.capturingColorHex;
-
-  /// 물리 GPS 점령의 진행 진척도 (0.0 ~ 1.0)
   double get captureProgress => _captureController.captureProgress;
-
-  /// 물리 GPS 점령이 실행 중인지 여부
   bool get isCapturing => _captureController.isCapturing;
 
   /// 현재 플레이어의 상태와 GPS 수신 상태를 기반으로 점령 개시가 가능한 상태인지 판단합니다.
@@ -313,51 +190,43 @@ class GameProvider extends ChangeNotifier with WidgetsBindingObserver {
     if (loc == null || !loc.isGpsActive || loc.currentLocation == null) {
       return false;
     }
-
-    // GPS 오차가 너무 크면 점령 불가
     if (loc.currentAccuracy > GameConfig.captureAccuracyThreshold) {
       return false;
     }
-
     if (auth == null || !auth.isAuthenticated) {
       return false;
     }
 
-    // 내 본진 타일은 점령할 필요가 없는 상시 내 영토이므로 점령 개시 불가로 철저히 차단
     final myMainBaseId = auth.profile?.mainBaseTileId;
     final hex = HexService.latLngToHex(loc.currentLocation!);
     final currentTileId = HexService.tileId(hex['q']!, hex['r']!);
-    if (myMainBaseId != null && myMainBaseId.isNotEmpty && currentTileId == myMainBaseId) {
+    if (myMainBaseId != null &&
+        myMainBaseId.isNotEmpty &&
+        currentTileId == myMainBaseId) {
       return false;
     }
-
-    // 이미 본인이 점령한 타일이면 점령 불가
-    if (isAlreadyCapturedByMe) {
+    if (_tileProvider.isAlreadyCapturedByMe(loc)) {
       return false;
     }
-
     return true;
   }
 
-  /// 현재 GPS 위치에 대응하는 점령 타일 정보(HexTile)를 반환 (아직 점령되지 않았거나 GPS 미수신 상태이면 null 반환)
-  HexTile? get currentTile {
-    final loc = _locationProvider;
-    if (loc?.currentLocation == null) return null;
-
-    final hex = HexService.latLngToHex(loc!.currentLocation!);
-    final tileId = HexService.tileId(hex['q']!, hex['r']!);
-    return capturedTiles[tileId];
-  }
+  /// 현재 GPS 위치에 대응하는 점령 타일 정보를 반환합니다.
+  HexTile? get currentTile => _tileProvider.currentTile(_locationProvider!);
 
   /// 현재 위치한 타일이 이미 자신이 지배 중인 타일인지 여부
   bool get isAlreadyCapturedByMe {
-    final auth = _authProvider;
-    if (auth?.user == null) return false;
-    return currentTile?.userId == auth!.user!.id;
+    final loc = _locationProvider;
+    if (loc == null) return false;
+    return _tileProvider.isAlreadyCapturedByMe(loc);
   }
 
-  /// GameProvider 생성자로 초기 점령 컨트롤러 설정 및 로컬 데이터 동기화를 지시합니다.
-  GameProvider({required SupabaseService supabase}) : _supabase = supabase {
+  // --- 생성자 ---
+  GameProvider({
+    required SupabaseService supabase,
+    required GameTileProvider tileProvider,
+  })  : _supabase = supabase,
+        _tileProvider = tileProvider {
     WidgetsBinding.instance.addObserver(this);
     _startUtcTimer();
     _goldManager = GoldManager(
@@ -369,8 +238,9 @@ class GameProvider extends ChangeNotifier with WidgetsBindingObserver {
       supabase: supabase,
       onAlert: addAlert,
       onTileCaptured: (id, tile, {required bool wasEnemyTile}) {
-        final oldOwnerId = _capturedTiles[id]?.userId;
-        _capturedTiles[id] = tile;
+        final oldOwnerId = _tileProvider.tileById(id)?.userId;
+        _tileProvider.updateTile(id, tile);
+
         if (_notificationController.isNotificationEnabled) {
           NotificationService().showLocalNotification(
             id: id.hashCode,
@@ -378,11 +248,8 @@ class GameProvider extends ChangeNotifier with WidgetsBindingObserver {
             body: GameStrings.notificationCaptureEmptyBody,
           );
         }
-
-        // 🎵 공통 알림 효과음 재생
         AudioService().playNotification();
 
-        // 상대방 구역 침탈 시 침탈 푸시 알림 발송
         final myId = _userId;
         if (wasEnemyTile &&
             oldOwnerId != null &&
@@ -424,22 +291,22 @@ class GameProvider extends ChangeNotifier with WidgetsBindingObserver {
       supabase: supabase,
       onAlert: addAlert,
       onCaptureSuccess: (tileId, tile) {
-        _capturedTiles[tileId] = tile;
+        _tileProvider.updateTile(tileId, tile);
         _selectedScanTileId = null;
         _selectedScanTileLatLng = null;
 
-        // 🪙 동전 원격 점령 획득 체크
         _checkCoinCollection(tileId);
-
-        // 🎵 공통 알림 효과음 재생
         AudioService().playNotification();
 
         final String? currentUserId = _userId;
-        if (currentUserId != null && _authProvider != null && _authProvider!.profile != null) {
+        if (currentUserId != null &&
+            _authProvider != null &&
+            _authProvider!.profile != null) {
           _supabase.incrementSatelliteCapture(currentUserId).then((success) {
             if (success) {
               final updatedProfile = _authProvider!.profile!.copyWith(
-                satelliteCaptureCount: _authProvider!.profile!.satelliteCaptureCount + 1,
+                satelliteCaptureCount:
+                    _authProvider!.profile!.satelliteCaptureCount + 1,
               );
               _authProvider!.updateProfileCache(updatedProfile);
               _achievementProvider?.checkAndUnlock(
@@ -465,9 +332,9 @@ class GameProvider extends ChangeNotifier with WidgetsBindingObserver {
         }
       },
       onStateChanged: notifyListeners,
-      getCapturedTiles: () => _capturedTiles,
+      getCapturedTiles: () => _tileProvider.capturedTiles,
       getUserId: () => _userId,
-      getColorHex: () => _userColorHex,
+      getColorHex: () => _authProvider?.profile?.colorHex,
       getMainBaseTileId: () => _userMainBaseTileId,
       getCurrentGold: () => _goldManager.currentGold,
       deductGold: (amount) => _goldManager.deductOptimistic(amount),
@@ -500,37 +367,34 @@ class GameProvider extends ChangeNotifier with WidgetsBindingObserver {
       },
     );
     NotificationService().onForegroundMessageReceived = (title, body, type) {
-      // ⚠️ 포그라운드 상태일 때 침탈 및 위성 성공은 이미 로컬(스트림/콜백)에서 배너를 띄우므로 FCM 포그라운드 노출 중복을 차단합니다.
       if (type == 'territory_attack' || type == 'satellite_complete') {
-        debugPrint('🔔 [포그라운드 FCM 중복 차단] $type 타입의 알림은 로컬 화면에 이미 표시되었으므로 배너 생성을 무시합니다.');
+        debugPrint(
+            '🔔 [포그라운드 FCM 중복 차단] $type 타입의 알림은 로컬 화면에 이미 표시되었으므로 배너 생성을 무시합니다.');
         return;
       }
-
       final alertType = switch (type) {
         'system_notice' => AlertType.info,
         _ => AlertType.info,
       };
       _addAlertInternal('[$title] $body', alertType);
     };
+
+    // 틸 프로바이더 침공 감지 시 알림/금/반격 처리
+    _tileProvider.onInvasionDetected = _onInvasionDetectedFromTiles;
+
     _init();
   }
 
-  /// 위치 관리 프로바이더([LocationProvider]) 인스턴스를 설정하고 상태 업데이트 리스너를 연동합니다.
+  // --- Provider 설정 ---
   void setLocationProvider(LocationProvider loc) {
     if (_locationProvider != loc) {
-      // 기존 리스너 제거
       _locationProvider?.removeListener(onLocationUpdated);
-
       _locationProvider = loc;
-
-      // 새 리스너 등록 (UI 리빌드와 상관없이 실행됨)
       _locationProvider?.addListener(onLocationUpdated);
-
       notifyListeners();
     }
   }
 
-  /// 업적 관리 프로바이더([AchievementProvider]) 인스턴스를 설정합니다.
   void setAchievementProvider(AchievementProvider ach) {
     if (_achievementProvider != ach) {
       _achievementProvider = ach;
@@ -538,16 +402,13 @@ class GameProvider extends ChangeNotifier with WidgetsBindingObserver {
     }
   }
 
-  /// 사용자 인증 관리 프로바이더([AuthProvider])를 설정하고 로그인 세션 여부에 따라 골드 생산 타이머를 가동/종료합니다.
   void setAuthProvider(AuthProvider auth) {
     final oldProfile = _profile;
     _authProvider = auth;
 
     if (auth.isAuthenticated) {
-      // 🎯 [신규] 로그인 상태에서는 항상 자동 점령(Auto Capture) 활성화
       _isAutoCapture = true;
 
-      // [추가] 외부(관리자 등) 조작에 의해 profiles 테이블의 골드 잔액이 로컬과 편차가 생겼을 때 강제 덮어쓰기 동기화
       if (auth.profile != null) {
         final double serverGold = auth.profile!.gold;
         final double localGold = _goldManager.currentGold;
@@ -556,72 +417,52 @@ class GameProvider extends ChangeNotifier with WidgetsBindingObserver {
         }
       }
 
-      // 동전 데이터 동기화 및 재생성 체크 수행
       _checkAndSyncCoins();
 
-      // 1. 프로필이 null이었다가 최초 로드(비동기 완료)된 시점
-      // 2. 혹은 골드 타이머가 실행 중이지 않은 상태일 때 동기화 트리거
       if ((oldProfile == null && auth.profile != null) ||
           !_goldManager.isTimerActive) {
         _goldManager.syncWithServer();
       }
     } else {
       _goldManager.reset();
-
-      // 로그아웃 시 자동 점령 모드 강제 정지(비활성화)
       _isAutoCapture = false;
-
-      // 로그아웃 시 위성 모드 및 위성 점령 상태 전격 해제
       _isScanMode = false;
       _selectedScanTileId = null;
       _selectedScanTileLatLng = null;
       _satelliteController.cancelCapture();
-
-      // 로그아웃 시 진행 중이던 물리 점령 작전 강제 중단
       _captureController.cancelCapture();
     }
     notifyListeners();
   }
 
-  /// 프로바이더의 비동기 초기 데이터 설정 및 로드가 완전히 완료되었는지 감시할 수 있는 Future 객체
-  Future<void> get initializationFuture => _initCompleter.future;
-
-  /// 초기 설정을 불러오고, 기점령 타일 정보 획득 및 Supabase 실시간 타일 스트림을 연결합니다.
+  // --- 초기화 ---
   Future<void> _init() async {
     try {
       _isMapRotationMode = await PreferencesService.isMapRotationMode();
       _lastTileId = await PreferencesService.getLastVisitedTileId();
-      _secondLastTileId = await PreferencesService.getSecondLastVisitedTileId();
+      _secondLastTileId =
+          await PreferencesService.getSecondLastVisitedTileId();
 
-      // 알림 설정 로드 및 FCM 구독 동기화
       await _notificationController.loadFromPrefs();
 
       final lastSatCapTimeStr =
           await PreferencesService.getLastSatelliteCaptureTime();
       _satelliteController.loadLastCaptureTime(lastSatCapTimeStr);
 
-      final tiles = await _supabase.fetchAllCapturedTiles();
-      for (final tile in tiles) {
-        _capturedTiles[tile.id] = tile;
-      }
+      // 타일 데이터 초기화 (GameTileProvider 위임)
+      await _tileProvider.init();
     } catch (e) {
       debugPrint('초기 데이터 로드 실패: $e');
     } finally {
-      _isInitialized = true;
-      if (!_initCompleter.isCompleted) _initCompleter.complete();
       if (_isAuthenticated == true) {
         _goldManager.syncWithServer();
       }
       notifyListeners();
     }
-    _tilesStreamSub = _supabase.capturedTilesStream.listen(
-      _onTilesUpdated,
-      onError: (e) => debugPrint('⚠️ 점령 타일 스트림 에러: $e'),
-    );
-    _startBackgroundPolling(); // 추가: 주기적 감시 시작
+    _startBackgroundPolling();
   }
 
-  /// 백그라운드에서도 정해진 주기마다 서버 데이터를 강제로 갱신하는 로직을 구동합니다.
+  // --- 백그라운드 폴링 ---
   void _startBackgroundPolling() {
     _backgroundPollingTimer?.cancel();
     _backgroundPollingTimer = Timer.periodic(
@@ -630,124 +471,68 @@ class GameProvider extends ChangeNotifier with WidgetsBindingObserver {
     );
   }
 
-  /// 서버에서 최신 타일 정보를 가져와 침공 여부를 강제로 체크하고 내 위치 타일을 갱신합니다.
   Future<void> _refreshTilesAndCheckInvasion() async {
-    if (!_isInitialized) return;
+    if (!isInitialized) return;
     try {
       debugPrint('🔍 백그라운드 정기 정밀 점검 중...');
-
-      // GPS가 정지 상태일 때도 점령 진입 로직이 실행되도록 강제 호출
-      // (onLocationUpdated 내부의 3초 딜레이 스로틀로 서버 과부하 방지됨)
       onLocationUpdated();
-
-      final tiles = await _supabase.fetchAllCapturedTiles();
-      _onTilesUpdated(tiles);
+      await _tileProvider.refreshTilesFromServer();
     } catch (e) {
       debugPrint('❌ 백그라운드 동기화 실패: $e');
     }
   }
 
-  /// 실시간 DB 변경 스트림을 통해 점령 타일 목록이 업데이트되었을 때 침공을 감지하고,
-  /// 잃은 영토로 인해 위성 점령의 연결성(Connectivity)이 상실되었는지 실시간으로 검사합니다.
-  void _onTilesUpdated(List<HexTile> tiles) {
-    final auth = _authProvider;
-    if (auth?.user == null) return;
+  /// 침공 감지 시 알림/반격 처리
+  void _onInvasionDetectedFromTiles() {
+    NotificationService().showLocalNotification(
+      id: 999,
+      title: GameStrings.notificationInvasionTitle,
+      body: GameStrings.notificationInvasionBody,
+    );
+    _addAlertInternal(
+      '[${GameStrings.notificationInvasionTitle}] ${GameStrings.notificationInvasionBody}',
+      AlertType.error,
+    );
 
-    bool changed = false;
-    bool invasionDetected = false;
-
-    final myMainBaseId = auth!.profile?.mainBaseTileId;
-
-    // 1. 서버에서 수신된 최신 활성 타일 ID 집합 구성
-    final incomingIds = tiles.map((t) => t.id).toSet();
-
-    // 2. 현재 로컬 캐시에는 존재하나 서버 스트림 목록에 없는 (즉, 삭제된) 타일 소거
-    final localIds = _capturedTiles.keys.toSet();
-    final removedIds = localIds.difference(incomingIds);
-    for (final id in removedIds) {
-      _capturedTiles.remove(id);
-      changed = true;
-    }
-
-    // 3. 신규 및 업데이트 타일 반영
-    for (final tile in tiles) {
-      // 침공 감지: 기존에 내 땅이었는데 주인이 바뀐 경우
-      // 단, 내 메인기지 타일(mainBaseTileId)인 경우는 언제나 내 영토이므로 침공 판정에서 제외합니다.
-      if (tile.id != myMainBaseId) {
-        final oldTile = _capturedTiles[tile.id];
-        if (oldTile != null &&
-            oldTile.userId == auth.user!.id &&
-            tile.userId != auth.user!.id) {
-          invasionDetected = true;
+    // 위성 점령 진행 중 연결성 상실 체크
+    if (_satelliteController.isCapturing) {
+      final captTileId = _satelliteController.capturingTileId;
+      if (captTileId != null) {
+        final stillConnected =
+            _satelliteController.checkConnectivity(captTileId);
+        if (!stillConnected) {
+          _satelliteController.cancelCapture();
+          addAlert(GameStrings.satelliteDisconnectedAlert, AlertType.error);
+          return;
         }
       }
-
-      // 실제 데이터가 변경되었을 때만 주입 및 변경 플래그 활성화 (성능 누수 및 무차별 리빌드 방지)
-      final oldTile = _capturedTiles[tile.id];
-      if (oldTile == null ||
-          oldTile.userId != tile.userId ||
-          oldTile.colorHex != tile.colorHex ||
-          oldTile.captureCount != tile.captureCount) {
-        _capturedTiles[tile.id] = tile;
-        changed = true;
-      }
     }
 
-    if (invasionDetected) {
-      // 침공 알림 발송
-      NotificationService().showLocalNotification(
-        id: 999,
-        title: GameStrings.notificationInvasionTitle,
-        body: GameStrings.notificationInvasionBody,
-      );
-
-      // 인게임 화면 내 노티 배너 띄우기
-      _addAlertInternal(
-        '[${GameStrings.notificationInvasionTitle}] ${GameStrings.notificationInvasionBody}',
-        AlertType.error,
-      );
-
-      // 만약 내가 그 자리에 있다면 즉시 반격 시작
-      if (_isAutoCapture) {
-        onLocationUpdated();
-      }
+    if (_isAutoCapture) {
+      onLocationUpdated();
     }
-
-    if (changed) {
-      // 위성 점령 진행 중일 때, 기지 침공이나 영토 분실 등으로 연결성이 끊어졌는지 실시간 체크
-      bool alreadyNotified = false;
-      if (_satelliteController.isCapturing) {
-        final captTileId = _satelliteController.capturingTileId;
-        if (captTileId != null) {
-          final stillConnected = _satelliteController.checkConnectivity(captTileId);
-          if (!stillConnected) {
-            _satelliteController.cancelCapture();
-            addAlert(GameStrings.satelliteDisconnectedAlert, AlertType.error);
-            alreadyNotified = true;
-          }
-        }
-      }
-      if (!alreadyNotified) {
-        notifyListeners();
-      }
-    }
+    notifyListeners();
   }
 
+  // --- 위치 기반 점령 오케스트레이션 ---
   void onLocationUpdated() {
-    if (!_isInitialized) return;
+    if (!isInitialized) return;
     final loc = _locationProvider;
     final auth = _authProvider;
-    if (loc == null || !loc.isGpsActive || loc.currentLocation == null) return;
-    if (auth == null || !auth.isAuthenticated || auth.profile == null) return;
+    if (loc == null || !loc.isGpsActive || loc.currentLocation == null) {
+      return;
+    }
+    if (auth == null || !auth.isAuthenticated || auth.profile == null) {
+      return;
+    }
 
     final hex = HexService.latLngToHex(loc.currentLocation!);
     final tileId = HexService.tileId(hex['q']!, hex['r']!);
 
-    // --- [신규] 동전 자정 경과 체크 및 동전 획득 검사 ---
     _checkAndSyncCoins();
     _checkCoinCollection(tileId);
 
-    // --- [신규] 편법 방지 타일 이동 카운팅 및 랭킹 반영 로직 ---
+    // 편법 방지 타일 이동 카운팅
     if (_lastTileId == null) {
       _lastTileId = tileId;
       PreferencesService.setLastVisitedTileId(tileId);
@@ -767,7 +552,8 @@ class GameProvider extends ChangeNotifier with WidgetsBindingObserver {
               totalMovedTilesCount: auth.profile!.totalMovedTilesCount + 1,
             );
             auth.updateProfileCache(updatedProfile);
-            _achievementProvider?.checkAndUnlock(capturedTiles: capturedTiles);
+            _achievementProvider?.checkAndUnlock(
+                capturedTiles: capturedTiles);
             notifyListeners();
           }
         }).catchError((e) {
@@ -783,28 +569,28 @@ class GameProvider extends ChangeNotifier with WidgetsBindingObserver {
       }
     }
 
-    // 1. 상태 체크 (백그라운드 타이머 보정 + 실시간 구역 이탈 체크)
     _captureController.checkCaptureStatus(loc.currentLocation);
 
-    // 2. 오직 순수하게 지정된 간격(딜레이)으로만 현재 위치 타일 상태를 서버에 확인하여 진행
     final now = DateTime.now();
-    if (_lastServerCheckTime == null ||
-        now.difference(_lastServerCheckTime!) >= GameConfig.serverCheckDelay) {
-      _lastServerCheckTime = now;
+    final lastCheck = _tileProvider.lastServerCheckTime;
+    if (lastCheck == null ||
+        now.difference(lastCheck) >= GameConfig.serverCheckDelay) {
+      _tileProvider.updateLastServerCheckTime();
 
-      checkCurrentLocationTileStatusFromServer().then((status) {
+      _tileProvider
+          .checkCurrentLocationTileStatusFromServer(loc, auth)
+          .then((status) {
         _processCaptureDecision(tileId, status);
       }).catchError((e) {
         debugPrint('⚠️ 위치 기반 타일 상태 서버 조회 실패: $e');
       });
     }
 
-    // 업적 조건 체크 호출
     _achievementProvider?.checkAndUnlock(capturedTiles: capturedTiles);
   }
 
-  /// 서버의 점령 상태 결과에 따라 점령 진행 여부를 판별하는 내부 로직
-  Future<void> _processCaptureDecision(String tileId, TileStatus status) async {
+  Future<void> _processCaptureDecision(
+      String tileId, TileStatus status) async {
     final loc = _locationProvider;
     final auth = _authProvider;
     if (loc == null ||
@@ -814,26 +600,24 @@ class GameProvider extends ChangeNotifier with WidgetsBindingObserver {
       return;
     }
 
-    // 내 본진 타일은 점령할 필요가 없는 상시 내 영토이므로 점령 개시 불가로 철저히 차단
-    final myMainBaseId = auth.profile?.mainBaseTileId;
-    if (myMainBaseId != null && myMainBaseId.isNotEmpty && tileId == myMainBaseId) {
+    final myMainBaseId = auth.profile!.mainBaseTileId;
+    if (myMainBaseId != null &&
+        myMainBaseId.isNotEmpty &&
+        tileId == myMainBaseId) {
       if (_captureController.capturingTileId == tileId) {
         _captureController.cancelCapture();
       }
       return;
     }
 
-    // mine: 내 타일 → 점령 중단
-    // empty/enemy: 점령 대상이므로 진행
     if (status == TileStatus.empty || status == TileStatus.enemy) {
       if (_isAutoCapture && !_captureController.isCapturing) {
-        // 자동 점령 개시 직전, DB 서버에서 해당 타일의 실시간 최신 정보 강제 패치
         try {
           final serverTile = await _supabase.fetchTile(tileId);
           if (serverTile != null) {
-            _capturedTiles[tileId] = serverTile;
+            _tileProvider.updateTile(tileId, serverTile);
           } else {
-            _capturedTiles.remove(tileId);
+            _tileProvider.removeTile(tileId);
           }
           notifyListeners();
         } catch (e) {
@@ -841,13 +625,13 @@ class GameProvider extends ChangeNotifier with WidgetsBindingObserver {
         }
 
         final int currentCaptureCount =
-            _capturedTiles[tileId]?.captureCount ?? 0;
+            _tileProvider.tileById(tileId)?.captureCount ?? 0;
         final int targetCaptureCount = currentCaptureCount + 1;
         final int durationSeconds =
             GameConfig.initialCaptureDurationSeconds * targetCaptureCount;
-        final Duration captureDuration = Duration(seconds: durationSeconds);
+        final Duration captureDuration =
+            Duration(seconds: durationSeconds);
 
-        // 물리 점령 개시 시점에 진행 중인 위성 점령이 있으면 중단
         _satelliteController.cancelCapture();
 
         _captureController.startCapture(
@@ -861,26 +645,12 @@ class GameProvider extends ChangeNotifier with WidgetsBindingObserver {
         );
       }
     } else {
-      // 내 타일(mine)인 경우 기존 진행 중인 점령 취소
       if (_captureController.capturingTileId == tileId) {
         _captureController.cancelCapture();
       }
     }
   }
 
-  /// 특정 타일의 남은 쉴드 보호 시간(초)을 반환 (0 이하이면 보호 만료)
-  /// 특정 타일의 남은 쉴드 보호 시간(초)을 반환 (0 이하이면 보호 만료)
-  int getRemainingShieldSeconds(String tileId) {
-    final tile = _capturedTiles[tileId];
-    if (tile == null) return 0;
-
-    final remaining = tile.shieldExpiration
-        .difference(DateTime.now().toUtc())
-        .inSeconds;
-    return remaining > 0 ? remaining : 0;
-  }
-
-  /// 사용자가 수동 모드 상태에서 즉시 수동 점령을 개시합니다.
   Future<void> startManualCapture() async {
     final loc = _locationProvider;
     final auth = _authProvider;
@@ -894,32 +664,32 @@ class GameProvider extends ChangeNotifier with WidgetsBindingObserver {
     final hex = HexService.latLngToHex(loc!.currentLocation!);
     final tileId = HexService.tileId(hex['q']!, hex['r']!);
 
-    // 내 본진 타일은 점령할 필요가 없는 상시 내 영토이므로 수동 점령 개시 즉시 무시 차단
     final myMainBaseId = auth?.profile?.mainBaseTileId;
-    if (myMainBaseId != null && myMainBaseId.isNotEmpty && tileId == myMainBaseId) {
+    if (myMainBaseId != null &&
+        myMainBaseId.isNotEmpty &&
+        tileId == myMainBaseId) {
       return;
     }
 
-    // 점령 시작 직전, DB 서버에서 해당 타일의 실시간 최신 정보 강제 패치
     try {
       final serverTile = await _supabase.fetchTile(tileId);
       if (serverTile != null) {
-        _capturedTiles[tileId] = serverTile;
+        _tileProvider.updateTile(tileId, serverTile);
       } else {
-        _capturedTiles.remove(tileId);
+        _tileProvider.removeTile(tileId);
       }
       notifyListeners();
     } catch (e) {
       debugPrint('점령 시작 전 서버 타일 정보 패치 실패 (로컬 데이터로 대체 진행): $e');
     }
 
-    final int currentCaptureCount = currentTile?.captureCount ?? 0;
+    final int currentCaptureCount =
+        _tileProvider.tileById(tileId)?.captureCount ?? 0;
     final int targetCaptureCount = currentCaptureCount + 1;
     final int durationSeconds =
         GameConfig.initialCaptureDurationSeconds * targetCaptureCount;
     final Duration captureDuration = Duration(seconds: durationSeconds);
 
-    // 물리 점령 개시 시점에 진행 중인 위성 점령이 있으면 중단
     _satelliteController.cancelCapture();
 
     _captureController.startCapture(
@@ -929,12 +699,10 @@ class GameProvider extends ChangeNotifier with WidgetsBindingObserver {
       colorHex: auth.profile!.colorHex,
       duration: captureDuration,
       targetCaptureCount: targetCaptureCount,
-      wasEnemyTile: currentTile != null, // 점령 전 타일이 존재하면 상대방 구역
+      wasEnemyTile: currentTile != null,
     );
   }
 
-  /// 자동 점령 작전의 활성/비활성 여부를 토글합니다.
-  /// 인증된 상태에서는 항상 자동 점령이 강제로 유지되므로 토글 효과가 없습니다(항상 true).
   void toggleAutoCapture() {
     if (_isAuthenticated == true) {
       _isAutoCapture = true;
@@ -944,209 +712,132 @@ class GameProvider extends ChangeNotifier with WidgetsBindingObserver {
     notifyListeners();
   }
 
-  /// 지도 배경 스타일(다크, 사이버펑크, 위성 등)을 순환 변경합니다.
+  // --- Map State ---
+  void setFollowingUser(bool value) {
+    if (_isFollowingUser != value) {
+      _isFollowingUser = value;
+      notifyListeners();
+    }
+  }
+
+  void toggleFollowingUser() {
+    _isFollowingUser = !_isFollowingUser;
+    notifyListeners();
+  }
+
+  void toggleCompletedPatternsView() {
+    _showCompletedPatterns = !_showCompletedPatterns;
+    notifyListeners();
+  }
+
   void cycleMapStyle() {
     _currentMapStyleIndex =
         (_currentMapStyleIndex + 1) % MapConfig.mapStyles.length;
     notifyListeners();
   }
 
-  /// 지도 회전 모드(나침반 헤딩 동기화)를 활성화/비활성화하고 내부 설정을 저장합니다.
   Future<void> toggleMapRotationMode() async {
     _isMapRotationMode = !_isMapRotationMode;
     notifyListeners();
-    // PreferencesService IO는 백그라운드 비동기 처리 — UI 반응성 확보
     PreferencesService.setMapRotationMode(_isMapRotationMode).catchError((e) {
       debugPrint('⚠️ 회전 모드 설정 저장 실패: $e');
     });
   }
 
-  /// 현재 위치의 헥사곤 타일 점령 상태를 서버 기준으로 실시간 확인하는 함수
-  Future<TileStatus> checkCurrentLocationTileStatusFromServer() async {
-    final loc = _locationProvider;
-    final auth = _authProvider;
-
-    if (loc?.currentLocation == null || auth?.user == null) {
-      return TileStatus.empty;
-    }
-
-    final hex = HexService.latLngToHex(loc!.currentLocation!);
-    final tileId = HexService.tileId(hex['q']!, hex['r']!);
-
-    final status = await _supabase.checkTileStatusFromServer(
-      tileId,
-      auth!.user!.id,
-    );
-
-    // 상대방 구역(enemy)이면 최신 타일 정보로 즉시 갱신
-    if (status == TileStatus.enemy) {
-      final serverTile = await _supabase.fetchTile(tileId);
-      if (serverTile != null) {
-        _capturedTiles[tileId] = serverTile;
-        notifyListeners();
-        debugPrint(
-          '🎨 [상대방 구역 갱신] 타일($tileId)을 상대방 점령색(${serverTile.colorHex})으로 실시간 갱신 완료.',
-        );
-      }
-    }
-    // 내 구역(mine)이어도 최신 타일 정보로 즉시 동기화 갱신
-    else if (status == TileStatus.mine) {
-      final serverTile = await _supabase.fetchTile(tileId);
-      if (serverTile != null) {
-        _capturedTiles[tileId] = serverTile;
-        notifyListeners();
-        debugPrint(
-          '🎨 [내 구역 갱신] 타일($tileId)의 최신 상태를 실시간 동기화 완료.',
-        );
-      }
-    }
-    // 빈 구역(empty)인데 로컬에 잔재가 있으면 제거하여 동기화
-    else if (status == TileStatus.empty) {
-      if (_capturedTiles.containsKey(tileId)) {
-        _capturedTiles.remove(tileId);
-        notifyListeners();
-        debugPrint('🎨 [중립 구역 갱신] 타일($tileId)이 빈 상태이므로 로컬에서 제거 완료.');
-      }
-    }
-
-    return status;
-  }
-
-  /// 알림 수신 동의 여부를 전환하고 변경 설정을 로컬 저장소 및 원격 DB 프로필에 보관합니다.
-  Future<void> toggleNotifications() =>
-      _notificationController.toggleNotifications();
-
-  /// 영토 침공 알림 여부를 토글합니다.
-  Future<void> toggleNotifTerritoryAttack() =>
-      _notificationController.toggleNotifTerritoryAttack();
-
-  /// 위성 점령 완료 알림 여부를 토글합니다.
-  Future<void> toggleNotifSatelliteComplete() =>
-      _notificationController.toggleNotifSatelliteComplete();
-
-  /// 시스템 공지 알림 여부를 토글합니다.
-  Future<void> toggleNotifSystemNotice() =>
-      _notificationController.toggleNotifSystemNotice();
-
-  /// 화면 상단에 표시될 새 경고/알림 팝업 메시지를 발행하고 3초 경과 후 자동 페이드아웃 되도록 타이머를 연동합니다.
+  // --- Alert System ---
   void addAlert(String message, AlertType type) {
     _addAlertInternal(message, type);
   }
 
-  /// 내부 알림 등록 메서드. 중복 추가되지 않았을 경우 true를 반환합니다.
   bool _addAlertInternal(String message, AlertType type) {
-    // ⚠️ 중복 알림 방지: 동일한 메시지가 이미 알림 목록에 존재하면 추가하지 않음
     if (_alerts.any((a) => a.message == message)) return false;
 
     final alert = GameAlert.create(message: message, type: type);
     _alerts.insert(0, alert);
     if (_alerts.length > 5) _alerts.removeLast();
     notifyListeners();
-
-    // 🎵 공통 알림 효과음 재생
     AudioService().playNotification();
 
-    Timer(const Duration(seconds: GameConfig.alertDismissDurationSeconds),
-        () => _removeAlert(alert.id));
+    Timer(
+      const Duration(seconds: GameConfig.alertDismissDurationSeconds),
+      () => _removeAlert(alert.id),
+    );
     return true;
   }
 
-  /// 알림 목록에서 특정 ID의 경고 알림을 제거하고 화면을 갱신합니다.
   void _removeAlert(String id) {
     _alerts.removeWhere((a) => a.id == id);
     notifyListeners();
   }
 
-  /// 유저 고유 ID를 닉네임으로 캐싱하는 메모리 버퍼
-  final Map<String, String> _agentNicknames = {};
+  // --- Notification (NotificationController 위임) ---
+  Future<void> toggleNotifications() =>
+      _notificationController.toggleNotifications();
 
-  /// 유저 고유 ID에 해당하는 닉네임을 반환합니다.
-  /// 만약 로그인된 본인의 ID라면 캐시/DB 조회 없이 즉시 본인 프로필의 닉네임을 반환합니다.
-  /// 캐시에 없으면 Supabase에서 즉시 조회 후 캐싱하여 반환합니다.
-  Future<String> getAgentNickname(String userId) async {
-    final myId = _userId;
-    final myNick = _userNickname;
+  Future<void> toggleNotifTerritoryAttack() =>
+      _notificationController.toggleNotifTerritoryAttack();
 
-    if (myId == userId && myNick != null && myNick.isNotEmpty) {
-      return myNick;
-    }
+  Future<void> toggleNotifSatelliteComplete() =>
+      _notificationController.toggleNotifSatelliteComplete();
 
-    if (_agentNicknames.containsKey(userId)) {
-      return _agentNicknames[userId]!;
-    }
+  Future<void> toggleNotifSystemNotice() =>
+      _notificationController.toggleNotifSystemNotice();
 
-    try {
-      final res = await _supabase.client
-          .from('profiles')
-          .select('nickname')
-          .eq('id', userId)
-          .maybeSingle();
-      if (res != null && res['nickname'] != null) {
-        final nick = res['nickname'] as String;
-        _agentNicknames[userId] = nick;
-        notifyListeners();
-        return nick;
-      }
-    } catch (e) {
-      debugPrint('⚠️ 닉네임 조회 실패: $e');
-    }
-
-    // 실패 시 마스킹된 ID 반환
-    final masked = userId.length > 8 ? '${userId.substring(0, 6)}...' : userId;
-    return masked;
+  // --- Satellite Scan ---
+  void toggleScanMode() {
+    _isScanMode = !_isScanMode;
+    _selectedScanTileId = null;
+    notifyListeners();
   }
 
-  /// 정보가 보안 해제(Reveal)된 타일 ID와 해제 일시 맵
-  final Map<String, DateTime> _revealedTileTimes = {};
+  void selectScanTile(String tileId) {
+    if (!_isAuthenticated) return;
 
-  /// 대상 타일과 유저의 본진 사이의 최단 경로 거리를 반환합니다. (SatelliteCaptureController에 위임)
+    if (_selectedScanTileId == tileId) {
+      _selectedScanTileId = null;
+      _selectedScanTileLatLng = null;
+      notifyListeners();
+    } else {
+      _selectedScanTileId = tileId;
+      final parts = tileId.split('_');
+      if (parts.length == 3) {
+        final q = int.tryParse(parts[1]);
+        final r = int.tryParse(parts[2]);
+        if (q != null && r != null) {
+          _selectedScanTileLatLng = HexService.hexToLatLng(q, r);
+        }
+      }
+      notifyListeners();
+
+      // 조준 즉시 서버에서 타일 최신 정보 패치
+      _tileProvider.fetchAndUpdateTile(tileId);
+    }
+  }
+
+  // --- Satellite Capture (SatelliteCaptureController 위임) ---
   int getTileDistance(String targetTileId) =>
       _satelliteController.getTileDistance(targetTileId);
 
-  /// 타일 정보가 열람(보안 해제) 가능한 상태인지 여부를 판별합니다.
-  /// 본인 타일이거나 중립(점령자 없음) 타일인 경우 항상 상시 노출(true)됩니다.
-  /// 상대 타일인 경우, 해제 일시로부터 10분(GameConfig.tileRevealDurationSeconds)이 지나지 않았는지 판별합니다.
-  bool isTileInfoRevealed(String tileId) {
-    final myMainBaseId = _userMainBaseTileId;
-    if (myMainBaseId != null && myMainBaseId.isNotEmpty && tileId == myMainBaseId) {
-      return true; // 내 본진 타일은 상시 보안 해제 상태로 모든 정보 노출
-    }
+  bool checkSatelliteCaptureConnectivity(String targetTileId) =>
+      _satelliteController.checkConnectivity(targetTileId);
 
-    final myId = _userId;
-    final tile = capturedTiles[tileId]; // 게터 호출로 안전하게 가상 주입본 사용
-    final isOwnTile = tile != null && tile.userId == myId;
-    final isNeutral = tile == null || tile.userId == null || tile.userId == 'none';
+  int getSatelliteCaptureDurationSeconds(String tileId) =>
+      _satelliteController.getCaptureDurationSeconds(tileId);
 
-    if (isOwnTile || isNeutral) {
-      return true;
-    }
+  double getSatelliteTravelRatio(String tileId) =>
+      _satelliteController.getTravelRatio(tileId);
 
-    final revealedAt = _revealedTileTimes[tileId];
-    if (revealedAt == null) return false;
+  void executeSatelliteCapture(String tileId) =>
+      _satelliteController.executeCapture(tileId);
 
-    // 만료 여부 검증 (10분)
-    final expiration = revealedAt.add(const Duration(seconds: GameConfig.tileRevealDurationSeconds));
-    final isValid = DateTime.now().toUtc().isBefore(expiration);
+  void cancelSatelliteCapture() => _satelliteController.cancelCapture();
 
-    if (!isValid) {
-      _revealedTileTimes.remove(tileId);
-      notifyListeners();
-    }
+  bool isHQOr1Ring(String tileId) =>
+      _satelliteController.isHQOr1Ring(tileId);
 
-    return isValid;
-  }
-
-  /// 보안 해제된 타일의 남은 만료 시각(DateTime)을 반환합니다.
-  /// 해제되지 않았거나 이미 만료된 경우 null을 반환합니다.
-  DateTime? getTileRevealExpiration(String tileId) {
-    final revealedAt = _revealedTileTimes[tileId];
-    if (revealedAt == null) return null;
-    return revealedAt.add(const Duration(seconds: GameConfig.tileRevealDurationSeconds));
-  }
-
-  /// 상대 타일 상세 정보 열람을 위해 본진으로부터의 거리(GP)만큼 골드를 지불하고 정보를 해제합니다.
+  // --- Tile Info Reveal (orchestration: gold + tile reveal) ---
   Future<bool> revealTileInfo(String tileId) async {
-    if (isTileInfoRevealed(tileId)) return true;
+    if (_tileProvider.isTileInfoRevealed(tileId)) return true;
 
     final distance = getTileDistance(tileId);
     if (_goldManager.currentGold < distance) {
@@ -1154,17 +845,15 @@ class GameProvider extends ChangeNotifier with WidgetsBindingObserver {
       return false;
     }
 
-    // [낙관적 업데이트] 골드 즉각 차감 및 해제 시간 즉시 등록
     final double previousGold = _goldManager.currentGold;
     final DateTime nowUtc = DateTime.now().toUtc();
 
     _goldManager.deductOptimistic(distance.toDouble());
-    _revealedTileTimes[tileId] = nowUtc;
-    notifyListeners(); // 즉각적인 UI 갱신 유도
+    _tileProvider.addRevealedTile(tileId, nowUtc);
+    notifyListeners();
 
     final myId = _userId;
     if (myId != null) {
-      // 백엔드 API 요청은 await 하지 않고 백그라운드 비동기 처리하여 화면 멈춤(랙) 현상 완벽 방지
       _supabase.client
           .from('profiles')
           .update({
@@ -1173,14 +862,17 @@ class GameProvider extends ChangeNotifier with WidgetsBindingObserver {
           })
           .eq('id', myId)
           .then((_) {
-            // 골드 저장 완료 후 위성 정보 조회 횟수 1 증가 실행
             _supabase.incrementSatelliteScan(myId).then((success) {
-              if (success && _authProvider != null && _authProvider!.profile != null) {
+              if (success &&
+                  _authProvider != null &&
+                  _authProvider!.profile != null) {
                 final updatedProfile = _authProvider!.profile!.copyWith(
-                  satelliteScanCount: _authProvider!.profile!.satelliteScanCount + 1,
+                  satelliteScanCount:
+                      _authProvider!.profile!.satelliteScanCount + 1,
                 );
                 _authProvider!.updateProfileCache(updatedProfile);
-                _achievementProvider?.checkAndUnlock(capturedTiles: capturedTiles);
+                _achievementProvider?.checkAndUnlock(
+                    capturedTiles: capturedTiles);
                 notifyListeners();
               } else {
                 _authProvider?.refreshProfile();
@@ -1192,9 +884,8 @@ class GameProvider extends ChangeNotifier with WidgetsBindingObserver {
           })
           .catchError((e) {
             debugPrint('⚠️ 상대 타일 정보 백엔드 저장 실패: $e');
-            // 네트워크 오류 등으로 실패 시 로컬 데이터 롤백 처리
             _goldManager.setGold(previousGold);
-            _revealedTileTimes.remove(tileId);
+            _tileProvider.removeRevealedTile(tileId);
             notifyListeners();
             addAlert(GameStrings.satSecurityDecryptFailed, AlertType.error);
           });
@@ -1204,7 +895,7 @@ class GameProvider extends ChangeNotifier with WidgetsBindingObserver {
     return true;
   }
 
-  /// 본진을 새로운 위치로 이전(재설정)하고 해당 거리에 따른 비용(재화)을 차감합니다.
+  // --- Main Base ---
   Future<bool> rebaseMainBase(String tileId, double cost) async {
     final myId = _userId;
     if (myId == null) return false;
@@ -1217,115 +908,27 @@ class GameProvider extends ChangeNotifier with WidgetsBindingObserver {
     final double previousGold = _goldManager.currentGold;
     final nowUtc = DateTime.now().toUtc();
 
-    // 낙관적 업데이트
     _goldManager.deductOptimistic(cost);
     notifyListeners();
 
     try {
-      await _supabase.client
-          .from('profiles')
-          .update({
-            'main_base_tile_id': tileId,
-            'gold': _goldManager.currentGold,
-            'last_gold_updated_at': nowUtc.toIso8601String(),
-          })
-          .eq('id', myId);
+      await _supabase.client.from('profiles').update({
+        'main_base_tile_id': tileId,
+        'gold': _goldManager.currentGold,
+        'last_gold_updated_at': nowUtc.toIso8601String(),
+      }).eq('id', myId);
 
-      // 프로필 데이터 강제 동기화
       await _authProvider?.refreshProfile();
       return true;
     } catch (e) {
       debugPrint('⚠️ 본진 이전 처리 중 오류 발생: $e');
-      // 롤백
       _goldManager.setGold(previousGold);
       notifyListeners();
       return false;
     }
   }
 
-  @override
-  void dispose() {
-    WidgetsBinding.instance.removeObserver(this);
-    _goldManager.dispose();
-    _tilesStreamSub?.cancel();
-    _backgroundPollingTimer?.cancel();
-    _utcTimer?.cancel();
-    _satelliteController.dispose();
-    _locationProvider?.removeListener(onLocationUpdated);
-    _captureController.dispose();
-    super.dispose();
-  }
-
-  /// 지정한 타일이 본진 기지이거나 본진을 둘러싼 인접 1링(Ring) 범위에 포함되는지 확인합니다.
-  bool isHQOr1Ring(String tileId) =>
-      _satelliteController.isHQOr1Ring(tileId);
-
-  /// 위성 궤도 스캔 모드의 On/Off 여부를 전환합니다.
-  void toggleScanMode() {
-    _isScanMode = !_isScanMode;
-    _selectedScanTileId = null;
-    notifyListeners();
-  }
-
-  /// 위성 스캔 화면 상에서 조준점으로 지정할 대상 헥사곤 타일을 선택 조준합니다.
-  /// 이미 선택된 타일을 다시 선택하는 경우 조준을 해제합니다.
-  void selectScanTile(String tileId) {
-    if (!_isAuthenticated) {
-      return;
-    }
-    if (_selectedScanTileId == tileId) {
-      _selectedScanTileId = null;
-      _selectedScanTileLatLng = null;
-      notifyListeners();
-    } else {
-      _selectedScanTileId = tileId;
-      // tileId 형식: 'hex_q_r'
-      final parts = tileId.split('_');
-      if (parts.length == 3) {
-        final q = int.tryParse(parts[1]);
-        final r = int.tryParse(parts[2]);
-        if (q != null && r != null) {
-          _selectedScanTileLatLng = HexService.hexToLatLng(q, r);
-        }
-      }
-      notifyListeners();
-
-      // [신규] 조준 즉시 서버 DB에서 이 타일의 실시간 최신 정보 강제 패치하여 동기화
-      _supabase.fetchTile(tileId).then((serverTile) {
-        if (_selectedScanTileId == tileId) {
-          if (serverTile != null) {
-            _capturedTiles[tileId] = serverTile;
-          } else {
-            _capturedTiles.remove(tileId);
-          }
-          notifyListeners();
-        }
-      }).catchError((e) {
-        debugPrint('⚠️ 조준 타일 최신 정보 실시간 패치 실패: $e');
-      });
-    }
-  }
-
-  /// 위성 점령 연결성을 검증합니다. (SatelliteCaptureController에 위임)
-  bool checkSatelliteCaptureConnectivity(String targetTileId) =>
-      _satelliteController.checkConnectivity(targetTileId);
-
-  /// 내 영토와 대상 타일 간의 거리를 산출하여 위성 점령 완료에 소요될 지연 시간(초)을 계산합니다.
-  int getSatelliteCaptureDurationSeconds(String tileId) =>
-      _satelliteController.getCaptureDurationSeconds(tileId);
-
-  /// 위성 점령의 총 시간 중 '이동(비행) 시간'이 차지하는 비율을 산출합니다.
-  double getSatelliteTravelRatio(String tileId) =>
-      _satelliteController.getTravelRatio(tileId);
-
-  /// 위성 원격 점령을 실행합니다. (SatelliteCaptureController에 위임)
-  void executeSatelliteCapture(String tileId) =>
-      _satelliteController.executeCapture(tileId);
-
-  /// 현재 시도 중인 위성 원격 점령을 취소합니다.
-  void cancelSatelliteCapture() =>
-      _satelliteController.cancelCapture();
-
+  // --- Lifecycle ---
   @override
   void didChangeAppLifecycleState(AppLifecycleState state) {
     if (state == AppLifecycleState.resumed) {
@@ -1334,14 +937,26 @@ class GameProvider extends ChangeNotifier with WidgetsBindingObserver {
       }
     } else if (state == AppLifecycleState.paused ||
         state == AppLifecycleState.inactive) {
-      // [신규] 사용자가 홈 화면으로 나가거나 앱을 끌 때 즉시 모인 실시간 재화를 DB에 저장하여 증발 유실 완벽 차단
       if (_isAuthenticated == true) {
         _goldManager.persistToServer();
       }
     }
   }
 
-  /// 동전 데이터를 서버에서 가져오고, 자정이 경과했으면 새로 생성합니다.
+  @override
+  void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
+    _goldManager.dispose();
+    _backgroundPollingTimer?.cancel();
+    _utcTimer?.cancel();
+    _satelliteController.dispose();
+    _locationProvider?.removeListener(onLocationUpdated);
+    _captureController.dispose();
+    _tileProvider.dispose();
+    super.dispose();
+  }
+
+  // --- Coin System ---
   Future<void> _checkAndSyncCoins() async {
     final myId = _userId;
     if (myId == null) return;
@@ -1351,29 +966,23 @@ class GameProvider extends ChangeNotifier with WidgetsBindingObserver {
     }
 
     try {
-      // 1. 오늘 날짜(UTC 기준 YYYY-MM-DD) 확인
       final nowUtc = DateTime.now().toUtc();
-      final todayStr = "${nowUtc.year}-${nowUtc.month.toString().padLeft(2, '0')}-${nowUtc.day.toString().padLeft(2, '0')}";
+      final todayStr =
+          "${nowUtc.year}-${nowUtc.month.toString().padLeft(2, '0')}-${nowUtc.day.toString().padLeft(2, '0')}";
 
-      // 2. 로컬에 저장된 마지막 동전 생성 날짜 조회
       final lastDate = await PreferencesService.getLastCoinGeneratedDate();
 
-      // [최적화 & 레이스 컨디션 방지]
-      // 이미 로컬 메모리에 동전 목록이 로드되어 있고 생성 날짜가 오늘과 일치한다면,
-      // 매초 GPS 갱신 시마다 무차별적으로 서버에서 동전을 재조회하는 오버헤드를 막기 위해 즉시 얼리 리턴합니다.
       if (_coins.isNotEmpty && lastDate == todayStr) {
         return;
       }
 
-      // 3. 서버에서 기존 동전 목록 조회
       final existingCoins = await _supabase.fetchUserCoins(myId);
 
-      // 재생성 기준: 저장된 생성 날짜가 오늘(UTC)과 다르거나, DB에 활성화된 동전이 아예 없는 경우
       if (lastDate != todayStr || existingCoins.isEmpty) {
-        debugPrint('🪙 자정 경과 또는 동전 없음 감지 ➔ 동전 재생성 시작 (UTC: $todayStr)');
+        debugPrint(
+            '🪙 자정 경과 또는 동전 없음 감지 ➔ 동전 재생성 시작 (UTC: $todayStr)');
         await _regenerateCoins(myId, todayStr);
       } else {
-        // 기존 동전 사용
         _coins = existingCoins;
         notifyListeners();
       }
@@ -1382,7 +991,6 @@ class GameProvider extends ChangeNotifier with WidgetsBindingObserver {
     }
   }
 
-  /// [디버그 전용] 현재 위치를 기준으로 자정 경과 여부와 상관없이 동전을 즉시 임의 재생성하여 초기화합니다.
   Future<void> debugRegenerateCoins() async {
     final myId = _userId;
     if (myId == null) {
@@ -1394,12 +1002,12 @@ class GameProvider extends ChangeNotifier with WidgetsBindingObserver {
       return;
     }
 
-    // 통신 딜레이 동안 이전 동전이 지도에 계속 보이는 현상을 방지하기 위해 로컬 목록 즉각 소거
     _coins = [];
     notifyListeners();
 
     final nowUtc = DateTime.now().toUtc();
-    final todayStr = "${nowUtc.year}-${nowUtc.month.toString().padLeft(2, '0')}-${nowUtc.day.toString().padLeft(2, '0')}";
+    final todayStr =
+        "${nowUtc.year}-${nowUtc.month.toString().padLeft(2, '0')}-${nowUtc.day.toString().padLeft(2, '0')}";
 
     addAlert('동전을 즉시 재배치하는 중...', AlertType.info);
 
@@ -1411,16 +1019,15 @@ class GameProvider extends ChangeNotifier with WidgetsBindingObserver {
     }
   }
 
-  /// 현재 위치 기준 15타일 반경 이내 무작위 10개 동전 생성
   Future<void> _regenerateCoins(String userId, String todayStr) async {
     if (_isRegeneratingCoins) return;
-    _isRegeneratingCoins = true; // 락 획득
+    _isRegeneratingCoins = true;
 
     final loc = _locationProvider;
     final currLoc = loc?.currentLocation;
     if (currLoc == null) {
       debugPrint('⚠️ 위치 정보가 없어 동전을 재생성할 수 없습니다. 다음 위치 업데이트 시도 대기.');
-      _isRegeneratingCoins = false; // 위치 수신 실패 시 락 해제
+      _isRegeneratingCoins = false;
       return;
     }
 
@@ -1430,8 +1037,6 @@ class GameProvider extends ChangeNotifier with WidgetsBindingObserver {
       final int centerR = centerHex['r']!;
       const int radius = GameConfig.coinSpawnRadius;
 
-      // 1. 15타일 이내의 모든 axial 타일 후보 수집 (본인 위치 제외)
-      // 원형에 가까운 분포를 위해 기본적으로 거리가 8~11타일 사이인 곳을 우선 후보로 수집하고, 그 외는 백업으로 수집
       final List<Map<String, dynamic>> candidates = [];
       final List<Map<String, dynamic>> backupCandidates = [];
       final centerLatLng = HexService.hexToLatLng(centerQ, centerR);
@@ -1440,18 +1045,19 @@ class GameProvider extends ChangeNotifier with WidgetsBindingObserver {
         final int rMin = math.max(-radius, -q - radius);
         final int rMax = math.min(radius, -q + radius);
         for (int r = rMin; r <= rMax; r++) {
-          if (q == 0 && r == 0) continue; // 내 위치 제외
+          if (q == 0 && r == 0) continue;
           final targetQ = centerQ + q;
           final targetR = centerR + r;
           final targetLatLng = HexService.hexToLatLng(targetQ, targetR);
 
-          // 방위각(라디안) 계산: -pi ~ pi
-          final double dLat = targetLatLng.latitude - centerLatLng.latitude;
-          final double dLng = targetLatLng.longitude - centerLatLng.longitude;
+          final double dLat =
+              targetLatLng.latitude - centerLatLng.latitude;
+          final double dLng =
+              targetLatLng.longitude - centerLatLng.longitude;
           final double angle = math.atan2(dLat, dLng);
 
-          // 헥사곤 격자 거리 계산
-          final int distance = ((q.abs() + r.abs() + (q + r).abs()) / 2).round();
+          final int distance =
+              ((q.abs() + r.abs() + (q + r).abs()) / 2).round();
 
           final item = {
             'q': targetQ,
@@ -1469,7 +1075,6 @@ class GameProvider extends ChangeNotifier with WidgetsBindingObserver {
 
       if (candidates.isEmpty && backupCandidates.isEmpty) return;
 
-      // 2. 각도 기준(-pi ~ pi)으로 10개의 슬라이스 구역 분할 및 균등 무작위 추출 (기본 후보군인 4~6타일 범위 내에서 우선 진행)
       final List<Map<String, int>> selected = [];
       const int numSlices = 10;
       const double sliceWidth = (2 * math.pi) / numSlices;
@@ -1478,7 +1083,6 @@ class GameProvider extends ChangeNotifier with WidgetsBindingObserver {
         final double sliceMin = -math.pi + (i * sliceWidth);
         final double sliceMax = sliceMin + sliceWidth;
 
-        // 해당 각도 범위에 속하는 기본 후보군 필터링
         final sliceCandidates = candidates.where((c) {
           final double angle = c['angle'] as double;
           return angle >= sliceMin && angle < sliceMax;
@@ -1494,41 +1098,34 @@ class GameProvider extends ChangeNotifier with WidgetsBindingObserver {
         }
       }
 
-      // 3. 슬라이스 부족 시 기본 후보군(4~6타일) 중 남은 후보에서 중복 없이 채우기
       if (selected.length < 10) {
         candidates.shuffle();
         for (final c in candidates) {
           if (selected.length >= 10) break;
           final targetQ = c['q'] as int;
           final targetR = c['r'] as int;
-          final isDuplicate = selected.any((s) => s['q'] == targetQ && s['r'] == targetR);
+          final isDuplicate =
+              selected.any((s) => s['q'] == targetQ && s['r'] == targetR);
           if (!isDuplicate) {
-            selected.add({
-              'q': targetQ,
-              'r': targetR,
-            });
+            selected.add({'q': targetQ, 'r': targetR});
           }
         }
       }
 
-      // 4. 그럼에도 부족하면 백업 후보군(1~15타일 중 4~6이 아닌 구역)에서 채우기
       if (selected.length < 10) {
         backupCandidates.shuffle();
         for (final c in backupCandidates) {
           if (selected.length >= 10) break;
           final targetQ = c['q'] as int;
           final targetR = c['r'] as int;
-          final isDuplicate = selected.any((s) => s['q'] == targetQ && s['r'] == targetR);
+          final isDuplicate =
+              selected.any((s) => s['q'] == targetQ && s['r'] == targetR);
           if (!isDuplicate) {
-            selected.add({
-              'q': targetQ,
-              'r': targetR,
-            });
+            selected.add({'q': targetQ, 'r': targetR});
           }
         }
       }
 
-      // 3. UserCoin 리스트 작성
       final List<UserCoin> newCoins = selected.map((c) {
         final q = c['q']!;
         final r = c['r']!;
@@ -1543,7 +1140,6 @@ class GameProvider extends ChangeNotifier with WidgetsBindingObserver {
         );
       }).toList();
 
-      // 4. DB 업데이트: 기존 동전 삭제 후 신규 동전 삽입
       await _supabase.clearUserCoins(userId);
       final insertSuccess = await _supabase.insertUserCoins(newCoins);
 
@@ -1556,24 +1152,21 @@ class GameProvider extends ChangeNotifier with WidgetsBindingObserver {
     } catch (e) {
       debugPrint('⚠️ 동전 생성 중 오류 발생: $e');
     } finally {
-      _isRegeneratingCoins = false; // 재생성 완료/실패 시 반드시 락 해제
+      _isRegeneratingCoins = false;
     }
   }
 
-  /// 특정 타일로 진입하거나 점령했을 때 동전 획득 조건을 확인하고 정산합니다.
   Future<void> _checkCoinCollection(String tileId) async {
     final myId = _userId;
     if (myId == null) return;
 
-    // 미획득 동전 중 해당 타일 ID와 일치하는 동전 찾기
-    final coinIndex = _coins.indexWhere((c) => c.tileId == tileId && !c.isCollected);
+    final coinIndex =
+        _coins.indexWhere((c) => c.tileId == tileId && !c.isCollected);
     if (coinIndex == -1) return;
 
     final targetCoin = _coins[coinIndex];
     debugPrint('🪙 동전 발견! 타일 ID: ${targetCoin.tileId}. 획득 시도 중...');
 
-    // 1. 낙관적 업데이트: 네트워크 요청 전 즉시 로컬 캐시를 획득으로 변경하여
-    // 중복 진입을 방지하고 화면에서 동전을 즉각적으로 소거(0ms)합니다.
     final originalCoins = List<UserCoin>.from(_coins);
     final updatedCoins = List<UserCoin>.from(_coins);
     updatedCoins[coinIndex] = UserCoin(
@@ -1588,36 +1181,29 @@ class GameProvider extends ChangeNotifier with WidgetsBindingObserver {
     _coins = updatedCoins;
     notifyListeners();
 
-    // 2. RPC 호출하여 동전 획득 처리
     try {
-      final success = await _supabase.collectCoin(myId, tileId, GameConfig.coinGoldReward);
+      final success =
+          await _supabase.collectCoin(myId, tileId, GameConfig.coinGoldReward);
       if (success) {
-        // 획득 효과음 재생
         AudioService().playNotification();
-
-        // 화면 알림 추가
         addAlert(
           '동전을 발견하여 ${GameConfig.coinGoldReward.toInt()}골드를 획득했습니다!',
           AlertType.info,
         );
-
-        // 골드 매니저 서버 동기화
         await _goldManager.syncWithServer();
       } else {
-        // DB 처리 실패 시 원래 상태로 복원(롤백)
         debugPrint('⚠️ 동전 획득 DB 처리 실패 ➔ 롤백 수행');
         _coins = originalCoins;
         notifyListeners();
       }
     } catch (e) {
-      // 네트워크 예외 발생 시 원래 상태로 복원(롤백)
       debugPrint('⚠️ 동전 획득 처리 중 예외 발생 ➔ 롤백 수행: $e');
       _coins = originalCoins;
       notifyListeners();
     }
   }
 
-  /// UTC 자정 카운트다운 타이머 기동
+  // --- UTC Timer ---
   void _startUtcTimer() {
     _updateUtcTimeString();
     _utcTimer = Timer.periodic(const Duration(seconds: 1), (_) {
@@ -1625,7 +1211,6 @@ class GameProvider extends ChangeNotifier with WidgetsBindingObserver {
     });
   }
 
-  /// UTC 자정 리셋까지 남은 시간을 계산하여 상태를 업데이트합니다.
   void _updateUtcTimeString() {
     final nowUtc = DateTime.now().toUtc();
     final targetUtc = DateTime.utc(nowUtc.year, nowUtc.month, nowUtc.day + 1);

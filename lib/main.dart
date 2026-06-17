@@ -12,6 +12,7 @@ import 'core/constants/app_routes.dart';
 import 'core/constants/strings.dart';
 import 'game/conquest_game.dart';
 import 'providers/game_provider.dart';
+import 'providers/game_tile_provider.dart';
 import 'providers/location_provider.dart';
 import 'services/geo_service.dart';
 import 'services/supabase_service.dart';
@@ -84,16 +85,28 @@ void main() async {
             update: (_, auth, ach) => ach!..setAuthProvider(auth),
           ),
 
-          // Game Provider — 게임 핵심 상태
-          ChangeNotifierProxyProvider3<
+          // Game Tile Provider — 타일 데이터 저장소 (GameProvider에서 분리)
+          ChangeNotifierProxyProvider2<SupabaseService, AuthProvider,
+              GameTileProvider>(
+            create: (ctx) =>
+                GameTileProvider(supabase: ctx.read<SupabaseService>()),
+            update: (_, supabase, auth, tileProv) =>
+                tileProv!..setAuthProvider(auth),
+          ),
+
+          // Game Provider — 게임 핵심 상태 및 오케스트레이션
+          ChangeNotifierProxyProvider4<
             LocationProvider,
             AuthProvider,
             AchievementProvider,
+            GameTileProvider,
             GameProvider
           >(
-            create: (ctx) =>
-                GameProvider(supabase: ctx.read<SupabaseService>()),
-            update: (_, loc, auth, ach, game) {
+            create: (ctx) => GameProvider(
+              supabase: ctx.read<SupabaseService>(),
+              tileProvider: ctx.read<GameTileProvider>(),
+            ),
+            update: (_, loc, auth, ach, tileProv, game) {
               game!.setLocationProvider(loc);
               game.setAuthProvider(auth);
               game.setAchievementProvider(ach);

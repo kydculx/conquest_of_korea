@@ -6,6 +6,7 @@ import 'package:latlong2/latlong.dart';
 import 'package:supabase_flutter/supabase_flutter.dart' as supabase_flutter;
 
 import 'package:conquest_mobile/providers/game_provider.dart';
+import 'package:conquest_mobile/providers/game_tile_provider.dart';
 import 'package:conquest_mobile/services/supabase_service.dart';
 import 'package:conquest_mobile/providers/auth_provider.dart';
 import 'package:conquest_mobile/providers/location_provider.dart';
@@ -148,9 +149,22 @@ void main() {
     );
   });
 
+  // GameTileProvider를 생성 및 초기화하는 헬퍼 함수
+  Future<GameTileProvider> createInitializedTileProvider() async {
+    final prov = GameTileProvider(supabase: fakeSupabase);
+    prov.setAuthProvider(fakeAuth);
+    // bypass network — just mark as initialized
+    await prov.init();
+    return prov;
+  }
+
   // GameProvider를 생성 및 초기화하고 반환하는 헬퍼 함수
   Future<GameProvider> createInitializedGameProvider() async {
-    final provider = GameProvider(supabase: fakeSupabase);
+    final tileProv = await createInitializedTileProvider();
+    final provider = GameProvider(
+      supabase: fakeSupabase,
+      tileProvider: tileProv,
+    );
     provider.setAuthProvider(fakeAuth);
     provider.setLocationProvider(fakeLocation);
     await provider.initializationFuture;
