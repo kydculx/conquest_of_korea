@@ -47,6 +47,8 @@ class HudOverlay extends StatelessWidget {
               CozyHeaderBar(),
               SizedBox(height: 6),
               UtcTimerHeaderBar(),
+              SizedBox(height: 6),
+              StepsHeaderBar(),
             ],
           ),
         ),

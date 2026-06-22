@@ -22,6 +22,7 @@ import '../controllers/gold_manager.dart';
 import '../core/constants/game_config.dart';
 import '../core/constants/map_config.dart';
 import '../core/constants/strings.dart';
+import '../services/health_service.dart';
 
 /// 게임의 핵심 인게임 비즈니스 상태 및 점령 로직을 관리하고 UI에 변경을 전파하는 메인 프로바이더.
 ///
@@ -60,6 +61,10 @@ class GameProvider extends ChangeNotifier with WidgetsBindingObserver {
   // --- 상태 ---
   /// 화면 상단에 표시될 인게임 알림/경고 목록
   final List<GameAlert> _alerts = [];
+
+  /// 오늘의 누적 걸음수 데이터
+  int _todaySteps = 0;
+  int get todaySteps => _todaySteps;
 
   /// 자동 점령 모드 활성화 여부
   bool _isAutoCapture = false;
@@ -451,6 +456,10 @@ class GameProvider extends ChangeNotifier with WidgetsBindingObserver {
 
       // 타일 데이터 초기화 (GameTileProvider 위임)
       await _tileProvider.init();
+      // 초기 걸음수 로드 (비동기로 실행하여 초기화 흐름을 방해하지 않도록 처리)
+      updateStepsState().catchError((e) {
+        debugPrint('초기 걸음수 로드 실패: $e');
+      });
     } catch (e) {
       debugPrint('초기 데이터 로드 실패: $e');
     } finally {
@@ -462,12 +471,35 @@ class GameProvider extends ChangeNotifier with WidgetsBindingObserver {
     _startBackgroundPolling();
   }
 
+  // --- 걸음수 관리 ---
+  Timer? _stepsTimer;
+
+  /// 오늘 걸음수 수동/자동 비동기 업데이트 메서드
+  Future<void> updateStepsState() async {
+    try {
+      final steps = await HealthService.instance.getTodaySteps();
+      if (_todaySteps != steps) {
+        _todaySteps = steps;
+        notifyListeners();
+      }
+    } catch (e) {
+      debugPrint('⚠️ 걸음수 데이터 업데이트 중 에러: $e');
+    }
+  }
+
   // --- 백그라운드 폴링 ---
   void _startBackgroundPolling() {
     _backgroundPollingTimer?.cancel();
     _backgroundPollingTimer = Timer.periodic(
       GameConfig.backgroundCheckInterval,
       (_) => _refreshTilesAndCheckInvasion(),
+    );
+
+    // 30초마다 건강 앱 걸음수 동기화
+    _stepsTimer?.cancel();
+    _stepsTimer = Timer.periodic(
+      const Duration(seconds: 30),
+      (_) => updateStepsState(),
     );
   }
 
@@ -935,6 +967,8 @@ class GameProvider extends ChangeNotifier with WidgetsBindingObserver {
       if (_isAuthenticated == true) {
         _goldManager.syncWithServer();
       }
+      // 앱이 다시 포그라운드로 올 때 걸음수 즉시 갱신
+      updateStepsState();
     } else if (state == AppLifecycleState.paused ||
         state == AppLifecycleState.inactive) {
       if (_isAuthenticated == true) {
@@ -949,6 +983,7 @@ class GameProvider extends ChangeNotifier with WidgetsBindingObserver {
     _goldManager.dispose();
     _backgroundPollingTimer?.cancel();
     _utcTimer?.cancel();
+    _stepsTimer?.cancel();
     _satelliteController.dispose();
     _locationProvider?.removeListener(onLocationUpdated);
     _captureController.dispose();

@@ -99,6 +99,46 @@ class GameGuideScreen extends StatelessWidget {
                   title: GameStrings.guideRevealTitle,
                   content: GameStrings.guideRevealContent,
                 ),
+                _buildGuideCard(
+                  title: GameStrings.guideShieldTitle,
+                  content: GameStrings.guideShieldContent,
+                ),
+                _buildGuideCard(
+                  title: GameStrings.guideGoldTitle,
+                  content: GameStrings.guideGoldContent,
+                ),
+                _buildGuideCard(
+                  title: GameStrings.guideAlertTitle,
+                  content: GameStrings.guideAlertContent,
+                ),
+                _buildGuideCard(
+                  title: GameStrings.guideRankingTitle,
+                  content: GameStrings.guideRankingContent,
+                ),
+                _buildGuideCard(
+                  title: GameStrings.guideAchievementTitle,
+                  content: GameStrings.guideAchievementContent,
+                ),
+                _buildGuideCard(
+                  title: GameStrings.guidePatternTitle,
+                  content: GameStrings.guidePatternContent,
+                ),
+                _buildGuideCard(
+                  title: GameStrings.guideRebaseTitle,
+                  content: GameStrings.guideRebaseContent,
+                ),
+                _buildGuideCard(
+                  title: GameStrings.guideMapStyleTitle,
+                  content: GameStrings.guideMapStyleContent,
+                ),
+                _buildGuideCard(
+                  title: GameStrings.guideNotificationTitle,
+                  content: GameStrings.guideNotificationContent,
+                ),
+                _buildGuideCard(
+                  title: GameStrings.guideBgSetupTitle,
+                  content: GameStrings.guideBgSetupContent,
+                ),
                 
                 const SizedBox(height: 24),
               ],

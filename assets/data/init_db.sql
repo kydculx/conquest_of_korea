@@ -500,6 +500,19 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql;
 
+-- [신규] 어드민 대시보드 전용 사용자 계정 영구 삭제(회원탈퇴) RPC 함수 정의
+CREATE OR REPLACE FUNCTION public.delete_user_by_admin(
+  p_user_id uuid
+) RETURNS void
+  SECURITY DEFINER
+  SET search_path = public, auth
+AS $$
+BEGIN
+  -- auth.users 테이블에서 사용자를 지우면 ON DELETE CASCADE로 인해 profiles 및 기타 테이블 연쇄 자동 삭제
+  DELETE FROM auth.users WHERE id = p_user_id;
+END;
+$$ LANGUAGE plpgsql;
+
 
 
 

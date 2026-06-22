@@ -72,9 +72,9 @@ export async function updateUserGold(userId, goldAmount) {
 
 export async function deleteUser(userId) {
   const { data, error } = await supabase
-    .from('profiles')
-    .delete()
-    .eq('id', userId);
+    .rpc('delete_user_by_admin', {
+      p_user_id: userId
+    });
   if (error) throw error;
   return data;
 }

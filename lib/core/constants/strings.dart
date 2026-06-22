@@ -962,6 +962,12 @@ class GameStrings {
   /// 점령 설명 내용
   static String get guideCaptureContent => 'guideCaptureContent'.tr();
 
+  /// 보유 골드 획득 설명 타이틀
+  static String get guideGoldTitle => 'guideGoldTitle'.tr();
+
+  /// 보유 골드 획득 설명 내용
+  static String get guideGoldContent => 'guideGoldContent'.tr();
+
   /// 영토 보호막 설명 타이틀
   static String get guideShieldTitle => 'guideShieldTitle'.tr();
 
@@ -979,6 +985,48 @@ class GameStrings {
 
   /// 실시간 경보 설명 내용
   static String get guideAlertContent => 'guideAlertContent'.tr();
+
+  /// 명예의 전당 설명 타이틀
+  static String get guideRankingTitle => 'guideRankingTitle'.tr();
+
+  /// 명예의 전당 설명 내용
+  static String get guideRankingContent => 'guideRankingContent'.tr();
+
+  /// 업적 설명 타이틀
+  static String get guideAchievementTitle => 'guideAchievementTitle'.tr();
+
+  /// 업적 설명 내용
+  static String get guideAchievementContent => 'guideAchievementContent'.tr();
+
+  /// 패턴 도감 설명 타이틀
+  static String get guidePatternTitle => 'guidePatternTitle'.tr();
+
+  /// 패턴 도감 설명 내용
+  static String get guidePatternContent => 'guidePatternContent'.tr();
+
+  /// 본진 이전 설명 타이틀
+  static String get guideRebaseTitle => 'guideRebaseTitle'.tr();
+
+  /// 본진 이전 설명 내용
+  static String get guideRebaseContent => 'guideRebaseContent'.tr();
+
+  /// 지도 스타일 설명 타이틀
+  static String get guideMapStyleTitle => 'guideMapStyleTitle'.tr();
+
+  /// 지도 스타일 설명 내용
+  static String get guideMapStyleContent => 'guideMapStyleContent'.tr();
+
+  /// 알림 시스템 설명 타이틀
+  static String get guideNotificationTitle => 'guideNotificationTitle'.tr();
+
+  /// 알림 시스템 설명 내용
+  static String get guideNotificationContent => 'guideNotificationContent'.tr();
+
+  /// 백그라운드 설정 설명 타이틀
+  static String get guideBgSetupTitle => 'guideBgSetupTitle'.tr();
+
+  /// 백그라운드 설정 설명 내용
+  static String get guideBgSetupContent => 'guideBgSetupContent'.tr();
 
   // --- HUD 정보창 다국어 라벨 ---
   /// 좌표 라벨

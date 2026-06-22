@@ -120,12 +120,73 @@ class UtcTimerHeaderBar extends StatelessWidget {
                   fontSize: 12.0,
                   fontWeight: FontWeight.bold,
                   letterSpacing: 0.4,
+                  ),
+                ),
+              ],
+            ),
+          );
+        },
+      );
+    }
+  }
+
+  /// [상단] 오늘의 실시간 걸음수를 표시하는 캡슐 바 (에메랄드 그린 테마)
+  class StepsHeaderBar extends StatelessWidget {
+    const StepsHeaderBar({super.key});
+
+    @override
+    Widget build(BuildContext context) {
+      return Selector<GameProvider, int>(
+        selector: (_, provider) => provider.todaySteps,
+        builder: (context, steps, _) {
+          return Container(
+            height: 38,
+            padding: const EdgeInsets.only(
+              left: 10,
+              right: 14,
+              top: 2,
+              bottom: 2,
+            ),
+            decoration: ShapeDecoration(
+              color: GameColors.backgroundMedium.withValues(alpha: 0.92),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(20),
+                side: BorderSide(
+                  color: const Color(0xFF00E676).withValues(alpha: 0.25), // 에메랄드 그린 보더
+                  width: 1.2,
                 ),
               ),
-            ],
-          ),
-        );
-      },
-    );
+              shadows: [
+                BoxShadow(
+                  color: Colors.black.withValues(alpha: 0.08),
+                  blurRadius: 8,
+                  offset: const Offset(0, 3),
+                ),
+              ],
+            ),
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.center,
+              children: [
+                const Icon(
+                  Icons.directions_run_rounded,
+                  color: Color(0xFF00E676),
+                  size: 18.0,
+                ),
+                const SizedBox(width: 6),
+                Text(
+                  '$steps 걸음',
+                  style: GoogleFonts.fredoka(
+                    color: GameColors.textPrimary,
+                    fontSize: 12.0,
+                    fontWeight: FontWeight.bold,
+                    letterSpacing: 0.4,
+                  ),
+                ),
+              ],
+            ),
+          );
+        },
+      );
+    }
   }
-}

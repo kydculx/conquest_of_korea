@@ -33,6 +33,9 @@ class AuthProvider extends ChangeNotifier {
   /// 중복 로그인 발생으로 인해 강제 로그아웃되었는지 여부
   bool _isDuplicateLoggedOut = false;
 
+  /// 로그인 후 프로필 정보를 서버에서 불러오는 중인지 여부 (GameScreen의 약관 리다이렉트 race condition 방지)
+  bool _isProfileLoading = false;
+
   /// profiles 테이블 실시간 감지용 스트림 구독 객체
   StreamSubscription<List<Map<String, dynamic>>>? _profileSubscription;
 
@@ -56,6 +59,9 @@ class AuthProvider extends ChangeNotifier {
 
   /// 중복 로그인 감지 플래그 게터
   bool get isDuplicateLoggedOut => _isDuplicateLoggedOut;
+
+  /// 로그인 후 프로필 로딩이 완료되지 않은 상태인지 여부를 반환합니다.
+  bool get isProfileLoading => _isProfileLoading;
 
   /// AuthProvider 생성자로, 앱 구동 시 내부 초기화 과정을 수행합니다.
   AuthProvider() {
@@ -88,10 +94,14 @@ class AuthProvider extends ChangeNotifier {
         final user = _user;
         if (user == null) return;
         _isDuplicateLoggedOut = false;
+        _isProfileLoading = true;
+        notifyListeners();
         _updateSessionIdInDatabase(user.id).then((_) {
           _loadProfile(user.id);
           _subscribeProfileRealtime(user.id);
         }).catchError((e) {
+          _isProfileLoading = false;
+          notifyListeners();
           debugPrint('⚠️ 세션 ID DB 업데이트 실패: $e');
         });
         _notificationService.setCurrentUserId(user.id);
@@ -224,6 +234,7 @@ class AuthProvider extends ChangeNotifier {
       }
     } finally {
       _setLoading(false);
+      _isProfileLoading = false;
       notifyListeners();
     }
   }

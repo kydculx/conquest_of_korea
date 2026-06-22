@@ -12,6 +12,7 @@ import 'package:conquest_mobile/providers/auth_provider.dart';
 import 'package:conquest_mobile/providers/location_provider.dart';
 import 'package:conquest_mobile/models/tile_model.dart';
 import 'package:conquest_mobile/models/user_profile.dart';
+import 'package:conquest_mobile/models/user_coin.dart';
 import 'package:conquest_mobile/core/constants/game_config.dart';
 
 // Fake Supabase Service 구현
@@ -69,7 +70,28 @@ class FakeSupabaseService implements SupabaseService {
   Future<double?> fetchGoldRate() async => 1.0;
 
   @override
-  dynamic noSuchMethod(Invocation invocation) => super.noSuchMethod(invocation);
+  Future<List<UserCoin>> fetchUserCoins(String userId) async => [];
+
+  @override
+  Future<bool> clearUserCoins(String userId) async => true;
+
+  @override
+  Future<bool> insertUserCoins(List<UserCoin> coins) async => true;
+
+  @override
+  Future<bool> incrementSatelliteCapture(String userId) async => true;
+
+  @override
+  Future<bool> incrementMovedTiles(String userId) async => true;
+
+  @override
+  dynamic noSuchMethod(Invocation invocation) {
+    try {
+      return super.noSuchMethod(invocation);
+    } catch (_) {
+      return null;
+    }
+  }
 }
 
 // Mock User 클래스 (supabase_flutter의 User를 흉내냄)
@@ -131,7 +153,6 @@ void main() {
 
   setUp(() async {
     SharedPreferences.setMockInitialValues({});
-
     fakeSupabase = FakeSupabaseService();
     fakeAuth = FakeAuthProvider();
     fakeLocation = FakeLocationProvider();
@@ -168,6 +189,8 @@ void main() {
     provider.setAuthProvider(fakeAuth);
     provider.setLocationProvider(fakeLocation);
     await provider.initializationFuture;
+    // _init() 비동기 함수가 완전히 실행 완료될 시간을 마이크로태스크 단위로 대기
+    await Future.delayed(const Duration(milliseconds: 20));
     return provider;
   }
 
@@ -362,8 +385,10 @@ void main() {
         'hq_last_satellite_capture_time',
         lastCaptureTime.toIso8601String(),
       );
+      await prefs.reload(); // 캐시 동기화 보장
+      await Future.delayed(Duration.zero);
 
-      // Provider를 새로 초기화하여 마지막 캡처 시각을 쿨타임 중으로 로드하도록 함
+      // SharedPreferences에 값을 먼저 쓰고 난 뒤 Provider를 생성하여 초기화 시점에 로드하도록 순서 교정
       final newGameProvider = await createInitializedGameProvider();
 
       expect(

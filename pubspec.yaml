@@ -54,6 +54,7 @@ dependencies:
   google_fonts: ^6.2.1
   webview_flutter: ^4.4.2
   audioplayers: ^6.7.1
+  health: ^13.1.4
 
 dev_dependencies:
   flutter_test:

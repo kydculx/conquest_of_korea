@@ -43,7 +43,7 @@ android {
         applicationId = "com.watercherry.conquestofkorea"
         // You can update the following values to match your application needs.
         // For more information, see: https://flutter.dev/to/review-gradle-config.
-        minSdk = flutter.minSdkVersion // Notification 전용 기능을 위해 상향 조정
+        minSdk = 26 // health 패키지 요구사항에 따라 26으로 상향 조정
         targetSdk = flutter.targetSdkVersion
         versionCode = flutter.versionCode
         versionName = flutter.versionName
