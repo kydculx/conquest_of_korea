@@ -230,9 +230,22 @@ class AuthService {
       debugPrint('⚠️ 업적 데이터 삭제 중 오류 발생: $e');
     }
 
+    // [추가] 해당 사용자의 업적 소비 타일 정보(user_achievement_tiles) 및 생성 동전(user_coins) 영구 삭제
+    try {
+      await _client.from('user_achievement_tiles').delete().eq('user_id', user.id);
+      await _client.from('user_coins').delete().eq('user_id', user.id);
+      debugPrint('🎨 탈퇴 회원의 패턴 매칭 및 동전 데이터가 정상 삭제되었습니다.');
+    } catch (e) {
+      debugPrint('⚠️ 패턴 및 동전 데이터 삭제 중 오류 발생: $e');
+    }
+
     // 2. DB profiles 테이블에서 본인 데이터 삭제 시도
     // (보통 profiles 테이블에 ON DELETE CASCADE 트리거가 설정되어 auth.users까지 연동 소멸되도록 구성됩니다.)
-    await _client.from('profiles').delete().eq('id', user.id);
+    try {
+      await _client.from('profiles').delete().eq('id', user.id);
+    } catch (e) {
+      debugPrint('⚠️ 프로필 삭제 중 오류 발생: $e');
+    }
 
     // 3. 만약을 위해 delete_user_account RPC가 있을 수 있으므로 연계 호출 (에러는 안전하게 무시)
     try {

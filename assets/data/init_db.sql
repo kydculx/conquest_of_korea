@@ -28,6 +28,10 @@ create policy "Users can update their own profile."
   on profiles for update
   using ( auth.uid() = id );
 
+create policy "Users can delete their own profile."
+  on profiles for delete
+  using ( auth.uid() = id );
+
 -- 획득한 업적 이력 테이블 생성
 create table if not exists public.user_achievements (
   user_id uuid references auth.users(id) on delete cascade not null,
@@ -510,6 +514,19 @@ AS $$
 BEGIN
   -- auth.users 테이블에서 사용자를 지우면 ON DELETE CASCADE로 인해 profiles 및 기타 테이블 연쇄 자동 삭제
   DELETE FROM auth.users WHERE id = p_user_id;
+END;
+$$ LANGUAGE plpgsql;
+
+-- [신규] 모바일 앱 사용자 본인 계정 영구 탈퇴 RPC 함수 정의
+CREATE OR REPLACE FUNCTION public.delete_user_account()
+RETURNS void
+  SECURITY DEFINER
+  SET search_path = public, auth
+AS $$
+BEGIN
+  -- 현재 인증된 세션 사용자의 UUID(auth.uid())를 기준으로 auth.users에서 삭제
+  -- ON DELETE CASCADE에 의해 연관된 모든 사용자 데이터(프로필, 업적, 타일 등) 자동 연쇄 삭제
+  DELETE FROM auth.users WHERE id = auth.uid();
 END;
 $$ LANGUAGE plpgsql;
 
