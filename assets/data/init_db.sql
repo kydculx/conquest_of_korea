@@ -512,7 +512,14 @@ CREATE OR REPLACE FUNCTION public.delete_user_by_admin(
   SET search_path = public, auth
 AS $$
 BEGIN
-  -- auth.users 테이블에서 사용자를 지우면 ON DELETE CASCADE로 인해 profiles 및 기타 테이블 연쇄 자동 삭제
+  -- 안전한 계정 삭제를 위해 연관 자식 데이터를 명시적으로 선제 삭제
+  DELETE FROM public.user_achievement_tiles WHERE user_id = p_user_id;
+  DELETE FROM public.user_achievements WHERE user_id = p_user_id;
+  DELETE FROM public.user_coins WHERE user_id = p_user_id;
+  DELETE FROM public.captured_tiles WHERE user_id = p_user_id;
+  DELETE FROM public.profiles WHERE id = p_user_id;
+
+  -- 최종적으로 auth.users 테이블에서 사용자 삭제
   DELETE FROM auth.users WHERE id = p_user_id;
 END;
 $$ LANGUAGE plpgsql;
@@ -524,8 +531,14 @@ RETURNS void
   SET search_path = public, auth
 AS $$
 BEGIN
+  -- 안전한 계정 삭제를 위해 연관 자식 데이터를 명시적으로 선제 삭제
+  DELETE FROM public.user_achievement_tiles WHERE user_id = auth.uid();
+  DELETE FROM public.user_achievements WHERE user_id = auth.uid();
+  DELETE FROM public.user_coins WHERE user_id = auth.uid();
+  DELETE FROM public.captured_tiles WHERE user_id = auth.uid();
+  DELETE FROM public.profiles WHERE id = auth.uid();
+
   -- 현재 인증된 세션 사용자의 UUID(auth.uid())를 기준으로 auth.users에서 삭제
-  -- ON DELETE CASCADE에 의해 연관된 모든 사용자 데이터(프로필, 업적, 타일 등) 자동 연쇄 삭제
   DELETE FROM auth.users WHERE id = auth.uid();
 END;
 $$ LANGUAGE plpgsql;
