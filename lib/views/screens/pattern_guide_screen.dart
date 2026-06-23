@@ -2,6 +2,7 @@ import 'dart:math' as math;
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:carousel_slider/carousel_slider.dart';
 import '../../providers/achievement_provider.dart';
 import '../../core/constants/strings.dart';
 import '../../core/constants/colors.dart';
@@ -70,8 +71,6 @@ class HexPatternPainter extends CustomPainter {
         end: Alignment.bottomRight,
       ).createShader(Rect.fromLTWH(0, 0, size.width, size.height));
 
-
-
     // 헥사곤 검은색 음영 입체 테두리
     final Paint borderPaint = Paint()
       ..color = const Color(0xFF0F1626)
@@ -137,10 +136,105 @@ class _PatternGuideScreenState extends State<PatternGuideScreen> {
   // 현재 선택된 문자 인덱스
   int _selectedIndex = 0;
 
+  // 캐러셀 슬라이더용 컨트롤러
+  final CarouselSliderController _carouselController = CarouselSliderController();
+
+  // 상단 칩 리스트 뷰용 스크롤 컨트롤러
+  final ScrollController _chipScrollController = ScrollController();
+
+  // 비동기 동시 프리로딩 데이터 보관 맵
+  Map<String, List<Map<String, int>>> _patternTilesMap = {};
+  bool _isLoading = true;
+
+  @override
+  void initState() {
+    super.initState();
+    _preloadAllPatterns();
+  }
+
+  @override
+  void dispose() {
+    _chipScrollController.dispose();
+    super.dispose();
+  }
+
+  /// 모든 지원 대상 알파벳 패턴 데이터를 미리 로딩(Pre-fetch)하여 캐싱
+  Future<void> _preloadAllPatterns() async {
+    final achProvider = Provider.of<AchievementProvider>(context, listen: false);
+    try {
+      Future.microtask(() async {
+        final Map<String, List<Map<String, int>>> tempMap = {};
+
+        // A ~ M 패턴 동시 병렬 비동기 조회
+        await Future.wait(
+          _alphabetList.map((char) async {
+            final tiles = await achProvider.getPatternCoordinates(char);
+            tempMap[char] = tiles;
+          }),
+        );
+
+        if (mounted) {
+          setState(() {
+            _patternTilesMap = tempMap;
+            _isLoading = false;
+          });
+          // 초기 선택 칩 위치로 스크롤 이동
+          WidgetsBinding.instance.addPostFrameCallback((_) {
+            if (mounted) {
+              _scrollToSelectedChip(_selectedIndex);
+            }
+          });
+        }
+      });
+    } catch (e) {
+      debugPrint('⚠️ 도감 패턴 프리로딩 실패: $e');
+      if (mounted) {
+        setState(() {
+          _isLoading = false;
+        });
+      }
+    }
+  }
+
+  /// 활성화된 칩이 화면 안에 완전히 정렬되도록 스크롤링 위치 자동 보정
+  void _scrollToSelectedChip(int index) {
+    if (!mounted) return;
+    if (!_chipScrollController.hasClients) return;
+    
+    // 개별 칩 너비(46) + 좌우 여백 마진 합(12) = 58
+    final double offset = (index * 58.0) - (MediaQuery.of(context).size.width / 2) + 29.0;
+    final double clampedOffset = offset.clamp(
+      0.0,
+      _chipScrollController.position.maxScrollExtent,
+    );
+    
+    _chipScrollController.animateTo(
+      clampedOffset,
+      duration: const Duration(milliseconds: 250),
+      curve: Curves.easeInOut,
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
-    final achProvider = Provider.of<AchievementProvider>(context);
-    final String selectedChar = _alphabetList[_selectedIndex];
+    if (_isLoading) {
+      return Scaffold(
+        appBar: TacticalAppBar(
+          titleText: GameStrings.patternGuideTitle,
+          showBackButton: true,
+        ),
+        body: Container(
+          decoration: const BoxDecoration(
+            gradient: GameColors.cozyDarkGradient,
+          ),
+          child: Center(
+            child: CircularProgressIndicator(
+              valueColor: AlwaysStoppedAnimation<Color>(GameColors.accentNeon),
+            ),
+          ),
+        ),
+      );
+    }
 
     return Scaffold(
       appBar: TacticalAppBar(
@@ -173,6 +267,7 @@ class _PatternGuideScreenState extends State<PatternGuideScreen> {
                 height: 54,
                 margin: const EdgeInsets.symmetric(vertical: 8),
                 child: ListView.builder(
+                  controller: _chipScrollController,
                   scrollDirection: Axis.horizontal,
                   padding: const EdgeInsets.symmetric(horizontal: 16),
                   itemCount: _alphabetList.length,
@@ -184,6 +279,12 @@ class _PatternGuideScreenState extends State<PatternGuideScreen> {
                         setState(() {
                           _selectedIndex = index;
                         });
+                        _carouselController.animateToPage(
+                          index,
+                          duration: const Duration(milliseconds: 300),
+                          curve: Curves.easeInOut,
+                        );
+                        _scrollToSelectedChip(index);
                       },
                       child: AnimatedContainer(
                         duration: const Duration(milliseconds: 250),
@@ -226,48 +327,47 @@ class _PatternGuideScreenState extends State<PatternGuideScreen> {
 
               const SizedBox(height: 16),
 
-              // 3. 메인 프리뷰 캔버스 영역 (3D 아크릴 느낌 데코 적용)
+              // 3. 메인 캐러셀 슬라이더 영역
               Expanded(
-                child: Container(
-                  margin: const EdgeInsets.symmetric(horizontal: 24),
-                  padding: const EdgeInsets.all(20),
-                  decoration: BoxDecoration(
-                    color: const Color(0xFF0F1626).withValues(alpha: 0.8),
-                    borderRadius: BorderRadius.circular(24),
-                    border: Border.all(
-                      color: GameColors.borderNeon,
-                      width: 1.0,
-                    ),
-                    boxShadow: [
-                      BoxShadow(
-                        color: GameColors.accentNeon.withValues(alpha: 0.04),
-                        blurRadius: 16,
-                        spreadRadius: 2,
-                      )
-                    ],
+                child: CarouselSlider.builder(
+                  carouselController: _carouselController,
+                  itemCount: _alphabetList.length,
+                  options: CarouselOptions(
+                    height: double.infinity,
+                    viewportFraction: 1.0,
+                    initialPage: _selectedIndex,
+                    enableInfiniteScroll: false,
+                    enlargeCenterPage: false,
+                    onPageChanged: (index, reason) {
+                      setState(() {
+                        _selectedIndex = index;
+                      });
+                      _scrollToSelectedChip(index);
+                    },
                   ),
-                  child: FutureBuilder<List<Map<String, int>>>(
-                    future: achProvider.getPatternCoordinates(selectedChar),
-                    builder: (context, snapshot) {
-                      if (snapshot.connectionState == ConnectionState.waiting) {
-                        return Center(
-                          child: CircularProgressIndicator(
-                            valueColor: AlwaysStoppedAnimation<Color>(GameColors.accentNeon),
-                          ),
-                        );
-                      }
+                  itemBuilder: (context, index, realIndex) {
+                    final char = _alphabetList[index];
+                    final tiles = _patternTilesMap[char] ?? [];
 
-                      if (snapshot.hasError || !snapshot.hasData || snapshot.data!.isEmpty) {
-                        return const Center(
-                          child: Text(
-                            '패턴 형상을 로드할 수 없습니다.',
-                            style: TextStyle(color: Colors.white60),
-                          ),
-                        );
-                      }
-
-                      final tiles = snapshot.data!;
-                      return Column(
+                    return Container(
+                      margin: const EdgeInsets.symmetric(horizontal: 24),
+                      padding: const EdgeInsets.all(20),
+                      decoration: BoxDecoration(
+                        color: const Color(0xFF0F1626).withValues(alpha: 0.8),
+                        borderRadius: BorderRadius.circular(24),
+                        border: Border.all(
+                          color: GameColors.borderNeon,
+                          width: 1.0,
+                        ),
+                        boxShadow: [
+                          BoxShadow(
+                            color: GameColors.accentNeon.withValues(alpha: 0.04),
+                            blurRadius: 16,
+                            spreadRadius: 2,
+                          )
+                        ],
+                      ),
+                      child: Column(
                         children: [
                           // 헥사곤 페인팅 캔버스
                           Expanded(
@@ -291,9 +391,9 @@ class _PatternGuideScreenState extends State<PatternGuideScreen> {
                             ),
                           ),
                         ],
-                      );
-                    },
-                  ),
+                      ),
+                    );
+                  },
                 ),
               ),
 
