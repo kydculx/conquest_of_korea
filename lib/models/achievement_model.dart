@@ -110,7 +110,10 @@ class Achievement {
   ];
 
   static List<Achievement> _buildPatternAchievements() {
-    const chars = ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K', 'L', 'M', 'N'];
+    const chars = [
+      'A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K', 'L', 'M', 'N',
+      'O', 'P', 'Q', 'R', 'S', 'T', 'U', 'V'
+    ];
     return chars.map((char) => Achievement(
       id: 'ACH_PATTERN_$char',
       titleKey: 'achPatternTitle',
