@@ -128,9 +128,9 @@ class PatternGuideScreen extends StatefulWidget {
 }
 
 class _PatternGuideScreenState extends State<PatternGuideScreen> {
-  // 도감 지원 대상 문자 리스트 (A ~ M)
+  // 도감 지원 대상 문자 리스트 (A ~ N)
   final List<String> _alphabetList = [
-    'A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K', 'L', 'M'
+    'A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K', 'L', 'M', 'N'
   ];
   
   // 현재 선택된 문자 인덱스
