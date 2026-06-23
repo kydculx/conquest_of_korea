@@ -38,22 +38,22 @@ class HexPatternPainter extends CustomPainter {
       if (y > maxY) maxY = y;
     }
 
-    // 2. 15x15 그리드 고정 한계 범위 정의 (q: -7 ~ 7, r: -7 ~ 7)
-    // 모든 알파벳 문자의 타일 크기를 일관성 있게 유지하고 캔버스 밖으로 나가지 않도록 고정 스펙 사용
-    final double layoutWidth = 21.0 * math.sqrt(3);
-    const double layoutHeight = 21.0;
+    // 2. 실제 타일들이 차지하는 2D 영역의 폭과 높이 산출 (최소 1.0 방어)
+    final double contentWidth = math.max(1.0, maxX - minX);
+    final double contentHeight = math.max(1.0, maxY - minY);
 
     // 3. 캔버스 영역 내 여백(Padding)을 고려한 동적 스케일 크기(Hex Radius) 계산
-    const double padding = 24.0; // 박스 테두리를 최대한 안 넘어가도록 조율된 여백
+    const double padding = 48.0; // 박스 테두리를 안전하게 안 넘어가도록 여유 마진 확보
     final double viewWidth = size.width - padding;
     final double viewHeight = size.height - padding;
 
-    // 단일 헥사곤 반지름 스케일 산출
-    final double scaleX = viewWidth / (layoutWidth + 2.0);
-    final double scaleY = viewHeight / (layoutHeight + 2.0);
+    // 단일 헥사곤 반지름 스케일 산출 (좌우 여백 안전을 위해 분모에 2.5 가산)
+    final double scaleX = viewWidth / (contentWidth + 2.5);
+    final double scaleY = viewHeight / (contentHeight + 2.5);
     
-    // 알파벳 종류에 상관없이 동일한 타일 크기를 갖도록 캔버스 크기 대비 고정 스케일 획득
-    final double hexRadius = math.max(10.0, math.min(scaleX, scaleY));
+    // 타일이 화면 밖으로 나가지 않도록 두 축 중 최소 스케일을 취하고, 
+    // 타일이 지나치게 커져서 상하좌우를 넘지 않도록 최대 반지름 18.0으로 제한
+    final double hexRadius = math.min(18.0, math.max(6.0, math.min(scaleX, scaleY)));
 
     // 4. 실제 칠해진 타일들의 바운딩 박스 중심을 캔버스 중앙에 매칭하여 정중앙 배치
     final double layoutCenterX = (minX + maxX) / 2;
