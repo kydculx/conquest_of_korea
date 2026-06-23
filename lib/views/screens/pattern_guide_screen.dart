@@ -334,10 +334,11 @@ class _PatternGuideScreenState extends State<PatternGuideScreen> {
                   itemCount: _alphabetList.length,
                   options: CarouselOptions(
                     height: double.infinity,
-                    viewportFraction: 1.0,
+                    viewportFraction: 0.82,
                     initialPage: _selectedIndex,
                     enableInfiniteScroll: false,
-                    enlargeCenterPage: false,
+                    enlargeCenterPage: true,
+                    enlargeFactor: 0.25,
                     onPageChanged: (index, reason) {
                       setState(() {
                         _selectedIndex = index;
@@ -350,7 +351,7 @@ class _PatternGuideScreenState extends State<PatternGuideScreen> {
                     final tiles = _patternTilesMap[char] ?? [];
 
                     return Container(
-                      margin: const EdgeInsets.symmetric(horizontal: 24),
+                      margin: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                       padding: const EdgeInsets.all(20),
                       decoration: BoxDecoration(
                         color: const Color(0xFF0F1626).withValues(alpha: 0.8),
