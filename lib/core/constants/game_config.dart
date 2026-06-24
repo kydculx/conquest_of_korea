@@ -113,4 +113,10 @@ class GameConfig {
 
   /// 동전 스폰/탐색 반경 타일 범위
   static const int coinSpawnRadius = 15;
+
+  /// 동전 스폰 최소 타일 격자 거리
+  static const int coinSpawnMinDistance = 3;
+
+  /// 동전 스폰 최대 타일 격자 거리
+  static const int coinSpawnMaxDistance = 5;
 }

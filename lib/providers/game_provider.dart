@@ -950,6 +950,9 @@ class GameProvider extends ChangeNotifier with WidgetsBindingObserver {
         'last_gold_updated_at': nowUtc.toIso8601String(),
       }).eq('id', myId);
 
+      // 본진 이동 횟수(RPC) 증가
+      await _supabase.incrementMainBaseMove(myId);
+
       await _authProvider?.refreshProfile();
       return true;
     } catch (e) {
@@ -1100,7 +1103,8 @@ class GameProvider extends ChangeNotifier with WidgetsBindingObserver {
             'angle': angle,
           };
 
-          if (distance >= 4 && distance <= 6) {
+          if (distance >= GameConfig.coinSpawnMinDistance &&
+              distance <= GameConfig.coinSpawnMaxDistance) {
             candidates.add(item);
           } else {
             backupCandidates.add(item);
