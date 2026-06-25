@@ -5,34 +5,20 @@ import {
   Download, 
   Upload, 
   Trash2, 
-  Compass, 
-  MapPin, 
   RotateCcw, 
   X,
-  Plus,
-  Edit2,
-  Navigation,
-  Type,
-  Grid,
-  Paintbrush,
-  Eraser,
   Map as MapIcon
 } from 'lucide-react';
+
 
 const originLat = 37.5665;
 const originLng = 126.9780;
 const hexSize = 100.0; // 100m 정밀 타일 규격
 const characters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789'.split('');
 
-// 색상 팔레트 옵션
-const paletteColors = [
-  { name: 'Neon Cyan', hex: '#00e5ff' },
-  { name: 'Neon Red', hex: '#ef4444' },
-  { name: 'Neon Gold', hex: '#f59e0b' },
-  { name: 'Neon Green', hex: '#10b981' },
-  { name: 'Neon Purple', hex: '#a855f7' },
-  { name: 'Slate Gray', hex: '#64748b' }
-];
+// 브러시 컬러 (기본 시안색 고정)
+const brushColor = '#00e5ff';
+
 
 // 헥스 그리드 좌표를 경위도로 변환
 function hexToLatLng(q, r, centerLat, centerLng) {
@@ -80,8 +66,6 @@ export default function MapEditorTab() {
   const [showSaveModal, setShowSaveModal] = useState(false);
   const [saveFileName, setSaveFileName] = useState('');
 
-  // 브러시 컬러 상태
-  const [brushColor, setBrushColor] = useState('#00e5ff'); // 기본값: 시안
 
   const mapRef = useRef(null);
   const mapInstance = useRef(null);
@@ -147,8 +131,8 @@ export default function MapEditorTab() {
         iconAnchor: [15, 15]
       });
 
-      // 마커를 그리드 최상단 외곽(q: 0, r: 8) 좌표에 생성하여 타일 가림 방지
-      const markerLatLng = hexToLatLng(0, 8, letter.lat, letter.lng);
+      // 마커를 그리드 우상단 외곽(q: 8, r: -8) 좌표에 생성하여 타일 가림 방지
+      const markerLatLng = hexToLatLng(8, -8, letter.lat, letter.lng);
       const marker = L.marker(markerLatLng, { icon: customIcon });
 
       // 문자 마커 클릭 시 해당 문자를 포커스하고 그 15x15 그리드를 띄운다.
@@ -516,91 +500,46 @@ export default function MapEditorTab() {
         </div>
 
         {/* 선택된 문자 및 개별 15x15 타일 페인팅 카드 */}
-        <div className="tactical-card" style={{ padding: '1.2rem', display: 'flex', flexDirection: 'column', gap: '0.8rem' }}>
-          {activeLetter ? (
-            <>
-              {/* 포커스 헤더 */}
-              <div className="editor-focus-header">
-                <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem' }}>
-                  <div className="focus-char-badge">{activeLetter.char}</div>
-                  <div>
-                    <h4 style={{ fontSize: '0.9rem', color: 'var(--text-primary)' }}>선택된 마커</h4>
-                    <span style={{ fontSize: '0.7rem', color: 'var(--text-muted)', fontFamily: 'monospace' }}>
-                      {activeLetter.lat.toFixed(5)}, {activeLetter.lng.toFixed(5)}
-                    </span>
-                  </div>
-                </div>
-                <div style={{ display: 'flex', gap: '0.4rem' }}>
-                  <button 
-                    onClick={() => setSelectedLetterId(null)}
-                    className="tactical-btn"
-                    style={{ padding: '0.3rem 0.5rem', fontSize: '0.75rem' }}
-                    title="그리드 닫기"
-                  >
-                    포커스 해제
-                  </button>
-                  <button 
-                    onClick={handleDeleteActiveMarker}
-                    className="tactical-btn danger"
-                    style={{ padding: '0.3rem', borderRadius: '4px' }}
-                    title="마커 삭제"
-                  >
-                    <Trash2 size={12} />
-                  </button>
-                </div>
-              </div>
-
-              {/* 브러시 컬러 팔레트 */}
-              <div>
-                <span style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', display: 'block', marginBottom: '0.4rem' }}>
-                  🎨 타일 페인트 색상 선택
-                </span>
-                <div className="color-palette-grid">
-                  {paletteColors.map((color) => (
-                    <button
-                      key={color.hex}
-                      onClick={() => setBrushColor(color.hex)}
-                      className={`color-swatch ${brushColor === color.hex ? 'active' : ''}`}
-                      style={{ backgroundColor: color.hex }}
-                      title={color.name}
-                    />
-                  ))}
+        {activeLetter && (
+          <div className="tactical-card" style={{ padding: '1.2rem', display: 'flex', flexDirection: 'column', gap: '0.8rem' }}>
+            {/* 문자 변경 툴 */}
+            <div>
+              <span style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', display: 'block', marginBottom: '0.4rem' }}>
+                🔤 문자 변경 ({activeLetter.char})
+              </span>
+              <div className="editor-char-grid" style={{ maxHeight: '120px', overflowY: 'auto', border: '1px solid var(--border-color)', borderRadius: '6px', padding: '0.3rem' }}>
+                {characters.map(char => (
                   <button
-                    onClick={() => setBrushColor(null)}
-                    className={`color-swatch eraser ${brushColor === null ? 'active' : ''}`}
-                    title="지우개 (색상 삭제)"
+                    key={char}
+                    onClick={() => handleUpdateActiveChar(char)}
+                    className={`editor-char-btn ${activeLetter.char === char ? 'active' : ''}`}
+                    style={{ height: '30px', fontSize: '0.85rem' }}
                   >
-                    <Eraser size={16} style={{ color: brushColor === null ? 'var(--accent-red)' : 'var(--text-muted)' }} />
+                    {char}
                   </button>
-                </div>
+                ))}
               </div>
-
-              {/* 문자 변경 툴 */}
-              <div style={{ marginTop: '0.4rem' }}>
-                <span style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', display: 'block', marginBottom: '0.4rem' }}>
-                  🔤 문자 변경
-                </span>
-                <div className="editor-char-grid" style={{ maxHeight: '120px', overflowY: 'auto', border: '1px solid var(--border-color)', borderRadius: '6px', padding: '0.3rem' }}>
-                  {characters.map(char => (
-                    <button
-                      key={char}
-                      onClick={() => handleUpdateActiveChar(char)}
-                      className={`editor-char-btn ${activeLetter.char === char ? 'active' : ''}`}
-                      style={{ height: '30px', fontSize: '0.85rem' }}
-                    >
-                      {char}
-                    </button>
-                  ))}
-                </div>
-              </div>
-            </>
-          ) : (
-            <div style={{ padding: '1rem', textAlign: 'center', color: 'var(--text-muted)', fontSize: '0.8rem' }}>
-              <MapPin size={28} style={{ color: 'var(--text-muted)', marginBottom: '0.6rem', opacity: 0.5 }} />
-              <p>지도 상에 배치된 문자 마커를 클릭하여 <strong>포커싱</strong>하면, 해당 문자의 개별 15x15 타일 그리드가 열리고 색칠할 수 있습니다.</p>
             </div>
-          )}
-        </div>
+            {/* 마커 조작 도구 */}
+            <div style={{ display: 'flex', gap: '0.4rem', marginTop: '0.4rem' }}>
+              <button 
+                onClick={() => setSelectedLetterId(null)}
+                className="tactical-btn"
+                style={{ flex: 1, justifyContent: 'center', padding: '0.4rem', fontSize: '0.8rem' }}
+              >
+                포커스 해제
+              </button>
+              <button 
+                onClick={handleDeleteActiveMarker}
+                className="tactical-btn danger"
+                style={{ flex: 1, justifyContent: 'center', padding: '0.4rem', fontSize: '0.8rem' }}
+              >
+                <Trash2 size={12} /> 마커 삭제
+              </button>
+            </div>
+          </div>
+        )}
+
 
         {/* 도움말 안내 카드 */}
         <div className="tactical-card" style={{ padding: '1.2rem' }}>
@@ -613,80 +552,6 @@ export default function MapEditorTab() {
           </ul>
         </div>
 
-        {/* 배치된 전체 마커 목록 */}
-        <div className="tactical-card" style={{ flex: 1, display: 'flex', flexDirection: 'column', padding: '1.2rem', minHeight: '200px' }}>
-          <h4 style={{ fontSize: '0.9rem', color: 'var(--text-primary)', marginBottom: '0.8rem' }}>
-            배치된 전체 문자 목록 ({letters.length})
-          </h4>
-
-          {letters.length === 0 ? (
-            <div style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', border: '1px dashed var(--border-color)', borderRadius: '8px', padding: '1rem', textAlign: 'center' }}>
-              <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>배치된 문자가 없습니다.</span>
-            </div>
-          ) : (
-            <div className="editor-markers-list-container" style={{ flex: 1 }}>
-              {letters.map((letter) => {
-                const isSelected = letter.id === selectedLetterId;
-                const tileCount = Object.keys(letter.gridTiles || {}).length;
-                return (
-                  <div 
-                    key={letter.id} 
-                    className="editor-marker-item" 
-                    style={{ 
-                      padding: '0.5rem 0.8rem',
-                      background: isSelected ? 'rgba(245, 158, 11, 0.05)' : 'transparent',
-                      borderLeft: isSelected ? '3px solid #f59e0b' : '3px solid transparent'
-                    }}
-                  >
-                    <div 
-                      className="editor-marker-info" 
-                      style={{ gap: '0.5rem', cursor: 'pointer' }}
-                      onClick={() => setSelectedLetterId(letter.id)}
-                    >
-                      <div 
-                        className="editor-marker-avatar" 
-                        style={{ 
-                          width: '20px', 
-                          height: '20px', 
-                          fontSize: '0.7rem',
-                          background: isSelected ? '#f59e0b' : '#00e5ff'
-                        }}
-                      >
-                        {letter.char}
-                      </div>
-                      <span className="editor-marker-coords" style={{ fontSize: '0.7rem' }}>
-                        칠해진 타일: {tileCount}개
-                      </span>
-                    </div>
-                    <div className="editor-marker-actions">
-                      <button 
-                        onClick={() => handleFocusLocation(letter.lat, letter.lng)}
-                        className="tactical-btn"
-                        style={{ padding: '0.2rem', borderRadius: '4px' }}
-                        title="위치로 지도 이동"
-                      >
-                        <Navigation size={10} />
-                      </button>
-                      <button 
-                        onClick={() => {
-                          if (window.confirm('이 마커와 타일을 삭제하시겠습니까?')) {
-                            setLetters(prev => prev.filter(item => item.id !== letter.id));
-                            if (isSelected) setSelectedLetterId(null);
-                          }
-                        }}
-                        className="tactical-btn danger"
-                        style={{ padding: '0.2rem', borderRadius: '4px' }}
-                        title="삭제"
-                      >
-                        <Trash2 size={10} />
-                      </button>
-                    </div>
-                  </div>
-                );
-              })}
-            </div>
-          )}
-        </div>
 
       </div>
 
