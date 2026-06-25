@@ -52,7 +52,7 @@ export default function LandingPage() {
             <span className="gradient-text">나만의 전장</span>으로!
           </h1>
           <p className="hero-desc animate-slide-up-delay">
-            '찜! 대모험'은 GPS를 이용해 실제 전 세계 지도를 무대로 영토를 넓혀가는 위치 기반 전술 게임입니다. 
+            '찜! 대모험'은 실시간 내 위치를 기반으로 실제 전 세계 지도를 무대로 영토를 넓혀가는 위치 기반 전술 게임입니다. 
             단순히 바라보기만 하는 맵이 아닙니다. 끊임없이 뺏고 뺏기는 실시간 영토전 속에서, 당신의 모든 발걸음, 조깅, 여행이 곧 전술 기동이자 정복의 흔적이 됩니다.
           </p>
 
