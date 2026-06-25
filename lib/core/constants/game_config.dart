@@ -119,4 +119,7 @@ class GameConfig {
 
   /// 동전 스폰 최대 타일 격자 거리
   static const int coinSpawnMaxDistance = 5;
+
+  /// 닉네임 변경 시 소모되는 골드 비용
+  static const double nicknameChangeCost = 1000.0;
 }
