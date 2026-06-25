@@ -238,6 +238,9 @@ class GameStrings {
   /// 작전 설정 메뉴 타이틀
   static String get operationSettings => 'operationSettings'.tr();
 
+  /// 시스템 설정 메뉴 타이틀
+  static String get systemSettings => 'systemSettings'.tr();
+
   /// 테마 컬러 변경 버튼 라벨
   static String get changeTacticalColor => 'changeTacticalColor'.tr();
 

@@ -160,24 +160,19 @@ class ProfileScreen extends StatelessWidget {
               else
                 const ProfileLoginPromptCard(),
 
-              const SizedBox(height: 24),
-              Text(
-                GameStrings.operationSettings,
-                style: TextStyle(
-                  color: GameColors.textMuted,
-                  fontWeight: FontWeight.bold,
-                  fontSize: 13,
+              // [로그인 플레이어 전용] 게임 설정 섹션
+              if (isAuth) ...[
+                const SizedBox(height: 24),
+                Text(
+                  GameStrings.operationSettings,
+                  style: TextStyle(
+                    color: GameColors.textMuted,
+                    fontWeight: FontWeight.bold,
+                    fontSize: 13,
+                  ),
                 ),
-              ),
-              const SizedBox(height: 12),
-
-              // 설정 메뉴 리스트
-              ProfileMenuCard(children: [
-
-
-
-                // [로그인 플레이어 전용] 알림 설정
-                if (isAuth) ...[
+                const SizedBox(height: 12),
+                ProfileMenuCard(children: [
                   ProfileMenuItem(
                     icon: Icons.notifications_active,
                     title: GameStrings.pushNotifications,
@@ -200,9 +195,21 @@ class ProfileScreen extends StatelessWidget {
                     subtitle: GameStrings.profileRebaseSubtitle,
                     onTap: () => _handleRebase(context, auth),
                   ),
-                  const ProfileMenuDivider(),
-                ],
+                ]),
+              ],
 
+              // 시스템 설정 섹션
+              const SizedBox(height: 24),
+              Text(
+                GameStrings.systemSettings,
+                style: TextStyle(
+                  color: GameColors.textMuted,
+                  fontWeight: FontWeight.bold,
+                  fontSize: 13,
+                ),
+              ),
+              const SizedBox(height: 12),
+              ProfileMenuCard(children: [
                 // 가이드 다시보기
                 ProfileMenuItem(
                   icon: Icons.help_outline_rounded,

@@ -77,6 +77,7 @@
   "myTeam": "Team",
   "capturedTiles": "Captured Zones",
   "operationSettings": "Game Settings",
+  "systemSettings": "System Settings",
   "changeTacticalColor": "Change Theme Color",
   "changeTacticalColorSub": "Change the color of your land",
   "pushNotifications": "Push Notifications",

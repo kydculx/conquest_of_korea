@@ -77,6 +77,7 @@
   "myTeam": "소속 팀",
   "capturedTiles": "나의 영토 개수",
   "operationSettings": "게임 설정",
+  "systemSettings": "시스템 설정",
   "changeTacticalColor": "나의 테마 색상 변경",
   "changeTacticalColorSub": "영토 테마 색상을 변경하십시오.",
   "pushNotifications": "푸시 알림 수신",
