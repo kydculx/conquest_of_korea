@@ -6,7 +6,8 @@ import {
   Shield,
   Globe,
   Coins,
-  Navigation
+  Navigation,
+  Palette
 } from 'lucide-react';
 
 export default function LandingPage() {
@@ -52,8 +53,8 @@ export default function LandingPage() {
             <span className="gradient-text">나만의 전장</span>으로!
           </h1>
           <p className="hero-desc animate-slide-up-delay">
-            '찜! 대모험'은 실시간 내 위치를 기반으로 실제 전 세계 지도를 무대로 영토를 넓혀가는 위치 기반 전술 게임입니다. 
-            단순히 바라보기만 하는 맵이 아닙니다. 끊임없이 뺏고 뺏기는 실시간 영토전 속에서, 당신의 모든 발걸음, 조깅, 여행이 곧 전술 기동이자 정복의 흔적이 됩니다.
+            '찜! 대모험'은 실시간 내 위치를 기반으로 지도를 점령해 나가는 영토 쟁탈전입니다. 
+            끊임없이 뺏고 뺏기는 전쟁 속에서 모든 움직임을 정복의 역사로 만드세요.
           </p>
 
           <div className="download-badges animate-slide-up-delay-2">
@@ -93,9 +94,9 @@ export default function LandingPage() {
       {/* 라이프스타일 유스케이스 섹션 */}
       <section className="features-section">
         <div className="features-header">
-          <h2 className="section-title">일상 속에서 시작되는 영토 정복</h2>
+          <h2 className="section-title">뺏고 뺏기는 일상 전술 플레이</h2>
           <p className="section-subtitle">
-            러닝, 출퇴근, 여행, 동네 산책까지. 뺏고 뺏기는 실시간 쟁탈전 속에서 일상적인 모든 움직임이 흥미진진한 전술 라이프스타일로 변화합니다.
+            러닝, 출퇴근, 동네 산책까지. 평범한 발걸음이 세력을 넓히는 가장 강력한 전술이 됩니다.
           </p>
         </div>
 
@@ -107,7 +108,7 @@ export default function LandingPage() {
             </div>
             <h3 className="card-heading">🏃‍♂️ 러닝 & 조깅 페이스메이커</h3>
             <p className="card-body-text">
-              매일 똑같은 코스를 달리는 지루한 운동 시간은 끝났습니다. 내가 딛고 올라선 모든 미터가 실시간으로 영토로 전환됩니다. 영토 점령 페이스와 랭킹을 모니터링하며 완벽한 운동 동기를 부여받으세요.
+              달리는 모든 미터가 실시간으로 영토가 됩니다. 뺏고 뺏기는 쟁탈 경쟁을 통해 운동에 강력한 동기를 부여받으세요.
             </p>
           </div>
 
@@ -116,20 +117,20 @@ export default function LandingPage() {
             <div className="card-icon-wrapper cyan">
               <Navigation size={22} style={{ transform: 'rotate(45deg)' }} />
             </div>
-            <h3 className="card-heading">🚌 출퇴근길을 나만의 정찰로</h3>
+            <h3 className="card-heading">🚌 출퇴근길 자동 영토 정찰</h3>
             <p className="card-body-text">
-              매일 타는 버스와 전철 노선이 강력한 영토 정찰 루트로 거듭납니다. 백그라운드 모드를 가동해 주머니에 넣어두기만 하면 지나치는 대중교통 경로에 맞춰 점령 구역이 자동으로 칠해집니다.
+              대중교통 이동 경로에 맞춰 점령지가 자동으로 칠해집니다. 백그라운드 모드만 켜두면 일상의 이동이 곧 정복 루트가 됩니다.
             </p>
           </div>
 
-          {/* 카드 3: 여행 */}
+          {/* 카드 3: 맵 아트 */}
           <div className="feature-premium-card card-travel">
             <div className="card-icon-wrapper blue">
-              <Globe size={22} />
+              <Palette size={22} />
             </div>
-            <h3 className="card-heading">🚗 여행과 드라이브의 흔적 소유</h3>
+            <h3 className="card-heading">🎨 내 발자국으로 그리는 맵 아트</h3>
             <p className="card-body-text">
-              새로운 휴양지로 떠나거나 고속도로 드라이브를 나설 때, 내가 다녀간 여정을 영토로 굳건히 소유해 보세요. 낯선 여행지에 나만의 본진 깃발을 꽂고 정복 랜드마크를 완성하는 소장 가치를 느껴보세요.
+              점령 타일들을 연결하여 지도 위에 하트, 문자 등 나만의 독창적인 모양을 그리고 이색적인 랜드마크를 완성해보세요.
             </p>
           </div>
 
@@ -138,9 +139,9 @@ export default function LandingPage() {
             <div className="card-icon-wrapper gold">
               <Coins size={22} />
             </div>
-            <h3 className="card-heading">🪙 골목 산책의 보물찾기 재미</h3>
+            <h3 className="card-heading">🪙 골목 산책과 보물찾기</h3>
             <p className="card-body-text">
-              단순한 걷기가 입체적인 보물찾기 모험으로 바뀝니다. 매일 본진 기지 주변 영역에 임의로 출현하는 골드 자원 노드를 획득하기 위해 이전에 가보지 않았던 동네의 좁고 낯선 골목길을 새로이 개척하고 탐색해보세요.
+              동네 골목 구석구석을 탐험하며 무작위로 생성되는 골드를 획득하세요. 안 가본 길을 탐색하는 소소한 모험의 즐거움을 줍니다.
             </p>
           </div>
 
@@ -149,9 +150,9 @@ export default function LandingPage() {
             <div className="card-icon-wrapper purple">
               <MapPin size={22} />
             </div>
-            <h3 className="card-heading">🛋️ 집콕이나 날씨가 나쁠 때의 원격 점령</h3>
+            <h3 className="card-heading">🛋️ 집 안에서 즐기는 원격 점령</h3>
             <p className="card-body-text">
-              폭우가 쏟아지거나 부상·피로로 집 밖을 나설 수 없는 날에도 점령은 멈추지 않습니다. 또는 강 너머, 사유지 등 직접 걸어서 진입할 수 없는 지형적 한계 구역도 그동안 비축한 골드를 사용해 방에 누워서 손끝 하나로 원격 점령하여 철벽 방어선을 완성해 보세요.
+              직접 가기 힘든 강 너머나 사유지, 혹은 날씨가 나쁜 날에는 비축한 골드를 사용해 방 안에서 원격으로 영토를 사수하세요.
             </p>
           </div>
         </div>
