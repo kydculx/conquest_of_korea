@@ -135,6 +135,11 @@ class GameProvider extends ChangeNotifier with WidgetsBindingObserver {
   double get currentGold => _goldManager.currentGold;
   double get goldRate => _goldManager.goldRate;
 
+  /// 서버에서 골드를 강제 동기화하여 가져옵니다.
+  Future<void> syncGoldWithServer() async {
+    await _goldManager.syncWithServer();
+  }
+
   // --- Public Getters (Satellite) ---
   bool get isScanMode =>
       _selectedScanTileId != null || _satelliteController.isCapturing;

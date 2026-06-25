@@ -485,4 +485,26 @@ class AuthProvider extends ChangeNotifier {
     _profile = updated;
     notifyListeners();
   }
+
+  /// 닉네임을 변경하고 골드를 차감하는 트랜잭션 함수를 호출한 뒤 로컬 캐시를 갱신합니다.
+  Future<void> changeNickname({
+    required String newNickname,
+    required double currentGold,
+    required double cost,
+  }) async {
+    final user = _user;
+    if (user == null) return;
+    _setLoading(true);
+    try {
+      await _authService.updateNicknameAndDeductGold(
+        userId: user.id,
+        newNickname: newNickname,
+        currentGold: currentGold,
+        cost: cost,
+      );
+      await refreshProfile();
+    } finally {
+      _setLoading(false);
+    }
+  }
 }

@@ -280,6 +280,25 @@ class GameStrings {
   /// 문의 메일 기본 제목
   static String get supportEmailSubject => 'supportEmailSubject'.tr();
 
+  /// 닉네임 수정 버튼 라벨
+  static String get changeNickname => 'changeNickname'.tr();
+
+  /// 닉네임 수정 상세 설명
+  static String get changeNicknameSub => 'changeNicknameSub'.tr();
+
+  /// 닉네임 수정 비용 안내 문구
+  static String nicknameChangeCost(String current) =>
+      'nicknameChangeCost'.tr(namedArgs: {'current': current});
+
+  /// 닉네임 수정 성공 알림 문구
+  static String get nicknameChangeSuccess => 'nicknameChangeSuccess'.tr();
+
+  /// 동일 닉네임 경고 문구
+  static String get nicknameChangeSame => 'nicknameChangeSame'.tr();
+
+  /// 골드 부족 경고 문구
+  static String get nicknameChangeGoldShortage => 'nicknameChangeGoldShortage'.tr();
+
   /// 계정 관리 메뉴 타이틀
   static String get accountManagement => 'accountManagement'.tr();
 

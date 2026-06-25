@@ -67,14 +67,35 @@ class ProfileScreen extends StatelessWidget {
             ),
           ),
           const SizedBox(height: 16),
-          Text(
-            profile.nickname,
-            style: GoogleFonts.fredoka(
-              color: GameColors.textPrimary,
-              fontSize: 24,
-              fontWeight: FontWeight.bold,
-              letterSpacing: 0.5,
-            ),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Text(
+                profile.nickname,
+                style: GoogleFonts.fredoka(
+                  color: GameColors.textPrimary,
+                  fontSize: 24,
+                  fontWeight: FontWeight.bold,
+                  letterSpacing: 0.5,
+                ),
+              ),
+              const SizedBox(width: 8),
+              GestureDetector(
+                onTap: () => _showChangeNicknameDialog(context, auth, game),
+                child: Container(
+                  padding: const EdgeInsets.all(6),
+                  decoration: BoxDecoration(
+                    color: Colors.white.withValues(alpha: 0.1),
+                    shape: BoxShape.circle,
+                  ),
+                  child: Icon(
+                    Icons.edit_rounded,
+                    size: 16,
+                    color: GameColors.accentNeon,
+                  ),
+                ),
+              ),
+            ],
           ),
           const SizedBox(height: 4),
           Text(
@@ -621,5 +642,193 @@ class ProfileScreen extends StatelessWidget {
         .map((MapEntry<String, String> e) =>
             '${Uri.encodeComponent(e.key)}=${Uri.encodeComponent(e.value)}')
         .join('&');
+  }
+
+  void _showChangeNicknameDialog(
+      BuildContext context, AuthProvider auth, GameProvider game) {
+    final nicknameController = TextEditingController(text: auth.profile?.nickname ?? '');
+    final formKey = GlobalKey<FormState>();
+    
+    bool isNicknameChecked = false;
+    bool isNicknameAvailable = false;
+    bool isChecking = false;
+    bool isSaving = false;
+    
+    final currentNickname = auth.profile?.nickname ?? '';
+    final double cost = 1000.0;
+    final bool hasEnoughGold = game.currentGold >= cost;
+
+    showDialog(
+      context: context,
+      builder: (context) {
+        return StatefulBuilder(
+          builder: (context, setState) {
+            final checkNickname = () async {
+              final newNickname = nicknameController.text.trim();
+              if (newNickname.isEmpty) {
+                ToastHelper.show(context: context, message: GameStrings.enterNickname, isSuccess: false);
+                return;
+              }
+              if (newNickname == currentNickname) {
+                ToastHelper.show(context: context, message: GameStrings.nicknameChangeSame, isSuccess: false);
+                return;
+              }
+              setState(() => isChecking = true);
+              try {
+                final available = await auth.isNicknameAvailable(newNickname);
+                setState(() {
+                  isNicknameAvailable = available;
+                  isNicknameChecked = true;
+                });
+                if (context.mounted) {
+                  ToastHelper.show(
+                    context: context,
+                    message: available ? GameStrings.nicknameAvailable : GameStrings.errorNicknameExists,
+                    isSuccess: available,
+                  );
+                }
+              } catch (e) {
+                if (context.mounted) {
+                  ToastHelper.show(context: context, message: ErrorTranslator.translate(e), isSuccess: false);
+                }
+              } finally {
+                setState(() => isChecking = false);
+              }
+            };
+
+            final handleSave = () async {
+              final newNickname = nicknameController.text.trim();
+              if (newNickname == currentNickname) {
+                Navigator.pop(context);
+                return;
+              }
+              if (!isNicknameChecked || !isNicknameAvailable) {
+                ToastHelper.show(context: context, message: GameStrings.errorNicknameCheckRequired, isSuccess: false);
+                return;
+              }
+              if (!hasEnoughGold) {
+                ToastHelper.show(context: context, message: GameStrings.nicknameChangeGoldShortage, isSuccess: false);
+                return;
+              }
+              setState(() => isSaving = true);
+              try {
+                await auth.changeNickname(
+                  newNickname: newNickname,
+                  currentGold: game.currentGold,
+                  cost: cost,
+                );
+                await game.syncGoldWithServer();
+                if (context.mounted) {
+                  ToastHelper.show(context: context, message: GameStrings.nicknameChangeSuccess, isSuccess: true);
+                  Navigator.pop(context);
+                }
+              } catch (e) {
+                if (context.mounted) {
+                  ToastHelper.show(context: context, message: ErrorTranslator.translate(e), isSuccess: false);
+                }
+              } finally {
+                setState(() => isSaving = false);
+              }
+            };
+
+            nicknameController.addListener(() {
+              final val = nicknameController.text.trim();
+              if (isNicknameChecked && val != currentNickname) {
+                setState(() {
+                  isNicknameChecked = false;
+                  isNicknameAvailable = false;
+                });
+              }
+            });
+
+            return TacticalDialog(
+              title: GameStrings.changeNickname,
+              icon: Icons.edit_rounded,
+              accentColor: GameColors.accentNeon,
+              content: Form(
+                key: formKey,
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    Text(
+                      GameStrings.changeNicknameSub,
+                      style: TextStyle(color: GameColors.textSecondary, fontSize: 13),
+                    ),
+                    const SizedBox(height: 16),
+                    Row(
+                      children: [
+                        Expanded(
+                          child: TextFormField(
+                            controller: nicknameController,
+                            style: GoogleFonts.quicksand(color: GameColors.textPrimary, fontWeight: FontWeight.bold),
+                            decoration: InputDecoration(
+                              hintText: GameStrings.enterNickname,
+                              hintStyle: TextStyle(color: GameColors.textMuted),
+                              filled: true,
+                              fillColor: GameColors.backgroundMedium.withValues(alpha: 0.5),
+                              contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                              border: OutlineInputBorder(
+                                borderRadius: BorderRadius.circular(16),
+                                borderSide: BorderSide.none,
+                              ),
+                            ),
+                            maxLength: 10,
+                          ),
+                        ),
+                        const SizedBox(width: 8),
+                        SizedBox(
+                          height: 48,
+                          child: OutlinedButton(
+                            onPressed: isChecking || nicknameController.text.trim() == currentNickname ? null : checkNickname,
+                            style: OutlinedButton.styleFrom(
+                              side: BorderSide(color: GameColors.accentNeon.withValues(alpha: 0.3)),
+                              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                            ),
+                            child: isChecking
+                                ? const SizedBox(width: 16, height: 16, child: CircularProgressIndicator(strokeWidth: 2))
+                                : Text(
+                                    GameStrings.checkDuplicate,
+                                    style: TextStyle(color: GameColors.accentNeon, fontSize: 12),
+                                  ),
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 16),
+                    Text(
+                      GameStrings.nicknameChangeCost(cost.toInt().toString()),
+                      style: TextStyle(
+                        color: hasEnoughGold ? GameColors.success : GameColors.error,
+                        fontSize: 12,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              actions: [
+                TextButton(
+                  onPressed: () => Navigator.pop(context),
+                  style: TextButton.styleFrom(foregroundColor: GameColors.textMuted),
+                  child: Text(GameStrings.cancel),
+                ),
+                ElevatedButton(
+                  onPressed: (isNicknameChecked && isNicknameAvailable && hasEnoughGold && !isSaving) ? handleSave : null,
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: GameColors.accentNeon,
+                    foregroundColor: GameColors.tacticalBlack,
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                  ),
+                  child: isSaving
+                      ? SizedBox(width: 20, height: 20, child: CircularProgressIndicator(strokeWidth: 2, color: GameColors.tacticalBlack))
+                      : Text(GameStrings.confirm, style: const TextStyle(fontWeight: FontWeight.bold)),
+                ),
+              ],
+            );
+          },
+        );
+      },
+    );
   }
 }

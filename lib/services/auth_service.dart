@@ -184,6 +184,20 @@ class AuthService {
     }
   }
 
+  /// 사용자의 닉네임을 변경하고 소정의 골드를 차감합니다.
+  Future<void> updateNicknameAndDeductGold({
+    required String userId,
+    required String newNickname,
+    required double currentGold,
+    required double cost,
+  }) async {
+    await _client.from('profiles').update({
+      'nickname': newNickname,
+      'gold': currentGold - cost,
+      'last_gold_updated_at': DateTime.now().toUtc().toIso8601String(),
+    }).eq('id', userId);
+  }
+
   /// 지정한 닉네임이 다른 사용자들에 의해 이미 점유되어 있는지 가용성 여부를 검사합니다.
   Future<bool> isNicknameAvailable(String nickname) async {
     final response = await _client
