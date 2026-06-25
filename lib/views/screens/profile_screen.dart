@@ -15,7 +15,7 @@ import '../widgets/tactical_dialog.dart';
 import '../widgets/profile_widgets.dart';
 import 'language_settings_screen.dart';
 import 'policy_webview_screen.dart';
-import 'game_guide_screen.dart';
+import 'package:easy_localization/easy_localization.dart';
 
 /// 로그인한 플레이어의 상세 프로필 상태(소속 테마 색상, 점령한 총 영토 수)를
 /// 검토하고, 테마 색상 수정 및 본진 이전(Rebase), 로그아웃 등 설정을 관리하는 프로필 화면 클래스입니다.
@@ -171,19 +171,6 @@ class ProfileScreen extends StatelessWidget {
 
               // 설정 메뉴 리스트
               ProfileMenuCard(children: [
-                // 게임 설명서
-                ProfileMenuItem(
-                  icon: Icons.menu_book_rounded,
-                  title: GameStrings.gameGuide,
-                  subtitle: GameStrings.gameGuideSub,
-                  onTap: () => Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                      builder: (context) => const GameGuideScreen(),
-                    ),
-                  ),
-                ),
-                const ProfileMenuDivider(),
 
 
 
@@ -238,7 +225,7 @@ class ProfileScreen extends StatelessWidget {
                     MaterialPageRoute(
                       builder: (context) => PolicyWebviewScreen(
                         title: GameStrings.termsOfService,
-                        url: GameUrls.termsOfService,
+                        url: '${GameUrls.termsOfService}?lang=${context.locale.languageCode}',
                       ),
                     ),
                   ),
@@ -255,7 +242,7 @@ class ProfileScreen extends StatelessWidget {
                     MaterialPageRoute(
                       builder: (context) => PolicyWebviewScreen(
                         title: GameStrings.privacyPolicy,
-                        url: GameUrls.privacyPolicy,
+                        url: '${GameUrls.privacyPolicy}?lang=${context.locale.languageCode}',
                       ),
                     ),
                   ),
@@ -545,7 +532,7 @@ class ProfileScreen extends StatelessWidget {
     return showDialog(
       context: context,
       builder: (context) => TacticalDialog(
-        title: '[ 오류 ]',
+        title: GameStrings.errorTitle,
         icon: Icons.error_outline_rounded,
         accentColor: GameColors.error,
         content: Text(message, style: TextStyle(color: GameColors.textSecondary, fontSize: 13)),

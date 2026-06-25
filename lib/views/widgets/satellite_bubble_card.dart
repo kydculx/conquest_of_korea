@@ -451,7 +451,7 @@ class BubbleBodyState extends State<BubbleBody> {
               text: widget.myNickname,
               style: TextStyle(color: nameColor),
             ),
-            const TextSpan(text: ' 님의 구역입니다.'),
+            TextSpan(text: GameStrings.capturedBySuffix),
           ],
         ),
       );
@@ -472,7 +472,7 @@ class BubbleBodyState extends State<BubbleBody> {
                   text: nickname,
                   style: TextStyle(color: nameColor),
                 ),
-                const TextSpan(text: ' 님의 구역입니다.'),
+                TextSpan(text: GameStrings.capturedBySuffix),
               ],
             ),
           );

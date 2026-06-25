@@ -191,146 +191,166 @@ class _SocialProfileSetupScreenState extends State<SocialProfileSetupScreen> {
 
           // 2. 메인 스크롤 콘텐츠
           SafeArea(
-            child: SingleChildScrollView(
-              physics: const BouncingScrollPhysics(),
-              padding: const EdgeInsets.symmetric(horizontal: 30, vertical: 20),
+            child: Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 30),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
-                  const SizedBox(height: 20),
-                  // 상단 레이더 아이콘
-                  Center(
-                    child: Icon(
-                      Icons.radar_outlined,
-                      size: 76,
-                      color: GameColors.accentNeon,
-                    ),
-                  ),
-                  const SizedBox(height: 24),
-                  Text(
-                    GameStrings.setupProfile.toUpperCase(),
-                    textAlign: TextAlign.center,
-                    style: GoogleFonts.fredoka(
-                      fontSize: 24,
-                      fontWeight: FontWeight.bold,
-                      color: GameColors.textPrimary,
-                      letterSpacing: 1.5,
-                    ),
-                  ),
-                  const SizedBox(height: 8),
-                  Text(
-                    GameStrings.setupProfileSub,
-                    textAlign: TextAlign.center,
-                    style: GoogleFonts.quicksand(
-                      fontSize: 12,
-                      color: GameColors.accentNeon,
-                      letterSpacing: 0.5,
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
-                  const SizedBox(height: 45),
-
-                  // 닉네임 입력 필드 및 중복 검사 버튼
-                  Row(
-                    crossAxisAlignment: CrossAxisAlignment.end,
-                    children: [
-                      Expanded(
-                        child: TextField(
-                          controller: _nicknameController,
-                          style: GoogleFonts.quicksand(color: GameColors.textPrimary, fontWeight: FontWeight.bold),
-                          decoration: InputDecoration(
-                            labelText: GameStrings.nickname,
-                            labelStyle: GoogleFonts.fredoka(
-                              color: GameColors.textMuted,
+                  Expanded(
+                    child: SingleChildScrollView(
+                      physics: const BouncingScrollPhysics(),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.stretch,
+                        children: [
+                          const SizedBox(height: 20),
+                          // 상단 레이더 아이콘
+                          Center(
+                            child: Icon(
+                              Icons.radar_outlined,
+                              size: 76,
+                              color: GameColors.accentNeon,
+                            ),
+                          ),
+                          const SizedBox(height: 24),
+                          Text(
+                            GameStrings.setupProfile.toUpperCase(),
+                            textAlign: TextAlign.center,
+                            style: GoogleFonts.fredoka(
+                              fontSize: 24,
+                              fontWeight: FontWeight.bold,
+                              color: GameColors.textPrimary,
+                              letterSpacing: 1.5,
+                            ),
+                          ),
+                          const SizedBox(height: 8),
+                          Text(
+                            GameStrings.setupProfileSub,
+                            textAlign: TextAlign.center,
+                            style: GoogleFonts.quicksand(
                               fontSize: 12,
+                              color: GameColors.accentNeon,
+                              letterSpacing: 0.5,
                               fontWeight: FontWeight.bold,
                             ),
-                            prefixIcon: Icon(
-                              Icons.person_outline,
-                              color: _isNicknameChecked
-                                  ? (_isNicknameAvailable
-                                        ? GameColors.success
-                                        : GameColors.error)
-                                  : GameColors.accentNeon,
-                              size: 20,
-                            ),
-                            border: OutlineInputBorder(
-                              borderRadius: BorderRadius.circular(16),
-                              borderSide: BorderSide.none,
-                            ),
-                            enabledBorder: OutlineInputBorder(
-                              borderRadius: BorderRadius.circular(16),
-                              borderSide: BorderSide.none,
-                            ),
-                            focusedBorder: OutlineInputBorder(
-                              borderRadius: BorderRadius.circular(16),
-                              borderSide: BorderSide(color: GameColors.accentNeon.withValues(alpha: 0.5), width: 1.5),
-                            ),
-                            filled: true,
-                            fillColor: GameColors.tacticalGray.withValues(alpha: 0.5),
                           ),
-                        ),
-                      ),
-                      const SizedBox(width: 15),
-                      SizedBox(
-                        height: 48,
-                        child: OutlinedButton(
-                          onPressed: _isChecking ? null : _checkNickname,
-                          style: OutlinedButton.styleFrom(
-                            side: BorderSide(
-                              color: _isChecking
-                                  ? GameColors.dividerColor
-                                  : GameColors.accentNeon.withValues(
-                                      alpha: 0.35,
+                          const SizedBox(height: 45),
+
+                          // 닉네임 라벨 독립화
+                          Text(
+                            GameStrings.nickname,
+                            style: GoogleFonts.fredoka(
+                              color: GameColors.textSecondary,
+                              fontSize: 13,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                          const SizedBox(height: 8),
+                          Row(
+                            crossAxisAlignment: CrossAxisAlignment.center,
+                            children: [
+                              Expanded(
+                                child: TextField(
+                                  controller: _nicknameController,
+                                  style: GoogleFonts.quicksand(color: GameColors.textPrimary, fontWeight: FontWeight.bold),
+                                  decoration: InputDecoration(
+                                    hintText: GameStrings.enterNickname,
+                                    hintStyle: GoogleFonts.fredoka(
+                                      color: GameColors.textMuted,
+                                      fontSize: 13,
+                                      fontWeight: FontWeight.bold,
                                     ),
-                              width: 1.2,
-                            ),
-                            backgroundColor: GameColors.accentNeon.withValues(
-                              alpha: 0.1,
-                            ),
-                            foregroundColor: GameColors.accentNeon,
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(16),
-                            ),
-                            padding: const EdgeInsets.symmetric(horizontal: 16),
-                          ),
-                          child: _isChecking
-                              ? SizedBox(
-                                  width: 16,
-                                  height: 16,
-                                  child: CircularProgressIndicator(
-                                    strokeWidth: 2,
-                                    color: GameColors.accentNeon,
-                                  ),
-                                )
-                              : Text(
-                                  GameStrings.checkDuplicate,
-                                  style: GoogleFonts.fredoka(
-                                    fontWeight: FontWeight.bold,
-                                    fontSize: 12,
+                                    contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
+                                    prefixIcon: Icon(
+                                      Icons.person_outline,
+                                      color: _isNicknameChecked
+                                          ? (_isNicknameAvailable
+                                              ? GameColors.success
+                                              : GameColors.error)
+                                          : GameColors.accentNeon,
+                                      size: 20,
+                                    ),
+                                    border: OutlineInputBorder(
+                                      borderRadius: BorderRadius.circular(16),
+                                      borderSide: BorderSide.none,
+                                    ),
+                                    enabledBorder: OutlineInputBorder(
+                                      borderRadius: BorderRadius.circular(16),
+                                      borderSide: BorderSide.none,
+                                    ),
+                                    focusedBorder: OutlineInputBorder(
+                                      borderRadius: BorderRadius.circular(16),
+                                      borderSide: BorderSide(color: GameColors.accentNeon.withValues(alpha: 0.5), width: 1.5),
+                                    ),
+                                    filled: true,
+                                    fillColor: GameColors.tacticalGray.withValues(alpha: 0.5),
                                   ),
                                 ),
-                        ),
-                      ),
-                    ],
-                  ),
-                  if (_isNicknameChecked)
-                    Padding(
-                      padding: const EdgeInsets.only(top: 10, left: 4),
-                      child: Text(
-                        _isNicknameAvailable
-                            ? '✓ ${GameStrings.nicknameAvailable}'
-                            : '✕ ${GameStrings.errorNicknameExists}',
-                        style: TextStyle(
-                          color: _isNicknameAvailable
-                              ? GameColors.success
-                              : GameColors.error,
-                          fontSize: 11,
-                          fontWeight: FontWeight.w600,
-                        ),
+                              ),
+                              const SizedBox(width: 12),
+                              SizedBox(
+                                height: 56,
+                                child: OutlinedButton(
+                                  onPressed: _isChecking ? null : _checkNickname,
+                                  style: OutlinedButton.styleFrom(
+                                    side: BorderSide(
+                                      color: _isChecking
+                                          ? GameColors.dividerColor
+                                          : GameColors.accentNeon.withValues(
+                                              alpha: 0.35,
+                                            ),
+                                      width: 1.2,
+                                    ),
+                                    backgroundColor: GameColors.accentNeon.withValues(
+                                      alpha: 0.1,
+                                    ),
+                                    foregroundColor: GameColors.accentNeon,
+                                    shape: RoundedRectangleBorder(
+                                      borderRadius: BorderRadius.circular(16),
+                                    ),
+                                    padding: const EdgeInsets.symmetric(horizontal: 20),
+                                  ),
+                                  child: _isChecking
+                                      ? SizedBox(
+                                          width: 16,
+                                          height: 16,
+                                          child: CircularProgressIndicator(
+                                            strokeWidth: 2,
+                                            color: GameColors.accentNeon,
+                                          ),
+                                        )
+                                      : Text(
+                                          GameStrings.checkDuplicate,
+                                          style: GoogleFonts.fredoka(
+                                            fontWeight: FontWeight.bold,
+                                            fontSize: 13,
+                                          ),
+                                        ),
+                                ),
+                              ),
+                            ],
+                          ),
+                          if (_isNicknameChecked)
+                            Padding(
+                              padding: const EdgeInsets.only(top: 10, left: 4),
+                              child: Text(
+                                _isNicknameAvailable
+                                    ? '✓ ${GameStrings.nicknameAvailable}'
+                                    : '✕ ${GameStrings.errorNicknameExists}',
+                                style: TextStyle(
+                                  color: _isNicknameAvailable
+                                      ? GameColors.success
+                                      : GameColors.error,
+                                  fontSize: 11,
+                                  fontWeight: FontWeight.w600,
+                                ),
+                              ),
+                            ),
+                          const SizedBox(height: 20),
+                        ],
                       ),
                     ),
-                  const SizedBox(height: 40),
+                  ),
+                  const SizedBox(height: 20),
 
                   // 최종 등록 승인 버튼
                   Consumer<AuthProvider>(
@@ -378,7 +398,7 @@ class _SocialProfileSetupScreenState extends State<SocialProfileSetupScreen> {
                       );
                     },
                   ),
-                  const SizedBox(height: 20),
+                  const SizedBox(height: 24),
                 ],
               ),
             ),

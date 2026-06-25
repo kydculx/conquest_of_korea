@@ -296,169 +296,209 @@ class _SignupScreenState extends State<SignupScreen> {
           gradient: GameColors.cozyDarkGradient,
         ),
         child: SafeArea(
-          child: SingleChildScrollView(
+          child: Padding(
             padding: const EdgeInsets.symmetric(horizontal: 30),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
-                const SizedBox(height: 20),
-                Text(
-                  GameStrings.signupTitle,
-                  style: GoogleFonts.fredoka(
-                    fontSize: 24,
-                    fontWeight: FontWeight.bold,
-                    color: GameColors.textPrimary,
-                    letterSpacing: 0.5,
-                  ),
-                ),
-                const SizedBox(height: 40),
-
-                // Nickname Field with Check Button
-                Row(
-                  crossAxisAlignment: CrossAxisAlignment.end,
-                  children: [
-                    Expanded(
-                      child: _buildTextField(
-                        controller: _nicknameController,
-                        label: GameStrings.nickname,
-                        icon: Icons.person_outline,
-                      ),
-                    ),
-                    const SizedBox(width: 10),
-                    SizedBox(
-                      height: 56,
-                      child: TextButton(
-                        onPressed: _isCheckingNickname ? null : _checkNickname,
-                        style: TextButton.styleFrom(
-                          backgroundColor: GameColors.accentNeon.withValues(
-                            alpha: 0.15,
-                          ),
-                          foregroundColor: GameColors.accentNeon,
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(16),
+                Expanded(
+                  child: SingleChildScrollView(
+                    physics: const BouncingScrollPhysics(),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.stretch,
+                      children: [
+                        const SizedBox(height: 20),
+                        Text(
+                          GameStrings.signupTitle,
+                          style: GoogleFonts.fredoka(
+                            fontSize: 24,
+                            fontWeight: FontWeight.bold,
+                            color: GameColors.textPrimary,
+                            letterSpacing: 0.5,
                           ),
                         ),
-                        child: _isCheckingNickname
-                            ? SizedBox(
-                                width: 20,
-                                height: 20,
-                                child: CircularProgressIndicator(
-                                  strokeWidth: 2,
-                                  color: GameColors.accentNeon,
-                                ),
-                              )
-                            : Text(
-                                GameStrings.checkDuplicate,
-                                style: GoogleFonts.fredoka(
-                                  fontWeight: FontWeight.bold,
-                                  fontSize: 12,
-                                ),
-                              ),
-                      ),
-                    ),
-                  ],
-                ),
-                if (_isNicknameChecked)
-                  Padding(
-                    padding: const EdgeInsets.only(top: 8, left: 4),
-                    child: Text(
-                      _isNicknameAvailable
-                          ? '✓ ${GameStrings.nicknameAvailable}'
-                          : '✕ ${GameStrings.errorNicknameExists}',
-                      style: TextStyle(
-                        color: _isNicknameAvailable
-                            ? GameColors.success
-                            : GameColors.error,
-                        fontSize: 10,
-                      ),
-                    ),
-                  ),
-                const SizedBox(height: 20),
+                        const SizedBox(height: 40),
 
-                // Email Field with Check Button
-                Row(
-                  crossAxisAlignment: CrossAxisAlignment.end,
-                  children: [
-                    Expanded(
-                      child: _buildTextField(
-                        controller: _emailController,
-                        label: GameStrings.emailAddress,
-                        icon: Icons.email_outlined,
-                      ),
-                    ),
-                    const SizedBox(width: 10),
-                    SizedBox(
-                      height: 56,
-                      child: TextButton(
-                        onPressed: _isCheckingEmail ? null : _checkEmail,
-                        style: TextButton.styleFrom(
-                          backgroundColor: GameColors.accentNeon.withValues(
-                            alpha: 0.15,
-                          ),
-                          foregroundColor: GameColors.accentNeon,
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(16),
+                        // Nickname Field with Check Button
+                        Text(
+                          GameStrings.nickname,
+                          style: GoogleFonts.fredoka(
+                            color: GameColors.textSecondary,
+                            fontSize: 13,
+                            fontWeight: FontWeight.bold,
                           ),
                         ),
-                        child: _isCheckingEmail
-                            ? SizedBox(
-                                width: 20,
-                                height: 20,
-                                child: CircularProgressIndicator(
-                                  strokeWidth: 2,
-                                  color: GameColors.accentNeon,
-                                ),
-                              )
-                            : Text(
-                                GameStrings.checkDuplicate,
-                                style: GoogleFonts.fredoka(
-                                  fontWeight: FontWeight.bold,
-                                  fontSize: 12,
-                                ),
+                        const SizedBox(height: 8),
+                        Row(
+                          crossAxisAlignment: CrossAxisAlignment.center,
+                          children: [
+                            Expanded(
+                              child: _buildTextField(
+                                controller: _nicknameController,
+                                hint: GameStrings.enterNickname,
+                                icon: Icons.person_outline,
                               ),
-                      ),
-                    ),
-                  ],
-                ),
-                if (_isEmailChecked)
-                  Padding(
-                    padding: const EdgeInsets.only(top: 8, left: 4),
-                    child: Text(
-                      _isEmailValid
-                          ? '✓ ${GameStrings.emailAvailable}'
-                          : '✕ ${GameStrings.emailInvalid}',
-                      style: TextStyle(
-                        color: _isEmailValid
-                            ? GameColors.success
-                            : GameColors.error,
-                        fontSize: 10,
-                      ),
-                    ),
-                  ),
-                const SizedBox(height: 20),
+                            ),
+                            const SizedBox(width: 10),
+                            SizedBox(
+                              height: 56,
+                              child: TextButton(
+                                onPressed: _isCheckingNickname ? null : _checkNickname,
+                                style: TextButton.styleFrom(
+                                  backgroundColor: GameColors.accentNeon.withValues(
+                                    alpha: 0.15,
+                                  ),
+                                  foregroundColor: GameColors.accentNeon,
+                                  shape: RoundedRectangleBorder(
+                                    borderRadius: BorderRadius.circular(16),
+                                  ),
+                                  padding: const EdgeInsets.symmetric(horizontal: 20),
+                                ),
+                                child: _isCheckingNickname
+                                    ? SizedBox(
+                                        width: 20,
+                                        height: 20,
+                                        child: CircularProgressIndicator(
+                                          strokeWidth: 2,
+                                          color: GameColors.accentNeon,
+                                        ),
+                                      )
+                                    : Text(
+                                        GameStrings.checkDuplicate,
+                                        style: GoogleFonts.fredoka(
+                                          fontWeight: FontWeight.bold,
+                                          fontSize: 13,
+                                        ),
+                                      ),
+                              ),
+                            ),
+                          ],
+                        ),
+                        if (_isNicknameChecked)
+                          Padding(
+                            padding: const EdgeInsets.only(top: 8, left: 4),
+                            child: Text(
+                              _isNicknameAvailable
+                                  ? '✓ ${GameStrings.nicknameAvailable}'
+                                  : '✕ ${GameStrings.errorNicknameExists}',
+                              style: TextStyle(
+                                color: _isNicknameAvailable
+                                    ? GameColors.success
+                                    : GameColors.error,
+                                fontSize: 10,
+                              ),
+                            ),
+                          ),
+                        const SizedBox(height: 20),
 
-                // Password Field
-                _buildTextField(
-                  controller: _passwordController,
-                  label: GameStrings.password,
-                  icon: Icons.lock_outline,
-                  isObscure: _isObscure,
-                  suffixIcon: IconButton(
-                    icon: Icon(
-                      _isObscure ? Icons.visibility_off : Icons.visibility,
-                      color: GameColors.textMuted,
+                        // Email Field with Check Button
+                        Text(
+                          GameStrings.emailAddress,
+                          style: GoogleFonts.fredoka(
+                            color: GameColors.textSecondary,
+                            fontSize: 13,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                        const SizedBox(height: 8),
+                        Row(
+                          crossAxisAlignment: CrossAxisAlignment.center,
+                          children: [
+                            Expanded(
+                              child: _buildTextField(
+                                controller: _emailController,
+                                hint: GameStrings.enterEmail,
+                                icon: Icons.email_outlined,
+                              ),
+                            ),
+                            const SizedBox(width: 10),
+                            SizedBox(
+                              height: 56,
+                              child: TextButton(
+                                onPressed: _isCheckingEmail ? null : _checkEmail,
+                                style: TextButton.styleFrom(
+                                  backgroundColor: GameColors.accentNeon.withValues(
+                                    alpha: 0.15,
+                                  ),
+                                  foregroundColor: GameColors.accentNeon,
+                                  shape: RoundedRectangleBorder(
+                                    borderRadius: BorderRadius.circular(16),
+                                  ),
+                                  padding: const EdgeInsets.symmetric(horizontal: 20),
+                                ),
+                                child: _isCheckingEmail
+                                    ? SizedBox(
+                                        width: 20,
+                                        height: 20,
+                                        child: CircularProgressIndicator(
+                                          strokeWidth: 2,
+                                          color: GameColors.accentNeon,
+                                        ),
+                                      )
+                                    : Text(
+                                        GameStrings.checkDuplicate,
+                                        style: GoogleFonts.fredoka(
+                                          fontWeight: FontWeight.bold,
+                                          fontSize: 13,
+                                        ),
+                                      ),
+                              ),
+                            ),
+                          ],
+                        ),
+                        if (_isEmailChecked)
+                          Padding(
+                            padding: const EdgeInsets.only(top: 8, left: 4),
+                            child: Text(
+                              _isEmailValid
+                                  ? '✓ ${GameStrings.emailAvailable}'
+                                  : '✕ ${GameStrings.emailInvalid}',
+                              style: TextStyle(
+                                color: _isEmailValid
+                                    ? GameColors.success
+                                    : GameColors.error,
+                                fontSize: 10,
+                              ),
+                            ),
+                          ),
+                        const SizedBox(height: 20),
+
+                        // Password Field
+                        Text(
+                          GameStrings.password,
+                          style: GoogleFonts.fredoka(
+                            color: GameColors.textSecondary,
+                            fontSize: 13,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                        const SizedBox(height: 8),
+                        _buildTextField(
+                          controller: _passwordController,
+                          hint: GameStrings.password,
+                          icon: Icons.lock_outline,
+                          isObscure: _isObscure,
+                          suffixIcon: IconButton(
+                            icon: Icon(
+                              _isObscure ? Icons.visibility_off : Icons.visibility,
+                              color: GameColors.textMuted,
+                            ),
+                            onPressed: () => setState(() => _isObscure = !_isObscure),
+                          ),
+                        ),
+                        Padding(
+                          padding: const EdgeInsets.only(top: 8, left: 4),
+                          child: Text(
+                            GameStrings.passwordHint,
+                            style: TextStyle(color: GameColors.textMuted, fontSize: 10),
+                          ),
+                        ),
+                        const SizedBox(height: 20),
+                      ],
                     ),
-                    onPressed: () => setState(() => _isObscure = !_isObscure),
                   ),
                 ),
-                Padding(
-                  padding: const EdgeInsets.only(top: 8, left: 4),
-                  child: Text(
-                    GameStrings.passwordHint,
-                    style: TextStyle(color: GameColors.textMuted, fontSize: 10),
-                  ),
-                ),
-                const SizedBox(height: 40),
+                const SizedBox(height: 20),
 
                 // Signup Button
                 Consumer<AuthProvider>(
@@ -479,7 +519,7 @@ class _SignupScreenState extends State<SignupScreen> {
                         style: ElevatedButton.styleFrom(
                           backgroundColor: GameColors.accentNeon,
                           foregroundColor: Colors.white,
-                          padding: const EdgeInsets.symmetric(vertical: 15),
+                          padding: const EdgeInsets.symmetric(vertical: 16),
                           shape: RoundedRectangleBorder(
                             borderRadius: BorderRadius.circular(20),
                           ),
@@ -506,7 +546,7 @@ class _SignupScreenState extends State<SignupScreen> {
                     );
                   },
                 ),
-                const SizedBox(height: 20),
+                const SizedBox(height: 24),
               ],
             ),
           ),
@@ -522,7 +562,7 @@ class _SignupScreenState extends State<SignupScreen> {
   /// [suffixIcon]은 입력란 우측에 들어갈 부가적인 아이콘 버튼(예: 패스워드 표시 토글)입니다.
   Widget _buildTextField({
     required TextEditingController controller,
-    required String label,
+    required String hint,
     required IconData icon,
     bool isObscure = false,
     Widget? suffixIcon,
@@ -532,12 +572,13 @@ class _SignupScreenState extends State<SignupScreen> {
       obscureText: isObscure,
       style: GoogleFonts.quicksand(color: GameColors.textPrimary, fontWeight: FontWeight.bold),
       decoration: InputDecoration(
-        labelText: label,
-        labelStyle: GoogleFonts.fredoka(
+        hintText: hint,
+        hintStyle: GoogleFonts.fredoka(
           color: GameColors.textMuted,
-          fontSize: 12,
+          fontSize: 13,
           fontWeight: FontWeight.bold,
         ),
+        contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
         prefixIcon: Icon(icon, color: GameColors.accentNeon, size: 20),
         suffixIcon: suffixIcon,
         border: OutlineInputBorder(

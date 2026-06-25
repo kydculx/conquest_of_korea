@@ -403,6 +403,26 @@ class _GameScreenState extends State<GameScreen> {
     final double topOffset = topPadding > 0 ? topPadding + 12.0 : 24.0;
 
     // 1. SNS 최초 로그인 등 약관 동의 리다이렉트만 최상단에서 감시
+    // 프로필 로딩 중 깜빡임 방지: 로그인되었으나 프로필 정보가 없고 아직 로딩 중인 상태
+    final isAuthPending = context.select<AuthProvider, bool>((auth) =>
+        auth.isAuthenticated && auth.profile == null && (auth.isLoading || auth.isProfileLoading));
+
+    if (isAuthPending) {
+      return Scaffold(
+        backgroundColor: GameColors.tacticalBlack,
+        body: Container(
+          decoration: const BoxDecoration(
+            gradient: GameColors.cozyDarkGradient,
+          ),
+          child: Center(
+            child: CircularProgressIndicator(
+              color: GameColors.accentNeon,
+            ),
+          ),
+        ),
+      );
+    }
+
     // isProfileLoading: 로그인 직후 프로필 로딩 중에는 리다이렉트하지 않음 (깜빡임 방지)
     final isRedirectNeeded = context.select<AuthProvider, bool>((auth) =>
         auth.isAuthenticated && auth.profile == null && !auth.isLoading && !auth.isProfileLoading);

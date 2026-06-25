@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
 import '../../models/achievement_model.dart';
+import '../../core/constants/strings.dart';
 
 /// 업적 해금 시 화면 상단에 표시되는 3D 네온 플로팅 토스트 연출 위젯
 class AchievementToast extends StatefulWidget {
@@ -171,9 +172,9 @@ class _AchievementToastState extends State<AchievementToast>
                 crossAxisAlignment: CrossAxisAlignment.start,
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  const Text(
-                    '🏆 업적 달성',
-                    style: TextStyle(
+                  Text(
+                    GameStrings.achievementUnlocked,
+                    style: const TextStyle(
                       color: Color(0xFF00FFCC), // 네온 민트
                       fontSize: 11,
                       fontWeight: FontWeight.bold,

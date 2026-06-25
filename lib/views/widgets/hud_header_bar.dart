@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:google_fonts/google_fonts.dart';
 import '../../core/constants/colors.dart';
+import '../../core/constants/strings.dart';
 import '../../providers/game_provider.dart';
 
 /// [상단] '솜사탕 올인원' 정보 캡슐 바 (오직 순수 GP 보유량만 극극 미니멀 노출)
@@ -175,7 +176,7 @@ class UtcTimerHeaderBar extends StatelessWidget {
                 ),
                 const SizedBox(width: 6),
                 Text(
-                  '$steps 걸음',
+                  GameStrings.stepsCount(steps),
                   style: GoogleFonts.fredoka(
                     color: GameColors.textPrimary,
                     fontSize: 12.0,

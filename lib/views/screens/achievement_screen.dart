@@ -73,7 +73,7 @@ class _AchievementScreenState extends State<AchievementScreen> {
                     : allAchievements.isEmpty
                         ? Center(
                             child: Text(
-                              '등록된 업적이 없습니다.',
+                              GameStrings.noAchievements,
                               style: TextStyle(
                                 color: GameColors.textSecondary,
                                 fontFamily: 'Fredoka',
@@ -169,7 +169,7 @@ class _AchievementScreenState extends State<AchievementScreen> {
                 ),
                 const SizedBox(height: 6),
                 Text(
-                  '모험을 통해 획득한 나의 성과표',
+                  GameStrings.myAchievementSub,
                   style: TextStyle(
                     color: GameColors.textMuted,
                     fontSize: 11,

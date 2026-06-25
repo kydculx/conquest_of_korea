@@ -1150,6 +1150,21 @@ class GameStrings {
   static String get alphabetPatterns => 'alphabetPatterns'.tr();
   static String get numberPatterns => 'numberPatterns'.tr();
   static String get patternCompletedBadge => 'patternCompletedBadge'.tr();
+  static String get myAchievementSub => 'myAchievementSub'.tr();
+  static String stepsCount(int count) =>
+      'stepsCount'.tr(namedArgs: {'count': count.toString()});
+
+  /// 에러 다이얼로그 타이틀
+  static String get errorTitle => 'errorTitle'.tr();
+
+  /// 업적 달성 토스트 타이틀
+  static String get achievementUnlocked => 'achievementUnlocked'.tr();
+
+  /// 구역 소유 정보 표시 접미사
+  static String get capturedBySuffix => 'capturedBySuffix'.tr();
+
+  /// 등록 업적 없음 메시지
+  static String get noAchievements => 'noAchievements'.tr();
 }
 
 class GameUrls {
