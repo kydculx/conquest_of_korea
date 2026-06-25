@@ -274,6 +274,9 @@ class GameStrings {
   /// 문의하기 안내 문구
   static String get contactSupportSub => 'contactSupportSub'.tr();
 
+  /// 문의 메일 기본 제목
+  static String get supportEmailSubject => 'supportEmailSubject'.tr();
+
   /// 계정 관리 메뉴 타이틀
   static String get accountManagement => 'accountManagement'.tr();
 

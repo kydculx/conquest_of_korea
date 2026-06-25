@@ -581,7 +581,7 @@ class ProfileScreen extends StatelessWidget {
       scheme: 'mailto',
       path: GameUrls.supportEmail,
       query: _encodeQueryParameters(<String, String>{
-        'subject': '[찜! 대모험] 문의 및 피드백',
+        'subject': GameStrings.supportEmailSubject,
         'body': '문의 내용:\n\n\n\n\n\n--------------------\n(상기 라인 위에 문의 내용을 작성해 주세요.)',
       }),
     );
