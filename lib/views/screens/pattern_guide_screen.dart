@@ -11,7 +11,7 @@ import '../widgets/tactical_app_bar.dart';
 /// Flat-top 헥사곤 그리드 상대 좌표를 화면 크기에 맞게 픽셀아트로 시각화해주는 커스텀 페인터
 class HexPatternPainter extends CustomPainter {
   final List<Map<String, int>> tiles;
-  
+
   HexPatternPainter({required this.tiles});
 
   @override
@@ -50,10 +50,13 @@ class HexPatternPainter extends CustomPainter {
     // 단일 헥사곤 반지름 스케일 산출 (좌우 여백 안전을 위해 분모에 2.5 가산)
     final double scaleX = viewWidth / (contentWidth + 2.5);
     final double scaleY = viewHeight / (contentHeight + 2.5);
-    
-    // 타일이 화면 밖으로 나가지 않도록 두 축 중 최소 스케일을 취하고, 
+
+    // 타일이 화면 밖으로 나가지 않도록 두 축 중 최소 스케일을 취하고,
     // 타일이 지나치게 커져서 상하좌우를 넘지 않도록 최대 반지름 18.0으로 제한
-    final double hexRadius = math.min(18.0, math.max(6.0, math.min(scaleX, scaleY)));
+    final double hexRadius = math.min(
+      18.0,
+      math.max(6.0, math.min(scaleX, scaleY)),
+    );
 
     // 4. 실제 칠해진 타일들의 바운딩 박스 중심을 캔버스 중앙에 매칭하여 정중앙 배치
     final double layoutCenterX = (minX + maxX) / 2;
@@ -128,17 +131,62 @@ class PatternGuideScreen extends StatefulWidget {
 }
 
 class _PatternGuideScreenState extends State<PatternGuideScreen> {
-  // 도감 지원 대상 문자 리스트 (A ~ V)
-  final List<String> _alphabetList = [
-    'A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K', 'L', 'M', 'N',
-    'O', 'P', 'Q', 'R', 'S', 'T', 'U', 'V'
+  // 알파벳 패턴 지원 문자 리스트 (A ~ Z)
+  final List<String> _letters = [
+    'A',
+    'B',
+    'C',
+    'D',
+    'E',
+    'F',
+    'G',
+    'H',
+    'I',
+    'J',
+    'K',
+    'L',
+    'M',
+    'N',
+    'O',
+    'P',
+    'Q',
+    'R',
+    'S',
+    'T',
+    'U',
+    'V',
+    'W',
+    'X',
+    'Y',
+    'Z',
   ];
-  
-  // 현재 선택된 문자 인덱스
+
+  // 숫자 패턴 지원 문자 리스트 (0 ~ 9)
+  final List<String> _numbers = [
+    '0',
+    '1',
+    '2',
+    '3',
+    '4',
+    '5',
+    '6',
+    '7',
+    '8',
+    '9',
+  ];
+
+  // 현재 선택된 탭 (0: 알파벳, 1: 숫자)
+  int _currentTab = 0;
+
+  // 현재 선택된 탭 내 문자 인덱스
   int _selectedIndex = 0;
 
+  // 활성 탭에 따른 문자 리스트 게터
+  List<String> get _currentList => _currentTab == 0 ? _letters : _numbers;
+
   // 캐러셀 슬라이더용 컨트롤러
-  final CarouselSliderController _carouselController = CarouselSliderController();
+  final CarouselSliderController _carouselController =
+      CarouselSliderController();
 
   // 상단 칩 리스트 뷰용 스크롤 컨트롤러
   final ScrollController _chipScrollController = ScrollController();
@@ -159,16 +207,20 @@ class _PatternGuideScreenState extends State<PatternGuideScreen> {
     super.dispose();
   }
 
-  /// 모든 지원 대상 알파벳 패턴 데이터를 미리 로딩(Pre-fetch)하여 캐싱
+  /// 모든 지원 대상 패턴 데이터를 미리 로딩(Pre-fetch)하여 캐싱
   Future<void> _preloadAllPatterns() async {
-    final achProvider = Provider.of<AchievementProvider>(context, listen: false);
+    final achProvider = Provider.of<AchievementProvider>(
+      context,
+      listen: false,
+    );
     try {
       Future.microtask(() async {
         final Map<String, List<Map<String, int>>> tempMap = {};
+        final allChars = [..._letters, ..._numbers];
 
-        // A ~ M 패턴 동시 병렬 비동기 조회
+        // 패턴 리스트 동시 병렬 비동기 조회
         await Future.wait(
-          _alphabetList.map((char) async {
+          allChars.map((char) async {
             final tiles = await achProvider.getPatternCoordinates(char);
             tempMap[char] = tiles;
           }),
@@ -201,14 +253,15 @@ class _PatternGuideScreenState extends State<PatternGuideScreen> {
   void _scrollToSelectedChip(int index) {
     if (!mounted) return;
     if (!_chipScrollController.hasClients) return;
-    
+
     // 개별 칩 너비(46) + 좌우 여백 마진 합(12) = 58
-    final double offset = (index * 58.0) - (MediaQuery.of(context).size.width / 2) + 29.0;
+    final double offset =
+        (index * 58.0) - (MediaQuery.of(context).size.width / 2) + 29.0;
     final double clampedOffset = offset.clamp(
       0.0,
       _chipScrollController.position.maxScrollExtent,
     );
-    
+
     _chipScrollController.animateTo(
       clampedOffset,
       duration: const Duration(milliseconds: 250),
@@ -218,6 +271,8 @@ class _PatternGuideScreenState extends State<PatternGuideScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final achProvider = Provider.of<AchievementProvider>(context);
+
     if (_isLoading) {
       return Scaffold(
         appBar: TacticalAppBar(
@@ -243,15 +298,13 @@ class _PatternGuideScreenState extends State<PatternGuideScreen> {
         showBackButton: true,
       ),
       body: Container(
-        decoration: const BoxDecoration(
-          gradient: GameColors.cozyDarkGradient,
-        ),
+        decoration: const BoxDecoration(gradient: GameColors.cozyDarkGradient),
         child: SafeArea(
           child: Column(
             children: [
               // 1. 타이틀 서브 설명 패널
               Padding(
-                padding: const EdgeInsets.fromLTRB(20, 16, 20, 12),
+                padding: const EdgeInsets.fromLTRB(20, 16, 20, 8),
                 child: Text(
                   GameStrings.patternGuideSubtitle,
                   style: TextStyle(
@@ -263,18 +316,66 @@ class _PatternGuideScreenState extends State<PatternGuideScreen> {
                 ),
               ),
 
-              // 2. 가로 스크롤 형태의 알파벳 칩 리스트뷰
+              // 2. 카테고리 전환 탭 (알파벳 / 숫자)
+              Padding(
+                padding: const EdgeInsets.symmetric(vertical: 8),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    _buildTabButton(0, GameStrings.alphabetPatterns),
+                    const SizedBox(width: 16),
+                    _buildTabButton(1, GameStrings.numberPatterns),
+                  ],
+                ),
+              ),
+
+              // 3. 가로 스크롤 형태의 칩 리스트뷰 (현재 리스트 기준)
               Container(
                 height: 54,
-                margin: const EdgeInsets.symmetric(vertical: 8),
+                margin: const EdgeInsets.symmetric(vertical: 4),
                 child: ListView.builder(
+                  key: ValueKey('chip_list_$_currentTab'),
                   controller: _chipScrollController,
                   scrollDirection: Axis.horizontal,
                   padding: const EdgeInsets.symmetric(horizontal: 16),
-                  itemCount: _alphabetList.length,
+                  itemCount: _currentList.length,
                   itemBuilder: (context, index) {
-                    final char = _alphabetList[index];
+                    final char = _currentList[index];
                     final isSelected = index == _selectedIndex;
+                    final isCompleted = achProvider.unlockedAchievementIds
+                        .contains('ACH_PATTERN_$char');
+
+                    Widget chipContent = Text(
+                      char,
+                      style: GoogleFonts.outfit(
+                        color: isSelected
+                            ? GameColors.accentNeon
+                            : (isCompleted
+                                  ? const Color(0xFF00FFCC)
+                                  : GameColors.textSecondary),
+                        fontSize: 18,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    );
+
+                    if (isCompleted) {
+                      chipContent = Stack(
+                        clipBehavior: Clip.none,
+                        children: [
+                          chipContent,
+                          const Positioned(
+                            top: -6,
+                            right: -10,
+                            child: Icon(
+                              Icons.check_circle,
+                              size: 11,
+                              color: Color(0xFF00FFCC),
+                            ),
+                          ),
+                        ],
+                      );
+                    }
+
                     return GestureDetector(
                       onTap: () {
                         setState(() {
@@ -292,47 +393,54 @@ class _PatternGuideScreenState extends State<PatternGuideScreen> {
                         curve: Curves.easeInOut,
                         width: 46,
                         alignment: Alignment.center,
-                        margin: const EdgeInsets.symmetric(horizontal: 6, vertical: 4),
+                        margin: const EdgeInsets.symmetric(
+                          horizontal: 6,
+                          vertical: 4,
+                        ),
                         decoration: BoxDecoration(
-                          color: isSelected 
+                          color: isSelected
                               ? GameColors.accentNeon.withValues(alpha: 0.15)
-                              : GameColors.backgroundMedium.withValues(alpha: 0.4),
+                              : GameColors.backgroundMedium.withValues(
+                                  alpha: 0.4,
+                                ),
                           borderRadius: BorderRadius.circular(14),
                           border: Border.all(
-                            color: isSelected ? GameColors.accentNeon : GameColors.borderLight,
+                            color: isSelected
+                                ? GameColors.accentNeon
+                                : (isCompleted
+                                      ? const Color(
+                                          0xFF00FFCC,
+                                        ).withValues(alpha: 0.6)
+                                      : GameColors.borderLight),
                             width: isSelected ? 1.5 : 1.0,
                           ),
                           boxShadow: isSelected
                               ? [
                                   BoxShadow(
-                                    color: GameColors.accentNeon.withValues(alpha: 0.15),
+                                    color: GameColors.accentNeon.withValues(
+                                      alpha: 0.15,
+                                    ),
                                     blurRadius: 8,
                                     spreadRadius: 1,
-                                  )
+                                  ),
                                 ]
                               : null,
                         ),
-                        child: Text(
-                          char,
-                          style: GoogleFonts.outfit(
-                            color: isSelected ? GameColors.accentNeon : GameColors.textSecondary,
-                            fontSize: 18,
-                            fontWeight: FontWeight.bold,
-                          ),
-                        ),
+                        child: chipContent,
                       ),
                     );
                   },
                 ),
               ),
 
-              const SizedBox(height: 16),
+              const SizedBox(height: 8),
 
-              // 3. 메인 캐러셀 슬라이더 영역
+              // 4. 메인 캐러셀 슬라이더 영역 (현재 리스트 기준)
               Expanded(
                 child: CarouselSlider.builder(
+                  key: ValueKey('carousel_$_currentTab'),
                   carouselController: _carouselController,
-                  itemCount: _alphabetList.length,
+                  itemCount: _currentList.length,
                   options: CarouselOptions(
                     height: double.infinity,
                     viewportFraction: 0.82,
@@ -348,38 +456,86 @@ class _PatternGuideScreenState extends State<PatternGuideScreen> {
                     },
                   ),
                   itemBuilder: (context, index, realIndex) {
-                    final char = _alphabetList[index];
+                    final char = _currentList[index];
                     final tiles = _patternTilesMap[char] ?? [];
+                    final isCompleted = achProvider.unlockedAchievementIds
+                        .contains('ACH_PATTERN_$char');
 
                     return Container(
-                      margin: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                      margin: const EdgeInsets.symmetric(
+                        horizontal: 8,
+                        vertical: 4,
+                      ),
                       padding: const EdgeInsets.all(20),
                       decoration: BoxDecoration(
                         color: const Color(0xFF0F1626).withValues(alpha: 0.8),
                         borderRadius: BorderRadius.circular(24),
                         border: Border.all(
-                          color: GameColors.borderNeon,
-                          width: 1.0,
+                          color: isCompleted
+                              ? const Color(0xFF00FFCC).withValues(alpha: 0.5)
+                              : GameColors.borderNeon,
+                          width: isCompleted ? 1.5 : 1.0,
                         ),
                         boxShadow: [
                           BoxShadow(
-                            color: GameColors.accentNeon.withValues(alpha: 0.04),
+                            color: isCompleted
+                                ? const Color(
+                                    0xFF00FFCC,
+                                  ).withValues(alpha: 0.08)
+                                : GameColors.accentNeon.withValues(alpha: 0.04),
                             blurRadius: 16,
                             spreadRadius: 2,
-                          )
+                          ),
                         ],
                       ),
                       child: Column(
                         children: [
                           // 헥사곤 페인팅 캔버스
                           Expanded(
-                            child: LayoutBuilder(
-                              builder: (context, constraints) {
-                                return CustomPaint(
-                                  size: Size(constraints.maxWidth, constraints.maxHeight),
-                                  painter: HexPatternPainter(tiles: tiles),
-                                );
-                              },
+                            child: Stack(
+                              alignment: Alignment.topRight,
+                              children: [
+                                LayoutBuilder(
+                                  builder: (context, constraints) {
+                                    return CustomPaint(
+                                      size: Size(
+                                        constraints.maxWidth,
+                                        constraints.maxHeight,
+                                      ),
+                                      painter: HexPatternPainter(tiles: tiles),
+                                    );
+                                  },
+                                ),
+                                if (isCompleted)
+                                  Positioned(
+                                    top: 0,
+                                    right: 0,
+                                    child: Container(
+                                      padding: const EdgeInsets.symmetric(
+                                        horizontal: 10,
+                                        vertical: 4,
+                                      ),
+                                      decoration: BoxDecoration(
+                                        color: const Color(
+                                          0xFF00FFCC,
+                                        ).withValues(alpha: 0.15),
+                                        borderRadius: BorderRadius.circular(12),
+                                        border: Border.all(
+                                          color: const Color(0xFF00FFCC),
+                                          width: 1.0,
+                                        ),
+                                      ),
+                                      child: Text(
+                                        GameStrings.patternCompletedBadge,
+                                        style: GoogleFonts.outfit(
+                                          color: const Color(0xFF00FFCC),
+                                          fontSize: 12,
+                                          fontWeight: FontWeight.bold,
+                                        ),
+                                      ),
+                                    ),
+                                  ),
+                              ],
                             ),
                           ),
                           const SizedBox(height: 12),
@@ -401,6 +557,57 @@ class _PatternGuideScreenState extends State<PatternGuideScreen> {
 
               const SizedBox(height: 24),
             ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  // 탭바 버튼 생성 헬퍼
+  Widget _buildTabButton(int index, String label) {
+    final isSelected = _currentTab == index;
+    return GestureDetector(
+      onTap: () {
+        if (_currentTab != index) {
+          setState(() {
+            _currentTab = index;
+            _selectedIndex = 0;
+          });
+          _carouselController.jumpToPage(0);
+          _scrollToSelectedChip(0);
+        }
+      },
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 200),
+        curve: Curves.easeInOut,
+        padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 10),
+        decoration: BoxDecoration(
+          color: isSelected
+              ? GameColors.accentNeon.withValues(alpha: 0.15)
+              : GameColors.backgroundMedium.withValues(alpha: 0.2),
+          borderRadius: BorderRadius.circular(20),
+          border: Border.all(
+            color: isSelected ? GameColors.accentNeon : GameColors.borderLight,
+            width: 1.5,
+          ),
+          boxShadow: isSelected
+              ? [
+                  BoxShadow(
+                    color: GameColors.accentNeon.withValues(alpha: 0.15),
+                    blurRadius: 8,
+                    spreadRadius: 1,
+                  ),
+                ]
+              : null,
+        ),
+        child: Text(
+          label,
+          style: GoogleFonts.outfit(
+            color: isSelected
+                ? GameColors.accentNeon
+                : GameColors.textSecondary,
+            fontSize: 14,
+            fontWeight: FontWeight.bold,
           ),
         ),
       ),

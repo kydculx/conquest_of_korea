@@ -339,8 +339,10 @@ class GameStrings {
 
   /// 랭킹별 설명 글 게터
   static String get rankingDescCapturedTiles => 'rankingDescCapturedTiles'.tr();
-  static String get rankingDescDailyMovedTiles => 'rankingDescDailyMovedTiles'.tr();
-  static String get rankingDescTotalMovedTiles => 'rankingDescTotalMovedTiles'.tr();
+  static String get rankingDescDailyMovedTiles =>
+      'rankingDescDailyMovedTiles'.tr();
+  static String get rankingDescTotalMovedTiles =>
+      'rankingDescTotalMovedTiles'.tr();
 
   /// 타일 단위 매핑 함수
   static String tileUnit(int count) =>
@@ -738,11 +740,7 @@ class GameStrings {
   static String get agreeMarketingBottomSheetTitle =>
       'agreeMarketingBottomSheetTitle'.tr();
 
-  /// 서비스 이용약관 상세 본문 문구
-  static String get agreeTermsDetail => 'agreeTermsDetail'.tr();
 
-  /// 개인정보 처리방침 상세 본문 문구
-  static String get agreePrivacyDetail => 'agreePrivacyDetail'.tr();
 
   /// 위치 정보 서비스 약관 상세 본문 문구
   static String get agreeLocationDetail => 'agreeLocationDetail'.tr();
@@ -1145,6 +1143,9 @@ class GameStrings {
   static String get patternGuideSubtitle => 'patternGuideSubtitle'.tr();
   static String requiredTilesCount(int count) =>
       'requiredTilesCount'.tr(namedArgs: {'count': count.toString()});
+  static String get alphabetPatterns => 'alphabetPatterns'.tr();
+  static String get numberPatterns => 'numberPatterns'.tr();
+  static String get patternCompletedBadge => 'patternCompletedBadge'.tr();
 }
 
 class GameUrls {

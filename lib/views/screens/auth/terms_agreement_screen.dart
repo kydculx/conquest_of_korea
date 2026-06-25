@@ -189,9 +189,7 @@ class _TermsAgreementScreenState extends State<TermsAgreementScreen> {
       ),
       extendBodyBehindAppBar: true,
       body: Container(
-        decoration: const BoxDecoration(
-          gradient: GameColors.cozyDarkGradient,
-        ),
+        decoration: const BoxDecoration(gradient: GameColors.cozyDarkGradient),
         child: SafeArea(
           child: Padding(
             padding: const EdgeInsets.symmetric(horizontal: 24),
@@ -324,9 +322,8 @@ class _TermsAgreementScreenState extends State<TermsAgreementScreen> {
                     style: ElevatedButton.styleFrom(
                       backgroundColor: GameColors.accentNeon,
                       foregroundColor: Colors.white,
-                      disabledBackgroundColor: GameColors.tacticalGray.withValues(
-                        alpha: 0.3,
-                      ),
+                      disabledBackgroundColor: GameColors.tacticalGray
+                          .withValues(alpha: 0.3),
                       disabledForegroundColor: GameColors.textMuted,
                       padding: const EdgeInsets.symmetric(vertical: 16),
                       shape: RoundedRectangleBorder(

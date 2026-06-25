@@ -133,7 +133,11 @@ class SecurityPolicyScreen extends StatelessWidget {
   }
 
   /// 상세 약관 전문을 보여주는 모달 바텀시트를 Cozy Midnight 디자인 톤에 맞춰 호출합니다.
-  void _showDetailBottomSheet(BuildContext context, String title, String detailText) {
+  void _showDetailBottomSheet(
+    BuildContext context,
+    String title,
+    String detailText,
+  ) {
     showModalBottomSheet(
       context: context,
       backgroundColor: GameColors.backgroundMedium,
