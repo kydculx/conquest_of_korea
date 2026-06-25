@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
 import 'package:google_fonts/google_fonts.dart';
 import '../../../core/constants/colors.dart';
@@ -68,6 +69,14 @@ class _SocialProfileSetupScreenState extends State<SocialProfileSetupScreen> {
       );
       return;
     }
+    if (nickname.contains(' ')) {
+      ToastHelper.show(
+        context: context,
+        message: GameStrings.errorNicknameContainsSpace,
+        isSuccess: false,
+      );
+      return;
+    }
 
     setState(() => _isChecking = true);
 
@@ -109,6 +118,14 @@ class _SocialProfileSetupScreenState extends State<SocialProfileSetupScreen> {
       ToastHelper.show(
         context: context,
         message: GameStrings.enterNickname,
+        isSuccess: false,
+      );
+      return;
+    }
+    if (nickname.contains(' ')) {
+      ToastHelper.show(
+        context: context,
+        message: GameStrings.errorNicknameContainsSpace,
         isSuccess: false,
       );
       return;
@@ -251,6 +268,9 @@ class _SocialProfileSetupScreenState extends State<SocialProfileSetupScreen> {
                               Expanded(
                                 child: TextField(
                                   controller: _nicknameController,
+                                  inputFormatters: [
+                                    FilteringTextInputFormatter.deny(RegExp(r'\s')),
+                                  ],
                                   style: GoogleFonts.quicksand(color: GameColors.textPrimary, fontWeight: FontWeight.bold),
                                   decoration: InputDecoration(
                                     hintText: GameStrings.enterNickname,

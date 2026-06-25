@@ -52,6 +52,7 @@
   "errorKakaoConfig": "Kakao login configuration error occurred.",
   "errorNicknameExists": "This nickname is already in use.",
   "errorNicknameCheckRequired": "Please check nickname availability.",
+  "errorNicknameContainsSpace": "Nickname cannot contain spaces.",
   "errorEmailCheckRequired": "Please verify your email first.",
   "signupPending": "Sign Up Pending",
   "signupCompleteMessage": "Registration request completed.\nPlease click the verification link sent to your email to activate your account.",

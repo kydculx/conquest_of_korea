@@ -162,6 +162,9 @@ class GameStrings {
   static String get errorNicknameCheckRequired =>
       'errorNicknameCheckRequired'.tr();
 
+  /// 닉네임 공백 포함 불가 메시지
+  static String get errorNicknameContainsSpace => 'errorNicknameContainsSpace'.tr();
+
   /// 이메일 중복 체크 필수 안내 메시지
   static String get errorEmailCheckRequired => 'errorEmailCheckRequired'.tr();
 

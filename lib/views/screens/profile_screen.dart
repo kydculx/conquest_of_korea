@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:package_info_plus/package_info_plus.dart';
@@ -670,6 +671,10 @@ class ProfileScreen extends StatelessWidget {
                 ToastHelper.show(context: context, message: GameStrings.enterNickname, isSuccess: false);
                 return;
               }
+              if (newNickname.contains(' ')) {
+                ToastHelper.show(context: context, message: GameStrings.errorNicknameContainsSpace, isSuccess: false);
+                return;
+              }
               if (newNickname == currentNickname) {
                 ToastHelper.show(context: context, message: GameStrings.nicknameChangeSame, isSuccess: false);
                 return;
@@ -699,6 +704,10 @@ class ProfileScreen extends StatelessWidget {
 
             Future<void> handleSave() async {
               final newNickname = nicknameController.text.trim();
+              if (newNickname.contains(' ')) {
+                ToastHelper.show(context: context, message: GameStrings.errorNicknameContainsSpace, isSuccess: false);
+                return;
+              }
               if (newNickname == currentNickname) {
                 Navigator.pop(context);
                 return;
@@ -769,6 +778,9 @@ class ProfileScreen extends StatelessWidget {
                     TextFormField(
                       controller: nicknameController,
                       style: GoogleFonts.quicksand(color: GameColors.textPrimary, fontWeight: FontWeight.bold),
+                      inputFormatters: [
+                        FilteringTextInputFormatter.deny(RegExp(r'\s')),
+                      ],
                       buildCounter: (context, {required currentLength, required isFocused, maxLength}) => null,
                       decoration: InputDecoration(
                         hintText: GameStrings.enterNickname,

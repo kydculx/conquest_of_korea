@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
 import 'package:google_fonts/google_fonts.dart';
 import '../../../core/constants/colors.dart';
@@ -147,6 +148,14 @@ class _SignupScreenState extends State<SignupScreen> {
       );
       return;
     }
+    if (nickname.contains(' ')) {
+      ToastHelper.show(
+        context: context,
+        message: GameStrings.errorNicknameContainsSpace,
+        isSuccess: false,
+      );
+      return;
+    }
 
     setState(() => _isCheckingNickname = true);
 
@@ -184,10 +193,19 @@ class _SignupScreenState extends State<SignupScreen> {
       return;
     }
 
-    if (_nicknameController.text.isEmpty) {
+    final nickname = _nicknameController.text.trim();
+    if (nickname.isEmpty) {
       ToastHelper.show(
         context: context,
         message: GameStrings.enterNickname,
+        isSuccess: false,
+      );
+      return;
+    }
+    if (nickname.contains(' ')) {
+      ToastHelper.show(
+        context: context,
+        message: GameStrings.errorNicknameContainsSpace,
         isSuccess: false,
       );
       return;
@@ -337,6 +355,9 @@ class _SignupScreenState extends State<SignupScreen> {
                                 controller: _nicknameController,
                                 hint: GameStrings.enterNickname,
                                 icon: Icons.person_outline,
+                                inputFormatters: [
+                                  FilteringTextInputFormatter.deny(RegExp(r'\s')),
+                                ],
                               ),
                             ),
                             const SizedBox(width: 10),
@@ -566,10 +587,12 @@ class _SignupScreenState extends State<SignupScreen> {
     required IconData icon,
     bool isObscure = false,
     Widget? suffixIcon,
+    List<TextInputFormatter>? inputFormatters,
   }) {
     return TextField(
       controller: controller,
       obscureText: isObscure,
+      inputFormatters: inputFormatters,
       style: GoogleFonts.quicksand(color: GameColors.textPrimary, fontWeight: FontWeight.bold),
       decoration: InputDecoration(
         hintText: hint,
