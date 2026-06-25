@@ -740,7 +740,11 @@ class GameStrings {
   static String get agreeMarketingBottomSheetTitle =>
       'agreeMarketingBottomSheetTitle'.tr();
 
+  /// 서비스 이용약관 상세 본문 문구
+  static String get agreeTermsDetail => 'agreeTermsDetail'.tr();
 
+  /// 개인정보 처리방침 상세 본문 문구
+  static String get agreePrivacyDetail => 'agreePrivacyDetail'.tr();
 
   /// 위치 정보 서비스 약관 상세 본문 문구
   static String get agreeLocationDetail => 'agreeLocationDetail'.tr();
