@@ -455,7 +455,16 @@ class _GameScreenState extends State<GameScreen> {
           GameMapWidget(initialLocation: initialLocation, game: flameGame),
 
           // HUD 레이어 (내부에 Selector 처리를 장착하여 독립 렌더링)
-          const HudOverlay(),
+          HudOverlay(
+            onProfileClosed: () async {
+              final hasSeen = await PreferencesService.hasSeenOnboarding();
+              if (!hasSeen && mounted) {
+                setState(() {
+                  _showOnboarding = true;
+                });
+              }
+            },
+          ),
 
           // 알림 레이어 (알림 리스트 변동 시에만 국한 리빌드)
           Positioned(

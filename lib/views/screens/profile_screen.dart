@@ -10,6 +10,7 @@ import '../../providers/auth_provider.dart';
 import '../../providers/game_provider.dart';
 import '../../providers/location_provider.dart';
 import '../../services/hex_service.dart';
+import '../../services/preferences_service.dart';
 import '../widgets/tactical_app_bar.dart';
 import '../widgets/tactical_dialog.dart';
 import '../widgets/profile_widgets.dart';
@@ -200,6 +201,20 @@ class ProfileScreen extends StatelessWidget {
                   ),
                   const ProfileMenuDivider(),
                 ],
+
+                // 가이드 다시보기
+                ProfileMenuItem(
+                  icon: Icons.help_outline_rounded,
+                  title: GameStrings.tutorialReplayTitle,
+                  subtitle: GameStrings.tutorialReplaySubtitle,
+                  onTap: () async {
+                    await PreferencesService.setSeenOnboarding(false);
+                    if (context.mounted) {
+                      Navigator.of(context).pop(true);
+                    }
+                  },
+                ),
+                const ProfileMenuDivider(),
 
                 // 언어 설정
                 ProfileMenuItem(

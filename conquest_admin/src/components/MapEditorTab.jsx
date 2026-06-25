@@ -468,7 +468,7 @@ export default function MapEditorTab() {
   };
 
   return (
-    <div style={{ display: 'grid', gridTemplateColumns: '340px 1fr', gap: '1.5rem' }}>
+    <div className="editor-layout">
       
       {/* 1. 에디터 제어 및 설정 사이드 패널 */}
       <div style={{ display: 'flex', flexDirection: 'column', gap: '1.2rem' }}>
@@ -692,11 +692,11 @@ export default function MapEditorTab() {
 
       {/* 2. 메인 지도 캔버스 영역 */}
       <div className="tactical-card map-card" style={{ padding: 0, overflow: 'hidden', flex: 1 }}>
-        <div className="map-wrapper" style={{ height: '100%', minHeight: '680px' }}>
+        <div className="map-wrapper" style={{ height: '100%' }}>
           <div 
             ref={mapRef} 
             className="map-element" 
-            style={{ height: '100%', minHeight: '680px', border: 'none', borderRadius: 'var(--glow-radius)' }} 
+            style={{ height: '100%', border: 'none', borderRadius: 'var(--glow-radius)' }} 
           />
         </div>
       </div>

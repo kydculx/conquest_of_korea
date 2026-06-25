@@ -6,6 +6,7 @@ import '../../core/constants/strings.dart';
 /// 최초 로그인 시 사용되는 인게임 HUD UI 안내 온보딩 단계들 (화면 위에서 아래 방향의 논리적 순서)
 enum OnboardingStep {
   welcome,
+  myLocation,
   goldBar,
   timerBar,
   stepsBar,
@@ -16,6 +17,7 @@ enum OnboardingStep {
   mapFollowBtn,
   patternToggleBtn,
   mapStyleBtn,
+  remoteInfo,
   complete
 }
 
@@ -59,6 +61,10 @@ class _OnboardingOverlayState extends State<OnboardingOverlay> {
         title: GameStrings.onboardingWelcomeTitle,
         description: GameStrings.onboardingWelcomeDesc,
       ),
+      OnboardingStep.myLocation: _StepContent(
+        title: GameStrings.onboardingMyLocationTitle,
+        description: GameStrings.onboardingMyLocationDesc,
+      ),
       OnboardingStep.goldBar: _StepContent(
         title: GameStrings.onboardingGoldTitle,
         description: GameStrings.onboardingGoldDesc,
@@ -99,6 +105,10 @@ class _OnboardingOverlayState extends State<OnboardingOverlay> {
         title: GameStrings.onboardingMapStyleTitle,
         description: GameStrings.onboardingMapStyleDesc,
       ),
+      OnboardingStep.remoteInfo: _StepContent(
+        title: GameStrings.onboardingRemoteTitle,
+        description: GameStrings.onboardingRemoteDesc,
+      ),
       OnboardingStep.complete: _StepContent(
         title: GameStrings.onboardingCompleteTitle,
         description: GameStrings.onboardingCompleteDesc,
@@ -130,9 +140,20 @@ class _OnboardingOverlayState extends State<OnboardingOverlay> {
     // 1. 단계별 targetRect 및 안내 팝업 배치 고정 좌표 연산
     switch (_currentStep) {
       case OnboardingStep.welcome:
+      case OnboardingStep.remoteInfo:
       case OnboardingStep.complete:
         // 화면 정중앙에 배치
         cardTop = (size.height - 200) / 2;
+        break;
+
+      case OnboardingStep.myLocation:
+        // 화면 정중앙의 내 위치 표시 화살표 마커를 하이라이트
+        targetRect = Rect.fromCircle(center: Offset(size.width / 2, size.height / 2), radius: 36.0);
+        cardTop = size.height - baseBottomMargin - 240.0;
+
+        lineStart = Offset(targetRect.left + targetRect.width / 2, targetRect.bottom + 4.0);
+        lineEnd = Offset(lineStart.dx.clamp(40.0, size.width - 40.0), cardTop - 2.0);
+        lineControl = Offset(lineStart.dx, lineEnd.dy - 30.0);
         break;
 
       case OnboardingStep.goldBar:
@@ -248,124 +269,118 @@ class _OnboardingOverlayState extends State<OnboardingOverlay> {
           top: cardTop,
           left: cardLeft,
           width: cardWidth,
-          child: AnimatedSwitcher(
-            duration: const Duration(milliseconds: 250),
-            transitionBuilder: (child, animation) {
-              return FadeTransition(
-                opacity: animation,
-                child: ScaleTransition(
-                  scale: Tween<double>(begin: 0.96, end: 1.0).animate(animation),
-                  child: child,
+          child: Container(
+            key: ValueKey(_currentStep),
+            padding: const EdgeInsets.all(22),
+            decoration: ShapeDecoration(
+              color: GameColors.backgroundMedium.withValues(alpha: 0.92),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(20),
+                side: BorderSide(
+                  color: GameColors.accentNeon.withValues(alpha: 0.4),
+                  width: 1.2,
                 ),
-              );
-            },
-            child: Container(
-              key: ValueKey(_currentStep),
-              padding: const EdgeInsets.all(22),
-              decoration: ShapeDecoration(
-                color: GameColors.backgroundMedium.withValues(alpha: 0.92),
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(20),
-                  side: BorderSide(
-                    color: GameColors.accentNeon.withValues(alpha: 0.4),
-                    width: 1.2,
-                  ),
-                ),
-                shadows: [
-                  BoxShadow(
-                    color: Colors.black.withValues(alpha: 0.4),
-                    blurRadius: 20,
-                    spreadRadius: 2,
-                    offset: const Offset(0, 10),
-                  ),
-                ],
               ),
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                crossAxisAlignment: _currentStep == OnboardingStep.welcome || _currentStep == OnboardingStep.complete
-                    ? CrossAxisAlignment.center
-                    : CrossAxisAlignment.start,
-                children: [
-                  // 타이틀
-                  Text(
-                    currentContent.title,
-                    style: GoogleFonts.fredoka(
-                      color: GameColors.accentNeon,
-                      fontSize: 17,
-                      fontWeight: FontWeight.bold,
-                      letterSpacing: 0.5,
-                    ),
-                    textAlign: _currentStep == OnboardingStep.welcome || _currentStep == OnboardingStep.complete
-                        ? TextAlign.center
-                        : TextAlign.start,
+              shadows: [
+                BoxShadow(
+                  color: Colors.black.withValues(alpha: 0.4),
+                  blurRadius: 20,
+                  spreadRadius: 2,
+                  offset: const Offset(0, 10),
+                ),
+              ],
+            ),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: _currentStep == OnboardingStep.welcome ||
+                      _currentStep == OnboardingStep.remoteInfo ||
+                      _currentStep == OnboardingStep.complete
+                  ? CrossAxisAlignment.center
+                  : CrossAxisAlignment.start,
+              children: [
+                // 타이틀
+                Text(
+                  currentContent.title,
+                  style: GoogleFonts.fredoka(
+                    color: GameColors.accentNeon,
+                    fontSize: 17,
+                    fontWeight: FontWeight.bold,
+                    letterSpacing: 0.5,
                   ),
-                  const SizedBox(height: 12),
-                  // 상세 설명
-                  Text(
-                    currentContent.description,
-                    style: GoogleFonts.quicksand(
-                      color: GameColors.textSecondary,
-                      fontSize: 13,
-                      height: 1.5,
-                      fontWeight: FontWeight.bold,
-                    ),
-                    textAlign: _currentStep == OnboardingStep.welcome || _currentStep == OnboardingStep.complete
-                        ? TextAlign.center
-                        : TextAlign.start,
-                  ),
-                  const SizedBox(height: 22),
-                  // 버튼 조작계
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      // 이전 단계 버튼 (웰컴일 땐 미표시)
-                      _currentStep != OnboardingStep.welcome
-                          ? OutlinedButton(
-                              onPressed: _prevStep,
-                              style: OutlinedButton.styleFrom(
-                                side: BorderSide(color: GameColors.dividerColor.withValues(alpha: 0.3)),
-                                padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
-                                shape: RoundedRectangleBorder(
-                                  borderRadius: BorderRadius.circular(14),
-                                ),
-                              ),
-                              child: Text(
-                                GameStrings.onboardingPrev,
-                                style: GoogleFonts.fredoka(
-                                  color: GameColors.textMuted,
-                                  fontSize: 13,
-                                  fontWeight: FontWeight.bold,
-                                ),
-                              ),
-                            )
-                          : const SizedBox.shrink(),
-
-                      // 다음 / 완료 버튼
-                      ElevatedButton(
-                        onPressed: _nextStep,
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: GameColors.accentNeon,
-                          foregroundColor: GameColors.tacticalBlack,
-                          padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(14),
-                          ),
-                          elevation: 0,
-                        ),
-                        child: Text(
+                  textAlign: _currentStep == OnboardingStep.welcome ||
+                          _currentStep == OnboardingStep.remoteInfo ||
                           _currentStep == OnboardingStep.complete
-                              ? GameStrings.onboardingStart
-                              : GameStrings.onboardingNext,
-                          style: GoogleFonts.fredoka(
-                            fontSize: 13,
-                            fontWeight: FontWeight.w900,
-                          ),
+                      ? TextAlign.center
+                      : TextAlign.start,
+                ),
+                const SizedBox(height: 12),
+                // 상세 설명
+                Text(
+                  currentContent.description,
+                  style: GoogleFonts.quicksand(
+                    color: GameColors.textSecondary,
+                    fontSize: 13,
+                    height: 1.5,
+                    fontWeight: FontWeight.bold,
+                  ),
+                  textAlign: _currentStep == OnboardingStep.welcome ||
+                          _currentStep == OnboardingStep.remoteInfo ||
+                          _currentStep == OnboardingStep.complete
+                      ? TextAlign.center
+                      : TextAlign.start,
+                ),
+                const SizedBox(height: 22),
+                // 버튼 조작계
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    // 이전 단계 버튼 (웰컴일 땐 미표시)
+                    _currentStep != OnboardingStep.welcome
+                        ? OutlinedButton(
+                            onPressed: _prevStep,
+                            style: OutlinedButton.styleFrom(
+                              side: BorderSide(color: GameColors.dividerColor.withValues(alpha: 0.3)),
+                              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(14),
+                              ),
+                            ),
+                            child: Text(
+                              GameStrings.onboardingPrev,
+                              style: GoogleFonts.fredoka(
+                                color: GameColors.textMuted,
+                                fontSize: 13,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                          )
+                        : const SizedBox.shrink(),
+
+                    // 다음 / 완료 버튼
+                    ElevatedButton(
+                      onPressed: _nextStep,
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: GameColors.accentNeon,
+                        foregroundColor: GameColors.tacticalBlack,
+                        padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(14),
+                        ),
+                        elevation: 0,
+                      ),
+                      child: Text(
+                        _currentStep == OnboardingStep.complete
+                            ? GameStrings.onboardingStart
+                            : GameStrings.onboardingNext,
+                        style: GoogleFonts.fredoka(
+                          fontSize: 13,
+                          fontWeight: FontWeight.w900,
                         ),
                       ),
-                    ],
-                  ),
-                ],
-              ),
+                    ),
+                  ],
+                ),
+              ],
             ),
           ),
         ),
@@ -397,18 +412,27 @@ class OnboardingOverlayPainter extends CustomPainter {
     final backgroundPath = Path()..addRect(Rect.fromLTWH(0, 0, size.width, size.height));
 
     Path targetPath = Path();
-    if (step != OnboardingStep.welcome && step != OnboardingStep.complete) {
-      // 타겟 영역 주위로 약간의 패딩(inflate)을 추가하고 둥근 헥사/박스형 하이라이팅 구멍 생성
-      targetPath.addRRect(
-        RRect.fromRectAndRadius(targetRect.inflate(6.0), const Radius.circular(14)),
-      );
+    if (step != OnboardingStep.welcome &&
+        step != OnboardingStep.remoteInfo &&
+        step != OnboardingStep.complete) {
+      if (step == OnboardingStep.myLocation) {
+        // 원형 하이라이팅
+        targetPath.addOval(targetRect.inflate(6.0));
+      } else {
+        // 타겟 영역 주위로 약간의 패딩(inflate)을 추가하고 둥근 헥사/박스형 하이라이팅 구멍 생성
+        targetPath.addRRect(
+          RRect.fromRectAndRadius(targetRect.inflate(6.0), const Radius.circular(14)),
+        );
+      }
     }
 
     final finalPath = Path.combine(PathOperation.difference, backgroundPath, targetPath);
     canvas.drawPath(finalPath, backgroundPaint);
 
     // 2. 가이딩 꺾은선 (지시선) 및 시작점 도트(Dot) 그리기
-    if (step != OnboardingStep.welcome && step != OnboardingStep.complete) {
+    if (step != OnboardingStep.welcome &&
+        step != OnboardingStep.remoteInfo &&
+        step != OnboardingStep.complete) {
       final linePaint = Paint()
         ..color = GameColors.accentNeon // 네온 민트/네온 시안
         ..style = PaintingStyle.stroke

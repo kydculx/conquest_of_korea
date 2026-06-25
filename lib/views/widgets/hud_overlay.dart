@@ -15,7 +15,12 @@ import 'tactical_press_button.dart';
 
 /// 인게임 HUD 오버레이 (점수판, 점령 버튼, 유틸리티 버튼, 위성 스캔 연동)
 class HudOverlay extends StatelessWidget {
-  const HudOverlay({super.key});
+  final VoidCallback? onProfileClosed;
+
+  const HudOverlay({
+    this.onProfileClosed,
+    super.key,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -79,7 +84,10 @@ class HudOverlay extends StatelessWidget {
         Positioned(
           top: topOffset,
           right: 20.0,
-          child: ProfileFloatingButton(auth: auth),
+          child: ProfileFloatingButton(
+            auth: auth,
+            onProfileClosed: onProfileClosed,
+          ),
         ),
 
         // [하단 좌측] 독립 배치된 내 위치 / 맵 회전 토글 버튼 (42x42)

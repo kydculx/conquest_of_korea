@@ -6,8 +6,13 @@ import 'tactical_press_button.dart';
 /// [신규] 상단 우측에 단독 배치되는 3D 보석 젤리 스타일의 프로필 아바타 단추
 class ProfileFloatingButton extends StatelessWidget {
   final AuthProvider auth;
+  final VoidCallback? onProfileClosed;
 
-  const ProfileFloatingButton({required this.auth, super.key});
+  const ProfileFloatingButton({
+    required this.auth,
+    this.onProfileClosed,
+    super.key,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -24,9 +29,12 @@ class ProfileFloatingButton extends StatelessWidget {
 
     return TacticalPressButton(
       size: 44,
-      onTap: () {
+      onTap: () async {
         if (isAuth) {
-          Navigator.pushNamed(context, AppRoutes.profile);
+          final result = await Navigator.pushNamed(context, AppRoutes.profile);
+          if (result == true) {
+            onProfileClosed?.call();
+          }
         } else {
           Navigator.pushNamed(context, AppRoutes.login);
         }

@@ -153,8 +153,8 @@ class PreferencesService {
     return prefs.getBool(_hasSeenOnboardingKey) ?? false;
   }
 
-  static Future<void> setSeenOnboarding() async {
+  static Future<void> setSeenOnboarding([bool v = true]) async {
     final prefs = await SharedPreferences.getInstance();
-    await prefs.setBool(_hasSeenOnboardingKey, true);
+    await prefs.setBool(_hasSeenOnboardingKey, v);
   }
 }

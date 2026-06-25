@@ -1194,6 +1194,12 @@ class GameStrings {
   static String get onboardingAchievementDesc => 'onboardingAchievementDesc'.tr();
   static String get onboardingPatternToggleTitle => 'onboardingPatternToggleTitle'.tr();
   static String get onboardingPatternToggleDesc => 'onboardingPatternToggleDesc'.tr();
+  static String get onboardingMyLocationTitle => 'onboardingMyLocationTitle'.tr();
+  static String get onboardingMyLocationDesc => 'onboardingMyLocationDesc'.tr();
+  static String get onboardingRemoteTitle => 'onboardingRemoteTitle'.tr();
+  static String get onboardingRemoteDesc => 'onboardingRemoteDesc'.tr();
+  static String get tutorialReplayTitle => 'tutorialReplayTitle'.tr();
+  static String get tutorialReplaySubtitle => 'tutorialReplaySubtitle'.tr();
 }
 
 class GameUrls {
