@@ -144,4 +144,17 @@ class PreferencesService {
     final prefs = await SharedPreferences.getInstance();
     await prefs.setString(_lastCoinGeneratedDateKey, v);
   }
+
+  // --- 최초 로그인 온보딩 튜토리얼 노출 플래그 ---
+  static const _hasSeenOnboardingKey = 'conquest_has_seen_onboarding';
+
+  static Future<bool> hasSeenOnboarding() async {
+    final prefs = await SharedPreferences.getInstance();
+    return prefs.getBool(_hasSeenOnboardingKey) ?? false;
+  }
+
+  static Future<void> setSeenOnboarding() async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setBool(_hasSeenOnboardingKey, true);
+  }
 }

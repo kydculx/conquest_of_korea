@@ -24,6 +24,7 @@ import '../widgets/loading_overlay.dart';
 import '../widgets/tactical_dialog.dart';
 import '../../models/tile_model.dart';
 import '../../models/alert_model.dart';
+import '../widgets/onboarding_overlay.dart';
 
 /// 메인 게임 화면
 /// 실시간 헥사곤 지도와 플레이어의 실시간 GPS 위치를 화면 상에 시각화하고,
@@ -44,12 +45,22 @@ class _GameScreenState extends State<GameScreen> {
   ConquestGame? _flameGame;
   AchievementProvider? _achievementProvider;
   StreamSubscription<Achievement>? _achievementSubscription;
+  bool _showOnboarding = false;
 
   @override
   void initState() {
     super.initState();
-    WidgetsBinding.instance.addPostFrameCallback((_) {
+    WidgetsBinding.instance.addPostFrameCallback((_) async {
       final geo = context.read<GeoService>();
+
+      // 최초 로그인 온보딩 가이드 체크
+      final hasSeen = await PreferencesService.hasSeenOnboarding();
+      if (!hasSeen && mounted) {
+        setState(() {
+          _showOnboarding = true;
+        });
+      }
+
       geo.checkPermissions().then((ok) async {
         if (ok) {
           await geo.startTracking();
@@ -474,6 +485,19 @@ class _GameScreenState extends State<GameScreen> {
               );
             },
           ),
+
+          // 온보딩 가이드 오버레이 (최초 진입 시)
+          if (_showOnboarding)
+            OnboardingOverlay(
+              onFinish: () async {
+                await PreferencesService.setSeenOnboarding();
+                if (mounted) {
+                  setState(() {
+                    _showOnboarding = false;
+                  });
+                }
+              },
+            ),
         ],
       ),
     );

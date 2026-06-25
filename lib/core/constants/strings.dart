@@ -1165,6 +1165,35 @@ class GameStrings {
 
   /// 등록 업적 없음 메시지
   static String get noAchievements => 'noAchievements'.tr();
+
+  // --- 최초 로그인 온보딩 가이드 관련 번역 ---
+  static String get onboardingWelcomeTitle => 'onboardingWelcomeTitle'.tr();
+  static String get onboardingWelcomeDesc => 'onboardingWelcomeDesc'.tr();
+  static String get onboardingGoldTitle => 'onboardingGoldTitle'.tr();
+  static String get onboardingGoldDesc => 'onboardingGoldDesc'.tr();
+  static String get onboardingTimerTitle => 'onboardingTimerTitle'.tr();
+  static String get onboardingTimerDesc => 'onboardingTimerDesc'.tr();
+  static String get onboardingStepsTitle => 'onboardingStepsTitle'.tr();
+  static String get onboardingStepsDesc => 'onboardingStepsDesc'.tr();
+  static String get onboardingProfileTitle => 'onboardingProfileTitle'.tr();
+  static String get onboardingProfileDesc => 'onboardingProfileDesc'.tr();
+  static String get onboardingPatternTitle => 'onboardingPatternTitle'.tr();
+  static String get onboardingPatternDesc => 'onboardingPatternDesc'.tr();
+  static String get onboardingMapFollowTitle => 'onboardingMapFollowTitle'.tr();
+  static String get onboardingMapFollowDesc => 'onboardingMapFollowDesc'.tr();
+  static String get onboardingMapStyleTitle => 'onboardingMapStyleTitle'.tr();
+  static String get onboardingMapStyleDesc => 'onboardingMapStyleDesc'.tr();
+  static String get onboardingCompleteTitle => 'onboardingCompleteTitle'.tr();
+  static String get onboardingCompleteDesc => 'onboardingCompleteDesc'.tr();
+  static String get onboardingNext => 'onboardingNext'.tr();
+  static String get onboardingPrev => 'onboardingPrev'.tr();
+  static String get onboardingStart => 'onboardingStart'.tr();
+  static String get onboardingRankingTitle => 'onboardingRankingTitle'.tr();
+  static String get onboardingRankingDesc => 'onboardingRankingDesc'.tr();
+  static String get onboardingAchievementTitle => 'onboardingAchievementTitle'.tr();
+  static String get onboardingAchievementDesc => 'onboardingAchievementDesc'.tr();
+  static String get onboardingPatternToggleTitle => 'onboardingPatternToggleTitle'.tr();
+  static String get onboardingPatternToggleDesc => 'onboardingPatternToggleDesc'.tr();
 }
 
 class GameUrls {
