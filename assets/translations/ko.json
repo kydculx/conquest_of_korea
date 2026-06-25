@@ -93,7 +93,7 @@
   "supportEmailSubject": "찜! 대모험 고객센터 문의",
   "changeNickname": "닉네임 수정",
   "changeNicknameSub": "닉네임을 수정합니다.",
-  "nicknameChangeCost": "비용: 1,000 골드 소모 (보유: {current}골드)",
+  "nicknameChangeCost": "비용: {cost}골드 소모 (보유: {current}골드)",
   "nicknameChangeSuccess": "닉네임이 변경되었습니다.",
   "nicknameChangeSame": "현재 사용 중인 닉네임과 동일합니다.",
   "nicknameChangeGoldShortage": "골드가 부족하여 닉네임을 변경할 수 없습니다.",

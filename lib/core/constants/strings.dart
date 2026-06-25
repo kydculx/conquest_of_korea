@@ -287,8 +287,8 @@ class GameStrings {
   static String get changeNicknameSub => 'changeNicknameSub'.tr();
 
   /// 닉네임 수정 비용 안내 문구
-  static String nicknameChangeCost(String current) =>
-      'nicknameChangeCost'.tr(namedArgs: {'current': current});
+  static String nicknameChangeCost(String cost, String current) =>
+      'nicknameChangeCost'.tr(namedArgs: {'cost': cost, 'current': current});
 
   /// 닉네임 수정 성공 알림 문구
   static String get nicknameChangeSuccess => 'nicknameChangeSuccess'.tr();

@@ -121,5 +121,5 @@ class GameConfig {
   static const int coinSpawnMaxDistance = 5;
 
   /// 닉네임 변경 시 소모되는 골드 비용
-  static const double nicknameChangeCost = 1000.0;
+  static const double nicknameChangeCost = 10.0;
 }

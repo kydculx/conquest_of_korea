@@ -843,7 +843,10 @@ class ProfileScreen extends StatelessWidget {
                       child: Padding(
                         padding: const EdgeInsets.only(left: 4),
                         child: Text(
-                          GameStrings.nicknameChangeCost(cost.toInt().toString()),
+                          GameStrings.nicknameChangeCost(
+                            cost.toInt().toString(),
+                            game.currentGold.toInt().toString(),
+                          ),
                           style: TextStyle(
                             color: hasEnoughGold ? GameColors.textMuted : GameColors.error,
                             fontSize: 11,
