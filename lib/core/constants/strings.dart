@@ -268,6 +268,12 @@ class GameStrings {
   /// 개인정보 처리방침 안내 문구
   static String get privacyPolicySub => 'privacyPolicySub'.tr();
 
+  /// 문의하기 버튼 라벨
+  static String get contactSupport => 'contactSupport'.tr();
+
+  /// 문의하기 안내 문구
+  static String get contactSupportSub => 'contactSupportSub'.tr();
+
   /// 계정 관리 메뉴 타이틀
   static String get accountManagement => 'accountManagement'.tr();
 
@@ -1205,4 +1211,5 @@ class GameStrings {
 class GameUrls {
   static const String termsOfService = 'https://jjim.vercel.app/terms';
   static const String privacyPolicy = 'https://jjim.vercel.app/privacy';
+  static const String supportEmail = 'kydculx@gmail.com';
 }

@@ -87,6 +87,8 @@
   "termsOfServiceSub": "플레이어의 서비스 이용 권리와 의무를 규정합니다.",
   "privacyPolicy": "개인정보 처리방침",
   "privacyPolicySub": "플레이어의 소중한 개인정보 처리 방식 및 방침입니다.",
+  "contactSupport": "문의하기",
+  "contactSupportSub": "개발자에게 의견 및 문의 사항을 메일로 보냅니다.",
   "accountManagement": "계정 관리",
   "terminateOperation": "회원 탈퇴",
   "logoutConfirmMessage": "로그아웃을 진행하시겠습니까?",

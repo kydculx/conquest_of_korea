@@ -17,6 +17,7 @@ import '../widgets/profile_widgets.dart';
 import 'language_settings_screen.dart';
 import 'policy_webview_screen.dart';
 import 'package:easy_localization/easy_localization.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 /// 로그인한 플레이어의 상세 프로필 상태(소속 테마 색상, 점령한 총 영토 수)를
 /// 검토하고, 테마 색상 수정 및 본진 이전(Rebase), 로그아웃 등 설정을 관리하는 프로필 화면 클래스입니다.
@@ -261,6 +262,15 @@ class ProfileScreen extends StatelessWidget {
                       ),
                     ),
                   ),
+                ),
+                const ProfileMenuDivider(),
+
+                // 문의하기
+                ProfileMenuItem(
+                  icon: Icons.mail_outline_rounded,
+                  title: GameStrings.contactSupport,
+                  subtitle: GameStrings.contactSupportSub,
+                  onTap: () => _handleContactSupport(context),
                 ),
               ]),
 
@@ -564,5 +574,45 @@ class ProfileScreen extends StatelessWidget {
         ],
       ),
     );
+  }
+
+  Future<void> _handleContactSupport(BuildContext context) async {
+    final Uri emailLaunchUri = Uri(
+      scheme: 'mailto',
+      path: GameUrls.supportEmail,
+      query: _encodeQueryParameters(<String, String>{
+        'subject': '[찜! 대모험] 문의 및 피드백',
+        'body': '문의 내용:\n\n\n\n\n\n--------------------\n(상기 라인 위에 문의 내용을 작성해 주세요.)',
+      }),
+    );
+
+    try {
+      if (await canLaunchUrl(emailLaunchUri)) {
+        await launchUrl(emailLaunchUri);
+      } else {
+        if (context.mounted) {
+          ToastHelper.show(
+            context: context,
+            message: '메일 앱을 열 수 없습니다. ${GameUrls.supportEmail}로 직접 문의해주세요.',
+            isSuccess: false,
+          );
+        }
+      }
+    } catch (e) {
+      if (context.mounted) {
+        ToastHelper.show(
+          context: context,
+          message: ErrorTranslator.translate(e),
+          isSuccess: false,
+        );
+      }
+    }
+  }
+
+  String? _encodeQueryParameters(Map<String, String> params) {
+    return params.entries
+        .map((MapEntry<String, String> e) =>
+            '${Uri.encodeComponent(e.key)}=${Uri.encodeComponent(e.value)}')
+        .join('&');
   }
 }
