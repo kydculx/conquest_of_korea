@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Routes, Route, Navigate, useNavigate, useLocation, Outlet } from 'react-router-dom';
 import DashboardTab from './components/DashboardTab';
 import RankingTab from './components/RankingTab';
@@ -8,6 +8,8 @@ import MapEditorTab from './components/MapEditorTab';
 import LandingPage from './components/LandingPage';
 import TermsPage from './components/TermsPage';
 import PrivacyPage from './components/PrivacyPage';
+import LoginPage from './components/LoginPage';
+import { supabase } from './supabase';
 import {
   ShieldAlert,
   Users,
@@ -17,10 +19,11 @@ import {
   Trophy,
   Menu,
   X,
-  Map
+  Map,
+  LogOut
 } from 'lucide-react';
 
-function AdminLayout() {
+function AdminLayout({ user, onLogout }) {
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const location = useLocation();
   const navigate = useNavigate();
@@ -51,7 +54,7 @@ function AdminLayout() {
       {/* 1. 사이드바 내비게이션 */}
       <aside className={`sidebar ${isSidebarOpen ? 'open' : ''}`}>
         {/* 로고 및 모바일 닫기 버튼 */}
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', paddingBottom: '1rem', borderBottom: '1px solid var(--border-color)' }}>
+        <div style={{ display: 'flex', alignItems: 'center', justifyBetween: 'space-between', paddingBottom: '1rem', borderBottom: '1px solid var(--border-color)' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: '0.8rem' }}>
             <Terminal size={24} style={{ color: 'var(--accent-cyan)' }} />
             <div>
@@ -110,12 +113,42 @@ function AdminLayout() {
           })}
         </nav>
 
-        {/* 푸터 */}
-        <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem', padding: '0.8rem', background: 'var(--bg-primary)', borderRadius: '8px', border: '1px solid var(--border-color)' }}>
-          <ShieldAlert size={16} style={{ color: 'var(--accent-gold)' }} />
-          <span style={{ fontSize: '0.7rem', color: 'var(--text-secondary)', fontFamily: 'monospace' }}>
-            보안 접속 상태
-          </span>
+        {/* 푸터 - 사용자 정보 및 로그아웃 */}
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '0.8rem', padding: '0.8rem', background: 'var(--bg-primary)', borderRadius: '8px', border: '1px solid var(--border-color)' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem' }}>
+            <ShieldAlert size={16} style={{ color: 'var(--accent-gold)' }} />
+            <span style={{ fontSize: '0.7rem', color: 'var(--text-secondary)', fontFamily: 'monospace', textOverflow: 'ellipsis', overflow: 'hidden', whiteSpace: 'nowrap', flex: 1 }} title={user?.email}>
+              {user?.email || '보안 접속 상태'}
+            </span>
+          </div>
+          <button 
+            onClick={onLogout}
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              gap: '0.5rem',
+              width: '100%',
+              padding: '0.5rem',
+              background: 'rgba(239, 68, 68, 0.08)',
+              border: '1px solid rgba(239, 68, 68, 0.15)',
+              borderRadius: '6px',
+              color: '#f87171',
+              fontSize: '0.75rem',
+              fontWeight: 600,
+              cursor: 'pointer',
+              transition: 'all 0.2s ease'
+            }}
+            onMouseEnter={(e) => {
+              e.currentTarget.style.background = 'rgba(239, 68, 68, 0.15)';
+            }}
+            onMouseLeave={(e) => {
+              e.currentTarget.style.background = 'rgba(239, 68, 68, 0.08)';
+            }}
+          >
+            <LogOut size={12} />
+            <span>보안 세션 로그아웃</span>
+          </button>
         </div>
       </aside>
 
@@ -155,6 +188,90 @@ function AdminLayout() {
 }
 
 export default function App() {
+  const [adminUser, setAdminUser] = useState(null);
+  const [authInitialized, setAuthInitialized] = useState(false);
+  const navigate = useNavigate();
+
+  useEffect(() => {
+    // 1. 초기 세션 체크
+    const initAuth = async () => {
+      try {
+        const { data: { session } } = await supabase.auth.getSession();
+        if (session && session.user) {
+          const user = session.user;
+          // 어드민 여부 확인 (Auth Metadata)
+          let isAdmin = user.app_metadata?.role === 'admin' || user.user_metadata?.role === 'admin';
+          
+          // Fallback: profiles 테이블 조회
+          if (!isAdmin) {
+            const { data: profile } = await supabase
+              .from('profiles')
+              .select('role')
+              .eq('id', user.id)
+              .single();
+            if (profile) {
+              isAdmin = profile.role === 'admin';
+            }
+          }
+
+          if (isAdmin) {
+            setAdminUser(user);
+          } else {
+            await supabase.auth.signOut();
+          }
+        }
+      } catch (err) {
+        console.error('Session check error:', err);
+      } finally {
+        setAuthInitialized(true);
+      }
+    };
+
+    initAuth();
+
+    // 2. Auth 상태 변화 감지 리스너
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
+      if (event === 'SIGNED_OUT') {
+        setAdminUser(null);
+      } else if (event === 'SIGNED_IN' && session?.user) {
+        const user = session.user;
+        let isAdmin = user.app_metadata?.role === 'admin' || user.user_metadata?.role === 'admin';
+        
+        if (!isAdmin) {
+          const { data: profile } = await supabase
+            .from('profiles')
+            .select('role')
+            .eq('id', user.id)
+            .single();
+          if (profile) {
+            isAdmin = profile.role === 'admin';
+          }
+        }
+
+        if (isAdmin) {
+          setAdminUser(user);
+        } else {
+          setAdminUser(null);
+          await supabase.auth.signOut();
+        }
+      }
+    });
+
+    return () => {
+      subscription.unsubscribe();
+    };
+  }, []);
+
+  const handleLogout = async () => {
+    await supabase.auth.signOut();
+    setAdminUser(null);
+    navigate('/');
+  };
+
+  if (!authInitialized) {
+    return <div className="tactical-spinner" style={{ margin: '20vh auto' }} />;
+  }
+
   return (
     <Routes>
       {/* 1. 메인 홈페이지 게임 소개 랜딩페이지 */}
@@ -162,8 +279,29 @@ export default function App() {
       <Route path="/terms" element={<TermsPage />} />
       <Route path="/privacy" element={<PrivacyPage />} />
 
-      {/* 2. 관리자 페이지 하위 주소 분리 */}
-      <Route path="/admin" element={<AdminLayout />}>
+      {/* 2. 관리자 로그인 게이트웨이 */}
+      <Route 
+        path="/admin/login" 
+        element={
+          adminUser ? (
+            <Navigate to="/admin/dashboard" replace />
+          ) : (
+            <LoginPage onLoginSuccess={(user) => setAdminUser(user)} />
+          )
+        } 
+      />
+
+      {/* 3. 관리자 페이지 하위 주소 (보호된 라우트) */}
+      <Route 
+        path="/admin" 
+        element={
+          adminUser ? (
+            <AdminLayout user={adminUser} onLogout={handleLogout} />
+          ) : (
+            <Navigate to="/admin/login" replace />
+          )
+        }
+      >
         {/* /admin 접속 시 /admin/dashboard로 리다이렉트 */}
         <Route index element={<Navigate to="dashboard" replace />} />
         <Route path="dashboard" element={<DashboardTab />} />
