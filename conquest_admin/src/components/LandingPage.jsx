@@ -568,10 +568,14 @@ export default function LandingPage() {
           max-width: 1200px;
           margin: 0 auto;
           display: flex;
-          justify-content: space-between;
+          flex-direction: column;
+          justify-content: center;
           align-items: center;
-          flex-wrap: wrap;
-          gap: 2rem;
+          text-align: center;
+          gap: 1.5rem;
+        }
+        .footer-brand .logo-group {
+          justify-content: center;
         }
         .brand-title {
           font-weight: 800;
@@ -581,9 +585,11 @@ export default function LandingPage() {
           font-size: 0.85rem;
           color: #475569;
           margin: 0.5rem 0 0 0;
+          text-align: center;
         }
         .footer-links {
           display: flex;
+          justify-content: center;
           gap: 2rem;
           flex-wrap: wrap;
         }
