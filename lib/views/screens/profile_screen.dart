@@ -655,7 +655,7 @@ class ProfileScreen extends StatelessWidget {
     bool isSaving = false;
     
     final currentNickname = auth.profile?.nickname ?? '';
-    final double cost = 1000.0;
+    const double cost = 1000.0;
     final bool hasEnoughGold = game.currentGold >= cost;
 
     showDialog(
@@ -663,7 +663,7 @@ class ProfileScreen extends StatelessWidget {
       builder: (context) {
         return StatefulBuilder(
           builder: (context, setState) {
-            final checkNickname = () async {
+            Future<void> checkNickname() async {
               final newNickname = nicknameController.text.trim();
               if (newNickname.isEmpty) {
                 ToastHelper.show(context: context, message: GameStrings.enterNickname, isSuccess: false);
@@ -694,9 +694,9 @@ class ProfileScreen extends StatelessWidget {
               } finally {
                 setState(() => isChecking = false);
               }
-            };
+            }
 
-            final handleSave = () async {
+            Future<void> handleSave() async {
               final newNickname = nicknameController.text.trim();
               if (newNickname == currentNickname) {
                 Navigator.pop(context);
@@ -729,17 +729,26 @@ class ProfileScreen extends StatelessWidget {
               } finally {
                 setState(() => isSaving = false);
               }
-            };
+            }
 
             nicknameController.addListener(() {
               final val = nicknameController.text.trim();
-              if (isNicknameChecked && val != currentNickname) {
-                setState(() {
+              setState(() {
+                if (isNicknameChecked && val != currentNickname) {
                   isNicknameChecked = false;
                   isNicknameAvailable = false;
-                });
-              }
+                }
+              });
             });
+
+            Color getBorderColor() {
+              if (isNicknameChecked) {
+                return isNicknameAvailable ? GameColors.success : GameColors.error;
+              }
+              return GameColors.borderNeon;
+            }
+
+            final activeBorderColor = getBorderColor();
 
             return TacticalDialog(
               title: GameStrings.changeNickname,
@@ -756,52 +765,89 @@ class ProfileScreen extends StatelessWidget {
                       style: TextStyle(color: GameColors.textSecondary, fontSize: 13),
                     ),
                     const SizedBox(height: 16),
-                    Row(
-                      children: [
-                        Expanded(
-                          child: TextFormField(
-                            controller: nicknameController,
-                            style: GoogleFonts.quicksand(color: GameColors.textPrimary, fontWeight: FontWeight.bold),
-                            decoration: InputDecoration(
-                              hintText: GameStrings.enterNickname,
-                              hintStyle: TextStyle(color: GameColors.textMuted),
-                              filled: true,
-                              fillColor: GameColors.backgroundMedium.withValues(alpha: 0.5),
-                              contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-                              border: OutlineInputBorder(
-                                borderRadius: BorderRadius.circular(16),
-                                borderSide: BorderSide.none,
-                              ),
-                            ),
-                            maxLength: 10,
-                          ),
+                    TextFormField(
+                      controller: nicknameController,
+                      style: GoogleFonts.quicksand(color: GameColors.textPrimary, fontWeight: FontWeight.bold),
+                      buildCounter: (context, {required currentLength, required isFocused, maxLength}) => null,
+                      decoration: InputDecoration(
+                        hintText: GameStrings.enterNickname,
+                        hintStyle: TextStyle(color: GameColors.textMuted),
+                        filled: true,
+                        fillColor: GameColors.backgroundMedium.withValues(alpha: 0.5),
+                        contentPadding: const EdgeInsets.only(left: 16, right: 8, top: 14, bottom: 14),
+                        suffixIconConstraints: const BoxConstraints(
+                          minWidth: 0,
+                          minHeight: 0,
                         ),
-                        const SizedBox(width: 8),
-                        SizedBox(
-                          height: 48,
-                          child: OutlinedButton(
-                            onPressed: isChecking || nicknameController.text.trim() == currentNickname ? null : checkNickname,
-                            style: OutlinedButton.styleFrom(
-                              side: BorderSide(color: GameColors.accentNeon.withValues(alpha: 0.3)),
-                              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-                            ),
-                            child: isChecking
-                                ? const SizedBox(width: 16, height: 16, child: CircularProgressIndicator(strokeWidth: 2))
-                                : Text(
-                                    GameStrings.checkDuplicate,
-                                    style: TextStyle(color: GameColors.accentNeon, fontSize: 12),
+                        suffixIcon: isChecking
+                            ? const Padding(
+                                padding: EdgeInsets.only(right: 16),
+                                child: SizedBox(
+                                  width: 16,
+                                  height: 16,
+                                  child: CircularProgressIndicator(
+                                    strokeWidth: 2,
+                                    color: Color(0xFF00E5FF),
                                   ),
+                                ),
+                              )
+                            : isNicknameChecked
+                                ? Padding(
+                                    padding: const EdgeInsets.only(right: 16),
+                                    child: Icon(
+                                      isNicknameAvailable ? Icons.check_circle_rounded : Icons.cancel_rounded,
+                                      color: isNicknameAvailable ? GameColors.success : GameColors.error,
+                                      size: 20,
+                                    ),
+                                  )
+                                : Padding(
+                                    padding: const EdgeInsets.only(right: 4),
+                                    child: TextButton(
+                                      onPressed: nicknameController.text.trim().isEmpty ||
+                                              nicknameController.text.trim() == currentNickname
+                                          ? null
+                                          : checkNickname,
+                                      style: TextButton.styleFrom(
+                                        foregroundColor: GameColors.accentNeon,
+                                        disabledForegroundColor: GameColors.textMuted.withValues(alpha: 0.4),
+                                        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                                      ),
+                                      child: Text(
+                                        GameStrings.checkDuplicate,
+                                        style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold),
+                                      ),
+                                    ),
+                                  ),
+                        border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(16),
+                          borderSide: BorderSide(color: activeBorderColor, width: 1.5),
+                        ),
+                        enabledBorder: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(16),
+                          borderSide: BorderSide(color: activeBorderColor, width: 1.5),
+                        ),
+                        focusedBorder: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(16),
+                          borderSide: BorderSide(
+                            color: isNicknameChecked ? activeBorderColor : GameColors.accentNeon,
+                            width: 2.0,
                           ),
                         ),
-                      ],
+                      ),
+                      maxLength: 10,
                     ),
-                    const SizedBox(height: 16),
-                    Text(
-                      GameStrings.nicknameChangeCost(cost.toInt().toString()),
-                      style: TextStyle(
-                        color: hasEnoughGold ? GameColors.success : GameColors.error,
-                        fontSize: 12,
-                        fontWeight: FontWeight.bold,
+                    const SizedBox(height: 8),
+                    Align(
+                      alignment: Alignment.centerLeft,
+                      child: Padding(
+                        padding: const EdgeInsets.only(left: 4),
+                        child: Text(
+                          GameStrings.nicknameChangeCost(cost.toInt().toString()),
+                          style: TextStyle(
+                            color: hasEnoughGold ? GameColors.textMuted : GameColors.error,
+                            fontSize: 11,
+                          ),
+                        ),
                       ),
                     ),
                   ],
@@ -810,7 +856,10 @@ class ProfileScreen extends StatelessWidget {
               actions: [
                 TextButton(
                   onPressed: () => Navigator.pop(context),
-                  style: TextButton.styleFrom(foregroundColor: GameColors.textMuted),
+                  style: TextButton.styleFrom(
+                    foregroundColor: GameColors.textSecondary,
+                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                  ),
                   child: Text(GameStrings.cancel),
                 ),
                 ElevatedButton(
@@ -818,10 +867,21 @@ class ProfileScreen extends StatelessWidget {
                   style: ElevatedButton.styleFrom(
                     backgroundColor: GameColors.accentNeon,
                     foregroundColor: GameColors.tacticalBlack,
+                    disabledBackgroundColor: GameColors.accentNeon.withValues(alpha: 0.15),
+                    disabledForegroundColor: GameColors.textMuted.withValues(alpha: 0.4),
                     shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                    padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+                    elevation: 0,
                   ),
                   child: isSaving
-                      ? SizedBox(width: 20, height: 20, child: CircularProgressIndicator(strokeWidth: 2, color: GameColors.tacticalBlack))
+                      ? SizedBox(
+                          width: 16,
+                          height: 16,
+                          child: CircularProgressIndicator(
+                            strokeWidth: 2,
+                            color: GameColors.tacticalBlack,
+                          ),
+                        )
                       : Text(GameStrings.confirm, style: const TextStyle(fontWeight: FontWeight.bold)),
                 ),
               ],
