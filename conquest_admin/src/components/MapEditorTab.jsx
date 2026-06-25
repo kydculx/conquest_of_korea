@@ -116,33 +116,10 @@ export default function MapEditorTab() {
     };
   }, []);
 
-  // 2. letters 상태 변경 시 지도 위의 문자 마커 동기화
+  // 2. letters 상태 변경 시 지도 위의 문자 마커 동기화 (Leaflet 마커 렌더링 제거)
   useEffect(() => {
     if (!mapInstance.current || !markersGroup.current) return;
-
     markersGroup.current.clearLayers();
-
-    letters.forEach(letter => {
-      const isFocused = letter.id === selectedLetterId;
-      const customIcon = L.divIcon({
-        className: 'leaflet-div-icon',
-        html: `<div class="editor-letter-badge ${isFocused ? 'focused' : ''}">${letter.char}</div>`,
-        iconSize: [30, 30],
-        iconAnchor: [15, 15]
-      });
-
-      // 마커를 그리드 최상단 외곽(q: 0, r: -8) 좌표에 생성하여 타일 가림 방지
-      const markerLatLng = hexToLatLng(0, -8, letter.lat, letter.lng);
-      const marker = L.marker(markerLatLng, { icon: customIcon });
-
-      // 문자 마커 클릭 시 해당 문자를 포커스하고 그 15x15 그리드를 띄운다.
-      marker.on('click', (e) => {
-        L.DomEvent.stopPropagation(e);
-        setSelectedLetterId(letter.id);
-      });
-
-      markersGroup.current.addLayer(marker);
-    });
   }, [letters, selectedLetterId]);
 
   // 3. 포커스된 마커 좌표를 기준으로 15x15 헥사 그리드 및 페인팅 타일 렌더링 동기화
@@ -556,13 +533,34 @@ export default function MapEditorTab() {
       </div>
 
       {/* 2. 메인 지도 캔버스 영역 */}
-      <div className="tactical-card map-card" style={{ padding: 0, overflow: 'hidden', flex: 1 }}>
+      <div className="tactical-card map-card" style={{ padding: 0, overflow: 'hidden', flex: 1, position: 'relative' }}>
         <div className="map-wrapper" style={{ height: '100%' }}>
           <div 
             ref={mapRef} 
             className="map-element" 
             style={{ height: '100%', border: 'none', borderRadius: 'var(--glow-radius)' }} 
           />
+          {activeLetter && (
+            <div style={{
+              position: 'absolute',
+              top: '1rem',
+              right: '1rem',
+              zIndex: 1000,
+              background: 'rgba(15, 23, 42, 0.9)',
+              border: '1.5px solid var(--accent-cyan)',
+              borderRadius: '8px',
+              padding: '0.6rem 1rem',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '0.6rem',
+              boxShadow: 'var(--neon-shadow)',
+              backdropFilter: 'blur(4px)',
+              pointerEvents: 'none'
+            }}>
+              <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>편집 중:</span>
+              <div className="focus-char-badge" style={{ margin: 0 }}>{activeLetter.char}</div>
+            </div>
+          )}
         </div>
       </div>
 
