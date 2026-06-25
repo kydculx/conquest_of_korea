@@ -45,7 +45,7 @@ export default function LandingPage() {
         <div className="hero-content">
           <div className="tag-badge animate-fade-in">
             <Zap size={14} className="glow-icon" />
-            <span>실시간 실제 지도 기반 영토 점령</span>
+            <span>뺏고 뺏기는 실시간 영토 쟁탈전</span>
           </div>
           <h1 className="hero-title animate-slide-up">
             지루했던 일상을<br />
@@ -53,7 +53,7 @@ export default function LandingPage() {
           </h1>
           <p className="hero-desc animate-slide-up-delay">
             '찜! 대모험'은 GPS를 이용해 실제 전 세계 지도를 무대로 영토를 넓혀가는 위치 기반 전술 게임입니다. 
-            단순히 바라보기만 하는 맵이 아닙니다. 당신의 모든 발걸음, 조깅, 여행이 곧 실시간 전술 기동이자 정복의 흔적이 됩니다.
+            단순히 바라보기만 하는 맵이 아닙니다. 끊임없이 뺏고 뺏기는 실시간 영토전 속에서, 당신의 모든 발걸음, 조깅, 여행이 곧 전술 기동이자 정복의 흔적이 됩니다.
           </p>
 
           <div className="download-badges animate-slide-up-delay-2">
@@ -95,7 +95,7 @@ export default function LandingPage() {
         <div className="features-header">
           <h2 className="section-title">일상 속에서 시작되는 영토 정복</h2>
           <p className="section-subtitle">
-            러닝, 출퇴근, 여행, 동네 산책까지. 일상적인 모든 움직임이 흥미진진한 전술 라이프스타일로 변화합니다.
+            러닝, 출퇴근, 여행, 동네 산책까지. 뺏고 뺏기는 실시간 쟁탈전 속에서 일상적인 모든 움직임이 흥미진진한 전술 라이프스타일로 변화합니다.
           </p>
         </div>
 
