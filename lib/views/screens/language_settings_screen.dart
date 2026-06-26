@@ -70,6 +70,78 @@ class LanguageSettingsScreen extends StatelessWidget {
                       locale: const Locale('en'),
                       isSelected: currentLocale.languageCode == 'en',
                     ),
+                    Divider(
+                      height: 1,
+                      color: GameColors.dividerColor.withValues(alpha: 30 / 255),
+                      indent: 16,
+                      endIndent: 16,
+                    ),
+                    _buildLanguageItem(
+                      context: context,
+                      title: GameStrings.languageChinese,
+                      locale: const Locale('zh'),
+                      isSelected: currentLocale.languageCode == 'zh',
+                    ),
+                    Divider(
+                      height: 1,
+                      color: GameColors.dividerColor.withValues(alpha: 30 / 255),
+                      indent: 16,
+                      endIndent: 16,
+                    ),
+                    _buildLanguageItem(
+                      context: context,
+                      title: GameStrings.languageJapanese,
+                      locale: const Locale('ja'),
+                      isSelected: currentLocale.languageCode == 'ja',
+                    ),
+                    Divider(
+                      height: 1,
+                      color: GameColors.dividerColor.withValues(alpha: 30 / 255),
+                      indent: 16,
+                      endIndent: 16,
+                    ),
+                    _buildLanguageItem(
+                      context: context,
+                      title: GameStrings.languageSpanish,
+                      locale: const Locale('es'),
+                      isSelected: currentLocale.languageCode == 'es',
+                    ),
+                    Divider(
+                      height: 1,
+                      color: GameColors.dividerColor.withValues(alpha: 30 / 255),
+                      indent: 16,
+                      endIndent: 16,
+                    ),
+                    _buildLanguageItem(
+                      context: context,
+                      title: GameStrings.languageFrench,
+                      locale: const Locale('fr'),
+                      isSelected: currentLocale.languageCode == 'fr',
+                    ),
+                    Divider(
+                      height: 1,
+                      color: GameColors.dividerColor.withValues(alpha: 30 / 255),
+                      indent: 16,
+                      endIndent: 16,
+                    ),
+                    _buildLanguageItem(
+                      context: context,
+                      title: GameStrings.languageGerman,
+                      locale: const Locale('de'),
+                      isSelected: currentLocale.languageCode == 'de',
+                    ),
+                    Divider(
+                      height: 1,
+                      color: GameColors.dividerColor.withValues(alpha: 30 / 255),
+                      indent: 16,
+                      endIndent: 16,
+                    ),
+                    _buildLanguageItem(
+                      context: context,
+                      title: GameStrings.languagePortuguese,
+                      locale: const Locale('pt'),
+                      isSelected: currentLocale.languageCode == 'pt',
+                    ),
                   ],
                 ),
               ),
@@ -103,9 +175,35 @@ class LanguageSettingsScreen extends StatelessWidget {
     return ListTile(
       onTap: () async {
         if (!isSelected) {
-          final targetMessage = locale.languageCode == 'ko'
-              ? GameStrings.languageChangedToKorean
-              : GameStrings.languageChangedToEnglish;
+          final String targetMessage;
+          switch (locale.languageCode) {
+            case 'ko':
+              targetMessage = GameStrings.languageChangedToKorean;
+              break;
+            case 'en':
+              targetMessage = GameStrings.languageChangedToEnglish;
+              break;
+            case 'zh':
+              targetMessage = GameStrings.languageChangedToChinese;
+              break;
+            case 'ja':
+              targetMessage = GameStrings.languageChangedToJapanese;
+              break;
+            case 'es':
+              targetMessage = GameStrings.languageChangedToSpanish;
+              break;
+            case 'fr':
+              targetMessage = GameStrings.languageChangedToFrench;
+              break;
+            case 'de':
+              targetMessage = GameStrings.languageChangedToGerman;
+              break;
+            case 'pt':
+              targetMessage = GameStrings.languageChangedToPortuguese;
+              break;
+            default:
+              targetMessage = GameStrings.languageChanged;
+          }
 
           await EasyLocalization.of(context)!.setLocale(locale);
           if (context.mounted) {

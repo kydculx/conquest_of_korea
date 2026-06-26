@@ -906,6 +906,24 @@ class GameStrings {
   /// 영어
   static String get languageEnglish => 'languageEnglish'.tr();
 
+  /// 중국어
+  static String get languageChinese => 'languageChinese'.tr();
+
+  /// 일본어
+  static String get languageJapanese => 'languageJapanese'.tr();
+
+  /// 스페인어
+  static String get languageSpanish => 'languageSpanish'.tr();
+
+  /// 프랑스어
+  static String get languageFrench => 'languageFrench'.tr();
+
+  /// 독일어
+  static String get languageGerman => 'languageGerman'.tr();
+
+  /// 포르투갈어
+  static String get languagePortuguese => 'languagePortuguese'.tr();
+
   /// 언어 변경 완료 알림
   static String get languageChanged => 'languageChanged'.tr();
 
@@ -914,6 +932,24 @@ class GameStrings {
 
   /// 영어로 언어 변경 완료 알림
   static String get languageChangedToEnglish => 'languageChangedToEnglish'.tr();
+
+  /// 중국어로 언어 변경 완료 알림
+  static String get languageChangedToChinese => 'languageChangedToChinese'.tr();
+
+  /// 일본어로 언어 변경 완료 알림
+  static String get languageChangedToJapanese => 'languageChangedToJapanese'.tr();
+
+  /// 스페인어로 언어 변경 완료 알림
+  static String get languageChangedToSpanish => 'languageChangedToSpanish'.tr();
+
+  /// 프랑스어로 언어 변경 완료 알림
+  static String get languageChangedToFrench => 'languageChangedToFrench'.tr();
+
+  /// 독일어로 언어 변경 완료 알림
+  static String get languageChangedToGerman => 'languageChangedToGerman'.tr();
+
+  /// 포르투갈어로 언어 변경 완료 알림
+  static String get languageChangedToPortuguese => 'languageChangedToPortuguese'.tr();
 
   /// 보안 해제 실패 알림
   static String get satSecurityDecryptFailed => 'satSecurityDecryptFailed'.tr();
@@ -1242,6 +1278,41 @@ class GameStrings {
   static String get mapModeFootprintAlert => 'mapModeFootprintAlert'.tr();
   /// 패턴 도감 맵 모드 전환 알림
   static String get mapModePatternAlert => 'mapModePatternAlert'.tr();
+
+  /// 발자취 탐색 성공
+  static String get footprintScanSuccess => 'footprintScanSuccess'.tr();
+
+  /// 기록 일시
+  static String footprintRecordTime(String time) =>
+      'footprintRecordTime'.tr(namedArgs: {'time': time});
+
+  /// 패턴 타일 탐색 성공
+  static String get patternTileScanSuccess => 'patternTileScanSuccess'.tr();
+
+  /// 이미 매칭에 완성해 사용한 도감 헥사곤 영역
+  static String get patternTileAlreadyUsed => 'patternTileAlreadyUsed'.tr();
+
+  /// 아직 완성한 패턴이 없음
+  static String get noCompletedPatterns => 'noCompletedPatterns'.tr();
+
+  /// 패턴 영역으로 이동했습니다
+  static String patternAreaMoved(String char) =>
+      'patternAreaMoved'.tr(namedArgs: {'char': char});
+
+  /// 패턴 정복자
+  static String patternConqueror(String char) =>
+      'patternConqueror'.tr(namedArgs: {'char': char});
+
+  /// 타일 몇개로 완성
+  static String patternTilesCountCompleted(String count) =>
+      'patternTilesCountCompleted'.tr(namedArgs: {'count': count});
+
+  /// 문의 내용 템플릿
+  static String get supportEmailBody => 'supportEmailBody'.tr();
+
+  /// 메일 앱을 열 수 없음
+  static String cannotOpenMailApp(String email) =>
+      'cannotOpenMailApp'.tr(namedArgs: {'email': email});
 }
 
 class GameUrls {

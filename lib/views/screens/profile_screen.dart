@@ -612,7 +612,7 @@ class ProfileScreen extends StatelessWidget {
       path: GameUrls.supportEmail,
       query: _encodeQueryParameters(<String, String>{
         'subject': GameStrings.supportEmailSubject,
-        'body': '문의 내용:\n\n\n\n\n\n--------------------\n(상기 라인 위에 문의 내용을 작성해 주세요.)',
+        'body': GameStrings.supportEmailBody,
       }),
     );
 
@@ -623,7 +623,7 @@ class ProfileScreen extends StatelessWidget {
         if (context.mounted) {
           ToastHelper.show(
             context: context,
-            message: '메일 앱을 열 수 없습니다. ${GameUrls.supportEmail}로 직접 문의해주세요.',
+            message: GameStrings.cannotOpenMailApp(GameUrls.supportEmail),
             isSuccess: false,
           );
         }

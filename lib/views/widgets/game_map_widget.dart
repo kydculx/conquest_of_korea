@@ -11,6 +11,7 @@ import '../../providers/game_provider.dart';
 import '../../providers/location_provider.dart';
 import '../../providers/achievement_provider.dart';
 import '../../services/hex_service.dart';
+import '../../core/constants/strings.dart';
 
 
 /// 지도(FlutterMap) + Flame 엔진 레이어를 결합한 위젯
@@ -299,15 +300,15 @@ class _GameMapWidgetState extends State<GameMapWidget>
                                 mainAxisSize: MainAxisSize.min,
                                 crossAxisAlignment: CrossAxisAlignment.start,
                                 children: [
-                                  const Text(
-                                    '발자취 탐색 성공',
-                                    style: TextStyle(
+                                  Text(
+                                    GameStrings.footprintScanSuccess,
+                                    style: const TextStyle(
                                       fontWeight: FontWeight.bold,
                                       color: Colors.white,
                                     ),
                                   ),
                                   Text(
-                                    '기록 일시: ${footprint.formattedTime}',
+                                    GameStrings.footprintRecordTime(footprint.formattedTime),
                                     style: const TextStyle(
                                       color: Color(0xFFE0E0E0),
                                       fontSize: 12,
@@ -340,29 +341,29 @@ class _GameMapWidgetState extends State<GameMapWidget>
                     ScaffoldMessenger.of(context).clearSnackBars();
                     ScaffoldMessenger.of(context).showSnackBar(
                       SnackBar(
-                        content: const Row(
+                        content: Row(
                           children: [
-                            Icon(
+                            const Icon(
                               Icons.grid_on_rounded,
                               color: Color(0xFF0066FF),
                               size: 20,
                             ),
-                            SizedBox(width: 10),
+                            const SizedBox(width: 10),
                             Expanded(
                               child: Column(
                                 mainAxisSize: MainAxisSize.min,
                                 crossAxisAlignment: CrossAxisAlignment.start,
                                 children: [
                                   Text(
-                                    '패턴 타일 탐색 성공',
-                                    style: TextStyle(
+                                    GameStrings.patternTileScanSuccess,
+                                    style: const TextStyle(
                                       fontWeight: FontWeight.bold,
                                       color: Colors.white,
                                     ),
                                   ),
                                   Text(
-                                    '이미 매칭에 완성해 사용한 도감 헥사곤 영역입니다.',
-                                    style: TextStyle(
+                                    GameStrings.patternTileAlreadyUsed,
+                                    style: const TextStyle(
                                       color: Color(0xFFE0E0E0),
                                       fontSize: 12,
                                     ),

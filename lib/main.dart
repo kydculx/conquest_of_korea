@@ -60,9 +60,19 @@ void main() async {
 
   runApp(
     EasyLocalization(
-      supportedLocales: const [Locale('ko'), Locale('en')],
+      supportedLocales: const [
+        Locale('ko'),
+        Locale('en'),
+        Locale('zh'),
+        Locale('ja'),
+        Locale('es'),
+        Locale('fr'),
+        Locale('de'),
+        Locale('pt'),
+      ],
       path: 'assets/translations',
-      fallbackLocale: const Locale('ko'),
+      fallbackLocale: const Locale('en'),
+      useOnlyLangCode: true,
       child: MultiProvider(
         providers: [
           // 순수 서비스 레이어

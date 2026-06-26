@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:easy_localization/easy_localization.dart';
 import '../../core/constants/colors.dart';
 import '../../core/constants/strings.dart';
 import '../../providers/game_provider.dart';
@@ -137,9 +138,13 @@ class UtcTimerHeaderBar extends StatelessWidget {
 
     @override
     Widget build(BuildContext context) {
-      return Selector<GameProvider, int>(
-        selector: (_, provider) => provider.todaySteps,
-        builder: (context, steps, _) {
+      return Selector<GameProvider, String>(
+        selector: (context, provider) {
+          // context.locale을 명시적으로 호출하여 언어 변경 시 Selector가 다시 평가되도록 함
+          final _ = context.locale;
+          return GameStrings.stepsCount(provider.todaySteps);
+        },
+        builder: (context, stepsText, _) {
           return Container(
             height: 38,
             padding: const EdgeInsets.only(
@@ -176,7 +181,7 @@ class UtcTimerHeaderBar extends StatelessWidget {
                 ),
                 const SizedBox(width: 6),
                 Text(
-                  GameStrings.stepsCount(steps),
+                  stepsText,
                   style: GoogleFonts.fredoka(
                     color: GameColors.textPrimary,
                     fontSize: 12.0,

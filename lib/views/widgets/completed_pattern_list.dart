@@ -77,7 +77,7 @@ class CompletedPatternList extends StatelessWidget {
             ),
             child: Center(
               child: Text(
-                '아직 완성한 패턴이 없습니다. 패턴 도감맵을 모험해 보세요!',
+                GameStrings.noCompletedPatterns,
                 style: GoogleFonts.quicksand(
                   color: GameColors.textMuted,
                   fontSize: 12,
@@ -109,7 +109,7 @@ class CompletedPatternList extends StatelessWidget {
                     gameProvider.requestMapMove(item.center);
                     // 이동 완료 배너 노출
                     gameProvider.addAlert(
-                      '${item.char} 패턴 영역으로 이동했습니다.',
+                      GameStrings.patternAreaMoved(item.char),
                       AlertType.info,
                     );
                   },
@@ -168,7 +168,7 @@ class CompletedPatternList extends StatelessWidget {
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
                               Text(
-                                '패턴 정복자: ${item.char}',
+                                GameStrings.patternConqueror(item.char),
                                 style: GoogleFonts.fredoka(
                                   color: Colors.white,
                                   fontSize: 12,
@@ -179,7 +179,7 @@ class CompletedPatternList extends StatelessWidget {
                               ),
                               const SizedBox(height: 2),
                               Text(
-                                '타일 ${item.tiles.length}개로 완성',
+                                GameStrings.patternTilesCountCompleted(item.tiles.length.toString()),
                                 style: GoogleFonts.quicksand(
                                   color: GameColors.textSecondary,
                                   fontSize: 10,
