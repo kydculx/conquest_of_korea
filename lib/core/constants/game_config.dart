@@ -1,7 +1,7 @@
 /// 인게임 비즈니스 로직 및 시스템의 수치 상수를 관리하는 설정 클래스
 class GameConfig {
   /// 애플리케이션 시스템 공식 명칭
-  static const String appName = '찜! 대모험 (Dibs Adventure)';
+  static const String appName = '찜! 대모험 (Jjim! Adventure)';
 
   /// 초당 1개 타일당 획득 가능한 기본 골드 배율
   static const double defaultGoldRate = 1.0;

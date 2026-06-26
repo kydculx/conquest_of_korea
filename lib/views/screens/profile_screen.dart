@@ -266,15 +266,18 @@ class ProfileScreen extends StatelessWidget {
                   icon: Icons.description_rounded,
                   title: GameStrings.termsOfService,
                   subtitle: GameStrings.termsOfServiceSub,
-                  onTap: () => Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                      builder: (context) => PolicyWebviewScreen(
-                        title: GameStrings.termsOfService,
-                        url: '${GameUrls.termsOfService}?lang=${context.locale.languageCode}',
+                  onTap: () {
+                    final lang = context.locale.languageCode == 'ko' ? 'ko' : 'en';
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => PolicyWebviewScreen(
+                          title: GameStrings.termsOfService,
+                          url: '${GameUrls.termsOfService}?lang=$lang',
+                        ),
                       ),
-                    ),
-                  ),
+                    );
+                  },
                 ),
                 const ProfileMenuDivider(),
 
@@ -283,15 +286,18 @@ class ProfileScreen extends StatelessWidget {
                   icon: Icons.privacy_tip_rounded,
                   title: GameStrings.privacyPolicy,
                   subtitle: GameStrings.privacyPolicySub,
-                  onTap: () => Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                      builder: (context) => PolicyWebviewScreen(
-                        title: GameStrings.privacyPolicy,
-                        url: '${GameUrls.privacyPolicy}?lang=${context.locale.languageCode}',
+                  onTap: () {
+                    final lang = context.locale.languageCode == 'ko' ? 'ko' : 'en';
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => PolicyWebviewScreen(
+                          title: GameStrings.privacyPolicy,
+                          url: '${GameUrls.privacyPolicy}?lang=$lang',
+                        ),
                       ),
-                    ),
-                  ),
+                    );
+                  },
                 ),
                 const ProfileMenuDivider(),
 
