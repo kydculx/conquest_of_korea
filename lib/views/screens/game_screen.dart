@@ -236,6 +236,8 @@ class _GameScreenState extends State<GameScreen> {
           ? (_achievementProvider?.consumedTileIds ?? {})
           : {},
       coins: _gameProvider!.coins,
+      showFootprints: _gameProvider!.isFootprintMode,
+      footprints: _gameProvider!.footprints,
     );
   }
 

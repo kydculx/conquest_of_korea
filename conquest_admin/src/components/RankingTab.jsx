@@ -17,6 +17,7 @@ export default function RankingTab() {
       const { data, error: err } = await supabase
         .from('profiles')
         .select('id, nickname, color_hex, captured_tiles_count, daily_moved_tiles_count, total_moved_tiles_count, gold, created_at')
+        .neq('role', 'admin')
         .order(sortBy, { ascending: false });
 
       if (err) throw err;

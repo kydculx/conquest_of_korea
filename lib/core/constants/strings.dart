@@ -1226,14 +1226,22 @@ class GameStrings {
   static String get onboardingRankingDesc => 'onboardingRankingDesc'.tr();
   static String get onboardingAchievementTitle => 'onboardingAchievementTitle'.tr();
   static String get onboardingAchievementDesc => 'onboardingAchievementDesc'.tr();
-  static String get onboardingPatternToggleTitle => 'onboardingPatternToggleTitle'.tr();
-  static String get onboardingPatternToggleDesc => 'onboardingPatternToggleDesc'.tr();
+  static String get onboardingMapModeToggleTitle => 'onboardingMapModeToggleTitle'.tr();
+  static String get onboardingMapModeToggleDesc => 'onboardingMapModeToggleDesc'.tr();
   static String get onboardingMyLocationTitle => 'onboardingMyLocationTitle'.tr();
   static String get onboardingMyLocationDesc => 'onboardingMyLocationDesc'.tr();
   static String get onboardingRemoteTitle => 'onboardingRemoteTitle'.tr();
   static String get onboardingRemoteDesc => 'onboardingRemoteDesc'.tr();
   static String get tutorialReplayTitle => 'tutorialReplayTitle'.tr();
   static String get tutorialReplaySubtitle => 'tutorialReplaySubtitle'.tr();
+
+  // --- 맵 모드 알림 ---
+  /// 일반 맵 모드 전환 알림
+  static String get mapModeNormalAlert => 'mapModeNormalAlert'.tr();
+  /// 발자취 맵 모드 전환 알림
+  static String get mapModeFootprintAlert => 'mapModeFootprintAlert'.tr();
+  /// 패턴 도감 맵 모드 전환 알림
+  static String get mapModePatternAlert => 'mapModePatternAlert'.tr();
 }
 
 class GameUrls {

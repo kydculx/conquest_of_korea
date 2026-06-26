@@ -157,4 +157,26 @@ class PreferencesService {
     final prefs = await SharedPreferences.getInstance();
     await prefs.setBool(_hasSeenOnboardingKey, v);
   }
+
+  // --- 발자취 로컬 백업 (game_tile_provider) ---
+  static const _footprintsKey = 'conquest_local_footprints';
+
+  static Future<Map<String, String>> getLocalFootprints() async {
+    final prefs = await SharedPreferences.getInstance();
+    final list = prefs.getStringList(_footprintsKey) ?? [];
+    final Map<String, String> map = {};
+    for (final item in list) {
+      final parts = item.split('|');
+      if (parts.length == 2) {
+        map[parts[0]] = parts[1];
+      }
+    }
+    return map;
+  }
+
+  static Future<void> saveLocalFootprints(Map<String, String> footprints) async {
+    final prefs = await SharedPreferences.getInstance();
+    final List<String> list = footprints.entries.map((e) => '${e.key}|${e.value}').toList();
+    await prefs.setStringList(_footprintsKey, list);
+  }
 }

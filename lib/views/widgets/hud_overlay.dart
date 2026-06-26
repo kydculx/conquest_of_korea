@@ -7,7 +7,8 @@ import 'hud_profile_button.dart';
 import 'hud_ranking_button.dart';
 import 'hud_achievement_button.dart';
 import 'hud_pattern_guide_button.dart';
-import 'hud_pattern_toggle_button.dart';
+import 'hud_map_mode_button.dart';
+import 'completed_pattern_list.dart';
 import 'hud_map_cycle_button.dart';
 import 'hud_map_follow_button.dart';
 import 'hud_satellite_bubble.dart';
@@ -100,11 +101,11 @@ class HudOverlay extends StatelessWidget {
         // [하단 중앙] 콤팩트해진 점령 조작 버튼 (항상 자동 기동되므로 버튼 미노출)
         const SizedBox.shrink(),
 
-        // [하단 우측 - 패턴 완료 타일 오버레이 토글 버튼] 테마 순환 버튼 바로 위에 배치 (44x44)
+        // [하단 우측 - 맵 뷰 모드 통합 토글 버튼] 테마 순환 버튼 바로 위에 배치 (44x44)
         Positioned(
           bottom: baseBottomMargin + bottomPadding + 16.0 + 44.0 + 10.0,
           right: 20.0,
-          child: const PatternToggleActionButton(size: 44),
+          child: const MapModeToggleButton(size: 44),
         ),
 
         // [하단 우측 - 테마 순환 버튼] 접이식 메뉴를 걷어내고 기존 메뉴 버튼 자리에 독립형 젤리 단추로 배치 (44x44)
@@ -112,6 +113,29 @@ class HudOverlay extends StatelessWidget {
           bottom: baseBottomMargin + bottomPadding + 16.0,
           right: 20.0, // 기존 기어 트리거 메뉴 버튼 자리에 완벽 대칭 배치
           child: MapStyleCycleButton(game: game, size: 44, iconSize: 22),
+        ),
+
+        // [하단 중앙 - 패턴 모드 전용 완성 패턴 카드 리스트]
+        Selector<GameProvider, MapMode>(
+          selector: (_, p) => p.mapMode,
+          builder: (context, mapMode, _) {
+            final isPatternMode = mapMode == MapMode.pattern;
+            return Positioned(
+              bottom: baseBottomMargin + bottomPadding + 16.0,
+              left: 20.0 + 42.0 + 15.0,
+              right: 20.0 + 44.0 + 10.0,
+              child: IgnorePointer(
+                ignoring: !isPatternMode,
+                child: AnimatedOpacity(
+                  opacity: isPatternMode ? 1.0 : 0.0,
+                  duration: const Duration(milliseconds: 200),
+                  child: isPatternMode
+                      ? const CompletedPatternList()
+                      : const SizedBox.shrink(),
+                ),
+              ),
+            );
+          },
         ),
 
         // [위성 스캔 팝업 레이어] 스캔 모드 여부 변동 시에만 리빌드 격리

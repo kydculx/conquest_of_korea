@@ -10,6 +10,7 @@ import 'components/tile_cluster_helper.dart';
 import '../services/hex_service.dart';
 import '../models/tile_model.dart';
 import '../models/user_coin.dart';
+import '../models/footprint_model.dart';
 import '../controllers/satellite_capture_controller.dart';
 import '../core/constants/colors.dart';
 import '../core/constants/game_config.dart';
@@ -61,6 +62,12 @@ class ConquestGame extends FlameGame {
 
   /// 이미 매칭 완료하여 해금한 패턴의 소비 타일들을 맵 상에 하이라이트할지 여부
   bool _showCompletedPatterns = false;
+
+  /// 발자취 오버레이 토글 상태
+  bool _showFootprints = false;
+
+  /// 플레이어의 발자취 데이터 맵 캐시
+  Map<String, FootprintTile> _footprints = {};
 
   /// 해금된 패턴 업적에 소비된 타일 ID 목록 캐시
   Set<String> _consumedTileIds = {};
@@ -206,6 +213,10 @@ class ConquestGame extends FlameGame {
         satelliteCapturePhase: _satelliteCapturePhase,
         satelliteTravelProgress: _satelliteTravelProgress,
         satelliteCaptureProgress: _satelliteCaptureProgress,
+        showCompletedPatterns: _showCompletedPatterns,
+        consumedTileIds: _consumedTileIds,
+        showFootprints: _showFootprints,
+        footprints: _footprints,
       );
     } else {
       _updateAllPositions();
@@ -272,9 +283,8 @@ class ConquestGame extends FlameGame {
     final List<HexTile> visibleTiles = [];
 
     _lastClusteredTiles.forEach((id, tile) {
-      // 패턴 뷰 모드 활성화 시, 이미 소비된 타일은 일반 영토 렌더링에서 제외 (패턴 전용 하이라이트가 덮어씌움)
-      if (_showCompletedPatterns && _consumedTileIds.contains(id)) {
-        return;
+      if (_showFootprints || _showCompletedPatterns) {
+        return; // 발자취 또는 패턴 도감 모드 활성화 시 일반 점령지 렌더링 생략
       }
       final centerLatLng = _clusterHelper.getTileCenter(tile.q, tile.r, id, dynamicHexSize);
       final double lat = centerLatLng.latitude;
@@ -289,6 +299,33 @@ class ConquestGame extends FlameGame {
         visibleTiles.add(tile);
       }
     });
+
+    // 발자취 모드 활성화 시 내 발자취 타일들을 가식 영역 체크 후 강제 렌더링 목록에 주입
+    if (_showFootprints) {
+      _footprints.forEach((tileId, footprint) {
+        final parsed = HexService.parseTileId(tileId);
+        if (parsed != null) {
+          final int q = parsed['q'] as int;
+          final int r = parsed['r'] as int;
+          final centerLatLng = _clusterHelper.getTileCenter(q, r, tileId, dynamicHexSize);
+          final double lat = centerLatLng.latitude;
+          final double lng = centerLatLng.longitude;
+
+          if (lat >= minLat && lat <= maxLat && lng >= minLng && lng <= maxLng) {
+            visibleIds.add(tileId);
+            visibleTiles.add(HexTile(
+              id: tileId,
+              q: q,
+              r: r,
+              userId: 'footprint_marker',
+              colorHex: '#00FFCC', // 발자취 전용 네온 민트 그린
+              capturedAt: footprint.recordedAt,
+              captureCount: 1,
+            ));
+          }
+        }
+      });
+    }
 
     // 패턴 뷰 모드 활성화 시 완료한 패턴 타일들을 가식 영역 체크 후 강제 렌더링 목록에 주입
     if (_showCompletedPatterns) {
@@ -317,28 +354,30 @@ class ConquestGame extends FlameGame {
       }
     }
 
-    // 미획득 상태의 동전이 위치한 타일들을 가식 영역 체크 후 강제 렌더링 목록에 주입 (중립 구역 동전 시각화 보장)
-    for (final coin in _coins) {
-      if (coin.isCollected) continue;
-      final String tileId = coin.tileId;
-      if (visibleIds.contains(tileId)) continue; // 이미 렌더링 목록에 있다면 스킵
+    // 미획득 상태의 동전이 위치한 타일들을 가식 영역 체크 후 강제 렌더링 목록에 주입 (중립 구역 동전 시각화 보장, 발자취 및 패턴 모드 시 생략)
+    if (!_showFootprints && !_showCompletedPatterns) {
+      for (final coin in _coins) {
+        if (coin.isCollected) continue;
+        final String tileId = coin.tileId;
+        if (visibleIds.contains(tileId)) continue; // 이미 렌더링 목록에 있다면 스킵
 
-      // 동전은 항상 기본 격자 크기(LOD 0) 기준으로 절대 중심점을 구하여 줌 배율 변경 시 튕김 방지
-      final centerLatLng = _clusterHelper.getTileCenter(coin.q, coin.r, tileId, GameConfig.lodSize0);
-      final double lat = centerLatLng.latitude;
-      final double lng = centerLatLng.longitude;
+        // 동전은 항상 기본 격자 크기(LOD 0) 기준으로 절대 중심점을 구하여 줌 배율 변경 시 튕김 방지
+        final centerLatLng = _clusterHelper.getTileCenter(coin.q, coin.r, tileId, GameConfig.lodSize0);
+        final double lat = centerLatLng.latitude;
+        final double lng = centerLatLng.longitude;
 
-      if (lat >= minLat && lat <= maxLat && lng >= minLng && lng <= maxLng) {
-        visibleIds.add(tileId);
-        visibleTiles.add(HexTile(
-          id: tileId,
-          q: coin.q,
-          r: coin.r,
-          userId: 'coin_marker', // 동전 전용 마커 식별자 지정
-          colorHex: null, // 중립 상태
-          capturedAt: coin.createdAt,
-          captureCount: 0,
-        ));
+        if (lat >= minLat && lat <= maxLat && lng >= minLng && lng <= maxLng) {
+          visibleIds.add(tileId);
+          visibleTiles.add(HexTile(
+            id: tileId,
+            q: coin.q,
+            r: coin.r,
+            userId: 'coin_marker', // 동전 전용 마커 식별자 지정
+            colorHex: null, // 중립 상태
+            capturedAt: coin.createdAt,
+            captureCount: 0,
+          ));
+        }
       }
     }
 
@@ -368,15 +407,17 @@ class ConquestGame extends FlameGame {
       final cornerLatLngs = _clusterHelper.getTileCorners(q, r, id, targetSize);
       final screenOffset = _mapController!.camera.latLngToScreenOffset(centerLatLng);
 
-      final String? targetTileColorHex = (tileData.userId == 'pattern_consumed')
-          ? '#0066FF'
-          : ((tileData.userId == 'coin_marker' || tileData.userId == 'none' || tileData.userId == null)
-              ? null
-              : ((tileData.userId == _currentUserId)
-                  ? GameColors.myTileColorHex
-                  : GameColors.enemyTileColorHex));
+      final String? targetTileColorHex = (tileData.userId == 'footprint_marker')
+          ? tileData.colorHex
+          : ((tileData.userId == 'pattern_consumed')
+              ? '#0066FF'
+              : ((tileData.userId == 'coin_marker' || tileData.userId == 'none' || tileData.userId == null)
+                  ? null
+                  : ((tileData.userId == _currentUserId)
+                      ? GameColors.myTileColorHex
+                      : GameColors.enemyTileColorHex)));
 
-      final hasCoin = _coins.any((c) => c.tileId == id && !c.isCollected);
+      final hasCoin = !_showFootprints && _coins.any((c) => c.tileId == id && !c.isCollected);
 
       if (_tileMap.containsKey(id)) {
         _tileMap[id]!.position = Vector2(screenOffset.dx, screenOffset.dy);
@@ -421,6 +462,8 @@ class ConquestGame extends FlameGame {
     bool showCompletedPatterns = false,
     Set<String>? consumedTileIds,
     List<UserCoin>? coins,
+    bool showFootprints = false,
+    Map<String, FootprintTile>? footprints,
   }) {
     _lastCapturedTiles = capturedTiles;
     _lastCapturingColorHex = capturingColorHex;
@@ -432,6 +475,10 @@ class ConquestGame extends FlameGame {
     _satelliteCaptureProgress = satelliteCaptureProgress;
     _satelliteCapturingTileId = satelliteCapturingTileId;
     _showCompletedPatterns = showCompletedPatterns;
+    _showFootprints = showFootprints;
+    if (footprints != null) {
+      _footprints = footprints;
+    }
     _consumedTileIds = consumedTileIds ?? {};
     if (coins != null) {
       _coins = coins;

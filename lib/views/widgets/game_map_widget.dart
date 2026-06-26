@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:flame/game.dart';
@@ -8,6 +9,7 @@ import '../../core/constants/colors.dart';
 import '../../core/constants/map_config.dart';
 import '../../providers/game_provider.dart';
 import '../../providers/location_provider.dart';
+import '../../providers/achievement_provider.dart';
 import '../../services/hex_service.dart';
 
 
@@ -36,6 +38,7 @@ class _GameMapWidgetState extends State<GameMapWidget>
   LocationProvider? _locProvider; // 추가: LocationProvider 참조 보관
   GameProvider? _gameProvider; // 추가: GameProvider 참조 보관
   AnimationController? _animationController; // 추가: 내 위치 애니메이션 컨트롤러
+  StreamSubscription<LatLng>? _mapMoveSub; // 추가: 지도 카메라 이동 수신용 구독
 
   @override
   void initState() {
@@ -55,8 +58,16 @@ class _GameMapWidgetState extends State<GameMapWidget>
     final newGameProvider = Provider.of<GameProvider>(context, listen: false);
     if (_gameProvider != newGameProvider) {
       _gameProvider?.removeListener(_onGameProviderChanged);
+      _mapMoveSub?.cancel();
       _gameProvider = newGameProvider;
       _gameProvider?.addListener(_onGameProviderChanged);
+      _mapMoveSub = _gameProvider?.mapMoveRequests.listen((destLatLng) {
+        if (mounted) {
+          // 수동 이동 처리이므로 위치 자동 추종 모드 해제
+          _gameProvider?.setFollowingUser(false);
+          _animatedMapMove(destLatLng, MapConfig.focusZoom, 0.0);
+        }
+      });
     }
   }
 
@@ -64,6 +75,7 @@ class _GameMapWidgetState extends State<GameMapWidget>
   void dispose() {
     _locProvider?.removeListener(_onLocationProviderChanged);
     _gameProvider?.removeListener(_onGameProviderChanged);
+    _mapMoveSub?.cancel();
     _stopAnimation();
     super.dispose();
   }
@@ -267,6 +279,115 @@ class _GameMapWidgetState extends State<GameMapWidget>
               onTap: (tapPosition, point) {
                 final hex = HexService.latLngToHex(point);
                 final tileId = HexService.tileId(hex['q']!, hex['r']!);
+
+                if (gameProvider.isFootprintMode) {
+                  final footprint = gameProvider.footprints[tileId];
+                  if (footprint != null) {
+                    ScaffoldMessenger.of(context).clearSnackBars();
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(
+                        content: Row(
+                          children: [
+                            const Icon(
+                              Icons.directions_walk_rounded,
+                              color: Color(0xFF00FFCC),
+                              size: 20,
+                            ),
+                            const SizedBox(width: 10),
+                            Expanded(
+                              child: Column(
+                                mainAxisSize: MainAxisSize.min,
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  const Text(
+                                    '발자취 탐색 성공',
+                                    style: TextStyle(
+                                      fontWeight: FontWeight.bold,
+                                      color: Colors.white,
+                                    ),
+                                  ),
+                                  Text(
+                                    '기록 일시: ${footprint.formattedTime}',
+                                    style: const TextStyle(
+                                      color: Color(0xFFE0E0E0),
+                                      fontSize: 12,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ],
+                        ),
+                        backgroundColor: const Color(0xFF1E1E1E),
+                        duration: const Duration(seconds: 4),
+                        behavior: SnackBarBehavior.floating,
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(12),
+                          side: const BorderSide(
+                            color: Color(0xFF00FFCC),
+                            width: 1.0,
+                          ),
+                        ),
+                      ),
+                    );
+                  }
+                  return;
+                }
+
+                if (gameProvider.showCompletedPatterns) {
+                  final consumedTileIds = Provider.of<AchievementProvider>(context, listen: false).consumedTileIds;
+                  if (consumedTileIds.contains(tileId)) {
+                    ScaffoldMessenger.of(context).clearSnackBars();
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(
+                        content: const Row(
+                          children: [
+                            Icon(
+                              Icons.grid_on_rounded,
+                              color: Color(0xFF0066FF),
+                              size: 20,
+                            ),
+                            SizedBox(width: 10),
+                            Expanded(
+                              child: Column(
+                                mainAxisSize: MainAxisSize.min,
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Text(
+                                    '패턴 타일 탐색 성공',
+                                    style: TextStyle(
+                                      fontWeight: FontWeight.bold,
+                                      color: Colors.white,
+                                    ),
+                                  ),
+                                  Text(
+                                    '이미 매칭에 완성해 사용한 도감 헥사곤 영역입니다.',
+                                    style: TextStyle(
+                                      color: Color(0xFFE0E0E0),
+                                      fontSize: 12,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ],
+                        ),
+                        backgroundColor: const Color(0xFF1E1E1E),
+                        duration: const Duration(seconds: 4),
+                        behavior: SnackBarBehavior.floating,
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(12),
+                          side: const BorderSide(
+                            color: Color(0xFF0066FF),
+                            width: 1.0,
+                          ),
+                        ),
+                      ),
+                    );
+                  }
+                  return;
+                }
+
                 gameProvider.selectScanTile(tileId);
               },
               onMapEvent: (event) {

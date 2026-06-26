@@ -31,6 +31,7 @@ export async function fetchDashboardStats() {
     const { data: topAgents, error: err4 } = await supabase
       .from('profiles')
       .select('id, nickname, color_hex, captured_tiles_count, gold')
+      .neq('role', 'admin')
       .order('captured_tiles_count', { ascending: false })
       .limit(5);
 

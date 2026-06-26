@@ -9,6 +9,7 @@ import 'package:conquest_mobile/models/user_profile.dart';
 import 'package:conquest_mobile/services/supabase_service.dart';
 import 'package:conquest_mobile/providers/auth_provider.dart';
 import 'package:conquest_mobile/services/hex_service.dart';
+import 'package:conquest_mobile/models/footprint_model.dart';
 import 'package:supabase_flutter/supabase_flutter.dart' as supabase_flutter;
 
 // Fake Supabase Service 구현
@@ -47,6 +48,12 @@ class FakeSupabaseService implements SupabaseService {
   Future<List<String>> fetchConsumedTileIds(String userId) async {
     return consumedTileIds;
   }
+
+  @override
+  Future<List<FootprintTile>> fetchUserFootprints(String userId) async => [];
+
+  @override
+  Future<bool> recordFootprint(String userId, String tileId, DateTime time) async => true;
 
   @override
   dynamic noSuchMethod(Invocation invocation) => super.noSuchMethod(invocation);

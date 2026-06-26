@@ -2,10 +2,12 @@ import 'dart:async';
 import 'package:flutter/widgets.dart';
 import '../core/constants/game_config.dart';
 import '../models/tile_model.dart';
+import '../models/footprint_model.dart';
 import '../providers/auth_provider.dart';
 import '../providers/location_provider.dart';
 import '../services/hex_service.dart';
 import '../services/supabase_service.dart';
+import '../services/preferences_service.dart';
 
 /// 점령된 타일 데이터의 저장소, 실시간 스트림 구독, 침공 감지, 타일 정보 해제, 
 /// 닉네임 캐싱 등 타일에 특화된 상태를 전담 관리하는 프로바이더.
@@ -20,6 +22,12 @@ class GameTileProvider extends ChangeNotifier {
 
   /// 점령된 타일 목록 (Key: 타일 ID, Value: 타일 상세 모델)
   final Map<String, HexTile> _capturedTiles = {};
+
+  /// 플레이어의 발자취 타일 목록 (Key: 타일 ID, Value: 발자취 모델)
+  final Map<String, FootprintTile> _footprints = {};
+
+  /// 발자취 맵 getter
+  Map<String, FootprintTile> get footprints => Map.unmodifiable(_footprints);
 
   /// 실시간 점령 타일 목록 스트림 구독 객체
   StreamSubscription<List<HexTile>>? _tilesStreamSub;
@@ -60,12 +68,20 @@ class GameTileProvider extends ChangeNotifier {
   bool get isInitialized => _isInitialized;
   Future<void> get initializationFuture => _initCompleter.future;
 
-  /// 서버에서 모든 점령 타일을 불러오고 실시간 스트림을 연결합니다.
+  /// 서버에서 모든 점령 타일을 불러오고 실시간 스트림을 연결하며, 로그인된 경우 발자취 데이터도 함께 불러옵니다.
   Future<void> init() async {
     try {
       final tiles = await _supabase.fetchAllCapturedTiles();
       for (final tile in tiles) {
         _capturedTiles[tile.id] = tile;
+      }
+
+      final myId = _userId;
+      if (myId != null) {
+        // 초기화 프로세스가 발자취 네트워크 대기에 블로킹되지 않도록 비동기 백그라운드 처리
+        loadFootprints(myId).catchError((e) {
+          debugPrint('⚠️ 초기 발자취 백그라운드 로드 실패: $e');
+        });
       }
     } catch (e) {
       debugPrint('GameTileProvider 초기 데이터 로드 실패: $e');
@@ -78,6 +94,81 @@ class GameTileProvider extends ChangeNotifier {
       _onTilesUpdated,
       onError: (e) => debugPrint('⚠️ 점령 타일 스트림 에러: $e'),
     );
+  }
+
+  // --- Footprint CRUD ---
+
+  /// 서버 및 로컬 캐시에서 사용자의 발자취 데이터를 불러와 캐시를 구축합니다.
+  Future<void> loadFootprints(String userId) async {
+    try {
+      // 1. 로컬 SharedPreferences 백업 데이터를 먼저 읽어와 캐시에 사전 탑재
+      final localMap = await PreferencesService.getLocalFootprints();
+      for (final entry in localMap.entries) {
+        final time = DateTime.tryParse(entry.value) ?? DateTime.now();
+        _footprints[entry.key] = FootprintTile(
+          tileId: entry.key,
+          recordedAt: time,
+        );
+      }
+      notifyListeners();
+      debugPrint('📦 로컬 발자취 ${localMap.length}개 로드 완료');
+
+      // 2. Supabase DB 서버 데이터 비동기 조회하여 캐시 병합 및 동기화
+      final list = await _supabase.fetchUserFootprints(userId);
+      for (final tile in list) {
+        _footprints[tile.tileId] = tile;
+      }
+      notifyListeners();
+
+      // 3. 최신 병합 상태를 로컬 SharedPreferences에 다시 영구 백업
+      final Map<String, String> toSaveMap = {};
+      _footprints.forEach((k, v) {
+        toSaveMap[k] = v.recordedAt.toUtc().toIso8601String();
+      });
+      await PreferencesService.saveLocalFootprints(toSaveMap);
+
+      debugPrint('📦 서버 발자취 ${list.length}개 동기화 완료 (총: ${_footprints.length}개)');
+    } catch (e) {
+      debugPrint('❌ 발자취 로드 실패: $e');
+    }
+  }
+
+  /// 새로운 발자취를 추가합니다. 이미 캐싱되어 있다면 서버/로컬 추가를 건너뜁니다.
+  Future<void> addFootprint(String userId, String tileId, DateTime time) async {
+    if (_footprints.containsKey(tileId)) return;
+
+    // 년/월/일/시/분까지만 기록 (초 이하 00으로 절사)
+    final truncatedTime = DateTime(
+      time.year,
+      time.month,
+      time.day,
+      time.hour,
+      time.minute,
+    );
+
+    final newFootprint = FootprintTile(
+      tileId: tileId,
+      recordedAt: truncatedTime,
+    );
+
+    // 1. 로컬 캐시에 즉각 추가하여 빠른 반응 속도 확보
+    _footprints[tileId] = newFootprint;
+    notifyListeners();
+
+    // 2. 로컬 SharedPreferences 백업 즉각 업데이트 (서버 실패나 지연 시에도 디바이스에 보존되도록)
+    try {
+      final localMap = await PreferencesService.getLocalFootprints();
+      localMap[tileId] = truncatedTime.toUtc().toIso8601String();
+      await PreferencesService.saveLocalFootprints(localMap);
+    } catch (e) {
+      debugPrint('⚠️ 발자취 로드/세이브 로컬 SharedPreferences 실패: $e');
+    }
+
+    // 3. 백그라운드 서버 저장 (실패하더라도 로컬에는 보존하여 롤백하지 않고 유지보수성 향상)
+    final success = await _supabase.recordFootprint(userId, tileId, truncatedTime);
+    if (!success) {
+      debugPrint('⚠️ 발자취 서버 동기화 실패 (로컬 디바이스에는 정상 보존): $tileId');
+    }
   }
 
   // --- Tile CRUD ---

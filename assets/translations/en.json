@@ -430,7 +430,7 @@
   "capturedBySuffix": "'s Territory",
   "noAchievements": "No achievements registered.",
   "onboardingWelcomeTitle": "Welcome, Adventurer!",
-  "onboardingWelcomeDesc": "This game is based on real-time GPS and actual maps, making the entire world your playground! Let us briefly introduce the key UI elements and a simple game guide.",
+  "onboardingWelcomeDesc": "Welcome, Adventurer! This game is based on real-time GPS and actual maps, making the entire world your playground! ⚠️ Note that you must create an account and log in to ensure your capture history and footprints are recorded and saved to the server. Let us briefly introduce the key UI elements and a simple game guide.",
   "onboardingGoldTitle": "My Gold Assets (GP)",
   "onboardingGoldDesc": "This is your current Gold (GP) amount. Capturing more territories through adventures accelerates your gold accumulation.",
   "onboardingTimerTitle": "Daily Reset Timer",
@@ -454,12 +454,15 @@
   "onboardingRankingDesc": "Check real-time rankings based on territory count, daily movement, and total distance.",
   "onboardingAchievementTitle": "My Achievements",
   "onboardingAchievementDesc": "Review your badges and achievement progress unlocked by completing various adventure goals.",
-  "onboardingPatternToggleTitle": "Pattern Layout Toggle",
-  "onboardingPatternToggleDesc": "Toggle the visibility of special pattern layout boundaries that you have completed on the map.",
+  "onboardingMapModeToggleTitle": "Cycle Map View Mode",
+  "onboardingMapModeToggleDesc": "Changes how the map is displayed. Tapping cycles through each mode.\n\n• Normal Mode: View displaying all territories and items. Tapping a tile displays its zone information or allows remote capture.\n• Footprint Mode: View displaying only your recorded footprint paths. Tapping a tile displays its capture record.\n• Pattern Mode: View displaying only completed pattern layouts.\n\n⚠️ Auto capture and footprint recording run continuously in the background regardless of the current mode.",
   "onboardingMyLocationTitle": "My Location Arrow Marker",
   "onboardingMyLocationDesc": "This is the blue arrow pointing to your real-time location. It rotates dynamically to show your compass direction as you move.",
   "onboardingRemoteTitle": "Remote Capture & Core Rules",
-  "onboardingRemoteDesc": "You can spend Gold (GP) to aim, scan, and claim remote zones. Your Headquarters (HQ), marked with a flag, can be relocated from the My Info menu, and gold coins generate around it daily for you to collect. Also, each zone becomes progressively harder to capture as its capture count increases.",
+  "onboardingRemoteDesc": "You can spend Gold (GP) to aim, scan, and claim remote zones. Your Headquarters (HQ), marked with a flag, can be relocated from the My Info menu, and gold items generate around it daily for you to collect. Also, each zone becomes progressively harder to capture as its capture count increases.",
   "tutorialReplayTitle": "Replay Guide",
-  "tutorialReplaySubtitle": "Replay the key features guide of the in-game screen."
+  "tutorialReplaySubtitle": "Replay the key features guide of the in-game screen.",
+  "mapModeNormalAlert": "Switched to Normal Map Mode.",
+  "mapModeFootprintAlert": "Switched to Footprint Map Mode.",
+  "mapModePatternAlert": "Switched to Pattern Collection Map Mode."
 }

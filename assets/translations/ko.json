@@ -430,7 +430,7 @@
   "capturedBySuffix": " 님의 구역입니다.",
   "noAchievements": "등록된 업적이 없습니다.",
   "onboardingWelcomeTitle": "반갑습니다, 모험가님!",
-  "onboardingWelcomeDesc": "본 게임은 실시간 GPS 기반의 실제 지도를 바탕으로 하며, 전 세계가 플레이어님의 게임 무대입니다! 지금부터 핵심 UI 요소와 간단한 게임 설명을 신속하게 소개해 드리겠습니다.",
+  "onboardingWelcomeDesc": "반갑습니다, 모험가님! 본 게임은 실시간 GPS 기반의 실제 지도를 바탕으로 하며, 전 세계가 플레이어님의 게임 무대입니다! ⚠️ 단, 계정을 생성하고 로그인하셔야 소중한 점령 이력과 발자취가 안전하게 기록되고 서버에 저장됩니다. 지금부터 핵심 UI 요소와 간단한 게임 설명을 신속하게 소개해 드리겠습니다.",
   "onboardingGoldTitle": "나의 골드 자산 (GP)",
   "onboardingGoldDesc": "현재 보유한 골드(GP) 총량입니다. 모험을 통해 구역을 더 많이 넓힐수록 골드가 더 신속하게 축적됩니다.",
   "onboardingTimerTitle": "일일 초기화 타이머",
@@ -454,12 +454,15 @@
   "onboardingRankingDesc": "영토 개수, 일일 이동 거리, 누적 이동 거리 기준의 플레이어 실시간 순위표를 확인합니다.",
   "onboardingAchievementTitle": "나의 업적 보드",
   "onboardingAchievementDesc": "다양한 모험 목표를 달성하여 획득한 나의 훈장과 업적 이력 상태를 검토할 수 있습니다.",
-  "onboardingPatternToggleTitle": "패턴 타일 시각화 토글",
-  "onboardingPatternToggleDesc": "매칭을 완료하여 획득한 특수 패턴 영토의 레이아웃을 지도상에 표시하거나 숨길 수 있습니다.",
+  "onboardingMapModeToggleTitle": "맵 뷰 모드 순환 토글",
+  "onboardingMapModeToggleDesc": "지도의 표시 방식을 변경합니다. 터치할 때마다 모드가 순환됩니다.\n\n• 일반 모드: 전체 영토와 아이템이 표시되는 화면입니다. 타일을 누르면 구역 정보를 확인하거나 원격 점령을 할 수 있습니다.\n• 발자취 모드: 내가 이동하며 기록한 발자취 동선만 표시되는 화면입니다. 타일을 누르면 점령 기록 정보가 나타납니다.\n• 패턴 도감 모드: 획득에 성공한 패턴 영역만 표시되는 화면입니다.\n\n⚠️ 어떤 모드로 보더라도 영토 자동 점령과 발자취 기록은 중단 없이 정상 진행됩니다.",
   "onboardingMyLocationTitle": "내 위치 화살표 마커",
   "onboardingMyLocationDesc": "지도의 중앙 또는 플레이어님의 실제 위치를 가리키는 파란색 화살표입니다. 기기의 움직임과 방향에 따라 실시간으로 나침반 방향을 나타내며 회전합니다.",
   "onboardingRemoteTitle": "원격 점령 및 주요 규칙",
   "onboardingRemoteDesc": "골드(GP)를 소모하여 원하는 지역을 원격 조준 및 스캔하여 점령(원격 점령)할 수 있습니다. 깃발로 표시된 본진(HQ)은 나의 정보 메뉴에서 위치를 이전할 수 있으며, 본진 주변에는 매일 획득 가능한 골드가 생성됩니다. 또한 각 구역은 점령 횟수가 늘어날수록 점령 난이도가 상승합니다.",
   "tutorialReplayTitle": "가이드 다시보기",
-  "tutorialReplaySubtitle": "인게임 화면의 핵심 기능 가이드를 다시 확인합니다."
+  "tutorialReplaySubtitle": "인게임 화면의 핵심 기능 가이드를 다시 확인합니다.",
+  "mapModeNormalAlert": "일반 맵 모드로 전환되었습니다.",
+  "mapModeFootprintAlert": "발자취 맵 모드로 전환되었습니다.",
+  "mapModePatternAlert": "패턴 도감 맵 모드로 전환되었습니다."
 }

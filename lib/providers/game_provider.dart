@@ -10,6 +10,7 @@ import '../models/alert_model.dart';
 import '../models/tile_model.dart';
 import '../models/user_profile.dart';
 import '../models/user_coin.dart';
+import '../models/footprint_model.dart';
 import '../providers/location_provider.dart';
 import '../providers/auth_provider.dart';
 import '../providers/achievement_provider.dart';
@@ -23,6 +24,12 @@ import '../core/constants/game_config.dart';
 import '../core/constants/map_config.dart';
 import '../core/constants/strings.dart';
 import '../services/health_service.dart';
+
+enum MapMode {
+  normal,
+  footprint,
+  pattern,
+}
 
 /// 게임의 핵심 인게임 비즈니스 상태 및 점령 로직을 관리하고 UI에 변경을 전파하는 메인 프로바이더.
 ///
@@ -78,8 +85,20 @@ class GameProvider extends ChangeNotifier with WidgetsBindingObserver {
   /// 지도 카메라가 플레이어의 GPS 실시간 위치를 추적하고 있는지 여부
   bool _isFollowingUser = true;
 
-  /// 이미 매칭 완료하여 해금한 패턴의 소비 타일들을 맵 상에 하이라이트할지 여부
-  bool _showCompletedPatterns = false;
+  /// 맵 뷰 모드 통합 관리 상태
+  MapMode _mapMode = MapMode.normal;
+  MapMode get mapMode => _mapMode;
+
+  bool get isFootprintMode => _mapMode == MapMode.footprint;
+  bool get showCompletedPatterns => _mapMode == MapMode.pattern;
+
+  /// 지도 카메라 이동 요청을 중계하기 위한 브로드캐스트 스트림 컨트롤러
+  final StreamController<LatLng> _mapMoveRequestController = StreamController<LatLng>.broadcast();
+  Stream<LatLng> get mapMoveRequests => _mapMoveRequestController.stream;
+
+  void requestMapMove(LatLng destination) {
+    _mapMoveRequestController.add(destination);
+  }
 
   // --- 위성 스캔 상태 ---
   bool _isScanMode = false;
@@ -116,6 +135,8 @@ class GameProvider extends ChangeNotifier with WidgetsBindingObserver {
 
   // --- Public Getters (Tile — GameTileProvider 위임) ---
   Map<String, HexTile> get capturedTiles => _tileProvider.capturedTiles;
+
+  Map<String, FootprintTile> get footprints => _tileProvider.footprints;
 
   int get myCapturedCount => _tileProvider.myCapturedCount;
 
@@ -182,7 +203,6 @@ class GameProvider extends ChangeNotifier with WidgetsBindingObserver {
   bool get isMapRotationMode => _isMapRotationMode;
   bool get isFollowingUser => _isFollowingUser;
   bool get showMap => currentMapStyle.url.isNotEmpty;
-  bool get showCompletedPatterns => _showCompletedPatterns;
 
   MapStyle get currentMapStyle => MapConfig.mapStyles[_currentMapStyleIndex];
 
@@ -197,7 +217,7 @@ class GameProvider extends ChangeNotifier with WidgetsBindingObserver {
     final loc = _locationProvider;
     final auth = _authProvider;
 
-    if (loc == null || !loc.isGpsActive || loc.currentLocation == null) {
+    if (loc == null || loc.currentLocation == null) {
       return false;
     }
     if (loc.currentAccuracy > GameConfig.captureAccuracyThreshold) {
@@ -556,7 +576,7 @@ class GameProvider extends ChangeNotifier with WidgetsBindingObserver {
     if (!isInitialized) return;
     final loc = _locationProvider;
     final auth = _authProvider;
-    if (loc == null || !loc.isGpsActive || loc.currentLocation == null) {
+    if (loc == null || loc.currentLocation == null) {
       return;
     }
     if (auth == null || !auth.isAuthenticated || auth.profile == null) {
@@ -569,7 +589,12 @@ class GameProvider extends ChangeNotifier with WidgetsBindingObserver {
     _checkAndSyncCoins();
     _checkCoinCollection(tileId);
 
-    // 편법 방지 타일 이동 카운팅
+    // 편법 방지 타일 이동 카운팅 및 발자취 기록
+    final myId = auth.profile!.id;
+
+    // [보완] 현재 밟고 있는 타일의 발자취 기록을 매번 확인 시도 (내부 캐시 조건으로 중복 저장 원천 차단됨)
+    _tileProvider.addFootprint(myId, tileId, DateTime.now());
+
     if (_lastTileId == null) {
       _lastTileId = tileId;
       PreferencesService.setLastVisitedTileId(tileId);
@@ -762,9 +787,53 @@ class GameProvider extends ChangeNotifier with WidgetsBindingObserver {
     notifyListeners();
   }
 
-  void toggleCompletedPatternsView() {
-    _showCompletedPatterns = !_showCompletedPatterns;
+  void cycleMapMode() {
+    final oldMode = _mapMode;
+    switch (_mapMode) {
+      case MapMode.normal:
+        _mapMode = MapMode.footprint;
+        break;
+      case MapMode.footprint:
+        _mapMode = MapMode.pattern;
+        break;
+      case MapMode.pattern:
+        _mapMode = MapMode.normal;
+        break;
+    }
     notifyListeners();
+    _showMapModeAlert(oldMode);
+  }
+
+  void toggleCompletedPatternsView() {
+    final oldMode = _mapMode;
+    _mapMode = (_mapMode == MapMode.pattern) ? MapMode.normal : MapMode.pattern;
+    notifyListeners();
+    _showMapModeAlert(oldMode);
+  }
+
+  void toggleFootprintMode() {
+    final oldMode = _mapMode;
+    _mapMode = (_mapMode == MapMode.footprint) ? MapMode.normal : MapMode.footprint;
+    notifyListeners();
+    _showMapModeAlert(oldMode);
+  }
+
+  void _showMapModeAlert(MapMode oldMode) {
+    if (oldMode != _mapMode) {
+      String message;
+      switch (_mapMode) {
+        case MapMode.normal:
+          message = GameStrings.mapModeNormalAlert;
+          break;
+        case MapMode.footprint:
+          message = GameStrings.mapModeFootprintAlert;
+          break;
+        case MapMode.pattern:
+          message = GameStrings.mapModePatternAlert;
+          break;
+      }
+      addAlert(message, AlertType.info);
+    }
   }
 
   void cycleMapStyle() {
@@ -996,6 +1065,7 @@ class GameProvider extends ChangeNotifier with WidgetsBindingObserver {
     _locationProvider?.removeListener(onLocationUpdated);
     _captureController.dispose();
     _tileProvider.dispose();
+    _mapMoveRequestController.close();
     super.dispose();
   }
 

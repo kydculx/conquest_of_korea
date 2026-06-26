@@ -4,6 +4,7 @@ import '../core/app_config.dart';
 import '../models/tile_model.dart';
 import '../models/user_profile.dart';
 import '../models/user_coin.dart';
+import '../models/footprint_model.dart';
 
 /// Supabase 백엔드 데이터베이스 및 Realtime 데이터 처리를 담당하는 네트워크 통신 서비스 클래스
 class SupabaseService {
@@ -146,6 +147,7 @@ class SupabaseService {
       final response = await _client
           .from('profiles')
           .select('*')
+          .neq('role', 'admin')
           .order(rankType, ascending: false)
           .limit(100);
 
@@ -174,6 +176,7 @@ class SupabaseService {
       final response = await _client
           .from('profiles')
           .select('id')
+          .neq('role', 'admin')
           .gt(rankType, queryVal);
 
       final count = (response as List).length;
@@ -275,6 +278,27 @@ class SupabaseService {
     } catch (e) {
       debugPrint('❌ 소비 타일 목록 조회 실패: $e');
       return [];
+    }
+  }
+
+  /// 특정 플레이어가 획득한 업적별 타일 맵핑 정보 (achievement_id -> List<tile_id>)를 조회하여 반환합니다.
+  Future<Map<String, List<String>>> fetchAchievementTiles(String userId) async {
+    try {
+      final response = await _client
+          .from('user_achievement_tiles')
+          .select('achievement_id, tile_id')
+          .eq('user_id', userId);
+
+      final Map<String, List<String>> resultMap = {};
+      for (final row in response as List) {
+        final achId = row['achievement_id'] as String;
+        final tileId = row['tile_id'] as String;
+        resultMap.putIfAbsent(achId, () => []).add(tileId);
+      }
+      return resultMap;
+    } catch (e) {
+      debugPrint('❌ 업적별 타일 맵핑 조회 실패: $e');
+      return {};
     }
   }
 
@@ -381,6 +405,48 @@ class SupabaseService {
     } catch (e) {
       lastError = e.toString();
       debugPrint('❌ 동전 획득 RPC 처리 실패: $e');
+      return false;
+    }
+  }
+
+  /// 특정 사용자의 모든 발자취 기록을 조회합니다.
+  Future<List<FootprintTile>> fetchUserFootprints(String userId) async {
+    try {
+      final response = await _client
+          .from('user_footprints')
+          .select('*')
+          .eq('user_id', userId);
+      return (response as List)
+          .map((e) => FootprintTile.fromJson(_toMap(e)))
+          .toList();
+    } catch (e) {
+      debugPrint('❌ 발자취 목록 조회 실패: $e');
+      return [];
+    }
+  }
+
+  /// 새로운 발자취 기록을 삽입합니다. 중복(user_id, tile_id) 발생 시 아무 작업도 하지 않고 성공 처리합니다.
+  Future<bool> recordFootprint(
+    String userId,
+    String tileId,
+    DateTime time,
+  ) async {
+    try {
+      lastError = null;
+      final data = {
+        'user_id': userId,
+        'tile_id': tileId,
+        'recorded_at': time.toUtc().toIso8601String(),
+      };
+      await _client.from('user_footprints').upsert(
+            data,
+            onConflict: 'user_id,tile_id',
+          );
+      debugPrint('🐾 발자취 DB 등록 완료: $tileId ($time)');
+      return true;
+    } catch (e) {
+      lastError = e.toString();
+      debugPrint('❌ 발자취 DB 등록 실패: $e');
       return false;
     }
   }

@@ -29,6 +29,9 @@ class AchievementProvider extends ChangeNotifier {
   // 이미 업적 해금에 소비 완료된 영토 타일 ID 목록 캐시
   final Set<String> _consumedTileIds = {};
 
+  // 업적별 소비(완성) 완료된 타일 ID 맵핑 캐시 (key: achievement_id, value: [tile_id, ...])
+  final Map<String, List<String>> _achievementTiles = {};
+
   /// 최근 해금된 업적 정보를 실시간 중계하는 브로드캐스트 스트림
   final StreamController<Achievement> _unlockStreamController =
       StreamController<Achievement>.broadcast();
@@ -229,6 +232,9 @@ class AchievementProvider extends ChangeNotifier {
   /// 업적 해금에 소비된 타일 ID 목록 반환
   Set<String> get consumedTileIds => Set.unmodifiable(_consumedTileIds);
 
+  /// 업적별로 소비된 타일 ID 맵핑 데이터 반환
+  Map<String, List<String>> get achievementTiles => Map.unmodifiable(_achievementTiles);
+
   /// 업적 데이터베이스 로딩 여부
   bool get isLoading => _isLoading;
 
@@ -256,6 +262,7 @@ class AchievementProvider extends ChangeNotifier {
         _currentUserId = null;
         _unlockedAchievementIds = [];
         _consumedTileIds.clear();
+        _achievementTiles.clear();
         notifyListeners();
       }
     }
@@ -270,6 +277,10 @@ class AchievementProvider extends ChangeNotifier {
       final consumed = await _supabase.fetchConsumedTileIds(userId);
       _consumedTileIds.clear();
       _consumedTileIds.addAll(consumed);
+
+      final achTiles = await _supabase.fetchAchievementTiles(userId);
+      _achievementTiles.clear();
+      _achievementTiles.addAll(achTiles);
     } catch (e) {
       debugPrint('⚠️ 해금 업적 및 소비 타일 조회 실패: $e');
     } finally {
@@ -431,6 +442,7 @@ class AchievementProvider extends ChangeNotifier {
           _unlockedAchievementIds.add(ach.id);
           if (currentMatchedIds != null) {
             _consumedTileIds.addAll(currentMatchedIds);
+            _achievementTiles[ach.id] = currentMatchedIds;
           }
           _unlockStreamController.add(ach); // 해금 완료 이벤트 중계
           notifyListeners();

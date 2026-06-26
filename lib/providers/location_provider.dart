@@ -83,10 +83,10 @@ class LocationProvider extends ChangeNotifier with WidgetsBindingObserver {
       _firstLocationCompleter.complete();
     }
 
-    // 10초간 업데이트 없으면 GPS 신호 유실로 판단
+    // 30초간 업데이트 없으면 GPS 신호 유실로 판단 (정지 테스트 고려)
     _gpsSignalTimer?.cancel();
     _gpsSignalTimer = Timer(
-        const Duration(seconds: GameConfig.gpsSignalLostTimeoutSeconds), () {
+        const Duration(seconds: 30), () {
       _isGpsActive = false;
       notifyListeners();
     });

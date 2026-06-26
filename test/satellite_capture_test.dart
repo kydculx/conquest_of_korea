@@ -10,6 +10,7 @@ import 'package:conquest_mobile/providers/game_tile_provider.dart';
 import 'package:conquest_mobile/services/supabase_service.dart';
 import 'package:conquest_mobile/providers/auth_provider.dart';
 import 'package:conquest_mobile/providers/location_provider.dart';
+import 'package:conquest_mobile/models/footprint_model.dart';
 import 'package:conquest_mobile/models/tile_model.dart';
 import 'package:conquest_mobile/models/user_profile.dart';
 import 'package:conquest_mobile/models/user_coin.dart';
@@ -83,6 +84,12 @@ class FakeSupabaseService implements SupabaseService {
 
   @override
   Future<bool> incrementMovedTiles(String userId) async => true;
+
+  @override
+  Future<List<FootprintTile>> fetchUserFootprints(String userId) async => [];
+
+  @override
+  Future<bool> recordFootprint(String userId, String tileId, DateTime time) async => true;
 
   @override
   dynamic noSuchMethod(Invocation invocation) {
