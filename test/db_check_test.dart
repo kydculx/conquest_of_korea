@@ -73,24 +73,22 @@ void main() {
       print('❌ captured_tiles 조회 에러: $e');
     }
 
-    // 6. safe_capture_tile RPC 호출 테스트
+    // 6. update_user_gold_admin RPC 호출 테스트
     try {
-      print('🏹 safe_capture_tile RPC 테스트 시작...');
-      const testUserId =
-          'de0a3e9e-c6d1-41d4-9f17-f1796b5f5df9'; // profiles에 존재하는 실서버 사용자 ID
+      print('🏹 update_user_gold_admin RPC 테스트 시작...');
+      const testUserId = '038f9c30-0314-4246-97d6-725f84a57efe'; // test_01
       final params = {
-        'p_tile_id': 'test_rpc_tile_id_123',
-        'p_q': 999,
-        'p_r': 999,
         'p_user_id': testUserId,
-        'p_color_hex': '#FF0000',
-        'p_target_capture_count': 1,
-        'p_shield_duration_seconds': 60,
+        'p_gold_amount': 2500.5,
       };
-      final response = await client.rpc('safe_capture_tile', params: params);
-      print('🚀 RPC safe_capture_tile 호출 결과: $response');
+      final response = await client.rpc('update_user_gold_admin', params: params);
+      print('🚀 RPC update_user_gold_admin 호출 결과: $response');
+      
+      // 반영 후 검증 조회
+      final updatedProfile = await client.from('profiles').select('gold').eq('id', testUserId).single();
+      print('💰 업데이트 후 골드 조회 결과: ${updatedProfile['gold']}');
     } catch (e) {
-      print('❌ RPC safe_capture_tile 호출 에러: $e');
+      print('❌ RPC update_user_gold_admin 호출 에러: $e');
     }
   });
 }

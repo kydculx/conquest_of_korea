@@ -117,7 +117,7 @@ class GoldManager {
     _notifyListeners();
   }
 
-  /// 현재 골드를 서버에 영속화 (앱 lifecyle pause 시)
+  /// 현재 골드를 서버에 영속화 (낙관적 락킹 조건부 업데이트 적용)
   Future<void> persistToServer() async {
     final auth = _auth;
     if (auth == null || !auth.isAuthenticated || auth.profile == null) return;
@@ -125,11 +125,27 @@ class GoldManager {
     try {
       final profile = auth.profile!;
       final now = DateTime.now().toUtc();
-      await _supabase.client.from('profiles').update({
+
+      var query = _supabase.client.from('profiles').update({
         'gold': _currentGold,
         'last_gold_updated_at': now.toIso8601String(),
       }).eq('id', profile.id);
-      await auth.refreshProfile();
+
+      // 외부(관리자 툴 등) 조작 시 last_gold_updated_at이 달라지므로,
+      // 기존에 알고 있던 lastGoldUpdatedAt과 동일할 때만 업데이트 수행
+      if (profile.lastGoldUpdatedAt != null) {
+        query = query.eq('last_gold_updated_at', profile.lastGoldUpdatedAt!.toIso8601String());
+      }
+
+      final response = await query.select();
+
+      if (response.isNotEmpty) {
+        await auth.refreshProfile();
+      } else {
+        debugPrint('⚠️ 골드 업데이트 건너뜀 (외부 조작 또는 동기화 불일치 감지)');
+        // 불일치 시 서버 데이터를 로컬로 강제 동기화
+        await syncWithServer();
+      }
     } catch (e) {
       debugPrint('❌ 골드 정밀 서버 영속화 실패: $e');
     }
@@ -168,7 +184,7 @@ class GoldManager {
       _notifyListeners();
 
       _syncCounter++;
-      if (_syncCounter >= 10) {
+      if (_syncCounter >= 30) {
         _syncCounter = 0;
         await persistToServer();
       }

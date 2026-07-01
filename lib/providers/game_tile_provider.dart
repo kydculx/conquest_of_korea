@@ -7,7 +7,6 @@ import '../providers/auth_provider.dart';
 import '../providers/location_provider.dart';
 import '../services/hex_service.dart';
 import '../services/supabase_service.dart';
-import '../services/preferences_service.dart';
 
 /// 점령된 타일 데이터의 저장소, 실시간 스트림 구독, 침공 감지, 타일 정보 해제, 
 /// 닉네임 캐싱 등 타일에 특화된 상태를 전담 관리하는 프로바이더.
@@ -29,11 +28,14 @@ class GameTileProvider extends ChangeNotifier {
   /// 발자취 맵 getter
   Map<String, FootprintTile> get footprints => Map.unmodifiable(_footprints);
 
-  /// 실시간 점령 타일 목록 스트림 구독 객체
-  StreamSubscription<List<HexTile>>? _tilesStreamSub;
-
   /// 프로바이더 내부 데이터 초기화 완료 여부
   bool _isInitialized = false;
+
+  /// 마지막으로 2km REST 조회를 진행했던 타일 ID
+  String? _lastCheckedAreaTileId;
+
+  /// 마지막으로 2km REST 조회를 수행한 시각
+  DateTime? _lastAreaFetchTime;
 
   /// 위치 변경 감지 시 서버 부하 방지용 3초 딜레이 타이머의 마지막 체크 시각
   DateTime? _lastServerCheckTime;
@@ -53,9 +55,32 @@ class GameTileProvider extends ChangeNotifier {
 
   GameTileProvider({required SupabaseService supabase}) : _supabase = supabase;
 
+  /// 모든 캐시 데이터를 청소합니다 (로그아웃/사용자 변경 시 호출).
+  void reset() {
+    _capturedTiles.clear();
+    _footprints.clear();
+    _lastCheckedAreaTileId = null;
+    _lastAreaFetchTime = null;
+    notifyListeners();
+  }
+
   // --- AuthProvider 바인딩 ---
   void setAuthProvider(AuthProvider auth) {
+    final oldUserId = _userId;
     _authProvider = auth;
+    final newUserId = auth.user?.id;
+
+    if (oldUserId != newUserId) {
+      // 로그인 사용자 세션이 변경된 경우 캐시 전면 초기화
+      reset();
+
+      if (newUserId != null) {
+        // 새 사용자의 발자취 데이터를 비동기로 로드
+        loadFootprints(newUserId).catchError((e) {
+          debugPrint('⚠️ 새 사용자 발자취 로드 실패: $e');
+        });
+      }
+    }
   }
 
   // --- 편의 getter (AuthProvider 캡슐화) ---
@@ -72,9 +97,7 @@ class GameTileProvider extends ChangeNotifier {
   Future<void> init() async {
     try {
       final tiles = await _supabase.fetchAllCapturedTiles();
-      for (final tile in tiles) {
-        _capturedTiles[tile.id] = tile;
-      }
+      _handleAllTilesSync(tiles);
 
       final myId = _userId;
       if (myId != null) {
@@ -90,50 +113,27 @@ class GameTileProvider extends ChangeNotifier {
       if (!_initCompleter.isCompleted) _initCompleter.complete();
       notifyListeners();
     }
-    _tilesStreamSub = _supabase.capturedTilesStream.listen(
-      _onTilesUpdated,
-      onError: (e) => debugPrint('⚠️ 점령 타일 스트림 에러: $e'),
-    );
   }
 
   // --- Footprint CRUD ---
 
-  /// 서버 및 로컬 캐시에서 사용자의 발자취 데이터를 불러와 캐시를 구축합니다.
+  /// 서버에서 사용자의 발자취 데이터를 불러와 캐시를 구축합니다.
   Future<void> loadFootprints(String userId) async {
     try {
-      // 1. 로컬 SharedPreferences 백업 데이터를 먼저 읽어와 캐시에 사전 탑재
-      final localMap = await PreferencesService.getLocalFootprints();
-      for (final entry in localMap.entries) {
-        final time = DateTime.tryParse(entry.value) ?? DateTime.now();
-        _footprints[entry.key] = FootprintTile(
-          tileId: entry.key,
-          recordedAt: time,
-        );
-      }
-      notifyListeners();
-      debugPrint('📦 로컬 발자취 ${localMap.length}개 로드 완료');
-
-      // 2. Supabase DB 서버 데이터 비동기 조회하여 캐시 병합 및 동기화
+      _footprints.clear();
+      // Supabase DB 서버 데이터 비동기 조회하여 캐시 구축
       final list = await _supabase.fetchUserFootprints(userId);
       for (final tile in list) {
         _footprints[tile.tileId] = tile;
       }
       notifyListeners();
-
-      // 3. 최신 병합 상태를 로컬 SharedPreferences에 다시 영구 백업
-      final Map<String, String> toSaveMap = {};
-      _footprints.forEach((k, v) {
-        toSaveMap[k] = v.recordedAt.toUtc().toIso8601String();
-      });
-      await PreferencesService.saveLocalFootprints(toSaveMap);
-
-      debugPrint('📦 서버 발자취 ${list.length}개 동기화 완료 (총: ${_footprints.length}개)');
+      debugPrint('📦 서버 발자취 ${list.length}개 동기화 완료');
     } catch (e) {
       debugPrint('❌ 발자취 로드 실패: $e');
     }
   }
 
-  /// 새로운 발자취를 추가합니다. 이미 캐싱되어 있다면 서버/로컬 추가를 건너뜁니다.
+  /// 새로운 발자취를 추가합니다. 이미 캐싱되어 있다면 서버 추가를 건너뜁니다.
   Future<void> addFootprint(String userId, String tileId, DateTime time) async {
     if (_footprints.containsKey(tileId)) return;
 
@@ -146,28 +146,18 @@ class GameTileProvider extends ChangeNotifier {
       time.minute,
     );
 
-    final newFootprint = FootprintTile(
-      tileId: tileId,
-      recordedAt: truncatedTime,
-    );
-
-    // 1. 로컬 캐시에 즉각 추가하여 빠른 반응 속도 확보
-    _footprints[tileId] = newFootprint;
-    notifyListeners();
-
-    // 2. 로컬 SharedPreferences 백업 즉각 업데이트 (서버 실패나 지연 시에도 디바이스에 보존되도록)
-    try {
-      final localMap = await PreferencesService.getLocalFootprints();
-      localMap[tileId] = truncatedTime.toUtc().toIso8601String();
-      await PreferencesService.saveLocalFootprints(localMap);
-    } catch (e) {
-      debugPrint('⚠️ 발자취 로드/세이브 로컬 SharedPreferences 실패: $e');
-    }
-
-    // 3. 백그라운드 서버 저장 (실패하더라도 로컬에는 보존하여 롤백하지 않고 유지보수성 향상)
+    // 서버 저장 성공 시에만 최종적으로 로컬 캐시에 추가하여 데이터 정합성 보장 및 깜빡임 차단
     final success = await _supabase.recordFootprint(userId, tileId, truncatedTime);
-    if (!success) {
-      debugPrint('⚠️ 발자취 서버 동기화 실패 (로컬 디바이스에는 정상 보존): $tileId');
+    if (success) {
+      final newFootprint = FootprintTile(
+        tileId: tileId,
+        recordedAt: truncatedTime,
+      );
+      _footprints[tileId] = newFootprint;
+      notifyListeners();
+      debugPrint('✅ 발자취 서버 저장 및 캐시 등록 성공: $tileId');
+    } else {
+      debugPrint('⚠️ 발자취 서버 저장 실패 (캐시 등록 생략): $tileId');
     }
   }
 
@@ -269,38 +259,39 @@ class GameTileProvider extends ChangeNotifier {
     return currentTile(loc)?.userId == _authProvider!.user!.id;
   }
 
-  // --- Stream / 침공 감지 ---
-  /// 실시간 DB 변경 스트림을 통해 점령 타일 목록이 업데이트되었을 때 
-  /// 침공을 감지하고 로컬 캐시를 갱신합니다.
-  void _onTilesUpdated(List<HexTile> tiles) {
-    final auth = _authProvider;
-    if (auth?.user == null) return;
+  // --- 동기화 핸들러 ---
 
+  /// 전체 갱신 동기화 처리
+  void _handleAllTilesSync(List<HexTile> tiles) {
+    _capturedTiles.clear();
+    for (final tile in tiles) {
+      _capturedTiles[tile.id] = tile;
+    }
+    notifyListeners();
+  }
+
+  /// 2km 사각형 범위 내의 타일 정보 머지 및 소거 처리
+  void _handleAreaTilesUpdate(List<HexTile> tiles, int minQ, int maxQ, int minR, int maxR) {
     bool changed = false;
-    bool invasionDetected = false;
 
-    final myMainBaseId = auth!.profile?.mainBaseTileId;
+    // 1. 해당 영역 내에 속하는 기존 로컬 타일 ID 집합 추출
+    final localIdsInArea = _capturedTiles.entries
+        .where((e) => e.value.q >= minQ && e.value.q <= maxQ && e.value.r >= minR && e.value.r <= maxR)
+        .map((e) => e.key)
+        .toSet();
 
-    // 1. 삭제된 타일 소거
+    // 2. 들어온 타일 ID 집합
     final incomingIds = tiles.map((t) => t.id).toSet();
-    final localIds = _capturedTiles.keys.toSet();
-    final removedIds = localIds.difference(incomingIds);
+
+    // 3. 영역 내에서 사라진 타일들 캐시 소거
+    final removedIds = localIdsInArea.difference(incomingIds);
     for (final id in removedIds) {
       _capturedTiles.remove(id);
       changed = true;
     }
 
-    // 2. 신규 및 업데이트 타일 반영 + 침공 감지
+    // 4. 신규 및 변경 타일 반영
     for (final tile in tiles) {
-      if (tile.id != myMainBaseId) {
-        final oldTile = _capturedTiles[tile.id];
-        if (oldTile != null &&
-            oldTile.userId == auth.user!.id &&
-            tile.userId != auth.user!.id) {
-          invasionDetected = true;
-        }
-      }
-
       final oldTile = _capturedTiles[tile.id];
       if (oldTile == null ||
           oldTile.userId != tile.userId ||
@@ -312,27 +303,63 @@ class GameTileProvider extends ChangeNotifier {
       }
     }
 
-    if (invasionDetected) {
-      onInvasionDetected?.call();
-    }
-
     if (changed) {
       notifyListeners();
     }
   }
-
-  /// 서버에서 모든 타일을 다시 불러와 캐시를 갱신합니다.
+  /// 서버에서 모든 타일을 다시 불러와 캐시를 갱신합니다 (포그라운드 복귀 및 강제 갱신용).
   Future<void> refreshTilesFromServer() async {
     if (!_isInitialized) return;
     try {
       final tiles = await _supabase.fetchAllCapturedTiles();
-      _onTilesUpdated(tiles);
+      _handleAllTilesSync(tiles);
+      debugPrint('📦 서버 전체 타일 동기화 완료 (${tiles.length}개)');
     } catch (e) {
-      debugPrint('❌ 타일 서버 동기화 실패: $e');
+      debugPrint('❌ 전체 타일 서버 동기화 실패: $e');
     }
   }
 
-  /// 현재 위치의 헥사곤 타일 점령 상태를 서버 기준으로 실시간 확인합니다.
+  /// 내 현재 위치 타일(q, r) 기준으로 2km 반경(오프셋 ±25) 영역의 타일을 서버에서 REST로 조회하여 갱신합니다.
+  /// 
+  /// 불필요한 서버 조회를 줄이기 위한 300m 이상 이동 가드 및 10초 시간 경과 가드가 적용되어 있습니다.
+  Future<void> updateTilesInArea(int centerQ, int centerR) async {
+    if (!_isInitialized) return;
+
+    final currentId = HexService.tileId(centerQ, centerR);
+    final now = DateTime.now();
+
+    // 1. 이동 거리 및 시간 가드 체크
+    if (_lastCheckedAreaTileId != null && _lastAreaFetchTime != null) {
+      final parsed = HexService.parseTileId(_lastCheckedAreaTileId!);
+      if (parsed != null) {
+        final dist = HexService.hexDistance(centerQ, centerR, parsed['q']!, parsed['r']!);
+        final timeDiff = now.difference(_lastAreaFetchTime!);
+        
+        // 약 300m(타일 3칸) 미만으로 이동했고, 마지막 조회 후 10초가 지나지 않았다면 스킵
+        if (dist < 3 && timeDiff < const Duration(seconds: 10)) {
+          return;
+        }
+      }
+    }
+
+    _lastCheckedAreaTileId = currentId;
+    _lastAreaFetchTime = now;
+
+    try {
+      // 2km 반경 사각형 범위 연산 (안전 마진 25 오프셋)
+      const int k = 25;
+      final minQ = centerQ - k;
+      final maxQ = centerQ + k;
+      final minR = centerR - k;
+      final maxR = centerR + k;
+
+      final tiles = await _supabase.fetchCapturedTilesInArea(minQ, maxQ, minR, maxR);
+      _handleAreaTilesUpdate(tiles, minQ, maxQ, minR, maxR);
+    } catch (e) {
+      debugPrint('❌ 주변 영역 타일 조회 실패 ($currentId): $e');
+    }
+  }
+
   Future<TileStatus> checkCurrentLocationTileStatusFromServer(
     LocationProvider loc,
     AuthProvider auth,
@@ -491,10 +518,5 @@ class GameTileProvider extends ChangeNotifier {
     }
   }
 
-  // --- 정리 ---
-  @override
-  void dispose() {
-    _tilesStreamSub?.cancel();
-    super.dispose();
-  }
+
 }

@@ -533,7 +533,6 @@ class GameProvider extends ChangeNotifier with WidgetsBindingObserver {
     try {
       debugPrint('🔍 백그라운드 정기 정밀 점검 중...');
       onLocationUpdated();
-      await _tileProvider.refreshTilesFromServer();
     } catch (e) {
       debugPrint('❌ 백그라운드 동기화 실패: $e');
     }
@@ -588,6 +587,9 @@ class GameProvider extends ChangeNotifier with WidgetsBindingObserver {
 
     _checkAndSyncCoins();
     _checkCoinCollection(tileId);
+
+    // 내 주변 2km 범위의 타일 실시간 갱신 트리거 작동
+    _tileProvider.updateTilesInArea(hex['q']!, hex['r']!);
 
     // 편법 방지 타일 이동 카운팅 및 발자취 기록
     final myId = auth.profile!.id;
@@ -1043,6 +1045,7 @@ class GameProvider extends ChangeNotifier with WidgetsBindingObserver {
     if (state == AppLifecycleState.resumed) {
       if (_isAuthenticated == true) {
         _goldManager.syncWithServer();
+        _tileProvider.refreshTilesFromServer(); // 복귀 시 전체 점령 타일 1회 동기화
       }
       // 앱이 다시 포그라운드로 올 때 걸음수 즉시 갱신
       updateStepsState();

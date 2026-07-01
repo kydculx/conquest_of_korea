@@ -45,16 +45,23 @@ class SupabaseService {
     return tiles;
   }
 
-  /// 실시간 점령 현황 동기화를 위한 Supabase Realtime 스트림을 제공합니다.
-  Stream<List<HexTile>> get capturedTilesStream {
-    return _client
+
+  /// 특정 사각형 영역 범위(minQ ~ maxQ, minR ~ maxR) 내의 점령 타일 목록을 비동기 조회하여 반환합니다.
+  Future<List<HexTile>> fetchCapturedTilesInArea(
+      int minQ, int maxQ, int minR, int maxR) async {
+    debugPrint('🔍 주변 ($minQ~$maxQ, $minR~$maxR) 타일 데이터 요청 중...');
+    final response = await _client
         .from('captured_tiles')
-        .stream(primaryKey: ['id'])
-        .map(
-          (list) => list
-              .map((e) => HexTile.fromJson(_toMap(e)))
-              .toList(),
-        );
+        .select('*')
+        .gte('q', minQ)
+        .lte('q', maxQ)
+        .gte('r', minR)
+        .lte('r', maxR);
+    final tiles = (response as List)
+        .map((e) => HexTile.fromJson(e as Map<String, dynamic>))
+        .toList();
+    debugPrint('📦 ${tiles.length}개 주변 타일 수신 완료');
+    return tiles;
   }
 
   Future<bool> captureTile(HexTile tile) async {

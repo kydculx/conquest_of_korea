@@ -307,7 +307,7 @@ class ConquestGame extends FlameGame {
         if (parsed != null) {
           final int q = parsed['q'] as int;
           final int r = parsed['r'] as int;
-          final centerLatLng = _clusterHelper.getTileCenter(q, r, tileId, dynamicHexSize);
+          final centerLatLng = _clusterHelper.getTileCenter(q, r, tileId, GameConfig.lodSize0);
           final double lat = centerLatLng.latitude;
           final double lng = centerLatLng.longitude;
 
@@ -398,8 +398,8 @@ class ConquestGame extends FlameGame {
       final int q = tileData.q;
       final int r = tileData.r;
 
-      // 동전 타일은 줌 배율에 변동하지 않고 항상 고정 크기(LOD 0)로 중심점을 매핑하여 렌더 왜곡 방지
-      final double targetSize = (tileData.userId == 'coin_marker')
+      // 동전 및 발자취 타일은 줌 배율에 변동하지 않고 항상 고정 크기(LOD 0)로 중심점/꼭짓점을 매핑하여 렌더 왜곡 방지
+      final double targetSize = (tileData.userId == 'coin_marker' || tileData.userId == 'footprint_marker')
           ? GameConfig.lodSize0
           : dynamicHexSize;
 
@@ -432,7 +432,7 @@ class ConquestGame extends FlameGame {
           centerLatLng: centerLatLng,
           cornerLatLngs: cornerLatLngs,
           colorHex: targetTileColorHex,
-          hexSize: dynamicHexSize,
+          hexSize: targetSize, // dynamicHexSize 대신 targetSize를 전달하여 렌더링 크기 일치
           hasCoin: hasCoin,
         )
           ..position = Vector2(screenOffset.dx, screenOffset.dy)
