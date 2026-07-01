@@ -137,7 +137,7 @@ class SatelliteMapBubbleState extends State<SatelliteMapBubble> {
 
           // 위성 점령 소모 재화(골드) 부족 여부 검증
           final double currentGold = game.currentGold;
-          if (currentGold < distance) {
+          if (currentGold < distance - 0.0001) {
             themeColor = GameColors.error;
             isError = true;
             detailsText = GameStrings.satGoldShortage;

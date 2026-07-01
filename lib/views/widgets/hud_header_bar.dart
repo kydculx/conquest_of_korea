@@ -54,7 +54,7 @@ class CozyHeaderBar extends StatelessWidget {
               ),
               const SizedBox(width: 6),
               Text(
-                gold.toStringAsFixed(0),
+                gold.toInt().toString(),
                 style: GoogleFonts.fredoka(
                   color: GameColors.textPrimary,
                   fontSize: 12.5,

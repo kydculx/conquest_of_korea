@@ -222,7 +222,7 @@ class SatelliteCaptureController {
     final dist = getTileDistance(tileId);
 
     // 위성 점령 소모 재화 부족 검증 (거리가 D이면 D GP 소모)
-    if (getCurrentGold() < dist) {
+    if (getCurrentGold() < dist - 0.0001) {
       onAlert(
         GameStrings.satGoldShortageDetail(
           dist.toString(),

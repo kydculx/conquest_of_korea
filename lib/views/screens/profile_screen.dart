@@ -529,7 +529,7 @@ class ProfileScreen extends StatelessWidget {
     final distance = game.getTileDistance(tileId);
     final requiredGold = distance * 10.0;
 
-    if (requiredGold > game.currentGold) {
+    if (requiredGold > game.currentGold + 0.0001) {
       await _showErrorDialog(
         context,
         GameStrings.rebaseGoldShortageMessage(
@@ -664,7 +664,7 @@ class ProfileScreen extends StatelessWidget {
     
     final currentNickname = auth.profile?.nickname ?? '';
     const double cost = GameConfig.nicknameChangeCost;
-    final bool hasEnoughGold = game.currentGold >= cost;
+    final bool hasEnoughGold = game.currentGold >= cost - 0.0001;
 
     showDialog(
       context: context,

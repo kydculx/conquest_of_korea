@@ -948,7 +948,7 @@ class GameProvider extends ChangeNotifier with WidgetsBindingObserver {
     if (_tileProvider.isTileInfoRevealed(tileId)) return true;
 
     final distance = getTileDistance(tileId);
-    if (_goldManager.currentGold < distance) {
+    if (_goldManager.currentGold < distance - 0.0001) {
       addAlert(GameStrings.satGoldShortage, AlertType.error);
       return false;
     }
@@ -1008,7 +1008,7 @@ class GameProvider extends ChangeNotifier with WidgetsBindingObserver {
     final myId = _userId;
     if (myId == null) return false;
 
-    if (_goldManager.currentGold < cost) {
+    if (_goldManager.currentGold < cost - 0.0001) {
       addAlert(GameStrings.satGoldShortage, AlertType.error);
       return false;
     }
