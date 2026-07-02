@@ -587,6 +587,14 @@ class GameStrings {
     namedArgs: {'tileId': tileId, 'cost': cost, 'currentGold': currentGold},
   );
 
+  /// 최초 1회 이전 대상 기지 타일 상세 안내 포맷팅 함수
+  static String rebaseConfirmContentFirst({
+    required String tileId,
+    required String currentGold,
+  }) => 'rebaseConfirmContentFirst'.tr(
+    namedArgs: {'tileId': tileId, 'currentGold': currentGold},
+  );
+
   /// 본진 이전 재화 부족 경고 메시지 포맷팅 함수
   static String rebaseGoldShortageMessage(String cost, String currentGold) =>
       'rebaseGoldShortageMessage'.tr(

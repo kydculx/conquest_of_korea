@@ -526,8 +526,9 @@ class ProfileScreen extends StatelessWidget {
       return;
     }
 
+    final isFirstRebase = (auth.profile?.mainBaseMoveCount ?? 0) == 0;
     final distance = game.getTileDistance(tileId);
-    final requiredGold = distance * 10.0;
+    final requiredGold = isFirstRebase ? 0.0 : (distance * 10.0);
 
     if (requiredGold > game.currentGold + 0.0001) {
       await _showErrorDialog(
@@ -547,11 +548,16 @@ class ProfileScreen extends StatelessWidget {
         icon: Icons.my_location_rounded,
         accentColor: GameColors.accentNeon,
         content: Text(
-          GameStrings.rebaseConfirmContent(
-            tileId: tileId,
-            cost: requiredGold.toInt().toString(),
-            currentGold: game.currentGold.toInt().toString(),
-          ),
+          isFirstRebase
+              ? GameStrings.rebaseConfirmContentFirst(
+                  tileId: tileId,
+                  currentGold: game.currentGold.toInt().toString(),
+                )
+              : GameStrings.rebaseConfirmContent(
+                  tileId: tileId,
+                  cost: requiredGold.toInt().toString(),
+                  currentGold: game.currentGold.toInt().toString(),
+                ),
           style: TextStyle(color: GameColors.textSecondary, fontSize: 13, height: 1.4),
         ),
         actions: [
