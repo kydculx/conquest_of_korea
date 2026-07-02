@@ -239,9 +239,9 @@ class ConquestGame extends FlameGame {
         currentCenter,
       );
       if (dist > 1000.0) {
-        _tileMap.clear();
-        final toRemove = children.whereType<HexTileComponent>().toList();
+        final toRemove = _tileMap.values.toList();
         removeAll(toRemove);
+        _tileMap.clear();
       }
     }
     _lastCameraCenter = currentCenter;
@@ -253,9 +253,9 @@ class ConquestGame extends FlameGame {
 
     // 줌 레벨(LOD) 스케일이 실제로 바뀌었을 경우 기존 컴포넌트들을 강제로 일괄 파기하여 무대 청소
     if (_lastLodLevel != currentLod || _lastClusteredTiles.isEmpty) {
-      _tileMap.clear();
-      final toRemove = children.whereType<HexTileComponent>().toList();
+      final toRemove = _tileMap.values.toList();
       removeAll(toRemove);
+      _tileMap.clear();
       _lastLodLevel = currentLod;
     }
 
@@ -622,6 +622,11 @@ class ConquestGame extends FlameGame {
   /// 화면 스크린 변화 감지 시 렌더링 중인 플레이어 및 타일 컴포넌트들의 스크린 좌표를 일괄 재계산하여 이동시킵니다.
   void _updateAllPositions() {
     if (_mapController == null) return;
+
+    // 카메라 이동 시 렌더링 중인 모든 타일들의 픽셀 꼭짓점 패스 캐시 무효화
+    for (final component in _tileMap.values) {
+      component.invalidateCache();
+    }
 
     // 점령 중인 타일 ID를 컴포넌트 상태에서 추출 (culling 제외 대상)
     String? capturingTileId;

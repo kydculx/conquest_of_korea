@@ -98,6 +98,11 @@ class HexTileComponent extends PositionComponent
     if (hasCoin != null) this.hasCoin = hasCoin;
   }
 
+  /// 캐싱된 Bezier 그리기 패스 무효화
+  void invalidateCache() {
+    _cachedPath = null;
+  }
+
   @override
   void onMount() {
     super.onMount();

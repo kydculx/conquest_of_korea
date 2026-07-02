@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:latlong2/latlong.dart';
-import 'package:easy_localization/easy_localization.dart';
 import '../../core/constants/colors.dart';
 import '../../core/constants/strings.dart';
 import '../../models/alert_model.dart';
@@ -63,12 +62,12 @@ class CompletedPatternList extends StatelessWidget {
         if (completedPatterns.isEmpty) {
           // 완성된 패턴이 하나도 없는 경우: 가이드 문구 노출
           return Container(
-            height: 76,
+            height: 48,
             padding: const EdgeInsets.symmetric(horizontal: 16),
             decoration: ShapeDecoration(
               color: GameColors.backgroundMedium.withValues(alpha: 0.92),
               shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(16),
+                borderRadius: BorderRadius.circular(12),
                 side: BorderSide(
                   color: GameColors.accentNeon.withValues(alpha: 0.2),
                   width: 1.0,
@@ -90,7 +89,7 @@ class CompletedPatternList extends StatelessWidget {
         }
 
         return SizedBox(
-          height: 76,
+          height: 48,
           child: ListView.builder(
             scrollDirection: Axis.horizontal,
             physics: const BouncingScrollPhysics(),
@@ -114,82 +113,34 @@ class CompletedPatternList extends StatelessWidget {
                     );
                   },
                   child: Container(
-                    width: 156,
-                    padding: const EdgeInsets.all(12),
+                    width: 48,
+                    height: 48,
                     decoration: ShapeDecoration(
-                      color: GameColors.backgroundMedium.withValues(alpha: 0.92),
+                      color: const Color(0xFF0066FF).withValues(alpha: 0.15),
                       shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(16),
-                        side: BorderSide(
-                          color: GameColors.accentNeon.withValues(alpha: 0.4),
+                        borderRadius: BorderRadius.circular(12),
+                        side: const BorderSide(
+                          color: Color(0xFF0066FF),
                           width: 1.2,
                         ),
                       ),
                       shadows: [
                         BoxShadow(
-                          color: Colors.black.withValues(alpha: 0.3),
-                          blurRadius: 8,
-                          offset: const Offset(0, 4),
+                          color: Colors.black.withValues(alpha: 0.2),
+                          blurRadius: 4,
+                          offset: const Offset(0, 2),
                         ),
                       ],
                     ),
-                    child: Row(
-                      children: [
-                        // 왼쪽에 크게 형광 파란색 패턴 문자 노출
-                        Container(
-                          width: 36,
-                          height: 36,
-                          decoration: ShapeDecoration(
-                            color: const Color(0xFF0066FF).withValues(alpha: 0.15),
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(10),
-                              side: const BorderSide(
-                                color: Color(0xFF0066FF),
-                                width: 1.0,
-                              ),
-                            ),
-                          ),
-                          child: Center(
-                            child: Text(
-                              item.char,
-                              style: GoogleFonts.fredoka(
-                                color: const Color(0xFF0066FF),
-                                fontSize: 18,
-                                fontWeight: FontWeight.bold,
-                              ),
-                            ),
-                          ),
+                    child: Center(
+                      child: Text(
+                        item.char,
+                        style: GoogleFonts.fredoka(
+                          color: const Color(0xFF0066FF),
+                          fontSize: 20,
+                          fontWeight: FontWeight.bold,
                         ),
-                        const SizedBox(width: 10),
-                        // 오른쪽에 텍스트 정보 노출
-                        Expanded(
-                          child: Column(
-                            mainAxisAlignment: MainAxisAlignment.center,
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Text(
-                                GameStrings.patternConqueror(item.char),
-                                style: GoogleFonts.fredoka(
-                                  color: Colors.white,
-                                  fontSize: 12,
-                                  fontWeight: FontWeight.bold,
-                                ),
-                                maxLines: 1,
-                                overflow: TextOverflow.ellipsis,
-                              ),
-                              const SizedBox(height: 2),
-                              Text(
-                                GameStrings.patternTilesCountCompleted(item.tiles.length.toString()),
-                                style: GoogleFonts.quicksand(
-                                  color: GameColors.textSecondary,
-                                  fontSize: 10,
-                                  fontWeight: FontWeight.bold,
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
-                      ],
+                      ),
                     ),
                   ),
                 ),
