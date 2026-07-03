@@ -66,7 +66,7 @@ export default function LandingPage() {
             <span className="gradient-text">나만의 전장</span>으로!
           </h1>
           <p className="hero-desc animate-slide-up-delay">
-            '찜! 대모험'은 실시간 내 위치를 기반으로 지도를 점령해 나가는 영토 쟁탈전입니다. 
+            '찜! 대모험'은 실시간 내 위치를 기반으로 지도를 점령해 나가는 영토 쟁탈전입니다.
             끊임없이 뺏고 뺏기는 전쟁 속에서 모든 움직임을 정복의 역사로 만드세요.
           </p>
 
@@ -78,7 +78,7 @@ export default function LandingPage() {
                 className="badge-img"
               />
             </a>
-            <a href="https://apps.apple.com/us/app/%EC%B0%9C-%EB%8C%80%EB%AA%A8%ED%97%98/id6769717240" target="_blank" rel="noopener noreferrer" className="badge-link">
+            <a href="https://apps.apple.com/kr/app/%EC%B0%9C-%EB%8C%80%EB%AA%A8%ED%97%98/id6769717240" target="_blank" rel="noopener noreferrer" className="badge-link">
               <img
                 src="https://upload.wikimedia.org/wikipedia/commons/3/3c/Download_on_the_App_Store_Badge.svg"
                 alt="Download on the App Store"
