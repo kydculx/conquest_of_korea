@@ -71,7 +71,7 @@ export default function LandingPage() {
           </p>
 
           <div className="download-badges animate-slide-up-delay-2">
-            <a href="#googleplay" onClick={(e) => e.preventDefault()} className="badge-link">
+            <a href="#googleplay" onClick={(e) => { e.preventDefault(); alert('준비중입니다.'); }} className="badge-link">
               <img
                 src="https://upload.wikimedia.org/wikipedia/commons/7/78/Google_Play_Store_badge_EN.svg"
                 alt="Get it on Google Play"
