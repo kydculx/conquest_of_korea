@@ -82,7 +82,7 @@ export default function LandingPage() {
             <div className="phone-notch" />
             <div className="phone-screen-inner">
               <img
-                src="/game_screen.png"
+                src="/screenshot_splash.jpg"
                 alt="Game Screen"
                 className="screen-shot-img"
               />
@@ -154,6 +154,67 @@ export default function LandingPage() {
             <p className="card-body-text">
               직접 가기 힘든 강 너머나 사유지, 혹은 날씨가 나쁜 날에는 비축한 골드를 사용해 방 안에서 원격으로 영토를 사수하세요.
             </p>
+          </div>
+        </div>
+      </section>
+
+      {/* 정복의 전장 갤러리 쇼케이스 섹션 */}
+      <section className="gallery-section">
+        <div className="gallery-header">
+          <div className="gallery-tag">
+            <Globe size={14} className="glow-icon" />
+            <span>LIVE BATTLEFIELD</span>
+          </div>
+          <h2 className="section-title">실시간 정복의 전장을 직접 확인하세요</h2>
+          <p className="section-subtitle">
+            지형 정보를 완벽 매핑한 위성 지도 모드부터 직관적인 다크 전술 모드까지, 최적화된 비주얼을 제공합니다.
+          </p>
+        </div>
+
+        <div className="gallery-grid animate-slide-up">
+          {/* 위성 맵 뷰 */}
+          <div className="gallery-card">
+            <div className="gallery-phone-mockup">
+              <div className="phone-notch-small" />
+              <div className="phone-screen-inner">
+                <img src="/screenshot_satellite.jpg" alt="Satellite Map View" className="screen-shot-img" />
+              </div>
+            </div>
+            <div className="gallery-card-info">
+              <span className="gallery-card-badge satellite">SATELLITE MODE</span>
+              <h4 className="gallery-card-title">실시간 위성 점령 모드</h4>
+              <p className="gallery-card-desc">실제 지형의 건물과 자연지물을 직관적으로 확인하고, 점령 타일을 정밀하게 맞물려 나갑니다.</p>
+            </div>
+          </div>
+
+          {/* 다크 네온 맵 뷰 */}
+          <div className="gallery-card">
+            <div className="gallery-phone-mockup">
+              <div className="phone-notch-small" />
+              <div className="phone-screen-inner">
+                <img src="/screenshot_neon.jpg" alt="Dark Neon Map View" className="screen-shot-img" />
+              </div>
+            </div>
+            <div className="gallery-card-info">
+              <span className="gallery-card-badge neon">TACTICAL NEON MODE</span>
+              <h4 className="gallery-card-title">네온 다크 전술 맵</h4>
+              <p className="gallery-card-desc">사이버펑크 감성의 고대비 전술 맵입니다. 주변 세력 구도와 동전 탐색 반경을 가장 명확히 식별할 수 있습니다.</p>
+            </div>
+          </div>
+
+          {/* 3D 클레이 하우스 홈 */}
+          <div className="gallery-card">
+            <div className="gallery-phone-mockup">
+              <div className="phone-notch-small" />
+              <div className="phone-screen-inner">
+                <img src="/screenshot_splash.jpg" alt="3D Clay House Home" className="screen-shot-img" />
+              </div>
+            </div>
+            <div className="gallery-card-info">
+              <span className="gallery-card-badge splash">CLAY 3D MODE</span>
+              <h4 className="gallery-card-title">클레이 3D 대기 모드</h4>
+              <p className="gallery-card-desc">나만의 본부와 영토 현황을 감성적인 3D 아트로 축소 렌더링하여 아늑하고 독특한 감성을 느낄 수 있습니다.</p>
+            </div>
           </div>
         </div>
       </section>
@@ -672,6 +733,126 @@ export default function LandingPage() {
           .section-title {
             font-size: 2.1rem;
           }
+        }
+
+        /* 정복의 전장 갤러리 섹션 */
+        .gallery-section {
+          position: relative;
+          z-index: 10;
+          background: #060913;
+          padding: 8rem 2rem;
+          max-width: 1200px;
+          margin: 0 auto;
+        }
+        .gallery-header {
+          text-align: center;
+          margin-bottom: 5rem;
+        }
+        .gallery-tag {
+          display: inline-flex;
+          align-items: center;
+          gap: 0.5rem;
+          background: rgba(16, 185, 129, 0.08);
+          border: 1px solid rgba(16, 185, 129, 0.15);
+          color: #10b981;
+          padding: 0.5rem 1.1rem;
+          border-radius: 30px;
+          font-size: 0.85rem;
+          font-weight: 700;
+          width: fit-content;
+          margin-bottom: 1.5rem;
+        }
+        .gallery-grid {
+          display: grid;
+          grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+          gap: 3rem;
+          justify-items: center;
+        }
+        .gallery-card {
+          background: rgba(30, 41, 59, 0.15);
+          border: 1px solid rgba(255, 255, 255, 0.03);
+          border-radius: 24px;
+          padding: 2rem;
+          display: flex;
+          flex-direction: column;
+          align-items: center;
+          gap: 1.5rem;
+          backdrop-filter: blur(8px);
+          -webkit-backdrop-filter: blur(8px);
+          transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+          width: 100%;
+          max-width: 340px;
+        }
+        .gallery-card:hover {
+          transform: translateY(-8px);
+          background: rgba(30, 41, 59, 0.25);
+          border-color: rgba(255, 255, 255, 0.08);
+          box-shadow: 0 20px 40px rgba(0, 0, 0, 0.5);
+        }
+        .gallery-phone-mockup {
+          width: 200px;
+          height: 400px;
+          border-radius: 28px;
+          border: 6px solid #1e293b;
+          background-color: #0b0f19;
+          box-shadow: 0 15px 30px rgba(0, 0, 0, 0.5);
+          position: relative;
+          overflow: hidden;
+          display: flex;
+          flex-direction: column;
+          transition: transform 0.5s ease;
+        }
+        .gallery-card:hover .gallery-phone-mockup {
+          transform: scale(1.03) rotateY(10deg);
+        }
+        .phone-notch-small {
+          width: 90px;
+          height: 16px;
+          background-color: #1e293b;
+          border-radius: 0 0 10px 10px;
+          position: absolute;
+          top: 0;
+          left: 50%;
+          transform: translateX(-50%);
+          z-index: 10;
+        }
+        .gallery-card-info {
+          display: flex;
+          flex-direction: column;
+          gap: 0.6rem;
+          width: 100%;
+        }
+        .gallery-card-badge {
+          font-size: 0.7rem;
+          font-weight: 800;
+          font-family: monospace;
+          padding: 0.25rem 0.6rem;
+          border-radius: 4px;
+          width: fit-content;
+        }
+        .gallery-card-badge.satellite {
+          background: rgba(59, 130, 246, 0.1);
+          color: #60a5fa;
+        }
+        .gallery-card-badge.neon {
+          background: rgba(167, 139, 250, 0.1);
+          color: #a78bfa;
+        }
+        .gallery-card-badge.splash {
+          background: rgba(16, 185, 129, 0.1);
+          color: #34d399;
+        }
+        .gallery-card-title {
+          font-size: 1.15rem;
+          font-weight: 700;
+          color: #f1f5f9;
+          margin: 0;
+        }
+        .gallery-card-desc {
+          font-size: 0.85rem;
+          color: #94a3b8;
+          line-height: 1.6;
+          margin: 0;
         }
       `}} />
     </div>
