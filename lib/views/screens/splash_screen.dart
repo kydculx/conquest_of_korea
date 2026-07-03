@@ -2,11 +2,11 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:google_fonts/google_fonts.dart';
-import 'package:package_info_plus/package_info_plus.dart';
 import '../../core/constants/assets.dart';
 import '../../core/constants/colors.dart';
 import '../../core/constants/game_config.dart';
 import '../../core/constants/strings.dart';
+import '../../core/constants/version_config.dart';
 import '../../providers/game_provider.dart';
 import 'game_screen.dart';
 
@@ -37,19 +37,10 @@ class _SplashScreenState extends State<SplashScreen> {
 
   // 플랫폼에서 실제 동적 빌드 버전을 가져오는 비동기 메소드 (Failsafe 예외 장치 완비)
   Future<void> _loadAppVersion() async {
-    try {
-      final packageInfo = await PackageInfo.fromPlatform();
-      if (mounted) {
-        setState(() {
-          _appVersion = 'v${packageInfo.version} (${packageInfo.buildNumber})';
-        });
-      }
-    } catch (_) {
-      if (mounted) {
-        setState(() {
-          _appVersion = 'v1.0.0';
-        });
-      }
+    if (mounted) {
+      setState(() {
+        _appVersion = 'v${VersionConfig.version} (${VersionConfig.buildNumber})';
+      });
     }
   }
 

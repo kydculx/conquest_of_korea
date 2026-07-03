@@ -2,10 +2,10 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
 import 'package:google_fonts/google_fonts.dart';
-import 'package:package_info_plus/package_info_plus.dart';
 import '../../core/constants/colors.dart';
 import '../../core/constants/strings.dart';
 import '../../core/constants/game_config.dart';
+import '../../core/constants/version_config.dart';
 import '../../core/utils/toast_helper.dart';
 import '../../core/utils/error_translator.dart';
 import '../../providers/auth_provider.dart';
@@ -358,22 +358,14 @@ class ProfileScreen extends StatelessWidget {
               ],
 
               const SizedBox(height: 40),
-              FutureBuilder<PackageInfo>(
-                future: PackageInfo.fromPlatform(),
-                builder: (context, snapshot) {
-                  final versionText = snapshot.hasData
-                      ? 'v${snapshot.data!.version} (${snapshot.data!.buildNumber})'
-                      : 'v1.0.0';
-                  return Center(
-                    child: Text(
-                      '${GameStrings.appName} $versionText',
-                      style: TextStyle(
-                        color: GameColors.textMuted.withValues(alpha: 100 / 255),
-                        fontSize: 12,
-                      ),
-                    ),
-                  );
-                },
+              Center(
+                child: Text(
+                  '${GameStrings.appName} v${VersionConfig.version} (${VersionConfig.buildNumber})',
+                  style: TextStyle(
+                    color: GameColors.textMuted.withValues(alpha: 100 / 255),
+                    fontSize: 12,
+                  ),
+                ),
               ),
             ],
           ),

@@ -1,4 +1,33 @@
+import java.io.File
 import java.util.Properties
+import java.util.regex.Pattern
+
+fun getVersionConfig(): Pair<String, Int> {
+    val configFile = File(projectDir.parentFile.parentFile, "lib/core/constants/version_config.dart")
+    if (!configFile.exists()) {
+        return Pair("1.0.0", 1)
+    }
+    var version = "1.0.0"
+    var buildNumber = 1
+    
+    configFile.forEachLine { line ->
+        if (line.contains("static const String version")) {
+            val matcher = Pattern.compile("version\\s*=\\s*['\"]([^'\"]+)['\"]").matcher(line)
+            if (matcher.find()) {
+                version = matcher.group(1)
+            }
+        }
+        if (line.contains("static const int buildNumber")) {
+            val matcher = Pattern.compile("buildNumber\\s*=\\s*(\\d+)").matcher(line)
+            if (matcher.find()) {
+                buildNumber = matcher.group(1).toInt()
+            }
+        }
+    }
+    return Pair(version, buildNumber)
+}
+
+val (vName, vCode) = getVersionConfig()
 
 plugins {
     id("com.android.application")
@@ -45,8 +74,8 @@ android {
         // For more information, see: https://flutter.dev/to/review-gradle-config.
         minSdk = 26 // health 패키지 요구사항에 따라 26으로 상향 조정
         targetSdk = flutter.targetSdkVersion
-        versionCode = flutter.versionCode
-        versionName = flutter.versionName
+        versionCode = vCode
+        versionName = vName
         multiDexEnabled = true
     }
 
