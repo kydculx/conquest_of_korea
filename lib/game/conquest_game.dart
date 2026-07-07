@@ -18,6 +18,12 @@ import '../core/constants/game_config.dart';
 /// Flame 게임 엔진을 상속받아 인게임 지도상에 헥사곤 타일 영역, 플레이어의 물리 위치 마커, 본부 기지(HQ), 위성 조준 마커 등을 렌더링하고 업데이트를 감시하는 커스텀 게임 엔진 클래스
 /// 줌 레벨별 동적 LOD(Level of Detail) 타일 규격 계층화 및 실시간 영토 병합(Clustering) 시스템을 이식받아 60 FPS 드래그 및 전국구 줌아웃 성능을 완벽 보장합니다.
 class ConquestGame extends FlameGame {
+  /// 30 FPS 제한을 위한 프레임 스로틀링 누적 타임 (초 단위)
+  double _frameTimeAccumulator = 0.0;
+
+  /// 30 FPS 기준의 프레임 시간 (1초 / 30 = 0.033333초)
+  static const double _targetFrameTime = 1 / 30;
+
   /// 플레이어 본인을 지도 상에 나타내는 2D 방향 컴포넌트
   late PlayerComponent player;
 
@@ -166,6 +172,12 @@ class ConquestGame extends FlameGame {
   /// Flame 게임 루프의 매 프레임 업데이트 콜백. 지도의 미세한 카메라 변경을 실시간 감시하여 타일 매핑 분리를 방지합니다.
   @override
   void update(double dt) {
+    _frameTimeAccumulator += dt;
+    if (_frameTimeAccumulator < _targetFrameTime) {
+      return;
+    }
+    _frameTimeAccumulator %= _targetFrameTime;
+
     super.update(dt);
 
     if (_mapController != null) {
