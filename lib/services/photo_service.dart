@@ -2,25 +2,23 @@ import 'dart:io';
 import 'package:flutter/foundation.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
+import 'package:image/image.dart' as img;
 
 /// 타일별 사진 촬영 및 갤러리 업로드/조회 트랜잭션을 전담 처리하는 서비스 클래스
 class PhotoService {
   final SupabaseClient _client = Supabase.instance.client;
   final ImagePicker _picker = ImagePicker();
 
-  /// 카메라를 가동하여 현장 사진을 촬영하고, 용량 절감을 위해 즉각 최적화 압축 가공을 실행합니다.
+  /// 카메라를 가동하여 현장 사진을 촬영하고, 1:1 비율(512x512)로 가공하여 반환합니다.
   Future<File?> captureCompressedPhoto() async {
     try {
-      // imageQuality: 50(50% 압축), maxWidth: 1080(해상도 경량화)
-      // 모바일 화면 렌더링에 차고 넘치며 원본 대비 용량이 1/10 수준(100~200KB 내외)으로 격감합니다.
       final XFile? photo = await _picker.pickImage(
         source: ImageSource.camera,
         maxWidth: 1080,
-        imageQuality: 50,
       );
 
       if (photo != null) {
-        return File(photo.path);
+        return await _processAndResizeTo512(photo.path);
       }
     } catch (e) {
       debugPrint('❌ 사진 촬영 및 압축 가공 중 실패: $e');
@@ -28,22 +26,66 @@ class PhotoService {
     return null;
   }
 
-  /// 앨범(갤러리)에서 이미지를 불러오고, 동일한 규격으로 압축합니다.
+  /// 앨범(갤러리)에서 이미지를 불러오고, 1:1 비율(512x512)로 가공하여 반환합니다.
   Future<File?> pickCompressedPhotoFromGallery() async {
     try {
       final XFile? photo = await _picker.pickImage(
         source: ImageSource.gallery,
         maxWidth: 1080,
-        imageQuality: 50,
       );
 
       if (photo != null) {
-        return File(photo.path);
+        return await _processAndResizeTo512(photo.path);
       }
     } catch (e) {
       debugPrint('❌ 갤러리 이미지 선택 및 압축 중 실패: $e');
     }
     return null;
+  }
+
+  /// 이미지를 중앙 기준으로 1:1 크롭하고 512x512 크기로 리사이즈합니다.
+  Future<File?> _processAndResizeTo512(String originalPath) async {
+    try {
+      final bytes = await File(originalPath).readAsBytes();
+      final img.Image? originalImage = img.decodeImage(bytes);
+      if (originalImage == null) return null;
+
+      // 1. 중앙 크롭 (가로와 세로 중 짧은 축 기준으로 1:1 자름)
+      final int width = originalImage.width;
+      final int height = originalImage.height;
+      final int size = width < height ? width : height;
+
+      final int x = (width - size) ~/ 2;
+      final int y = (height - size) ~/ 2;
+
+      final img.Image croppedImage = img.copyCrop(
+        originalImage,
+        x: x,
+        y: y,
+        width: size,
+        height: size,
+      );
+
+      // 2. 512x512 크기로 리사이즈
+      final img.Image resizedImage = img.copyResize(
+        croppedImage,
+        width: 512,
+        height: 512,
+      );
+
+      // 3. JPG로 변환 인코딩
+      final jpgBytes = img.encodeJpg(resizedImage, quality: 75);
+
+      // 4. 기존 파일에 덮어쓰기
+      final File processedFile = File(originalPath);
+      await processedFile.writeAsBytes(jpgBytes);
+      
+      debugPrint('📸 [PhotoService] 이미지 1:1 512x512 가공 완료: ${processedFile.lengthSync()} bytes');
+      return processedFile;
+    } catch (e) {
+      debugPrint('❌ [PhotoService] 이미지 1:1 512 리사이즈 가공 실패: $e');
+      return null;
+    }
   }
 
   /// Supabase Storage 버킷('tile-photos')에 이미지를 물리 업로드하고,

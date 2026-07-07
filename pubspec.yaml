@@ -58,6 +58,7 @@ dependencies:
   health: ^13.1.4
   carousel_slider: ^5.1.2
   url_launcher: ^6.3.2
+  image: ^4.8.0
 
 dev_dependencies:
   flutter_test:
