@@ -288,6 +288,8 @@
   "setHQConfirmMessage": "현재 위치에 본부 기지(HQ)를 설정하시겠습니까?",
   "onboardingHQTitle": "본부 기지 (HQ)",
   "onboardingHQDesc": "내 본부 기지로 지도를 즉시 이동시킵니다. 본진이 설정되어 있지 않다면 현재 밟고 있는 내 위치에 본진을 구축할 수 있습니다.",
+  "onboardingPhotoTitle": "타일 현장 촬영",
+  "onboardingPhotoDesc": "현재 밟고 있는 타일의 리얼한 현장 사진을 압축 촬영해 갤러리에 업로드할 수 있습니다. 등록한 사진은 맵을 탐색하는 모든 유저가 자유롭게 볼 수 있습니다.",
   "tileGalleryTitle": "타일 사진 갤러리",
   "noPhotosInTile": "이 타일에 아직 등록된 사진이 없습니다.",
   "uploadPhotoAction": "사진 촬영 및 등록",

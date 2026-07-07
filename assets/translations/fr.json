@@ -288,6 +288,8 @@
   "setHQConfirmMessage": "Souhaitez-vous établir le quartier général (QG) à votre position actuelle ?",
   "onboardingHQTitle": "Quartier Général (QG)",
   "onboardingHQDesc": "Centre instantanément la carte sur votre QG. S'il n'est pas configuré, vous pouvez l'établir à votre position actuelle.",
+  "onboardingPhotoTitle": "Capture de terrain sur la tuile",
+  "onboardingPhotoDesc": "Vous pouvez capturer une photo de terrain de la tuile actuelle et l'envoyer vers la galerie. Les photos enregistrées sont visibles par tous les joueurs.",
   "tileGalleryTitle": "Galerie photos de la tuile",
   "noPhotosInTile": "Aucune photo enregistrée sur cette tuile pour le moment.",
   "uploadPhotoAction": "Prendre et envoyer une photo",

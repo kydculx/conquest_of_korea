@@ -288,6 +288,8 @@
   "setHQConfirmMessage": "Möchten Sie das Hauptquartier (HQ) am aktuellen Standort einrichten?",
   "onboardingHQTitle": "Hauptquartier (HQ)",
   "onboardingHQDesc": "Zentriert die Karte sofort auf Ihr Hauptquartier. Wenn nicht eingerichtet, können Sie Ihr HQ am aktuellen Standort aufbauen.",
+  "onboardingPhotoTitle": "Kachel-Vorort-Aufnahme",
+  "onboardingPhotoDesc": "Sie können ein lebendiges Vorort-Foto der aktuellen Kachel aufnehmen und hochladen. Registrierte Fotos können von allen Spielern gesehen werden.",
   "tileGalleryTitle": "Kachel-Fotogalerie",
   "noPhotosInTile": "Noch keine Fotos auf dieser Kachel registriert.",
   "uploadPhotoAction": "Foto aufnehmen und hochladen",

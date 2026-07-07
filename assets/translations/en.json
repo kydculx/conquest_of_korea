@@ -288,6 +288,8 @@
   "setHQConfirmMessage": "Would you like to set your Headquarters (HQ) at your current location?",
   "onboardingHQTitle": "Headquarters (HQ)",
   "onboardingHQDesc": "Instantly centers the map on your Headquarters. If not set, you can establish your HQ at your current location.",
+  "onboardingPhotoTitle": "Tile Field Capture",
+  "onboardingPhotoDesc": "You can capture a vivid field photo of your current tile and upload it to the gallery. Registered photos can be viewed by all players exploring the map.",
   "tileGalleryTitle": "Tile Photo Gallery",
   "noPhotosInTile": "No photos registered in this tile yet.",
   "uploadPhotoAction": "Capture & Upload Photo",

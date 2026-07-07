@@ -390,17 +390,33 @@ export default function DashboardTab() {
                           onClick={async () => {
                             if (window.confirm('관리자 권한으로 이 사진을 영구 삭제하시겠습니까? (스토리지 물리 파일도 함께 정리됩니다.)')) {
                               try {
-                                const bucketMarker = 'tile-photos/';
-                                const markerIdx = photo.photo_url.indexOf(bucketMarker);
-                                if (markerIdx !== -1) {
-                                  const storagePath = photo.photo_url.substring(markerIdx + bucketMarker.length);
-                                  await supabase.storage.from('tile-photos').remove([storagePath]);
+                                // 1. 스토리지 파일 삭제 시도 (실패해도 DB 삭제는 계속되도록 예외 격리)
+                                try {
+                                  const bucketMarker = 'tile-photos/';
+                                  const markerIdx = photo.photo_url.indexOf(bucketMarker);
+                                  if (markerIdx !== -1) {
+                                    const storagePath = photo.photo_url.substring(markerIdx + bucketMarker.length);
+                                    await supabase.storage.from('tile-photos').remove([storagePath]);
+                                  }
+                                } catch (storageErr) {
+                                  console.warn('⚠️ 스토리지 파일 물리 삭제 실패:', storageErr);
                                 }
-                                await supabase.from('tile_photos').delete().eq('id', photo.id);
+
+                                // 2. RPC를 통한 RLS 우회 삭제 시도
+                                const { error: rpcErr } = await supabase.rpc('delete_photo_by_admin', {
+                                  p_photo_id: photo.id
+                                });
+
+                                if (rpcErr) {
+                                  console.warn('⚠️ RPC 함수가 없어 일반 DELETE 쿼리로 대체합니다:', rpcErr);
+                                  const { error: delErr } = await supabase.from('tile_photos').delete().eq('id', photo.id);
+                                  if (delErr) throw delErr;
+                                }
+
                                 alert('사진이 성공적으로 강제 삭제되었습니다.');
                                 loadData();
                               } catch (e) {
-                                alert('삭제 중 오류 발생: ' + e.message);
+                                alert('삭제 중 오류 발생: ' + (e.message || JSON.stringify(e)));
                               }
                             }
                           }}

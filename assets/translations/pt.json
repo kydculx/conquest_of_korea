@@ -288,6 +288,8 @@
   "setHQConfirmMessage": "Deseja estabelecer o Quartel General (QG) no local atual?",
   "onboardingHQTitle": "Quartel General (QG)",
   "onboardingHQDesc": "Centraliza instantaneamente o mapa no seu QG. Se não estiver configurado, você pode estabelecê-lo no seu local atual.",
+  "onboardingPhotoTitle": "Captura de campo no bloco",
+  "onboardingPhotoDesc": "Você pode capturar uma foto do terreno do bloco atual e enviá-la para a galeria. As fotos registradas são visíveis para todos os jogadores.",
   "tileGalleryTitle": "Galeria de fotos do bloco",
   "noPhotosInTile": "Nenhuma foto registrada neste bloco ainda.",
   "uploadPhotoAction": "Tirar e enviar foto",

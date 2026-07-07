@@ -288,6 +288,8 @@
   "setHQConfirmMessage": "現在地に本部基地(HQ)を設定しますか？",
   "onboardingHQTitle": "本部基地 (HQ)",
   "onboardingHQDesc": "マップを本部基地の場所に即座に移動します。まだ設定されていない場合は、現在地に本部を構築できます。",
+  "onboardingPhotoTitle": "エリア現地撮影",
+  "onboardingPhotoDesc": "現在いるエリアのリアルな現場写真を撮影し、ギャラリーにアップロードできます。登録された写真はマップを探索する全ユーザーに共有されます。",
   "tileGalleryTitle": "エリア写真ギャラリー",
   "noPhotosInTile": "このエリアに登録された写真はまだありません。",
   "uploadPhotoAction": "写真を撮影して登録",

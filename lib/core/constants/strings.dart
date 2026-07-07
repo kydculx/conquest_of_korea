@@ -935,6 +935,12 @@ class GameStrings {
   /// 온보딩 본부 기지 상세 설명
   static String get onboardingHQDesc => 'onboardingHQDesc'.tr();
 
+  /// 온보딩 사진 촬영 타이틀
+  static String get onboardingPhotoTitle => 'onboardingPhotoTitle'.tr();
+
+  /// 온보딩 사진 촬영 상세 설명
+  static String get onboardingPhotoDesc => 'onboardingPhotoDesc'.tr();
+
   /// 타일 사진 갤러리 타이틀
   static String get tileGalleryTitle => 'tileGalleryTitle'.tr();
 
