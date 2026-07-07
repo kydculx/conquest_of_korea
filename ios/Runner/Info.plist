@@ -58,6 +58,10 @@
 	<string>백그라운드에서도 실시간 위치 기반 구역 확보를 진행하기 위해 위치 권한이 필요합니다.</string>
 	<key>NSLocationWhenInUseUsageDescription</key>
 	<string>실시간 구역 확보 지도를 위해 현재 위치 정보가 필요합니다.</string>
+	<key>NSCameraUsageDescription</key>
+	<string>타일에 현장 사진을 촬영하고 등록하기 위해 카메라 권한이 필요합니다.</string>
+	<key>NSPhotoLibraryUsageDescription</key>
+	<string>타일에 업로드할 현장 사진을 갤러리에서 선택하기 위해 사진첩 접근 권한이 필요합니다.</string>
 	<key>UIApplicationSceneManifest</key>
 	<dict>
 		<key>UIApplicationSupportsMultipleScenes</key>

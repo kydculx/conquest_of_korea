@@ -935,6 +935,27 @@ class GameStrings {
   /// 온보딩 본부 기지 상세 설명
   static String get onboardingHQDesc => 'onboardingHQDesc'.tr();
 
+  /// 타일 사진 갤러리 타이틀
+  static String get tileGalleryTitle => 'tileGalleryTitle'.tr();
+
+  /// 타일 내 사진 없음
+  static String get noPhotosInTile => 'noPhotosInTile'.tr();
+
+  /// 사진 등록 액션
+  static String get uploadPhotoAction => 'uploadPhotoAction'.tr();
+
+  /// 사진 작성자
+  static String get photoUploader => 'photoUploader'.tr();
+
+  /// 사진 업로드 성공
+  static String get photoUploadSuccess => 'photoUploadSuccess'.tr();
+
+  /// 사진 업로드 실패
+  static String get photoUploadFail => 'photoUploadFail'.tr();
+
+  /// 카메라 권한 거부 에러
+  static String get cameraRollAccessDenied => 'cameraRollAccessDenied'.tr();
+
   /// 표시 언어 선택 타이틀
   static String get selectLanguage => 'selectLanguage'.tr();
 

@@ -12,6 +12,7 @@ import 'completed_pattern_list.dart';
 import 'hud_map_cycle_button.dart';
 import 'hud_map_follow_button.dart';
 import 'hud_hq_move_button.dart';
+import 'hud_photo_button.dart';
 import 'hud_satellite_bubble.dart';
 import 'tactical_press_button.dart';
 
@@ -90,6 +91,13 @@ class HudOverlay extends StatelessWidget {
             auth: auth,
             onProfileClosed: onProfileClosed,
           ),
+        ),
+
+        // [하단 좌측 - 현재 타일 사진첩 갤러리/카메라 버튼] 본진 버튼 바로 위에 배치 (42x42)
+        Positioned(
+          bottom: baseBottomMargin + bottomPadding + 17.0 + (42.0 + 10.0) * 2,
+          left: 20.0,
+          child: const TilePhotoActionButton(size: 42, iconSize: 20),
         ),
 
         // [하단 좌측 - 본부 기지(HQ) 이동 및 설정 버튼] 내 위치 버튼 바로 위에 배치 (42x42)

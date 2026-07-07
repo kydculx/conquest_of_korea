@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:io';
 import 'dart:math' as math;
 import 'package:flutter/widgets.dart';
 import 'package:latlong2/latlong.dart';
@@ -6,6 +7,7 @@ import '../controllers/capture_controller.dart';
 import '../controllers/notification_controller.dart';
 import '../services/preferences_service.dart';
 import '../services/geo_service.dart';
+import '../services/photo_service.dart';
 import '../controllers/satellite_capture_controller.dart';
 import '../models/alert_model.dart';
 import '../models/tile_model.dart';
@@ -77,6 +79,10 @@ class GameProvider extends ChangeNotifier with WidgetsBindingObserver {
   /// 사용자가 설정한 로컬 GPS 정확도 레벨 ('high', 'best', 'bestForNavigation', 'medium')
   String _gpsAccuracyLevel = 'high';
   String get gpsAccuracyLevel => _gpsAccuracyLevel;
+
+  /// 타일 ID별 등록된 사진 데이터 목록 캐시
+  final Map<String, List<Map<String, dynamic>>> _tilePhotosCache = {};
+  Map<String, List<Map<String, dynamic>>> get tilePhotosCache => _tilePhotosCache;
 
   /// 자동 점령 모드 활성화 여부
   bool _isAutoCapture = false;
@@ -437,6 +443,36 @@ class GameProvider extends ChangeNotifier with WidgetsBindingObserver {
       // 실시간 하드웨어 수신 정확도 재동기화
       await GeoService().updateTrackingAccuracy();
     }
+  }
+
+  /// 특정 타일 ID에 등록된 사진첩 데이터를 Supabase에서 로드하고 캐시를 갱신합니다.
+  Future<List<Map<String, dynamic>>> loadPhotosForTile(String tileId) async {
+    final photos = await PhotoService().fetchPhotosForTile(tileId);
+    _tilePhotosCache[tileId] = photos;
+    notifyListeners();
+    return photos;
+  }
+
+  /// 현재 밟고 있는 타일에 사진첩 등록을 수행하고 연동 캐시를 리로드합니다.
+  Future<bool> uploadPhotoForTile(String tileId, File file) async {
+    final auth = _authProvider;
+    if (auth == null || !auth.isAuthenticated || auth.profile == null) {
+      return false;
+    }
+
+    final profile = auth.profile!;
+    final response = await PhotoService().uploadTilePhoto(
+      tileId: tileId,
+      file: file,
+      userId: profile.id,
+      userNickname: profile.nickname,
+    );
+
+    if (response != null) {
+      await loadPhotosForTile(tileId);
+      return true;
+    }
+    return false;
   }
 
   // --- Provider 설정 ---
