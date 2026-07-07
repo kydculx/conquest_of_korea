@@ -456,7 +456,16 @@ class GameProvider extends ChangeNotifier with WidgetsBindingObserver {
   /// 현재 밟고 있는 타일에 사진첩 등록을 수행하고 연동 캐시를 리로드합니다.
   Future<bool> uploadPhotoForTile(String tileId, File file) async {
     final auth = _authProvider;
-    if (auth == null || !auth.isAuthenticated || auth.profile == null) {
+    if (auth == null) {
+      debugPrint('❌ [GameProvider] uploadPhotoForTile 실패: _authProvider가 null입니다.');
+      return false;
+    }
+    if (!auth.isAuthenticated) {
+      debugPrint('❌ [GameProvider] uploadPhotoForTile 실패: 인증되지 않은 세션입니다. (isAuthenticated=false)');
+      return false;
+    }
+    if (auth.profile == null) {
+      debugPrint('❌ [GameProvider] uploadPhotoForTile 실패: 사용자 프로필(profile) 캐시가 null입니다.');
       return false;
     }
 

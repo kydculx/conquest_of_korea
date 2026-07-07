@@ -55,8 +55,11 @@ class PhotoService {
     required String userNickname,
   }) async {
     try {
-      // 1. Storage 버킷에 저장할 유니크 파일 경로 이름 연산
-      final String fileExtension = file.path.split('.').last.toLowerCase();
+      // 1. Storage 버킷에 저장할 유니크 파일 경로 이름 연산 (안전한 확장자 가드 적용)
+      final String rawPath = file.path;
+      final String fileExtension = rawPath.contains('.') && rawPath.split('.').last.length < 6
+          ? rawPath.split('.').last.toLowerCase()
+          : 'jpg';
       final String timestamp = DateTime.now().millisecondsSinceEpoch.toString();
       final String storagePath = '$tileId/${userId}_$timestamp.$fileExtension';
 
