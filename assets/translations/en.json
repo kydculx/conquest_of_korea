@@ -286,6 +286,8 @@
   "gpsAccuracyMedium": "Medium Accuracy (Battery Saving - Low Power)",
   "setHQConfirmTitle": "Set Headquarters",
   "setHQConfirmMessage": "Would you like to set your Headquarters (HQ) at your current location?",
+  "onboardingHQTitle": "Headquarters (HQ)",
+  "onboardingHQDesc": "Instantly centers the map on your Headquarters. If not set, you can establish your HQ at your current location.",
   "selectLanguage": "Select Display Language",
   "languageKorean": "한국어 (Korean)",
   "languageEnglish": "English (영어)",

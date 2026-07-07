@@ -14,6 +14,7 @@ enum OnboardingStep {
   achievementBtn,
   rankingBtn,
   profileBtn,
+  hqBtn,
   mapFollowBtn,
   mapModeToggleBtn,
   mapStyleBtn,
@@ -92,6 +93,10 @@ class _OnboardingOverlayState extends State<OnboardingOverlay> {
       OnboardingStep.profileBtn: _StepContent(
         title: GameStrings.onboardingProfileTitle,
         description: GameStrings.onboardingProfileDesc,
+      ),
+      OnboardingStep.hqBtn: _StepContent(
+        title: GameStrings.onboardingHQTitle,
+        description: GameStrings.onboardingHQDesc,
       ),
       OnboardingStep.mapFollowBtn: _StepContent(
         title: GameStrings.onboardingMapFollowTitle,
@@ -217,6 +222,15 @@ class _OnboardingOverlayState extends State<OnboardingOverlay> {
         lineStart = Offset(targetRect.left + targetRect.width / 2, targetRect.bottom + 4.0);
         lineEnd = Offset(lineStart.dx.clamp(40.0, size.width - 40.0), cardTop - 2.0);
         lineControl = Offset(lineStart.dx, lineEnd.dy - 30.0);
+        break;
+
+      case OnboardingStep.hqBtn:
+        targetRect = Rect.fromLTWH(20.0, size.height - baseBottomMargin - 17.0 - 42.0 * 2 - 10.0, 42.0, 42.0);
+        cardTop = topOffset + 140.0;
+
+        lineStart = Offset(targetRect.left + targetRect.width / 2, targetRect.top - 4.0);
+        lineEnd = Offset(lineStart.dx.clamp(40.0, size.width - 40.0), cardTop + 160.0 + 2.0);
+        lineControl = Offset(lineStart.dx, lineEnd.dy + 30.0);
         break;
 
       case OnboardingStep.mapFollowBtn:

@@ -286,6 +286,8 @@
   "gpsAccuracyMedium": "Precisión media (Ahorro de batería - Baja potencia)",
   "setHQConfirmTitle": "Establecer Cuartel General",
   "setHQConfirmMessage": "¿Desea establecer el Cuartel General (HQ) en la ubicación actual?",
+  "onboardingHQTitle": "Cuartel General (HQ)",
+  "onboardingHQDesc": "Centra el mapa en su cuartel general al instante. Si no está configurado, puede establecer su HQ en la ubicación actual.",
   "selectLanguage": "Seleccionar Idioma",
   "languageKorean": "한국어 (Korean)",
   "languageEnglish": "English (영어)",

@@ -286,6 +286,8 @@
   "gpsAccuracyMedium": "中精度 (省电模式 - 低功耗)",
   "setHQConfirmTitle": "设置总部基地",
   "setHQConfirmMessage": "是否要在当前位置设置总部基地(HQ)？",
+  "onboardingHQTitle": "总部基地 (HQ)",
+  "onboardingHQDesc": "立即将地图移动到总部基地。如果尚未设置，您可以在当前位置建立总部。",
   "selectLanguage": "选择显示语言",
   "languageKorean": "한국어 (Korean)",
   "languageEnglish": "English (英语)",

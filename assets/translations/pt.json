@@ -286,6 +286,8 @@
   "gpsAccuracyMedium": "Precisão média (Economia de bateria - Baixa potência)",
   "setHQConfirmTitle": "Definir Quartel General",
   "setHQConfirmMessage": "Deseja estabelecer o Quartel General (QG) no local atual?",
+  "onboardingHQTitle": "Quartel General (QG)",
+  "onboardingHQDesc": "Centraliza instantaneamente o mapa no seu QG. Se não estiver configurado, você pode estabelecê-lo no seu local atual.",
   "selectLanguage": "Selecionar Idioma",
   "languageKorean": "한국어 (Korean)",
   "languageEnglish": "English (영어)",

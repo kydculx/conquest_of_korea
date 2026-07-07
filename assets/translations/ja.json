@@ -286,6 +286,8 @@
   "gpsAccuracyMedium": "中精度 (バッテリー節約モード - 低電力)",
   "setHQConfirmTitle": "本部基地設定",
   "setHQConfirmMessage": "現在地に本部基地(HQ)を設定しますか？",
+  "onboardingHQTitle": "本部基地 (HQ)",
+  "onboardingHQDesc": "マップを本部基地の場所に即座に移動します。まだ設定されていない場合は、現在地に本部を構築できます。",
   "selectLanguage": "表示言語を選択",
   "languageKorean": "한국어 (Korean)",
   "languageEnglish": "English (英語)",

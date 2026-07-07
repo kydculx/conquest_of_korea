@@ -286,6 +286,8 @@
   "gpsAccuracyMedium": "Mittlere Genauigkeit (Akkusparmodus - Geringe Leistung)",
   "setHQConfirmTitle": "Hauptquartier einrichten",
   "setHQConfirmMessage": "Möchten Sie das Hauptquartier (HQ) am aktuellen Standort einrichten?",
+  "onboardingHQTitle": "Hauptquartier (HQ)",
+  "onboardingHQDesc": "Zentriert die Karte sofort auf Ihr Hauptquartier. Wenn nicht eingerichtet, können Sie Ihr HQ am aktuellen Standort aufbauen.",
   "selectLanguage": "Sprache auswählen",
   "languageKorean": "한국어 (Korean)",
   "languageEnglish": "English (영어)",

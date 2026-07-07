@@ -929,6 +929,12 @@ class GameStrings {
   /// 본부 기지 설정 메시지
   static String get setHQConfirmMessage => 'setHQConfirmMessage'.tr();
 
+  /// 온보딩 본부 기지 타이틀
+  static String get onboardingHQTitle => 'onboardingHQTitle'.tr();
+
+  /// 온보딩 본부 기지 상세 설명
+  static String get onboardingHQDesc => 'onboardingHQDesc'.tr();
+
   /// 표시 언어 선택 타이틀
   static String get selectLanguage => 'selectLanguage'.tr();
 
