@@ -454,34 +454,44 @@ class GameProvider extends ChangeNotifier with WidgetsBindingObserver {
   }
 
   /// 현재 밟고 있는 타일에 사진첩 등록을 수행하고 연동 캐시를 리로드합니다.
-  Future<bool> uploadPhotoForTile(String tileId, File file) async {
+  /// 성공 시 null을 반환하며, 실패 시 에러 사유 문자열을 반환합니다.
+  Future<String?> uploadPhotoForTile(String tileId, File file) async {
     final auth = _authProvider;
     if (auth == null) {
-      debugPrint('❌ [GameProvider] uploadPhotoForTile 실패: _authProvider가 null입니다.');
-      return false;
+      const msg = '인증 서비스(authProvider) 연동 실패';
+      debugPrint('❌ [GameProvider] uploadPhotoForTile 실패: $msg');
+      return msg;
     }
     if (!auth.isAuthenticated) {
-      debugPrint('❌ [GameProvider] uploadPhotoForTile 실패: 인증되지 않은 세션입니다. (isAuthenticated=false)');
-      return false;
+      const msg = '인증되지 않은 유저 세션입니다. 로그인이 필요합니다.';
+      debugPrint('❌ [GameProvider] uploadPhotoForTile 실패: $msg');
+      return msg;
     }
     if (auth.profile == null) {
-      debugPrint('❌ [GameProvider] uploadPhotoForTile 실패: 사용자 프로필(profile) 캐시가 null입니다.');
-      return false;
+      const msg = '사용자 프로필 정보가 누락되었습니다.';
+      debugPrint('❌ [GameProvider] uploadPhotoForTile 실패: $msg');
+      return msg;
     }
 
-    final profile = auth.profile!;
-    final response = await PhotoService().uploadTilePhoto(
-      tileId: tileId,
-      file: file,
-      userId: profile.id,
-      userNickname: profile.nickname,
-    );
+    try {
+      final profile = auth.profile!;
+      final response = await PhotoService().uploadTilePhoto(
+        tileId: tileId,
+        file: file,
+        userId: profile.id,
+        userNickname: profile.nickname,
+      );
 
-    if (response != null) {
-      await loadPhotosForTile(tileId);
-      return true;
+      if (response != null) {
+        await loadPhotosForTile(tileId);
+        return null; // 성공
+      }
+      return '서버 응답 오류 (알 수 없음)';
+    } catch (e) {
+      final msg = e.toString();
+      debugPrint('❌ [GameProvider] 사진 업로드 트랜잭션 에러: $msg');
+      return msg;
     }
-    return false;
   }
 
   // --- Provider 설정 ---

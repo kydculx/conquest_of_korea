@@ -108,6 +108,7 @@ class PhotoService {
       }
     } catch (e) {
       debugPrint('❌ [PhotoService] uploadTilePhoto 전체 예외 트래킹: $e');
+      rethrow;
     }
     return null;
   }

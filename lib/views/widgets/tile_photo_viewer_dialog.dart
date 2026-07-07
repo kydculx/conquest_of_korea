@@ -68,14 +68,14 @@ class _TilePhotoViewerDialogState extends State<TilePhotoViewerDialog> {
     });
 
     // 2. Supabase 업로드 및 연동 DB 인서트 실행
-    final bool success = await game.uploadPhotoForTile(widget.tileId, imageFile);
+    final String? errorMsg = await game.uploadPhotoForTile(widget.tileId, imageFile);
 
     if (mounted) {
       setState(() {
         _isLoading = false;
       });
 
-      if (success) {
+      if (errorMsg == null) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text(GameStrings.photoUploadSuccess),
@@ -86,8 +86,9 @@ class _TilePhotoViewerDialogState extends State<TilePhotoViewerDialog> {
       } else {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text(GameStrings.photoUploadFail),
+            content: Text('${GameStrings.photoUploadFail}\n사유: $errorMsg'),
             backgroundColor: GameColors.error,
+            duration: const Duration(seconds: 4),
           ),
         );
       }
