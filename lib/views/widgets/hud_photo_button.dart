@@ -2,7 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../../core/constants/colors.dart';
 import '../../core/constants/strings.dart';
+import '../../core/constants/app_routes.dart';
 import '../../providers/location_provider.dart';
+import '../../providers/auth_provider.dart';
 import '../../services/hex_service.dart';
 import 'tactical_press_button.dart';
 import 'tactical_dialog.dart';
@@ -23,10 +25,17 @@ class TilePhotoActionButton extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final loc = Provider.of<LocationProvider>(context);
+    final auth = Provider.of<AuthProvider>(context, listen: false);
 
     return TacticalPressButton(
       size: size,
       onTap: () {
+        // 🔒 로그인 인증 상태 체크 가드 (미인증 시 로그인 화면으로 리다이렉션)
+        if (!auth.isAuthenticated) {
+          Navigator.pushNamed(context, AppRoutes.login);
+          return;
+        }
+
         final currentLocation = loc.currentLocation;
         if (currentLocation == null) {
           _showErrorDialog(context, GameStrings.gpsSignalError);
