@@ -962,6 +962,21 @@ class GameStrings {
   /// 갤러리 없음 라벨
   static String get galleryEmptyLabel => 'galleryEmptyLabel'.tr();
 
+  /// 사진 삭제 액션
+  static String get deletePhotoAction => 'deletePhotoAction'.tr();
+
+  /// 사진 삭제 확인 타이틀
+  static String get deletePhotoConfirmTitle => 'deletePhotoConfirmTitle'.tr();
+
+  /// 사진 삭제 확인 메시지
+  static String get deletePhotoConfirmMessage => 'deletePhotoConfirmMessage'.tr();
+
+  /// 사진 삭제 성공
+  static String get photoDeleteSuccess => 'photoDeleteSuccess'.tr();
+
+  /// 사진 삭제 실패
+  static String get photoDeleteFail => 'photoDeleteFail'.tr();
+
   /// 표시 언어 선택 타이틀
   static String get selectLanguage => 'selectLanguage'.tr();
 

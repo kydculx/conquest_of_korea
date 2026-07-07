@@ -131,4 +131,32 @@ class PhotoService {
       return [];
     }
   }
+
+  /// Supabase Storage 및 DB 테이블('tile_photos') 모두에서 지정된 사진 데이터를 영구 삭제합니다.
+  Future<bool> deleteTilePhoto({
+    required String photoId,
+    required String photoUrl,
+  }) async {
+    try {
+      const String bucketMarker = 'tile-photos/';
+      final int markerIndex = photoUrl.indexOf(bucketMarker);
+      if (markerIndex == -1) {
+        debugPrint('❌ [PhotoService] 사진 URL 형식이 올바르지 않습니다: $photoUrl');
+        return false;
+      }
+      final String storagePath = photoUrl.substring(markerIndex + bucketMarker.length);
+
+      // 1. Storage 물리 파일 삭제
+      await _client.storage.from('tile-photos').remove([storagePath]);
+
+      // 2. DB 메타데이터 행 삭제
+      await _client.from('tile_photos').delete().eq('id', photoId);
+
+      debugPrint('🗑️ [PhotoService] 타일 사진 삭제 성공 (ID: $photoId, Path: $storagePath)');
+      return true;
+    } catch (e) {
+      debugPrint('❌ [PhotoService] 사진 삭제 프로세스 실패: $e');
+      rethrow;
+    }
+  }
 }

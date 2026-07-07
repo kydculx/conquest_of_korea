@@ -494,6 +494,27 @@ class GameProvider extends ChangeNotifier with WidgetsBindingObserver {
     }
   }
 
+  /// 지정된 타일의 특정 사진첩 데이터를 삭제하고 연동 캐시를 리로드합니다.
+  /// 성공 시 null을 반환하며, 실패 시 에러 사유 문자열을 반환합니다.
+  Future<String?> deletePhotoForTile(String tileId, String photoId, String photoUrl) async {
+    try {
+      final success = await PhotoService().deleteTilePhoto(
+        photoId: photoId,
+        photoUrl: photoUrl,
+      );
+
+      if (success) {
+        await loadPhotosForTile(tileId);
+        return null; // 성공
+      }
+      return '서버 삭제 응답 오류 (알 수 없음)';
+    } catch (e) {
+      final msg = e.toString();
+      debugPrint('❌ [GameProvider] 사진 삭제 트랜잭션 에러: $msg');
+      return msg;
+    }
+  }
+
   // --- Provider 설정 ---
   void setLocationProvider(LocationProvider loc) {
     if (_locationProvider != loc) {

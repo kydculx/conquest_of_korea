@@ -6,6 +6,7 @@ import 'package:google_fonts/google_fonts.dart';
 import '../../core/constants/colors.dart';
 import '../../core/constants/strings.dart';
 import '../../providers/game_provider.dart';
+import '../../providers/auth_provider.dart';
 import '../../services/photo_service.dart';
 import 'tactical_dialog.dart';
 
@@ -95,6 +96,91 @@ class _TilePhotoViewerDialogState extends State<TilePhotoViewerDialog> {
     }
   }
 
+  Future<void> _handleDeletePhoto(String photoId, String photoUrl) async {
+    final game = context.read<GameProvider>();
+    final bool? confirm = await showDialog<bool>(
+      context: context,
+      builder: (context) => TacticalDialog(
+        title: GameStrings.deletePhotoConfirmTitle,
+        icon: Icons.delete_forever_rounded,
+        accentColor: GameColors.error,
+        content: Text(
+          GameStrings.deletePhotoConfirmMessage,
+          style: TextStyle(color: GameColors.textSecondary, fontSize: 13),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context, false),
+            child: Text(
+              GameStrings.cancel,
+              style: const TextStyle(fontWeight: FontWeight.bold),
+            ),
+          ),
+          ElevatedButton(
+            onPressed: () => Navigator.pop(context, true),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: GameColors.error,
+              foregroundColor: GameColors.tacticalWhite,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(16),
+              ),
+            ),
+            child: Text(
+              GameStrings.confirm,
+              style: const TextStyle(fontWeight: FontWeight.bold),
+            ),
+          ),
+        ],
+      ),
+    );
+
+    if (confirm != true) return;
+
+    if (mounted) {
+      setState(() {
+        _isLoading = true;
+      });
+    }
+
+    try {
+      final String? errorMsg = await game.deletePhotoForTile(widget.tileId, photoId, photoUrl);
+
+      if (!mounted) return;
+
+      if (errorMsg == null) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(GameStrings.photoDeleteSuccess),
+            backgroundColor: GameColors.success,
+          ),
+        );
+        _loadPhotos(); // 목록 리프레시
+      } else {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('${GameStrings.photoDeleteFail}\n사유: $errorMsg'),
+            backgroundColor: GameColors.error,
+          ),
+        );
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('${GameStrings.photoDeleteFail}\n오류: $e'),
+            backgroundColor: GameColors.error,
+          ),
+        );
+      }
+    } finally {
+      if (mounted) {
+        setState(() {
+          _isLoading = false;
+        });
+      }
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final size = MediaQuery.of(context).size;
@@ -173,11 +259,17 @@ class _TilePhotoViewerDialogState extends State<TilePhotoViewerDialog> {
   }
 
   Widget _buildPhotoSlider() {
+    final auth = Provider.of<AuthProvider>(context, listen: false);
+    final currentUserId = auth.user?.id;
+
     return PageView.builder(
       itemCount: _photos.length,
       physics: const BouncingScrollPhysics(),
       itemBuilder: (context, index) {
         final photo = _photos[index];
+        final String photoId = photo['id'] ?? '';
+        final String uploaderId = photo['user_id'] ?? '';
+        final bool isMyPhoto = currentUserId != null && uploaderId == currentUserId;
         final String photoUrl = photo['photo_url'] ?? '';
         final String uploader = photo['user_nickname'] ?? 'None';
         final String rawDate = photo['created_at'] ?? '';
@@ -298,6 +390,30 @@ class _TilePhotoViewerDialogState extends State<TilePhotoViewerDialog> {
                     ),
                   ),
                 ),
+                if (isMyPhoto)
+                  Positioned(
+                    top: 12,
+                    left: 12,
+                    child: GestureDetector(
+                      onTap: () => _handleDeletePhoto(photoId, photoUrl),
+                      child: Container(
+                        padding: const EdgeInsets.all(8),
+                        decoration: BoxDecoration(
+                          color: Colors.black.withValues(alpha: 0.6),
+                          shape: BoxShape.circle,
+                          border: Border.all(
+                            color: GameColors.error.withValues(alpha: 0.5),
+                            width: 0.8,
+                          ),
+                        ),
+                        child: Icon(
+                          Icons.delete_forever_rounded,
+                          color: GameColors.error,
+                          size: 18,
+                        ),
+                      ),
+                    ),
+                  ),
               ],
             ),
           ),
