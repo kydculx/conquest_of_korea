@@ -284,6 +284,8 @@
   "gpsAccuracyBest": "最高精度 (精细地图匹配)",
   "gpsAccuracyBestForNav": "最上级精度 (车辆导航专用 - 高功耗)",
   "gpsAccuracyMedium": "中精度 (省电模式 - 低功耗)",
+  "setHQConfirmTitle": "设置总部基地",
+  "setHQConfirmMessage": "是否要在当前位置设置总部基地(HQ)？",
   "selectLanguage": "选择显示语言",
   "languageKorean": "한국어 (Korean)",
   "languageEnglish": "English (英语)",

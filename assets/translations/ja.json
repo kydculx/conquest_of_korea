@@ -284,6 +284,8 @@
   "gpsAccuracyBest": "最高精度 (精密マップマッチング)",
   "gpsAccuracyBestForNav": "最上級精度 (車両ナビゲーション用 - 高電力)",
   "gpsAccuracyMedium": "中精度 (バッテリー節約モード - 低電力)",
+  "setHQConfirmTitle": "本部基地設定",
+  "setHQConfirmMessage": "現在地に本部基地(HQ)を設定しますか？",
   "selectLanguage": "表示言語を選択",
   "languageKorean": "한국어 (Korean)",
   "languageEnglish": "English (英語)",

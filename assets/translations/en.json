@@ -284,6 +284,8 @@
   "gpsAccuracyBest": "Best Accuracy (Precise Map Matching)",
   "gpsAccuracyBestForNav": "Navigation Accuracy (Vehicle Nav - High Power)",
   "gpsAccuracyMedium": "Medium Accuracy (Battery Saving - Low Power)",
+  "setHQConfirmTitle": "Set Headquarters",
+  "setHQConfirmMessage": "Would you like to set your Headquarters (HQ) at your current location?",
   "selectLanguage": "Select Display Language",
   "languageKorean": "한국어 (Korean)",
   "languageEnglish": "English (영어)",

@@ -284,6 +284,8 @@
   "gpsAccuracyBest": "Beste Genauigkeit (Präzise Kartenübereinstimmung)",
   "gpsAccuracyBestForNav": "Navigationsgenauigkeit (Fahrzeugnavigation - Hohe Leistung)",
   "gpsAccuracyMedium": "Mittlere Genauigkeit (Akkusparmodus - Geringe Leistung)",
+  "setHQConfirmTitle": "Hauptquartier einrichten",
+  "setHQConfirmMessage": "Möchten Sie das Hauptquartier (HQ) am aktuellen Standort einrichten?",
   "selectLanguage": "Sprache auswählen",
   "languageKorean": "한국어 (Korean)",
   "languageEnglish": "English (영어)",

@@ -284,6 +284,8 @@
   "gpsAccuracyBest": "최고 정확도 (정밀 맵 매핑)",
   "gpsAccuracyBestForNav": "최상급 정확도 (차량 내비게이션용 - 고전력)",
   "gpsAccuracyMedium": "중간 정확도 (배터리 절약형 - 저전력)",
+  "setHQConfirmTitle": "본부 기지 설정",
+  "setHQConfirmMessage": "현재 위치에 본부 기지(HQ)를 설정하시겠습니까?",
   "selectLanguage": "표시 언어 선택",
   "languageKorean": "한국어 (Korean)",
   "languageEnglish": "English (영어)",

@@ -284,6 +284,8 @@
   "gpsAccuracyBest": "Melhor precisão (Correspondência de mapa precisa)",
   "gpsAccuracyBestForNav": "Precisão de navegação (Navegación veicular - Alta potência)",
   "gpsAccuracyMedium": "Precisão média (Economia de bateria - Baixa potência)",
+  "setHQConfirmTitle": "Definir Quartel General",
+  "setHQConfirmMessage": "Deseja estabelecer o Quartel General (QG) no local atual?",
   "selectLanguage": "Selecionar Idioma",
   "languageKorean": "한국어 (Korean)",
   "languageEnglish": "English (영어)",

@@ -11,6 +11,7 @@ import 'hud_map_mode_button.dart';
 import 'completed_pattern_list.dart';
 import 'hud_map_cycle_button.dart';
 import 'hud_map_follow_button.dart';
+import 'hud_hq_move_button.dart';
 import 'hud_satellite_bubble.dart';
 import 'tactical_press_button.dart';
 
@@ -89,6 +90,13 @@ class HudOverlay extends StatelessWidget {
             auth: auth,
             onProfileClosed: onProfileClosed,
           ),
+        ),
+
+        // [하단 좌측 - 본부 기지(HQ) 이동 및 설정 버튼] 내 위치 버튼 바로 위에 배치 (42x42)
+        Positioned(
+          bottom: baseBottomMargin + bottomPadding + 17.0 + 42.0 + 10.0,
+          left: 20.0,
+          child: const HQMoveButton(size: 42, iconSize: 20),
         ),
 
         // [하단 좌측] 독립 배치된 내 위치 / 맵 회전 토글 버튼 (42x42)

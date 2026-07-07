@@ -923,6 +923,12 @@ class GameStrings {
   /// 중간 정확도
   static String get gpsAccuracyMedium => 'gpsAccuracyMedium'.tr();
 
+  /// 본부 기지 설정 타이틀
+  static String get setHQConfirmTitle => 'setHQConfirmTitle'.tr();
+
+  /// 본부 기지 설정 메시지
+  static String get setHQConfirmMessage => 'setHQConfirmMessage'.tr();
+
   /// 표시 언어 선택 타이틀
   static String get selectLanguage => 'selectLanguage'.tr();
 
