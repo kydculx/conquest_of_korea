@@ -346,8 +346,8 @@ class GameTileProvider extends ChangeNotifier {
     _lastAreaFetchTime = now;
 
     try {
-      // 2km 반경 사각형 범위 연산 (안전 마진 25 오프셋)
-      const int k = 25;
+      // 1km 반경 사각형 범위 연산 (안전 마진 13 오프셋)
+      const int k = 13;
       final minQ = centerQ - k;
       final maxQ = centerQ + k;
       final minR = centerR - k;
