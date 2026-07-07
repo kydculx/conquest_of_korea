@@ -189,9 +189,9 @@ export default function LandingPage() {
             <div className="card-icon-wrapper red">
               <Camera size={22} />
             </div>
-            <h3 className="card-heading">📸 타일 현장 촬영 및 갤러리 공유</h3>
+            <h3 className="card-heading">📸 내 주변 현장 촬영 및 갤러리 공유</h3>
             <p className="card-body-text">
-              내가 밟고 서 있는 타일에서 리얼한 현장 사진을 촬영해 갤러리에 업로드해 보세요. 내가 점령한 영토의 풍경 기록은 지도를 탐색하는 모든 유저가 자유롭게 볼 수 있습니다.
+              내가 밟고 서 있는 내 주변 구역에서 리얼한 현장 사진을 촬영해 갤러리에 업로드해 보세요. 내가 점령한 영토의 풍경 기록은 지도를 탐색하는 모든 유저가 자유롭게 볼 수 있습니다.
             </p>
           </div>
         </div>

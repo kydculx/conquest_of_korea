@@ -338,7 +338,7 @@ export default function DashboardTab() {
             {/* 헤더 */}
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
               <h3 style={{ fontSize: '1.1rem', color: 'var(--text-primary)', fontFamily: 'var(--font-display)', fontWeight: 'bold' }}>
-                타일 사진 갤러리 <span style={{ fontSize: '0.85rem', color: 'var(--accent-cyan)', marginLeft: '0.5rem' }}>({selectedTileId})</span>
+                내 주변 현장 사진 갤러리 <span style={{ fontSize: '0.85rem', color: 'var(--accent-cyan)', marginLeft: '0.5rem' }}>({selectedTileId})</span>
               </h3>
               <button 
                 onClick={() => setIsGalleryOpen(false)}
