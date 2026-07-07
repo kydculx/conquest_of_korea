@@ -43,6 +43,7 @@ export default function DashboardTab() {
 
   const [tiles, setTiles] = useState([]);
   const [users, setUsers] = useState([]);
+  const [photoCounts, setPhotoCounts] = useState({});
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
@@ -92,12 +93,22 @@ export default function DashboardTab() {
   // 데이터 통합 로딩 함수
   const loadData = async () => {
     try {
-      const [tilesData, usersData] = await Promise.all([
+      const [tilesData, usersData, photosData] = await Promise.all([
         fetchTiles(),
-        fetchUsers()
+        fetchUsers(),
+        supabase.from('tile_photos').select('tile_id')
       ]);
       setTiles(tilesData);
       setUsers(usersData);
+
+      const counts = {};
+      if (photosData.data) {
+        photosData.data.forEach(p => {
+          const tid = p.tile_id;
+          counts[tid] = (counts[tid] || 0) + 1;
+        });
+      }
+      setPhotoCounts(counts);
     } catch (err) {
       console.error(err);
       setError('실시간 지도 데이터를 불러오는 중 에러가 발생했습니다.');
@@ -115,6 +126,13 @@ export default function DashboardTab() {
       .on(
         'postgres_changes',
         { event: '*', schema: 'public', table: 'captured_tiles' },
+        () => {
+          loadData();
+        }
+      )
+      .on(
+        'postgres_changes',
+        { event: '*', schema: 'public', table: 'tile_photos' },
         () => {
           loadData();
         }
@@ -204,17 +222,24 @@ export default function DashboardTab() {
         dashArray: '2, 2'
       });
 
+      const tileId = `hex_${tile.q}_${tile.r}`;
+      const count = photoCounts[tileId] || 0;
+      const galleryText = count > 0 
+        ? `<span style="color: #00e5ff; font-weight: bold;">사진 ${count}장</span>`
+        : '<span style="color: var(--text-secondary);">없음</span>';
+
       const popupContent = `
         <div style="font-family: monospace; color: var(--text-primary); line-height: 1.4; font-size: 0.8rem;">
           <strong style="color: ${color}">[사용자]</strong> ${ownerName}<br/>
           <strong>[점령]</strong> ${tile.capture_count}회 중첩<br/>
+          <strong>[갤러리]</strong> ${galleryText}<br/>
           <strong>[좌표]</strong> Q:${tile.q}, R:${tile.r}
         </div>
       `;
 
       // 클릭 시 단일 팝업 연동 (마우스 오버레이 툴팁 없음)
       polygon.bindPopup(popupContent, {
-        minWidth: 120
+        minWidth: 130
       });
 
       polygonsGroup.current.addLayer(polygon);
@@ -226,7 +251,7 @@ export default function DashboardTab() {
         centerSet = true;
       }
     });
-  }, [tiles, users]);
+  }, [tiles, users, photoCounts]);
 
   if (error) {
     return <div style={{ color: 'var(--accent-red)', padding: '2rem' }}>{error}</div>;
