@@ -375,7 +375,8 @@ export default function DashboardTab() {
                         src={photo.photo_url} 
                         alt="타일 사진" 
                         style={{
-                          width: '100%', height: 'auto', maxHeight: '280px', objectFit: 'cover',
+                          width: '100%', height: 'auto', maxHeight: '320px', objectFit: 'contain',
+                          background: 'rgba(0, 0, 0, 0.3)',
                           borderRadius: '6px', border: '1px solid rgba(255,255,255,0.1)'
                         }}
                       />
