@@ -71,7 +71,7 @@ class GeoService {
 
     if (!kIsWeb && Platform.isIOS) {
       locationSettings = AppleSettings(
-        accuracy: LocationAccuracy.high,
+        accuracy: GameConfig.gpsAccuracy,
         activityType: ActivityType.otherNavigation,
         distanceFilter: 3,
         pauseLocationUpdatesAutomatically: false,
@@ -80,7 +80,7 @@ class GeoService {
       );
     } else if (!kIsWeb && Platform.isAndroid) {
       locationSettings = AndroidSettings(
-        accuracy: LocationAccuracy.high,
+        accuracy: GameConfig.gpsAccuracy,
         distanceFilter: GameConfig.gpsDistanceFilterMeters,
         forceLocationManager: true, // 구글 서비스를 거치지 않고 하드웨어 직접 제어
         intervalDuration: const Duration(seconds: GameConfig.gpsUpdateIntervalSeconds),
@@ -92,7 +92,7 @@ class GeoService {
       );
     } else {
       locationSettings = const LocationSettings(
-        accuracy: LocationAccuracy.high,
+        accuracy: GameConfig.gpsAccuracy,
         distanceFilter: GameConfig.gpsDistanceFilterMeters,
       );
     }

@@ -1,5 +1,10 @@
+import 'package:geolocator/geolocator.dart';
+
 /// 인게임 비즈니스 로직 및 시스템의 수치 상수를 관리하는 설정 클래스
 class GameConfig {
+  /// 위치 서비스 추적 시 사용할 하드웨어 GPS 정확도 등급 (배터리 효율 튜닝용)
+  static const LocationAccuracy gpsAccuracy = LocationAccuracy.high;
+
   /// 애플리케이션 시스템 공식 명칭
   static const String appName = '찜! 대모험 (Jjim! Adventure)';
 
