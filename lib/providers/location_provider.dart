@@ -104,9 +104,9 @@ class LocationProvider extends ChangeNotifier with WidgetsBindingObserver {
         final double currentHeading = event.heading!;
         final now = DateTime.now();
 
-        // 1. 시간 기반 스로틀링 (16ms 주기 갭을 두어 초당 최대 60회 60fps에 완벽 정렬 갱신)
+        // 1. 시간 기반 스로틀링 (1000ms 주기 갭을 두어 1초에 최대 1회만 갱신)
         final elapsedMs = now.difference(_lastCompassUpdatedTime).inMilliseconds;
-        if (elapsedMs < 16) return;
+        if (elapsedMs < 1000) return;
 
         // 2. 최초 수신 시에는 평활화 필터를 건너뛰고 즉시 초기화하여 부팅 지연 방지
         if (_lastNotifiedHeading == -999.0) {
