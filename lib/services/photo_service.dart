@@ -61,14 +61,20 @@ class PhotoService {
       final String storagePath = '$tileId/${userId}_$timestamp.$fileExtension';
 
       // 2. Storage 업로드 실행
-      await _client.storage.from('tile-photos').upload(
-            storagePath,
-            file,
-            fileOptions: const FileOptions(
-              contentType: 'image/jpeg',
-              upsert: true,
-            ),
-          );
+      try {
+        await _client.storage.from('tile-photos').upload(
+              storagePath,
+              file,
+              fileOptions: const FileOptions(
+                contentType: 'image/jpeg',
+                upsert: true,
+              ),
+            );
+      } catch (storageErr, stack) {
+        debugPrint('❌ [PhotoService] Supabase Storage 물리 업로드 실패: $storageErr');
+        debugPrint('$stack');
+        rethrow;
+      }
 
       // 3. 업로드 완료된 사진의 Public URL 획득
       final String photoUrl =
@@ -82,17 +88,23 @@ class PhotoService {
         'photo_url': photoUrl,
       };
 
-      final List<Map<String, dynamic>> response = await _client
-          .from('tile_photos')
-          .insert(insertData)
-          .select();
+      try {
+        final List<Map<String, dynamic>> response = await _client
+            .from('tile_photos')
+            .insert(insertData)
+            .select();
 
-      if (response.isNotEmpty) {
-        debugPrint('📡 타일 사진 DB 등록 성공 (Tile: $tileId)');
-        return response.first;
+        if (response.isNotEmpty) {
+          debugPrint('📡 타일 사진 DB 등록 성공 (Tile: $tileId)');
+          return response.first;
+        }
+      } catch (dbErr, stack) {
+        debugPrint('❌ [PhotoService] DB 타일 사진 메타데이터 등록 실패: $dbErr');
+        debugPrint('$stack');
+        rethrow;
       }
     } catch (e) {
-      debugPrint('❌ Supabase 사진 업로드 및 DB 연동 실패: $e');
+      debugPrint('❌ [PhotoService] uploadTilePhoto 전체 예외 트래킹: $e');
     }
     return null;
   }
