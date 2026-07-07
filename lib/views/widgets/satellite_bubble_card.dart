@@ -5,6 +5,7 @@ import '../../core/constants/colors.dart';
 import '../../core/constants/strings.dart';
 import 'package:provider/provider.dart';
 import '../../providers/game_provider.dart';
+import '../../services/hex_service.dart';
 import 'tile_photo_viewer_dialog.dart';
 
 /// 위성 조준 타일 정보 말풍선 본체 위젯 (Cozy 버블 테두리 + BackdropBlur 배경)
@@ -90,7 +91,7 @@ class BubbleBodyState extends State<BubbleBody> {
     });
 
     try {
-      final tileId = 'tile_${widget.q}_${widget.r}';
+      final tileId = HexService.tileId(widget.q, widget.r);
       final game = Provider.of<GameProvider>(context, listen: false);
       await game.loadPhotosForTile(tileId);
     } catch (e) {
@@ -107,7 +108,7 @@ class BubbleBodyState extends State<BubbleBody> {
   @override
   Widget build(BuildContext context) {
     final game = Provider.of<GameProvider>(context);
-    final tileId = 'tile_${widget.q}_${widget.r}';
+    final tileId = HexService.tileId(widget.q, widget.r);
     final cachedPhotos = game.tilePhotosCache[tileId] ?? [];
     final bool hasPhotos = cachedPhotos.isNotEmpty;
 
@@ -274,7 +275,7 @@ class BubbleBodyState extends State<BubbleBody> {
                               margin: const EdgeInsets.only(top: 2),
                               child: TextButton.icon(
                                 onPressed: () {
-                                  final tileId = 'tile_${widget.q}_${widget.r}';
+                                  final tileId = HexService.tileId(widget.q, widget.r);
                                   showDialog(
                                     context: context,
                                     builder: (context) => TilePhotoViewerDialog(tileId: tileId),
