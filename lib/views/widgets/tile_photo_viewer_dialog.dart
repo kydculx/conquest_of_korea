@@ -206,7 +206,7 @@ class _TilePhotoViewerDialogState extends State<TilePhotoViewerDialog> {
       accentColor: GameColors.colorAccent,
       content: SizedBox(
         width: size.width * 0.85,
-        height: size.height * 0.45,
+        height: size.width * 0.85, // 1:1 정사이즈 비율 영역 확보
         child: _isLoading
             ? Center(
                 child: CircularProgressIndicator(
