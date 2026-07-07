@@ -22,6 +22,13 @@ class HealthService {
       return true;
     }
     try {
+      if (Platform.isAndroid) {
+        final status = await _health.getHealthConnectSdkStatus();
+        if (status != HealthConnectSdkStatus.sdkAvailable) {
+          debugPrint('⚠️ Health Connect Sdk is not available: status = $status');
+          return false;
+        }
+      }
       final bool? hasPermission = await _health.hasPermissions(_types, permissions: _permissions);
       return hasPermission ?? false;
     } catch (e) {
@@ -37,6 +44,17 @@ class HealthService {
       return true;
     }
     try {
+      if (Platform.isAndroid) {
+        final status = await _health.getHealthConnectSdkStatus();
+        if (status == HealthConnectSdkStatus.sdkUnavailableProviderUpdateRequired) {
+          debugPrint('⚠️ Health Connect Provider (Update) required. Launching install redirect.');
+          await _health.installHealthConnect();
+          return false;
+        } else if (status == HealthConnectSdkStatus.sdkUnavailable) {
+          debugPrint('⚠️ Health Connect completely unavailable.');
+          return false;
+        }
+      }
       final bool requested = await _health.requestAuthorization(_types, permissions: _permissions);
       return requested;
     } catch (e) {
