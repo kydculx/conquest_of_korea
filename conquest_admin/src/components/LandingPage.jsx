@@ -7,7 +7,8 @@ import {
   Globe,
   Coins,
   Navigation,
-  Palette
+  Palette,
+  Camera
 } from 'lucide-react';
 
 export default function LandingPage() {
@@ -180,6 +181,17 @@ export default function LandingPage() {
             <h3 className="card-heading">🛋️ 집 안에서 즐기는 원격 점령</h3>
             <p className="card-body-text">
               직접 가기 힘든 강 너머나 사유지, 혹은 날씨가 나쁜 날에는 비축한 골드를 사용해 방 안에서 원격으로 영토를 사수하세요.
+            </p>
+          </div>
+
+          {/* 카드 6: 사진 촬영 */}
+          <div className="feature-premium-card card-camera">
+            <div className="card-icon-wrapper red">
+              <Camera size={22} />
+            </div>
+            <h3 className="card-heading">📸 타일 현장 촬영 및 갤러리 공유</h3>
+            <p className="card-body-text">
+              내가 밟고 서 있는 타일에서 리얼한 현장 사진을 촬영해 갤러리에 업로드해 보세요. 내가 점령한 영토의 풍경 기록은 지도를 탐색하는 모든 유저가 자유롭게 볼 수 있습니다.
             </p>
           </div>
         </div>
