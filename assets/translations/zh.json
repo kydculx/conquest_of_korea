@@ -304,6 +304,7 @@
   "deletePhotoConfirmMessage": "确定要删除这张照片吗？",
   "photoDeleteSuccess": "照片删除成功。",
   "photoDeleteFail": "照片删除失败。",
+  "photoLimitReached": "已存在登记的照片。请在删除现有照片后重新拍摄。",
   "selectLanguage": "选择显示语言",
   "languageKorean": "한국어 (Korean)",
   "languageEnglish": "English (英语)",

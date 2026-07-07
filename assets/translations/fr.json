@@ -304,6 +304,7 @@
   "deletePhotoConfirmMessage": "Êtes-vous sûr de vouloir supprimer cette photo ?",
   "photoDeleteSuccess": "Photo supprimée avec succès.",
   "photoDeleteFail": "Échec de la suppression du photo.",
+  "photoLimitReached": "Une photo est déjà enregistrée. Veuillez supprimer votre photo existante avant d'en prendre une nouvelle.",
   "selectLanguage": "Sélectionner la Langue",
   "languageKorean": "한국어 (Korean)",
   "languageEnglish": "English (영어)",

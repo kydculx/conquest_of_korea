@@ -57,6 +57,21 @@ class _TilePhotoViewerDialogState extends State<TilePhotoViewerDialog> {
 
   Future<void> _handleCaptureAndUpload() async {
     final game = context.read<GameProvider>();
+    final auth = context.read<AuthProvider>();
+    final currentUserId = auth.user?.id;
+
+    // 1인 1타일 1사진 업로드 규칙 위반 검사
+    final bool alreadyUploaded = _photos.any((p) => p['user_id'] == currentUserId);
+    if (alreadyUploaded) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(GameStrings.photoLimitReached),
+          backgroundColor: GameColors.error,
+        ),
+      );
+      return;
+    }
+
     final photoService = PhotoService();
 
     // 1. 카메라 촬영 & 최적화 압축 가공 (150KB 규격)
