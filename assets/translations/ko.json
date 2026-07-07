@@ -295,6 +295,8 @@
   "photoUploadSuccess": "사진이 성공적으로 업로드되었습니다.",
   "photoUploadFail": "사진 업로드에 실패했습니다.",
   "cameraRollAccessDenied": "카메라 또는 갤러리 접근 권한이 거부되었습니다.",
+  "viewGalleryBtn": "갤러리 보기",
+  "galleryEmptyLabel": "갤러리가 없습니다.",
   "selectLanguage": "표시 언어 선택",
   "languageKorean": "한국어 (Korean)",
   "languageEnglish": "English (영어)",

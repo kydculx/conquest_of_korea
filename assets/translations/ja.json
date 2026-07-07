@@ -295,6 +295,8 @@
   "photoUploadSuccess": "写真が正常にアップロードされました。",
   "photoUploadFail": "写真のアップロードに失敗しました。",
   "cameraRollAccessDenied": "カメラまたは写真ライブラリの権限が拒否されました。",
+  "viewGalleryBtn": "ギャラリーを見る",
+  "galleryEmptyLabel": "ギャラリーはありません。",
   "selectLanguage": "表示言語を選択",
   "languageKorean": "한국어 (Korean)",
   "languageEnglish": "English (英語)",

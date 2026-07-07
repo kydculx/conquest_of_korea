@@ -956,6 +956,12 @@ class GameStrings {
   /// 카메라 권한 거부 에러
   static String get cameraRollAccessDenied => 'cameraRollAccessDenied'.tr();
 
+  /// 갤러리 보기 버튼 텍스트
+  static String get viewGalleryBtn => 'viewGalleryBtn'.tr();
+
+  /// 갤러리 없음 라벨
+  static String get galleryEmptyLabel => 'galleryEmptyLabel'.tr();
+
   /// 표시 언어 선택 타이틀
   static String get selectLanguage => 'selectLanguage'.tr();
 

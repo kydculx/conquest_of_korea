@@ -3,6 +3,9 @@ import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import '../../core/constants/colors.dart';
 import '../../core/constants/strings.dart';
+import 'package:provider/provider.dart';
+import '../../providers/game_provider.dart';
+import 'tile_photo_viewer_dialog.dart';
 
 /// 위성 조준 타일 정보 말풍선 본체 위젯 (Cozy 버블 테두리 + BackdropBlur 배경)
 class BubbleBody extends StatefulWidget {
@@ -62,6 +65,50 @@ class BubbleBody extends StatefulWidget {
 
 class BubbleBodyState extends State<BubbleBody> {
   bool _isPressed = false;
+  bool _hasPhotos = false;
+  bool _checkingPhotos = true;
+
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _checkPhotos();
+    });
+  }
+
+  @override
+  void didUpdateWidget(BubbleBody oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.q != widget.q || oldWidget.r != widget.r) {
+      _checkPhotos();
+    }
+  }
+
+  Future<void> _checkPhotos() async {
+    if (!mounted) return;
+    setState(() {
+      _checkingPhotos = true;
+    });
+
+    try {
+      final tileId = 'tile_${widget.q}_${widget.r}';
+      final game = Provider.of<GameProvider>(context, listen: false);
+      final photos = await game.loadPhotosForTile(tileId);
+      if (mounted) {
+        setState(() {
+          _hasPhotos = photos.isNotEmpty;
+          _checkingPhotos = false;
+        });
+      }
+    } catch (e) {
+      if (mounted) {
+        setState(() {
+          _hasPhotos = false;
+          _checkingPhotos = false;
+        });
+      }
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -212,6 +259,84 @@ class BubbleBodyState extends State<BubbleBody> {
                       ],
                     ),
                   ],
+                  // 📸 사진 갤러리 조회 영역 (기본 정보 패널 바로 밑)
+                  const SizedBox(height: 8),
+                  _checkingPhotos
+                      ? SizedBox(
+                          height: 16,
+                          width: 16,
+                          child: CircularProgressIndicator(
+                            strokeWidth: 1.5,
+                            valueColor: AlwaysStoppedAnimation<Color>(GameColors.colorAccent),
+                          ),
+                        )
+                      : _hasPhotos
+                          ? Container(
+                              margin: const EdgeInsets.only(top: 2),
+                              child: TextButton.icon(
+                                onPressed: () {
+                                  final tileId = 'tile_${widget.q}_${widget.r}';
+                                  showDialog(
+                                    context: context,
+                                    builder: (context) => TilePhotoViewerDialog(tileId: tileId),
+                                  );
+                                },
+                                style: TextButton.styleFrom(
+                                  backgroundColor: GameColors.colorAccent.withValues(alpha: 0.1),
+                                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                                  shape: RoundedRectangleBorder(
+                                    borderRadius: BorderRadius.circular(10),
+                                    side: BorderSide(
+                                      color: GameColors.colorAccent.withValues(alpha: 0.3),
+                                      width: 0.8,
+                                    ),
+                                  ),
+                                ),
+                                icon: Icon(
+                                  Icons.photo_library_rounded,
+                                  color: GameColors.colorAccent,
+                                  size: 14,
+                                ),
+                                label: Text(
+                                  GameStrings.viewGalleryBtn,
+                                  style: GoogleFonts.quicksand(
+                                    color: GameColors.colorAccent,
+                                    fontSize: 10.5,
+                                    fontWeight: FontWeight.bold,
+                                  ),
+                                ),
+                              ),
+                            )
+                          : Container(
+                              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
+                              decoration: BoxDecoration(
+                                color: GameColors.tacticalGray.withValues(alpha: 0.15),
+                                borderRadius: BorderRadius.circular(8),
+                                border: Border.all(
+                                  color: GameColors.dividerColor.withValues(alpha: 0.3),
+                                  width: 0.5,
+                                ),
+                              ),
+                              child: Row(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  Icon(
+                                    Icons.no_photography_outlined,
+                                    color: GameColors.textMuted.withValues(alpha: 0.6),
+                                    size: 13,
+                                  ),
+                                  const SizedBox(width: 4),
+                                  Text(
+                                    GameStrings.galleryEmptyLabel,
+                                    style: GoogleFonts.quicksand(
+                                      color: GameColors.textMuted,
+                                      fontSize: 10.0,
+                                      fontWeight: FontWeight.bold,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
                   // 하단 행동 버튼 (All-In-One 통합)
                   if (widget.showActionButton &&
                       widget.onActionPressed != null) ...[

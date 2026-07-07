@@ -295,6 +295,8 @@
   "photoUploadSuccess": "Photo uploaded successfully.",
   "photoUploadFail": "Failed to upload photo.",
   "cameraRollAccessDenied": "Camera or Photo Library permission denied.",
+  "viewGalleryBtn": "View Gallery",
+  "galleryEmptyLabel": "No gallery available.",
   "selectLanguage": "Select Display Language",
   "languageKorean": "한국어 (Korean)",
   "languageEnglish": "English (영어)",

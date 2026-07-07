@@ -295,6 +295,8 @@
   "photoUploadSuccess": "照片上传成功。",
   "photoUploadFail": "照片上传失败。",
   "cameraRollAccessDenied": "相机或相册访问权限被拒绝。",
+  "viewGalleryBtn": "查看画廊",
+  "galleryEmptyLabel": "无画廊照片。",
   "selectLanguage": "选择显示语言",
   "languageKorean": "한국어 (Korean)",
   "languageEnglish": "English (英语)",
