@@ -65,7 +65,6 @@ class BubbleBody extends StatefulWidget {
 
 class BubbleBodyState extends State<BubbleBody> {
   bool _isPressed = false;
-  bool _hasPhotos = false;
   bool _checkingPhotos = true;
 
   @override
@@ -93,17 +92,12 @@ class BubbleBodyState extends State<BubbleBody> {
     try {
       final tileId = 'tile_${widget.q}_${widget.r}';
       final game = Provider.of<GameProvider>(context, listen: false);
-      final photos = await game.loadPhotosForTile(tileId);
-      if (mounted) {
-        setState(() {
-          _hasPhotos = photos.isNotEmpty;
-          _checkingPhotos = false;
-        });
-      }
+      await game.loadPhotosForTile(tileId);
     } catch (e) {
+      debugPrint('❌ 버블 카드 사진 존재 여부 검사 실패: $e');
+    } finally {
       if (mounted) {
         setState(() {
-          _hasPhotos = false;
           _checkingPhotos = false;
         });
       }
@@ -112,6 +106,11 @@ class BubbleBodyState extends State<BubbleBody> {
 
   @override
   Widget build(BuildContext context) {
+    final game = Provider.of<GameProvider>(context);
+    final tileId = 'tile_${widget.q}_${widget.r}';
+    final cachedPhotos = game.tilePhotosCache[tileId] ?? [];
+    final bool hasPhotos = cachedPhotos.isNotEmpty;
+
     return ClipPath(
       clipper: ShapeBorderClipper(
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
@@ -270,7 +269,7 @@ class BubbleBodyState extends State<BubbleBody> {
                             valueColor: AlwaysStoppedAnimation<Color>(GameColors.colorAccent),
                           ),
                         )
-                      : _hasPhotos
+                      : hasPhotos
                           ? Container(
                               margin: const EdgeInsets.only(top: 2),
                               child: TextButton.icon(
