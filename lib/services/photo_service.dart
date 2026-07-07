@@ -76,6 +76,9 @@ class PhotoService {
       } catch (storageErr, stack) {
         debugPrint('❌ [PhotoService] Supabase Storage 물리 업로드 실패: $storageErr');
         debugPrint('$stack');
+        if (storageErr.toString().contains('404')) {
+          throw 'Supabase Storage에 \'tile-photos\' 버킷이 존재하지 않습니다. 대시보드 ➔ Storage에서 \'tile-photos\' 버킷을 생성해 주세요.';
+        }
         rethrow;
       }
 
