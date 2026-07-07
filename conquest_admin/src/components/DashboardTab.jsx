@@ -43,9 +43,24 @@ export default function DashboardTab() {
 
   const [tiles, setTiles] = useState([]);
   const [users, setUsers] = useState([]);
+  const [photos, setPhotos] = useState([]);
   const [photoCounts, setPhotoCounts] = useState({});
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+
+  const [selectedTileId, setSelectedTileId] = useState(null);
+  const [isGalleryOpen, setIsGalleryOpen] = useState(false);
+
+  // 글로벌 윈도우 객체에 사진첩 모달 호출 핸들러 등록
+  useEffect(() => {
+    window.openAdminGallery = (tileId) => {
+      setSelectedTileId(tileId);
+      setIsGalleryOpen(true);
+    };
+    return () => {
+      delete window.openAdminGallery;
+    };
+  }, []);
 
   const mapRef = useRef(null);
   const mapInstance = useRef(null);
@@ -96,10 +111,11 @@ export default function DashboardTab() {
       const [tilesData, usersData, photosData] = await Promise.all([
         fetchTiles(),
         fetchUsers(),
-        supabase.from('tile_photos').select('tile_id')
+        supabase.from('tile_photos').select('*').order('created_at', { ascending: false })
       ]);
       setTiles(tilesData);
       setUsers(usersData);
+      setPhotos(photosData.data || []);
 
       const counts = {};
       if (photosData.data) {
@@ -225,7 +241,7 @@ export default function DashboardTab() {
       const tileId = `hex_${tile.q}_${tile.r}`;
       const count = photoCounts[tileId] || 0;
       const galleryText = count > 0 
-        ? `<span style="color: #00e5ff; font-weight: bold;">사진 ${count}장</span>`
+        ? `<button onclick="window.openAdminGallery('${tileId}')" style="background: #3b82f6; color: white; border: none; padding: 2px 6px; border-radius: 4px; font-size: 0.7rem; cursor: pointer; font-weight: bold; margin-top: 2px;">사진 ${count}장 보기</button>`
         : '<span style="color: var(--text-secondary);">없음</span>';
 
       const popupContent = `
@@ -305,6 +321,105 @@ export default function DashboardTab() {
           </div>
         </div>
 
+      {/* 📸 관리자 전용 사진 갤러리 팝업 모달 */}
+      {isGalleryOpen && (
+        <div style={{
+          position: 'fixed', top: 0, left: 0, width: '100vw', height: '100vh',
+          background: 'rgba(15, 23, 42, 0.85)', backdropFilter: 'blur(8px)',
+          display: 'flex', alignItems: 'center', justifyContent: 'center',
+          zIndex: 9999, padding: '1.5rem'
+        }}>
+          <div className="tactical-card" style={{
+            width: '100%', maxWidth: '520px', background: 'var(--bg-secondary)',
+            border: '1px solid var(--border-color)', borderRadius: '12px',
+            boxShadow: 'var(--shadow-card)', padding: '1.5rem', position: 'relative',
+            display: 'flex', flexDirection: 'column', gap: '1rem'
+          }}>
+            {/* 헤더 */}
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+              <h3 style={{ fontSize: '1.1rem', color: 'var(--text-primary)', fontFamily: 'var(--font-display)', fontWeight: 'bold' }}>
+                타일 사진 갤러리 <span style={{ fontSize: '0.85rem', color: 'var(--accent-cyan)', marginLeft: '0.5rem' }}>({selectedTileId})</span>
+              </h3>
+              <button 
+                onClick={() => setIsGalleryOpen(false)}
+                style={{
+                  background: 'none', border: 'none', color: 'var(--text-secondary)',
+                  fontSize: '1.5rem', cursor: 'pointer', outline: 'none'
+                }}
+              >
+                &times;
+              </button>
+            </div>
+
+            {/* 사진 리스트 컨테이너 */}
+            <div style={{
+              maxHeight: '400px', overflowY: 'auto', display: 'flex', flexDirection: 'column',
+              gap: '1.2rem', paddingRight: '0.25rem'
+            }} className="custom-scrollbar">
+              {photos.filter(p => p.tile_id === selectedTileId).length === 0 ? (
+                <div style={{ textAlign: 'center', padding: '2rem', color: 'var(--text-muted)' }}>
+                  등록된 사진이 없습니다.
+                </div>
+              ) : (
+                photos.filter(p => p.tile_id === selectedTileId).map(photo => {
+                  const dt = new Date(photo.created_at);
+                  const dateStr = `${dt.getFullYear()}.${String(dt.getMonth() + 1).padStart(2, '0')}.${String(dt.getDate()).padStart(2, '0')} ${String(dt.getHours()).padStart(2, '0')}:${String(dt.getMinutes()).padStart(2, '0')}`;
+
+                  return (
+                    <div key={photo.id} style={{
+                      display: 'flex', flexDirection: 'column', gap: '0.5rem',
+                      background: 'rgba(15, 23, 42, 0.3)', borderRadius: '8px',
+                      padding: '0.75rem', border: '1px solid rgba(255,255,255,0.05)'
+                    }}>
+                      <img 
+                        src={photo.photo_url} 
+                        alt="타일 사진" 
+                        style={{
+                          width: '100%', height: 'auto', maxHeight: '280px', objectFit: 'cover',
+                          borderRadius: '6px', border: '1px solid rgba(255,255,255,0.1)'
+                        }}
+                      />
+                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: '0.75rem' }}>
+                        <div>
+                          <span style={{ color: 'var(--accent-cyan)', fontWeight: 'bold' }}>{photo.user_nickname}</span>
+                          <span style={{ color: 'var(--text-muted)', marginLeft: '0.5rem' }}>{dateStr}</span>
+                        </div>
+                        {/* 관리자 직권 삭제 권한 */}
+                        <button
+                          onClick={async () => {
+                            if (window.confirm('관리자 권한으로 이 사진을 영구 삭제하시겠습니까? (스토리지 물리 파일도 함께 정리됩니다.)')) {
+                              try {
+                                const bucketMarker = 'tile-photos/';
+                                const markerIdx = photo.photo_url.indexOf(bucketMarker);
+                                if (markerIdx !== -1) {
+                                  const storagePath = photo.photo_url.substring(markerIdx + bucketMarker.length);
+                                  await supabase.storage.from('tile-photos').remove([storagePath]);
+                                }
+                                await supabase.from('tile_photos').delete().eq('id', photo.id);
+                                alert('사진이 성공적으로 강제 삭제되었습니다.');
+                                loadData();
+                              } catch (e) {
+                                alert('삭제 중 오류 발생: ' + e.message);
+                              }
+                            }
+                          }}
+                          style={{
+                            background: 'rgba(239, 68, 68, 0.1)', color: 'var(--accent-red)',
+                            border: '1px solid rgba(239, 68, 68, 0.2)', padding: '2px 8px',
+                            borderRadius: '4px', cursor: 'pointer', fontSize: '0.7rem'
+                          }}
+                        >
+                          강제 삭제
+                        </button>
+                      </div>
+                    </div>
+                  );
+                })
+              )}
+            </div>
+          </div>
+        </div>
+      )}
       </div>
     </div>
   );
