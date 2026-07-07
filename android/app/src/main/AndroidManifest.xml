@@ -44,6 +44,11 @@
                 <category android:name="android.intent.category.BROWSABLE" />
                 <data android:scheme="com.watercherry.conquestofkorea" android:host="login-callback" />
             </intent-filter>
+
+            <!-- 헬스 커넥트(Health Connect) 자동 권한 요청 팝업 런처 트리거 -->
+            <intent-filter>
+                <action android:name="androidx.health.platform.client.ACTION_SHOW_PERMISSIONS_RATIONALE" />
+            </intent-filter>
         </activity>
         <!-- Don't delete the meta-data below.
              This is used by the Flutter tool to generate GeneratedPluginRegistrant.java -->
