@@ -228,6 +228,37 @@ class AuthService {
     final user = currentUser;
     if (user == null) return;
 
+    // [추가] 해당 사용자가 촬영하여 등록한 모든 타일 사진 갤러리 물리 파일 및 DB 레코드 영구 삭제
+    try {
+      final List<Map<String, dynamic>> photos = await _client
+          .from('tile_photos')
+          .select('photo_url')
+          .eq('user_id', user.id);
+
+      if (photos.isNotEmpty) {
+        final List<String> pathsToDelete = [];
+        const String bucketMarker = 'tile-photos/';
+        for (final p in photos) {
+          final String url = p['photo_url'] ?? '';
+          final int markerIndex = url.indexOf(bucketMarker);
+          if (markerIndex != -1) {
+            final String storagePath = url.substring(markerIndex + bucketMarker.length);
+            pathsToDelete.add(storagePath);
+          }
+        }
+
+        if (pathsToDelete.isNotEmpty) {
+          await _client.storage.from('tile-photos').remove(pathsToDelete);
+          debugPrint('📸 탈퇴 회원의 사진 갤러리 물리 파일 ${pathsToDelete.length}개 삭제 완료.');
+        }
+      }
+
+      await _client.from('tile_photos').delete().eq('user_id', user.id);
+      debugPrint('📸 탈퇴 회원의 사진 갤러리 DB 레코드 삭제 완료.');
+    } catch (e) {
+      debugPrint('⚠️ 탈퇴 회원 사진 갤러리 데이터 삭제 실패: $e');
+    }
+
     // 1. 해당 사용자가 점령한 타일 데이터(captured_tiles) 영구 삭제
     try {
       await _client.from('captured_tiles').delete().eq('user_id', user.id);
