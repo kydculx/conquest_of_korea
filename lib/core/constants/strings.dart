@@ -905,6 +905,24 @@ class GameStrings {
   /// 언어 설정 상세 설명
   static String get languageSettingsSub => 'languageSettingsSub'.tr();
 
+  /// GPS 정확도 설정 타이틀
+  static String get gpsAccuracySettings => 'gpsAccuracySettings'.tr();
+
+  /// GPS 정확도 설정 상세 설명
+  static String get gpsAccuracySettingsSub => 'gpsAccuracySettingsSub'.tr();
+
+  /// 높은 정확도
+  static String get gpsAccuracyHigh => 'gpsAccuracyHigh'.tr();
+
+  /// 최고 정확도
+  static String get gpsAccuracyBest => 'gpsAccuracyBest'.tr();
+
+  /// 최상급 정확도
+  static String get gpsAccuracyBestForNav => 'gpsAccuracyBestForNav'.tr();
+
+  /// 중간 정확도
+  static String get gpsAccuracyMedium => 'gpsAccuracyMedium'.tr();
+
   /// 표시 언어 선택 타이틀
   static String get selectLanguage => 'selectLanguage'.tr();
 

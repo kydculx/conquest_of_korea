@@ -158,6 +158,19 @@ class PreferencesService {
     await prefs.setBool(_hasSeenOnboardingKey, v);
   }
 
+  // --- GPS 정확도 레벨 설정 (SharedPreferences 저장) ---
+  static const _gpsAccuracyKey = 'conquest_gps_accuracy_level';
+
+  static Future<String> getGpsAccuracyLevel() async {
+    final prefs = await SharedPreferences.getInstance();
+    return prefs.getString(_gpsAccuracyKey) ?? 'high';
+  }
+
+  static Future<void> setGpsAccuracyLevel(String level) async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setString(_gpsAccuracyKey, level);
+  }
+
   // --- 발자취 로컬 백업 (game_tile_provider) ---
   static const _footprintsKey = 'conquest_local_footprints';
 

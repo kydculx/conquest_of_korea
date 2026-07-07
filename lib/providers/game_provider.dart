@@ -5,6 +5,7 @@ import 'package:latlong2/latlong.dart';
 import '../controllers/capture_controller.dart';
 import '../controllers/notification_controller.dart';
 import '../services/preferences_service.dart';
+import '../services/geo_service.dart';
 import '../controllers/satellite_capture_controller.dart';
 import '../models/alert_model.dart';
 import '../models/tile_model.dart';
@@ -72,6 +73,10 @@ class GameProvider extends ChangeNotifier with WidgetsBindingObserver {
   /// 오늘의 누적 걸음수 데이터
   int _todaySteps = 0;
   int get todaySteps => _todaySteps;
+
+  /// 사용자가 설정한 로컬 GPS 정확도 레벨 ('high', 'best', 'bestForNavigation', 'medium')
+  String _gpsAccuracyLevel = 'high';
+  String get gpsAccuracyLevel => _gpsAccuracyLevel;
 
   /// 자동 점령 모드 활성화 여부
   bool _isAutoCapture = false;
@@ -259,6 +264,7 @@ class GameProvider extends ChangeNotifier with WidgetsBindingObserver {
         _tileProvider = tileProvider {
     WidgetsBinding.instance.addObserver(this);
     _startUtcTimer();
+    initGpsSettings();
     _goldManager = GoldManager(
       supabase: supabase,
       getAuthProvider: () => _authProvider,
@@ -413,6 +419,24 @@ class GameProvider extends ChangeNotifier with WidgetsBindingObserver {
     _tileProvider.onInvasionDetected = _onInvasionDetectedFromTiles;
 
     _init();
+  }
+
+  /// GPS 설정값을 비동기로 초기 로드합니다.
+  Future<void> initGpsSettings() async {
+    _gpsAccuracyLevel = await PreferencesService.getGpsAccuracyLevel();
+    notifyListeners();
+  }
+
+  /// 사용자가 GPS 정확도를 변경했을 때 호출됩니다.
+  Future<void> updateGpsAccuracy(String newLevel) async {
+    if (_gpsAccuracyLevel != newLevel) {
+      _gpsAccuracyLevel = newLevel;
+      await PreferencesService.setGpsAccuracyLevel(newLevel);
+      notifyListeners();
+      
+      // 실시간 하드웨어 수신 정확도 재동기화
+      await GeoService().updateTrackingAccuracy();
+    }
   }
 
   // --- Provider 설정 ---

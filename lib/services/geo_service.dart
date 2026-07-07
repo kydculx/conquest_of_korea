@@ -5,9 +5,15 @@ import 'package:flutter/services.dart';
 import 'package:geolocator/geolocator.dart';
 import '../core/constants/game_config.dart';
 import '../core/constants/strings.dart';
+import 'preferences_service.dart';
 
 /// 디바이스의 물리 GPS 하드웨어를 직접 제어하고, 실시간 위치 스트림 데이터 수신 및 백그라운드 배터리 최적화 설정을 관리하는 서비스 클래스
 class GeoService {
+  // 싱글톤 패턴 적용
+  static final GeoService _instance = GeoService._internal();
+  factory GeoService() => _instance;
+  GeoService._internal();
+
   static const MethodChannel _batteryChannel = MethodChannel(
     'com.watercherry.conquest_mobile/battery',
   );
@@ -67,11 +73,29 @@ class GeoService {
 
   /// 하드웨어 GPS 칩을 깨워 예열(Priming)을 시도하고 설정된 주기/정확도 옵션에 따라 백그라운드 포그라운드 위치 추적을 시작합니다.
   Future<void> startTracking() async {
+    final accuracyLevel = await PreferencesService.getGpsAccuracyLevel();
+    LocationAccuracy selectedAccuracy;
+    switch (accuracyLevel) {
+      case 'bestForNavigation':
+        selectedAccuracy = LocationAccuracy.bestForNavigation;
+        break;
+      case 'best':
+        selectedAccuracy = LocationAccuracy.best;
+        break;
+      case 'medium':
+        selectedAccuracy = LocationAccuracy.medium;
+        break;
+      case 'high':
+      default:
+        selectedAccuracy = LocationAccuracy.high;
+        break;
+    }
+
     LocationSettings locationSettings;
 
     if (!kIsWeb && Platform.isIOS) {
       locationSettings = AppleSettings(
-        accuracy: GameConfig.gpsAccuracy,
+        accuracy: selectedAccuracy,
         activityType: ActivityType.otherNavigation,
         distanceFilter: 3,
         pauseLocationUpdatesAutomatically: false,
@@ -80,7 +104,7 @@ class GeoService {
       );
     } else if (!kIsWeb && Platform.isAndroid) {
       locationSettings = AndroidSettings(
-        accuracy: GameConfig.gpsAccuracy,
+        accuracy: selectedAccuracy,
         distanceFilter: GameConfig.gpsDistanceFilterMeters,
         forceLocationManager: true, // 구글 서비스를 거치지 않고 하드웨어 직접 제어
         intervalDuration: const Duration(seconds: GameConfig.gpsUpdateIntervalSeconds),
@@ -91,8 +115,8 @@ class GeoService {
         ),
       );
     } else {
-      locationSettings = const LocationSettings(
-        accuracy: GameConfig.gpsAccuracy,
+      locationSettings = LocationSettings(
+        accuracy: selectedAccuracy,
         distanceFilter: GameConfig.gpsDistanceFilterMeters,
       );
     }
@@ -112,9 +136,18 @@ class GeoService {
         );
   }
 
+  /// GPS 설정 변경 시 스트림을 재시작하여 새로운 오차 정확도를 하드웨어 칩에 주입합니다.
+  Future<void> updateTrackingAccuracy() async {
+    if (_positionStreamSubscription != null) {
+      stopTracking();
+      await startTracking();
+    }
+  }
+
   /// 진행 중인 실시간 GPS 추적 스트림을 취소하여 위치 트래킹을 중단합니다.
   void stopTracking() {
     _positionStreamSubscription?.cancel();
+    _positionStreamSubscription = null;
   }
 
   /// 추적을 중지하고 활성화된 위치 스트림 컨트롤러를 해제합니다.
