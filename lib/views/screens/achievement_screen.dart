@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:easy_localization/easy_localization.dart';
 import 'package:provider/provider.dart';
 import 'package:google_fonts/google_fonts.dart';
 import '../../models/achievement_model.dart';
@@ -19,6 +20,20 @@ class AchievementScreen extends StatefulWidget {
 }
 
 class _AchievementScreenState extends State<AchievementScreen> {
+  // 🧭 업적 종류 필터 칩 목록 정의
+  final List<Map<String, dynamic>> _filterCategories = [
+    {'id': 'ALL', 'labelKey': 'achCatAll'},
+    {'id': 'CAPTURE', 'labelKey': 'achCatCapture'},
+    {'id': 'EXPLORATION', 'labelKey': 'achCatExploration'},
+    {'id': 'SATELLITE', 'labelKey': 'achCatSatellite'},
+    {'id': 'FORTIFICATION', 'labelKey': 'achCatFortification'},
+    {'id': 'GOLD', 'labelKey': 'achCatGold'},
+    {'id': 'PHOTO', 'labelKey': 'achCatPhoto'},
+    {'id': 'PATTERN', 'labelKey': 'achCatPattern'},
+  ];
+
+  String _activeFilterId = 'ALL';
+
   @override
   void initState() {
     super.initState();
@@ -30,6 +45,32 @@ class _AchievementScreenState extends State<AchievementScreen> {
         achProvider.checkAndUnlock(capturedTiles: gameProvider.capturedTiles);
       }
     });
+  }
+
+  bool _matchesFilter(Achievement ach, String filterId) {
+    if (filterId == 'ALL') return true;
+    switch (filterId) {
+      case 'CAPTURE':
+        return ach.category == AchievementCategory.capturedTiles ||
+               ach.category == AchievementCategory.enemyCapturedTiles;
+      case 'EXPLORATION':
+        return ach.category == AchievementCategory.totalMovedTiles ||
+               ach.category == AchievementCategory.dailyMovedTiles ||
+               ach.category == AchievementCategory.mainBaseMove;
+      case 'SATELLITE':
+        return ach.category == AchievementCategory.satelliteCapture ||
+               ach.category == AchievementCategory.satelliteInfo;
+      case 'FORTIFICATION':
+        return ach.category == AchievementCategory.hqFortification;
+      case 'GOLD':
+        return ach.category == AchievementCategory.goldAmount;
+      case 'PHOTO':
+        return ach.category == AchievementCategory.photoUpload;
+      case 'PATTERN':
+        return ach.category == AchievementCategory.patternMatch;
+      default:
+        return false;
+    }
   }
 
   @override
@@ -45,6 +86,11 @@ class _AchievementScreenState extends State<AchievementScreen> {
     final totalCount = allAchievements.length;
     final unlockedCount = allAchievements.where((a) => unlockedIds.contains(a.id)).length;
     final progressRatio = totalCount > 0 ? unlockedCount / totalCount : 0.0;
+
+    // 필터링 적용된 목록 산출
+    final filteredAchievements = allAchievements
+        .where((ach) => _matchesFilter(ach, _activeFilterId))
+        .toList();
 
     return Scaffold(
       appBar: TacticalAppBar(
@@ -62,7 +108,11 @@ class _AchievementScreenState extends State<AchievementScreen> {
               // 1. 달성률 헤더 대시보드
               _buildHeaderDashboard(unlockedCount, totalCount, progressRatio),
 
-              // 2. 업적 리스트 (단일 열 리스트뷰)
+              // 2. 가로 스크롤 업적 종류 필터 칩 바
+              _buildFilterChips(),
+              const SizedBox(height: 12),
+
+              // 3. 업적 리스트
               Expanded(
                 child: achProvider.isLoading
                     ? Center(
@@ -70,7 +120,7 @@ class _AchievementScreenState extends State<AchievementScreen> {
                           valueColor: AlwaysStoppedAnimation<Color>(GameColors.accentNeon),
                         ),
                       )
-                    : allAchievements.isEmpty
+                    : filteredAchievements.isEmpty
                         ? Center(
                             child: Text(
                               GameStrings.noAchievements,
@@ -82,10 +132,10 @@ class _AchievementScreenState extends State<AchievementScreen> {
                           )
                         : ListView.separated(
                             padding: const EdgeInsets.fromLTRB(16, 8, 16, 16),
-                            itemCount: allAchievements.length,
+                            itemCount: filteredAchievements.length,
                             separatorBuilder: (context, index) => const SizedBox(height: 12),
                             itemBuilder: (context, index) {
-                              final ach = allAchievements[index];
+                              final ach = filteredAchievements[index];
                               final isUnlocked = unlockedIds.contains(ach.id);
                               return _buildAchievementCard(ach, isUnlocked, profile);
                             },
@@ -94,6 +144,53 @@ class _AchievementScreenState extends State<AchievementScreen> {
             ],
           ),
         ),
+      ),
+    );
+  }
+
+  /// 🧭 가로 스크롤링 카테고리 필터 칩 바 빌더
+  Widget _buildFilterChips() {
+    return SizedBox(
+      height: 38,
+      child: ListView.separated(
+        padding: const EdgeInsets.symmetric(horizontal: 16),
+        scrollDirection: Axis.horizontal,
+        itemCount: _filterCategories.length,
+        separatorBuilder: (context, index) => const SizedBox(width: 8),
+        itemBuilder: (context, index) {
+          final filter = _filterCategories[index];
+          final id = filter['id'] as String;
+          final labelKey = filter['labelKey'] as String;
+          final isActive = _activeFilterId == id;
+
+          return ChoiceChip(
+            label: Text(
+              labelKey.tr(),
+              style: TextStyle(
+                fontSize: 12,
+                fontWeight: isActive ? FontWeight.bold : FontWeight.normal,
+                color: isActive ? GameColors.tacticalBlack : GameColors.textSecondary,
+              ),
+            ),
+            selected: isActive,
+            selectedColor: GameColors.accentNeon,
+            backgroundColor: GameColors.backgroundMedium.withValues(alpha: 0.5),
+            side: BorderSide(
+              color: isActive ? GameColors.accentNeon : GameColors.borderLight,
+              width: 1.0,
+            ),
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(20),
+            ),
+            onSelected: (selected) {
+              if (selected) {
+                setState(() {
+                  _activeFilterId = id;
+                });
+              }
+            },
+          );
+        },
       ),
     );
   }
