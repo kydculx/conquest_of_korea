@@ -429,6 +429,16 @@ const MASTER_ACHIEVEMENTS = [
   { id: 'ACH_GOLD_T2', title: '자급자족 플레이어', desc: '보유 골드 10,000 Gold 돌파', tier: 2, category: '보유 골드' },
   { id: 'ACH_GOLD_T3', title: '자산가', desc: '보유 골드 50,000 Gold 돌파', tier: 3, category: '보유 골드' },
   { id: 'ACH_GOLD_T4', title: '성간 연합 자산가', desc: '보유 골드 200,000 Gold 돌파', tier: 4, category: '보유 골드' },
+
+  { id: 'ACH_BASE_MOV_T1', title: '첫 이사', desc: '본진 이동 1회 완료', tier: 1, category: '본진 이동' },
+  { id: 'ACH_BASE_MOV_T2', title: '프로 이사러', desc: '본진 이동 3회 완료', tier: 2, category: '본진 이동' },
+  { id: 'ACH_BASE_MOV_T3', title: '유목민', desc: '본진 이동 10회 완료', tier: 3, category: '본진 이동' },
+  { id: 'ACH_BASE_MOV_T4', title: '역마살 모험가', desc: '본진 이동 30회 완료', tier: 4, category: '본진 이동' },
+
+  { id: 'ACH_PHOTO_T1', title: '첫 찰칵', desc: '서로 다른 1개 구역에서 사진 촬영 등록', tier: 1, category: '사진 촬영' },
+  { id: 'ACH_PHOTO_T2', title: '추억 기록자', desc: '서로 다른 5개 구역에서 사진 촬영 등록', tier: 2, category: '사진 촬영' },
+  { id: 'ACH_PHOTO_T3', title: '풍경 탐험가', desc: '서로 다른 15개 구역에서 사진 촬영 등록', tier: 3, category: '사진 촬영' },
+  { id: 'ACH_PHOTO_T4', title: '구역 포토그래퍼', desc: '서로 다른 50개 구역에서 사진 촬영 등록', tier: 4, category: '사진 촬영' },
   
   { id: 'ACH_PATTERN_A', title: '문자 패턴 A', desc: '지도 상에 헥사곤 타일로 알파벳 A 모양 점령 달성', tier: 1, category: '패턴 매칭' },
   { id: 'ACH_PATTERN_B', title: '문자 패턴 B', desc: '지도 상에 헥사곤 타일로 알파벳 B 모양 점령 달성', tier: 1, category: '패턴 매칭' },
