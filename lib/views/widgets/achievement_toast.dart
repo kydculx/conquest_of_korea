@@ -262,6 +262,8 @@ class _AchievementToastState extends State<AchievementToast>
         return Icons.monetization_on;
       case AchievementCategory.mainBaseMove:
         return Icons.home;
+      case AchievementCategory.photoUpload:
+        return Icons.photo_camera_rounded;
       case AchievementCategory.patternMatch:
         return Icons.palette;
     }

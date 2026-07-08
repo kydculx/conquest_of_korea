@@ -11,6 +11,7 @@ enum AchievementCategory {
   goldAmount,
   mainBaseMove,
   patternMatch,
+  photoUpload,
 }
 
 /// 인게임 전체 업적 정보의 정적 규격을 정의하는 마스터 모델 클래스
@@ -104,6 +105,12 @@ class Achievement {
     const Achievement(id: 'ACH_BASE_MOV_T2', titleKey: 'achBaseMovT2Title', descriptionKey: 'achBaseMovT2Desc', category: AchievementCategory.mainBaseMove, threshold: 3, tier: 2),
     const Achievement(id: 'ACH_BASE_MOV_T3', titleKey: 'achBaseMovT3Title', descriptionKey: 'achBaseMovT3Desc', category: AchievementCategory.mainBaseMove, threshold: 10, tier: 3),
     const Achievement(id: 'ACH_BASE_MOV_T4', titleKey: 'achBaseMovT4Title', descriptionKey: 'achBaseMovT4Desc', category: AchievementCategory.mainBaseMove, threshold: 30, tier: 4),
+
+    // 11. 사진 촬영 업적 (서로 다른 구역 사진)
+    const Achievement(id: 'ACH_PHOTO_T1', titleKey: 'achPhotoT1Title', descriptionKey: 'achPhotoT1Desc', category: AchievementCategory.photoUpload, threshold: 1, tier: 1),
+    const Achievement(id: 'ACH_PHOTO_T2', titleKey: 'achPhotoT2Title', descriptionKey: 'achPhotoT2Desc', category: AchievementCategory.photoUpload, threshold: 5, tier: 2),
+    const Achievement(id: 'ACH_PHOTO_T3', titleKey: 'achPhotoT3Title', descriptionKey: 'achPhotoT3Desc', category: AchievementCategory.photoUpload, threshold: 15, tier: 3),
+    const Achievement(id: 'ACH_PHOTO_T4', titleKey: 'achPhotoT4Title', descriptionKey: 'achPhotoT4Desc', category: AchievementCategory.photoUpload, threshold: 50, tier: 4),
 
     // 10. 특정 모양 패턴 점령 (A부터 M까지 동적 추가)
     ..._buildPatternAchievements(),

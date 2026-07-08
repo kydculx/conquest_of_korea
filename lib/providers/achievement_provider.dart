@@ -15,6 +15,9 @@ class AchievementProvider extends ChangeNotifier {
   AuthProvider? _authProvider;
   String? _currentUserId;
 
+  int _userUniquePhotoTilesCount = 0;
+  int get userUniquePhotoTilesCount => _userUniquePhotoTilesCount;
+
   List<String> _unlockedAchievementIds = [];
   bool _isLoading = false;
   bool _isChecking = false; // 연타 점령 시 비동기 경합(Race Condition)을 가드하는 락 플래그
@@ -281,6 +284,8 @@ class AchievementProvider extends ChangeNotifier {
       final achTiles = await _supabase.fetchAchievementTiles(userId);
       _achievementTiles.clear();
       _achievementTiles.addAll(achTiles);
+
+      _userUniquePhotoTilesCount = await _supabase.fetchUserUniquePhotoTilesCount(userId);
     } catch (e) {
       debugPrint('⚠️ 해금 업적 및 소비 타일 조회 실패: $e');
     } finally {
@@ -415,6 +420,10 @@ class AchievementProvider extends ChangeNotifier {
           break;
         case AchievementCategory.mainBaseMove:
           shouldUnlock = profile.mainBaseMoveCount >= ach.threshold;
+          break;
+        case AchievementCategory.photoUpload:
+          final uniquePhotoCount = await _supabase.fetchUserUniquePhotoTilesCount(userId);
+          shouldUnlock = uniquePhotoCount >= ach.threshold;
           break;
         case AchievementCategory.patternMatch:
           if (capturedTiles != null) {

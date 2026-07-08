@@ -296,6 +296,9 @@ class _AchievementScreenState extends State<AchievementScreen> {
         return (profile.gold as num).toDouble();
       case AchievementCategory.mainBaseMove:
         return (profile.mainBaseMoveCount as num).toDouble();
+      case AchievementCategory.photoUpload:
+        final achProvider = Provider.of<AchievementProvider>(context, listen: false);
+        return achProvider.userUniquePhotoTilesCount.toDouble();
       case AchievementCategory.patternMatch:
         return 0.0;
     }

@@ -309,6 +309,24 @@ class SupabaseService {
     }
   }
 
+  /// 특정 플레이어가 각기 다른 타일(구역)에서 찍어서 올린 사진의 고유 개수를 카운트하여 반환합니다.
+  Future<int> fetchUserUniquePhotoTilesCount(String userId) async {
+    try {
+      final response = await _client
+          .from('tile_photos')
+          .select('tile_id')
+          .eq('user_id', userId);
+
+      final Set<String> uniqueTiles = (response as List)
+          .map((e) => e['tile_id'] as String)
+          .toSet();
+      return uniqueTiles.length;
+    } catch (e) {
+      debugPrint('❌ 유저 사진 고유 타일 수 조회 실패: $e');
+      return 0;
+    }
+  }
+
   /// 플레이어의 위성 원격 점령 횟수를 1 증가시킵니다.
   Future<bool> incrementSatelliteCapture(String userId) async {
     try {

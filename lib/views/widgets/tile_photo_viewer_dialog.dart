@@ -7,6 +7,7 @@ import '../../core/constants/colors.dart';
 import '../../core/constants/strings.dart';
 import '../../providers/game_provider.dart';
 import '../../providers/auth_provider.dart';
+import '../../providers/achievement_provider.dart';
 import '../../services/photo_service.dart';
 import 'tactical_dialog.dart';
 
@@ -99,6 +100,9 @@ class _TilePhotoViewerDialogState extends State<TilePhotoViewerDialog> {
           ),
         );
         _loadPhotos(); // 목록 리프레시
+        if (context.mounted) {
+          context.read<AchievementProvider>().checkAndUnlock();
+        }
       } else {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
@@ -170,6 +174,9 @@ class _TilePhotoViewerDialogState extends State<TilePhotoViewerDialog> {
           ),
         );
         _loadPhotos(); // 목록 리프레시
+        if (context.mounted) {
+          context.read<AchievementProvider>().checkAndUnlock();
+        }
       } else {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
