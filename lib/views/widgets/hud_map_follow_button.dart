@@ -35,12 +35,7 @@ class MapFollowRotationButton extends StatelessWidget {
         final isRotation = state.$2;
 
         final icon = _getCurrentIcon(isFollowing, isRotation);
-        final Color iconColor = switch ((isFollowing, isRotation)) {
-          (true, true) => Colors.white,
-          (true, false) => const Color(0xFF80DEEA),
-          (false, false) => GameColors.textSecondary,
-          (false, true) => const Color(0xFFFFD54F),
-        };
+        final Color iconColor = isFollowing ? Colors.white : GameColors.textSecondary;
 
         return TacticalPressButton(
           size: size,

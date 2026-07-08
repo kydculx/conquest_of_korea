@@ -96,7 +96,7 @@ class HQMoveButton extends StatelessWidget {
       },
       child: Icon(
         Icons.home_work_rounded,
-        color: hasHQ ? GameColors.colorAccent : GameColors.textMuted,
+        color: hasHQ ? GameColors.tacticalWhite : GameColors.textMuted,
         size: iconSize,
       ),
     );

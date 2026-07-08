@@ -52,7 +52,7 @@ class TilePhotoActionButton extends StatelessWidget {
       },
       child: Icon(
         Icons.photo_camera_rounded,
-        color: GameColors.colorAccent,
+        color: GameColors.tacticalWhite,
         size: iconSize,
       ),
     );
