@@ -108,6 +108,14 @@ class GameProvider extends ChangeNotifier with WidgetsBindingObserver {
   Stream<LatLng> get mapMoveRequests => _mapMoveRequestController.stream;
 
   void requestMapMove(LatLng destination) {
+    // 🧭 수동 맵 카메라 이동(본진 이동, 패턴 조회 등) 시 나침반 회전 모드를 꺼서 불필요한 강제 회전 방지
+    if (_isMapRotationMode) {
+      _isMapRotationMode = false;
+      PreferencesService.setMapRotationMode(false).catchError((e) {
+        debugPrint('❌ MapRotationMode 저장 실패: $e');
+      });
+      notifyListeners();
+    }
     _mapMoveRequestController.add(destination);
   }
 
