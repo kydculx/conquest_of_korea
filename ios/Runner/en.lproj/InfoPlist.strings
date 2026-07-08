@@ -1,2 +1,9 @@
-"CFBundleDisplayName" = "Jjim! Adventure";
-"CFBundleName" = "Jjim! Adventure";
+"CFBundleDisplayName" = "Conquest of Korea";
+"CFBundleName" = "Conquest of Korea";
+"NSHealthShareUsageDescription" = "Access to health data is required to measure today's real-time steps and apply them to in-game movement and scores.";
+"NSHealthUpdateUsageDescription" = "Access to health data is required to sync and update in-game workout records with Apple Health.";
+"NSLocationAlwaysAndWhenInUseUsageDescription" = "Location access is required to display the tactical map and secure territories.";
+"NSLocationAlwaysUsageDescription" = "Location access is required to secure territories in real time even while the app is in the background.";
+"NSLocationWhenInUseUsageDescription" = "Location access is required to display the tactical map and show your current position.";
+"NSCameraUsageDescription" = "Camera access is required to take photos of target areas and upload them to the tile gallery.";
+"NSPhotoLibraryUsageDescription" = "Photo library access is required to select and upload photos of target areas to the tile gallery.";

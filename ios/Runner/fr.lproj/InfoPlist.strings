@@ -1,2 +1,9 @@
-"CFBundleDisplayName" = "Jjim! Aventure";
-"CFBundleName" = "Jjim! Aventure";
+"CFBundleDisplayName" = "Grande Aventure de Zones";
+"CFBundleName" = "Grande Aventure de Zones";
+"NSHealthShareUsageDescription" = "L'accès aux données de santé est requis pour mesurer vos pas en temps réel et les appliquer à vos déplacements et scores dans le jeu.";
+"NSHealthUpdateUsageDescription" = "L'accès aux données de santé est requis pour synchroniser et mettre à jour vos entraînements du jeu avec Apple Santé.";
+"NSLocationAlwaysAndWhenInUseUsageDescription" = "L'accès à la localisation est requis pour faire fonctionner la carte tactique et sécuriser les zones.";
+"NSLocationAlwaysUsageDescription" = "L'accès à la localisation en arrière-plan est requis pour continuer à sécuriser des zones en temps réel.";
+"NSLocationWhenInUseUsageDescription" = "L'accès à la localisation est requis pour afficher la carte tactique et votre position actuelle.";
+"NSCameraUsageDescription" = "L'accès à la caméra est requis pour prendre des photos de zones et les ajouter à la galerie.";
+"NSPhotoLibraryUsageDescription" = "L'accès à la bibliothèque de photos est requis pour sélectionner et envoyer des photos dans la galerie de zones.";

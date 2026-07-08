@@ -1,2 +1,9 @@
-"CFBundleDisplayName" = "Jjim! Abenteuer";
-"CFBundleName" = "Jjim! Abenteuer";
+"CFBundleDisplayName" = "Bereichs Abenteuer";
+"CFBundleName" = "Bereichs Abenteuer";
+"NSHealthShareUsageDescription" = "Der Zugriff auf Gesundheitsdaten wird benötigt, um die heutigen Schritte in Echtzeit zu messen und auf Bewegung und Spielstände anzuwenden.";
+"NSHealthUpdateUsageDescription" = "Der Zugriff auf Gesundheitsdaten wird benötigt, um im Spiel erzielte Trainingsdaten mit Apple Health zu synchronisieren.";
+"NSLocationAlwaysAndWhenInUseUsageDescription" = "Der Zugriff auf den Standort wird benötigt, um die taktische Karte anzuzeigen und Bereiche zu sichern.";
+"NSLocationAlwaysUsageDescription" = "Der Zugriff auf den Standort im Hintergrund wird benötigt, um Bereiche kontinuierlich in Echtzeit zu sichern.";
+"NSLocationWhenInUseUsageDescription" = "Der Zugriff auf den Standort wird benötigt, um die taktische Karte und Ihre aktuelle Position anzuzeigen.";
+"NSCameraUsageDescription" = "Der Zugriff auf die Kamera wird benötigt, um Fotos von Bereichen zu machen und in die Galerie hochzuladen.";
+"NSPhotoLibraryUsageDescription" = "Der Zugriff auf die Fotomediathek wird benötigt, um Fotos für die Bereichs-Galerie auszuwählen.";

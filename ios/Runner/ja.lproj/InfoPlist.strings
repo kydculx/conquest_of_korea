@@ -1,2 +1,9 @@
-"CFBundleDisplayName" = "Jjim!アドベンチャー";
-"CFBundleName" = "Jjim!アドベンチャー";
+"CFBundleDisplayName" = "エリア大冒険";
+"CFBundleName" = "エリア大冒険";
+"NSHealthShareUsageDescription" = "本日のリアルタイム歩数を測定し、ゲーム内の移動 data やプレイヤー成績に反映するため、ヘルスケアデータの読み取り権限が必要です。";
+"NSHealthUpdateUsageDescription" = "ゲーム内で獲得した運動記録をヘルスケア情報と連動して更新するため、ヘルスケアデータの書き込み権限が必要です。";
+"NSLocationAlwaysAndWhenInUseUsageDescription" = "地図およびエリア占領システムを作動させるために位置情報が必要です。";
+"NSLocationAlwaysUsageDescription" = "バックグラウンドでもリアルタイムで位置情報に基づいたエリア占領を行うために位置情報権限が必要です。";
+"NSLocationWhenInUseUsageDescription" = "リアルタイムのエリア占領地図を表示するために現在地情報が必要です。";
+"NSCameraUsageDescription" = "エリアの現地写真を撮影して登録するためにカメラ権限が必要です。";
+"NSPhotoLibraryUsageDescription" = "エリアにアップロードする写真をアルバムから選択するために写真ライブラリへのアクセス権限が必要です。";

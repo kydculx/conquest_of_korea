@@ -1,2 +1,9 @@
 "CFBundleDisplayName" = "찜! 대모험";
 "CFBundleName" = "찜! 대모험";
+"NSHealthShareUsageDescription" = "오늘의 실시간 걸음수를 측정하여 게임 내 이동 데이터 및 플레이어 성적에 반영하기 위해 건강 데이터 읽기 권한이 필요합니다.";
+"NSHealthUpdateUsageDescription" = "게임 내 획득한 운동 기록을 건강 정보와 연동하여 업데이트하기 위해 건강 데이터 쓰기 권한이 필요합니다.";
+"NSLocationAlwaysAndWhenInUseUsageDescription" = "지도 및 구역 확보 시스템 작동을 위해 위치 정보가 필요합니다.";
+"NSLocationAlwaysUsageDescription" = "백그라운드에서도 실시간 위치 기반 구역 확보를 진행하기 위해 위치 권한이 필요합니다.";
+"NSLocationWhenInUseUsageDescription" = "실시간 구역 확보 지도를 위해 현재 위치 정보가 필요합니다.";
+"NSCameraUsageDescription" = "타일에 현장 사진을 촬영하고 등록하기 위해 카메라 권한이 필요합니다.";
+"NSPhotoLibraryUsageDescription" = "타일에 업로드할 현장 사진을 갤러리에서 선택하기 위해 사진첩 접근 권한이 필요합니다.";

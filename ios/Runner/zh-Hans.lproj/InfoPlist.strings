@@ -1,2 +1,9 @@
-"CFBundleDisplayName" = "Jjim!大冒险";
-"CFBundleName" = "Jjim!大冒险";
+"CFBundleDisplayName" = "占领大冒险";
+"CFBundleName" = "占领大冒险";
+"NSHealthShareUsageDescription" = "需要读取健康数据，以测量今天的实时步数并将其应用于游戏内移动数据和玩家成绩。";
+"NSHealthUpdateUsageDescription" = "需要写入健康数据，以将游戏内获得的运动记录与健康信息联动更新。";
+"NSLocationAlwaysAndWhenInUseUsageDescription" = "需要位置信息来运行地图和区域占领系统。";
+"NSLocationAlwaysUsageDescription" = "即使在后台运行，也需要位置权限来实时进行基于位置的区域占领。";
+"NSLocationWhenInUseUsageDescription" = "需要当前位置信息以展示实时区域占领地图。";
+"NSCameraUsageDescription" = "需要相机权限来拍摄并注册区域现场照片。";
+"NSPhotoLibraryUsageDescription" = "需要相册访问权限以从相册中选择要上传到区域的照片。";
