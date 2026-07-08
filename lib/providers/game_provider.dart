@@ -124,6 +124,12 @@ class GameProvider extends ChangeNotifier with WidgetsBindingObserver {
   String? _selectedScanTileId;
   LatLng? _selectedScanTileLatLng;
 
+  // --- 발자취 선택 상태 ---
+  String? _selectedFootprintTileId;
+  LatLng? _selectedFootprintTileLatLng;
+  String? get selectedFootprintTileId => _selectedFootprintTileId;
+  LatLng? get selectedFootprintTileLatLng => _selectedFootprintTileLatLng;
+
   // --- 편법 방지용 최근 방문한 2개 타일 ID 캐시 ---
   String? _lastTileId;
   String? _secondLastTileId;
@@ -910,6 +916,7 @@ class GameProvider extends ChangeNotifier with WidgetsBindingObserver {
         _mapMode = MapMode.normal;
         break;
     }
+    _clearFootprintSelectionIfNeeded();
     notifyListeners();
     _showMapModeAlert(oldMode);
   }
@@ -917,6 +924,7 @@ class GameProvider extends ChangeNotifier with WidgetsBindingObserver {
   void toggleCompletedPatternsView() {
     final oldMode = _mapMode;
     _mapMode = (_mapMode == MapMode.pattern) ? MapMode.normal : MapMode.pattern;
+    _clearFootprintSelectionIfNeeded();
     notifyListeners();
     _showMapModeAlert(oldMode);
   }
@@ -924,8 +932,16 @@ class GameProvider extends ChangeNotifier with WidgetsBindingObserver {
   void toggleFootprintMode() {
     final oldMode = _mapMode;
     _mapMode = (_mapMode == MapMode.footprint) ? MapMode.normal : MapMode.footprint;
+    _clearFootprintSelectionIfNeeded();
     notifyListeners();
     _showMapModeAlert(oldMode);
+  }
+
+  void _clearFootprintSelectionIfNeeded() {
+    if (_mapMode != MapMode.footprint) {
+      _selectedFootprintTileId = null;
+      _selectedFootprintTileLatLng = null;
+    }
   }
 
   void _showMapModeAlert(MapMode oldMode) {
@@ -1028,6 +1044,30 @@ class GameProvider extends ChangeNotifier with WidgetsBindingObserver {
       // 조준 즉시 서버에서 타일 최신 정보 패치
       _tileProvider.fetchAndUpdateTile(tileId);
     }
+  }
+
+  void selectFootprintTile(String tileId) {
+    if (_selectedFootprintTileId == tileId) {
+      _selectedFootprintTileId = null;
+      _selectedFootprintTileLatLng = null;
+    } else {
+      _selectedFootprintTileId = tileId;
+      final parts = tileId.split('_');
+      if (parts.length == 3) {
+        final q = int.tryParse(parts[1]);
+        final r = int.tryParse(parts[2]);
+        if (q != null && r != null) {
+          _selectedFootprintTileLatLng = HexService.hexToLatLng(q, r);
+        }
+      }
+    }
+    notifyListeners();
+  }
+
+  void clearSelectedFootprint() {
+    _selectedFootprintTileId = null;
+    _selectedFootprintTileLatLng = null;
+    notifyListeners();
   }
 
   // --- Satellite Capture (SatelliteCaptureController 위임) ---

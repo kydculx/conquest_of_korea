@@ -13,6 +13,7 @@ import '../models/user_coin.dart';
 import '../models/footprint_model.dart';
 import '../controllers/satellite_capture_controller.dart';
 import '../core/constants/colors.dart';
+import 'components/footprint_target_marker.dart';
 import '../core/constants/game_config.dart';
 
 /// Flame 게임 엔진을 상속받아 인게임 지도상에 헥사곤 타일 영역, 플레이어의 물리 위치 마커, 본부 기지(HQ), 위성 조준 마커 등을 렌더링하고 업데이트를 감시하는 커스텀 게임 엔진 클래스
@@ -56,6 +57,9 @@ class ConquestGame extends FlameGame {
 
   /// 위성 궤도 스캔 시 락온(Lock-on) 연출 및 게이지를 그리는 조준마커 컴포넌트
   ScanTargetMarker? _scanTargetMarker;
+
+  /// 발자취 선택 시 네온 청록색 하이라이팅 조준마커 컴포넌트
+  FootprintTargetMarker? _footprintTargetMarker;
 
   /// 현재 설정된 플레이어의 본부 기지(HQ) 타일 ID
   String? _currentHQTileId;
@@ -229,6 +233,9 @@ class ConquestGame extends FlameGame {
         consumedTileIds: _consumedTileIds,
         showFootprints: _showFootprints,
         footprints: _footprints,
+        selectedFootprintTileId: _footprintTargetMarker != null
+            ? HexService.tileId(_footprintTargetMarker!.q, _footprintTargetMarker!.r)
+            : null,
       );
     } else {
       _updateAllPositions();
@@ -476,6 +483,7 @@ class ConquestGame extends FlameGame {
     List<UserCoin>? coins,
     bool showFootprints = false,
     Map<String, FootprintTile>? footprints,
+    String? selectedFootprintTileId,
   }) {
     _lastCapturedTiles = capturedTiles;
     _lastCapturingColorHex = capturingColorHex;
@@ -500,6 +508,7 @@ class ConquestGame extends FlameGame {
     }
     _updateHQMarker(mainBaseTileId, capturingColorHex);
     _updateScanTargetMarker(selectedScanTileId, isScanMode);
+    _updateFootprintTargetMarker(selectedFootprintTileId);
     if (_mapController == null) return;
 
     final double dynamicHexSize = _clusterHelper.getHexSizeForZoom(_mapController!.camera.zoom);
@@ -763,6 +772,37 @@ class ConquestGame extends FlameGame {
     if (targetQ != null && targetR != null) {
       _scanTargetMarker = ScanTargetMarker(q: targetQ, r: targetR);
       add(_scanTargetMarker!);
+    }
+  }
+
+  /// 발자취 조준 타겟 마커를 추가/제거 및 갱신합니다.
+  void _updateFootprintTargetMarker(String? selectedFootprintTileId) {
+    int? targetQ;
+    int? targetR;
+
+    if (selectedFootprintTileId != null && selectedFootprintTileId.isNotEmpty) {
+      final parsed = HexService.parseTileId(selectedFootprintTileId);
+      if (parsed != null) {
+        targetQ = parsed['q'];
+        targetR = parsed['r'];
+      }
+    }
+
+    if (_footprintTargetMarker != null) {
+      // 이미 띄워진 조준 마커가 갱신 대상과 동일하다면 스킵
+      if (targetQ != null &&
+          targetR != null &&
+          _footprintTargetMarker!.q == targetQ &&
+          _footprintTargetMarker!.r == targetR) {
+        return;
+      }
+      remove(_footprintTargetMarker!);
+      _footprintTargetMarker = null;
+    }
+
+    if (targetQ != null && targetR != null) {
+      _footprintTargetMarker = FootprintTargetMarker(q: targetQ, r: targetR);
+      add(_footprintTargetMarker!);
     }
   }
 }

@@ -284,53 +284,7 @@ class _GameMapWidgetState extends State<GameMapWidget>
                 if (gameProvider.isFootprintMode) {
                   final footprint = gameProvider.footprints[tileId];
                   if (footprint != null) {
-                    ScaffoldMessenger.of(context).clearSnackBars();
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      SnackBar(
-                        content: Row(
-                          children: [
-                            const Icon(
-                              Icons.directions_walk_rounded,
-                              color: Color(0xFF00FFCC),
-                              size: 20,
-                            ),
-                            const SizedBox(width: 10),
-                            Expanded(
-                              child: Column(
-                                mainAxisSize: MainAxisSize.min,
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  Text(
-                                    GameStrings.footprintScanSuccess,
-                                    style: const TextStyle(
-                                      fontWeight: FontWeight.bold,
-                                      color: Colors.white,
-                                    ),
-                                  ),
-                                  Text(
-                                    GameStrings.footprintRecordTime(footprint.formattedTime),
-                                    style: const TextStyle(
-                                      color: Color(0xFFE0E0E0),
-                                      fontSize: 12,
-                                    ),
-                                  ),
-                                ],
-                              ),
-                            ),
-                          ],
-                        ),
-                        backgroundColor: const Color(0xFF1E1E1E),
-                        duration: const Duration(seconds: 4),
-                        behavior: SnackBarBehavior.floating,
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(12),
-                          side: const BorderSide(
-                            color: Color(0xFF00FFCC),
-                            width: 1.0,
-                          ),
-                        ),
-                      ),
-                    );
+                    gameProvider.selectFootprintTile(tileId);
                   }
                   return;
                 }

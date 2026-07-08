@@ -14,6 +14,7 @@ import 'hud_map_follow_button.dart';
 import 'hud_hq_move_button.dart';
 import 'hud_photo_button.dart';
 import 'hud_satellite_bubble.dart';
+import 'hud_footprint_bubble.dart';
 import 'tactical_press_button.dart';
 
 /// 인게임 HUD 오버레이 (점수판, 점령 버튼, 유틸리티 버튼, 위성 스캔 연동)
@@ -170,6 +171,31 @@ class HudOverlay extends StatelessWidget {
                     duration: const Duration(milliseconds: 200),
                     child: isScanMode
                         ? const SatelliteMapBubble()
+                        : const SizedBox.shrink(),
+                  ),
+                ),
+              ),
+            );
+          },
+        ),
+
+        // [발자취 세부 정보 카드] 발자취 모드 상의 선택된 타일 정보 고정 노출 오버레이
+        Selector<GameProvider, String?>(
+          selector: (_, provider) => provider.selectedFootprintTileId,
+          builder: (context, selectedFootprintTileId, child) {
+            final showFootprint = selectedFootprintTileId != null;
+            return Positioned(
+              bottom: 90 + baseBottomMargin + bottomPadding,
+              left: 0,
+              right: 0,
+              child: IgnorePointer(
+                ignoring: !showFootprint,
+                child: Center(
+                  child: AnimatedOpacity(
+                    opacity: showFootprint ? 1.0 : 0.0,
+                    duration: const Duration(milliseconds: 200),
+                    child: showFootprint
+                        ? const FootprintInfoBubble()
                         : const SizedBox.shrink(),
                   ),
                 ),

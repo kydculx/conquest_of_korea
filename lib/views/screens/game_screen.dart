@@ -238,6 +238,7 @@ class _GameScreenState extends State<GameScreen> {
       coins: _gameProvider!.coins,
       showFootprints: _gameProvider!.isFootprintMode,
       footprints: _gameProvider!.footprints,
+      selectedFootprintTileId: _gameProvider!.selectedFootprintTileId,
     );
   }
 
