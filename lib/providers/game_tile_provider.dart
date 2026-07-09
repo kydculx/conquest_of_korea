@@ -32,6 +32,10 @@ class GameTileProvider extends ChangeNotifier {
   /// 발자취 맵 getter
   Map<String, FootprintTile> get footprints => Map.unmodifiable(_footprints);
 
+  /// 사진(갤러리)이 1개 이상 등록된 모든 타일 ID의 집합
+  final Set<String> _photoTileIds = {};
+  Set<String> get photoTileIds => Set.unmodifiable(_photoTileIds);
+
   /// 프로바이더 내부 데이터 초기화 완료 여부
   bool _isInitialized = false;
 
@@ -63,6 +67,7 @@ class GameTileProvider extends ChangeNotifier {
   void reset() {
     _capturedTiles.clear();
     _footprints.clear();
+    _photoTileIds.clear();
     _lastCheckedAreaTileId = null;
     _lastAreaFetchTime = null;
     _hasInitializedLocation = false;
@@ -84,6 +89,9 @@ class GameTileProvider extends ChangeNotifier {
         loadFootprints(newUserId).catchError((e) {
           debugPrint('⚠️ 새 사용자 발자취 로드 실패: $e');
         });
+        loadPhotoTileIds().catchError((e) {
+          debugPrint('⚠️ 새 사용자 사진 타일 ID 로드 실패: $e');
+        });
       }
     }
   }
@@ -98,14 +106,17 @@ class GameTileProvider extends ChangeNotifier {
   bool get isInitialized => _isInitialized;
   Future<void> get initializationFuture => _initCompleter.future;
 
-  /// [개편] 서버 전체 로드 대신 최초 위치 획득 후 5km 선별 조회를 대기하도록 설정하며, 로그인 시 발자취 데이터만 즉시 불러옵니다.
+  /// [개편] 서버 전체 로드 대신 최초 위치 획득 후 5km 선별 조회를 대기하도록 설정하며, 로그인 시 발자취 및 사진 등록 타일 목록을 백그라운드 로드합니다.
   Future<void> init() async {
     try {
       final myId = _userId;
       if (myId != null) {
-        // 초기화 프로세스가 발자취 네트워크 대기에 블로킹되지 않도록 비동기 백그라운드 처리
+        // 초기화 프로세스가 네트워크 대기에 블로킹되지 않도록 비동기 백그라운드 처리
         loadFootprints(myId).catchError((e) {
           debugPrint('⚠️ 초기 발자취 백그라운드 로드 실패: $e');
+        });
+        loadPhotoTileIds().catchError((e) {
+          debugPrint('⚠️ 초기 사진 타일 ID 로드 실패: $e');
         });
       }
     } catch (e) {
@@ -114,6 +125,18 @@ class GameTileProvider extends ChangeNotifier {
       _isInitialized = true;
       if (!_initCompleter.isCompleted) _initCompleter.complete();
       notifyListeners();
+    }
+  }
+
+  /// [신규] 사진이 등록된 모든 타일 ID 목록을 서버에서 일괄 로딩하여 로컬 캐시를 구성합니다.
+  Future<void> loadPhotoTileIds() async {
+    try {
+      final ids = await _supabase.fetchPhotoTileIds();
+      _photoTileIds.clear();
+      _photoTileIds.addAll(ids);
+      notifyListeners();
+    } catch (e) {
+      debugPrint('❌ 사진 등록 타일 ID 캐시 로드 실패: $e');
     }
   }
 

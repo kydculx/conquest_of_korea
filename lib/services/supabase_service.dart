@@ -327,6 +327,22 @@ class SupabaseService {
     }
   }
 
+  /// [신규] 사진이 하나 이상 등록되어 있는 모든 영토 타일 ID 목록을 비동기 조회하여 반환합니다.
+  Future<Set<String>> fetchPhotoTileIds() async {
+    try {
+      final response = await _client
+          .from('tile_photos')
+          .select('tile_id');
+      final Set<String> tileIds = (response as List)
+          .map((e) => e['tile_id'] as String)
+          .toSet();
+      return tileIds;
+    } catch (e) {
+      debugPrint('❌ 사진 등록 타일 ID 목록 조회 실패: $e');
+      return {};
+    }
+  }
+
   /// 플레이어의 위성 원격 점령 횟수를 1 증가시킵니다.
   Future<bool> incrementSatelliteCapture(String userId) async {
     try {

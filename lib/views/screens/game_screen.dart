@@ -239,6 +239,7 @@ class _GameScreenState extends State<GameScreen> {
       showFootprints: _gameProvider!.isFootprintMode,
       footprints: _gameProvider!.footprints,
       selectedFootprintTileId: _gameProvider!.selectedFootprintTileId,
+      photoTileIds: _gameProvider!.photoTileIds,
     );
   }
 

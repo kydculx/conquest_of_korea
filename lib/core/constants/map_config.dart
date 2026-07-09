@@ -3,7 +3,7 @@ import 'package:latlong2/latlong.dart';
 /// 지도의 기본 위치, 줌 레벨 및 제공 스타일 설정을 관리하는 클래스
 class MapConfig {
   /// 지도 데이터 로딩 시 사용할 기준 탐색 반경 (km 단위)
-  static const double mapLoadRadiusKm = 5.0;
+  static const double mapLoadRadiusKm = 1.0;
 
   /// 지도의 기본 초기 좌표 (0.0, 0.0)
   static const LatLng defaultPosition = LatLng(0.0, 0.0);

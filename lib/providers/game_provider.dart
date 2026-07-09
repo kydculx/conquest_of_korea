@@ -269,6 +269,9 @@ class GameProvider extends ChangeNotifier with WidgetsBindingObserver {
   /// 현재 GPS 위치에 대응하는 점령 타일 정보를 반환합니다.
   HexTile? get currentTile => _tileProvider.currentTile(_locationProvider!);
 
+  /// 사진(갤러리)이 등록된 전체 타일 ID 목록 게터 (시각 표시용)
+  Set<String> get photoTileIds => _tileProvider.photoTileIds;
+
   /// 현재 위치한 타일이 이미 자신이 지배 중인 타일인지 여부
   bool get isAlreadyCapturedByMe {
     final loc = _locationProvider;
@@ -498,6 +501,9 @@ class GameProvider extends ChangeNotifier with WidgetsBindingObserver {
 
       if (response != null) {
         await loadPhotosForTile(tileId);
+        _tileProvider.loadPhotoTileIds().catchError((e) {
+          debugPrint('⚠️ 사진 업로드 후 캐시 동기화 실패: $e');
+        });
         return null; // 성공
       }
       return '서버 응답 오류 (알 수 없음)';
@@ -519,6 +525,9 @@ class GameProvider extends ChangeNotifier with WidgetsBindingObserver {
 
       if (success) {
         await loadPhotosForTile(tileId);
+        _tileProvider.loadPhotoTileIds().catchError((e) {
+          debugPrint('⚠️ 사진 삭제 후 캐시 동기화 실패: $e');
+        });
         return null; // 성공
       }
       return '서버 삭제 응답 오류 (알 수 없음)';

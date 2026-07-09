@@ -39,6 +39,9 @@ class HexTileComponent extends PositionComponent
   /// 이 타일에 동전이 있는지 여부
   bool hasCoin;
 
+  /// 이 타일에 갤러리(사진)가 존재하여 맵 상에 시각 표시할지 여부
+  bool hasPhoto;
+
   /// 로컬 꼭짓점 6개의 픽셀 상대 좌표 리스트 (중심 (0, 0) 기준)
   List<Offset> localCorners = [];
 
@@ -78,6 +81,7 @@ class HexTileComponent extends PositionComponent
     this.progress = 0.0,
     this.capturingColorHex,
     this.hasCoin = false,
+    this.hasPhoto = false,
   });
 
   /// 점령 플레이어의 식별 색상, 점령 진행도 상태가 갱신되었을 때 해당 상태를 반영하고 화면 갱신을 준비합니다.
@@ -87,6 +91,7 @@ class HexTileComponent extends PositionComponent
     double? progress,
     String? capturingColorHex,
     bool? hasCoin,
+    bool? hasPhoto,
   }) {
     if (colorHex != null && this.colorHex != colorHex) {
       this.colorHex = colorHex;
@@ -96,6 +101,7 @@ class HexTileComponent extends PositionComponent
     if (progress != null) this.progress = progress;
     if (capturingColorHex != null) this.capturingColorHex = capturingColorHex;
     if (hasCoin != null) this.hasCoin = hasCoin;
+    if (hasPhoto != null) this.hasPhoto = hasPhoto;
   }
 
   /// 캐싱된 Bezier 그리기 패스 무효화
@@ -424,6 +430,38 @@ class HexTileComponent extends PositionComponent
         canvas.restore();
       }
 
+      canvas.restore();
+    }
+
+    // 6. 갤러리 보유 타일 표시 (사진이 있는 경우)
+    // 성능을 위해 LOD 0, 1 레벨(기본 hexSize가 일정 임계값 이상인 경우) 에서만 드로잉
+    if (hasPhoto && hexSize >= GameConfig.lodSize1) {
+      canvas.save();
+      // 동전과 겹치지 않도록 동전 존재 시 하단에 배치
+      final double offsetOffsetY = hasCoin ? 9.0 : 0.0;
+
+      final textPainter = TextPainter(
+        text: TextSpan(
+          text: '\uE412', // Icons.photo_camera_rounded 유니코드 기호
+          style: TextStyle(
+            color: Colors.white.withValues(alpha: 0.95), // 네온 화이트
+            fontSize: 12.5,
+            fontFamily: 'MaterialIcons',
+            shadows: [
+              Shadow(
+                color: const Color(0xFF00FFCC).withValues(alpha: 0.95), // 네온 민트 청록 글로우
+                blurRadius: 5.0,
+              ),
+            ],
+          ),
+        ),
+        textDirection: TextDirection.ltr,
+      );
+      textPainter.layout();
+      textPainter.paint(
+        canvas,
+        Offset(-textPainter.width / 2, -textPainter.height / 2 + offsetOffsetY),
+      );
       canvas.restore();
     }
   }
