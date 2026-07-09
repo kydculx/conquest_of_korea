@@ -2,6 +2,7 @@ import 'dart:async';
 import 'package:flutter/widgets.dart';
 import 'package:latlong2/latlong.dart';
 import '../core/constants/game_config.dart';
+import '../core/constants/map_config.dart';
 import '../models/tile_model.dart';
 import '../models/footprint_model.dart';
 import '../providers/auth_provider.dart';
@@ -116,7 +117,7 @@ class GameTileProvider extends ChangeNotifier {
     }
   }
 
-  /// [신규] 최초 위치(현재 GPS 또는 본진) 좌표가 획득되었을 때 5km 반경의 타일을 최초로 선별 로딩합니다.
+  /// [신규] 최초 위치(현재 GPS 또는 본진) 좌표가 획득되었을 때 지정된 반경의 타일을 최초로 선별 로딩합니다.
   Future<void> initializeWithLocation(LatLng location) async {
     if (!_isInitialized || _hasInitializedLocation) return;
     _hasInitializedLocation = true;
@@ -124,8 +125,8 @@ class GameTileProvider extends ChangeNotifier {
     final centerQ = hex['q']!;
     final centerR = hex['r']!;
     
-    debugPrint('🗺️ [GameTileProvider] 최초 위치 기반 5km 이내 지도 타일 로딩 개시 (${location.latitude}, ${location.longitude})');
-    await updateTilesInArea(centerQ, centerR, radiusKm: 5.0, force: true);
+    debugPrint('🗺️ [GameTileProvider] 최초 위치 기반 ${MapConfig.mapLoadRadiusKm}km 이내 지도 타일 로딩 개시 (${location.latitude}, ${location.longitude})');
+    await updateTilesInArea(centerQ, centerR, radiusKm: MapConfig.mapLoadRadiusKm, force: true);
   }
 
   // --- Footprint CRUD ---
@@ -313,7 +314,7 @@ class GameTileProvider extends ChangeNotifier {
       notifyListeners();
     }
   }
-  /// [개편] 서버 전체 갱신 대신, 플레이어의 현재 위치 또는 본진 위치를 기준으로 주변 5km 영역을 강제로 다시 불러와 캐시를 갱신합니다.
+  /// [개편] 서버 전체 갱신 대신, 플레이어의 현재 위치 또는 본진 위치를 기준으로 주변 지정 반경 영역을 강제로 다시 불러와 캐시를 갱신합니다.
   Future<void> refreshTilesFromServer({LatLng? customLocation}) async {
     if (!_isInitialized) return;
     try {
@@ -330,7 +331,7 @@ class GameTileProvider extends ChangeNotifier {
       
       if (targetLoc != null) {
         final hex = HexService.latLngToHex(targetLoc);
-        await updateTilesInArea(hex['q']!, hex['r']!, radiusKm: 5.0, force: true);
+        await updateTilesInArea(hex['q']!, hex['r']!, radiusKm: MapConfig.mapLoadRadiusKm, force: true);
         debugPrint('📦 서버 주변 타일 강제 동기화 완료');
       }
     } catch (e) {
@@ -338,10 +339,10 @@ class GameTileProvider extends ChangeNotifier {
     }
   }
 
-  /// [개편] 내 현재 위치 또는 지도 중심 타일(q, r) 기준으로 지정된 반경(radiusKm, 기본 5km) 영역의 타일을 서버에서 REST로 조회하여 갱신합니다.
+  /// [개편] 내 현재 위치 또는 지도 중심 타일(q, r) 기준으로 지정된 반경(radiusKm) 영역의 타일을 서버에서 REST로 조회하여 갱신합니다.
   /// 
   /// 불필요한 서버 조회를 줄이기 위해 500m(타일 5칸) 이상 이동했거나 force가 true일 때만 백엔드 조회를 진행하며, 10초 쿨타임 가드가 적용됩니다.
-  Future<void> updateTilesInArea(int centerQ, int centerR, {double radiusKm = 5.0, bool force = false}) async {
+  Future<void> updateTilesInArea(int centerQ, int centerR, {double radiusKm = MapConfig.mapLoadRadiusKm, bool force = false}) async {
     if (!_isInitialized) return;
 
     final currentId = HexService.tileId(centerQ, centerR);

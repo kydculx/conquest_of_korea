@@ -351,9 +351,9 @@ class _GameMapWidgetState extends State<GameMapWidget>
                 if (event is MapEventMoveEnd) {
                   final centerLatLng = _mapController.camera.center;
                   final hex = HexService.latLngToHex(centerLatLng);
-                  // 화면 중심 기준으로 주변 5km 영역의 타일을 REST로 실시간 동적 로드 (이동 가드 내장)
+                  // 화면 중심 기준으로 지정된 반경 영역의 타일을 REST로 실시간 동적 로드 (이동 가드 내장)
                   final tileProvider = Provider.of<GameTileProvider>(context, listen: false);
-                  tileProvider.updateTilesInArea(hex['q']!, hex['r']!, radiusKm: 5.0);
+                  tileProvider.updateTilesInArea(hex['q']!, hex['r']!, radiusKm: MapConfig.mapLoadRadiusKm);
                 }
 
                 if (event.source ==
