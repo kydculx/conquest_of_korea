@@ -285,6 +285,7 @@ class GameProvider extends ChangeNotifier with WidgetsBindingObserver {
     required GameTileProvider tileProvider,
   })  : _supabase = supabase,
         _tileProvider = tileProvider {
+    _tileProvider.addListener(notifyListeners);
     WidgetsBinding.instance.addObserver(this);
     _startUtcTimer();
     initGpsSettings();
@@ -1227,6 +1228,7 @@ class GameProvider extends ChangeNotifier with WidgetsBindingObserver {
     _satelliteController.dispose();
     _locationProvider?.removeListener(onLocationUpdated);
     _captureController.dispose();
+    _tileProvider.removeListener(notifyListeners);
     _tileProvider.dispose();
     _mapMoveRequestController.close();
     super.dispose();
