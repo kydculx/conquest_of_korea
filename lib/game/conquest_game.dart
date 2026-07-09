@@ -40,8 +40,7 @@ class ConquestGame extends FlameGame {
   /// 현재 활성화된 동전 목록 캐시
   List<UserCoin> _coins = [];
 
-  /// 사진(갤러리)이 등록된 타일 ID의 고유 집합 캐시
-  Set<String> _photoTileIds = {};
+
 
   /// 최근 렌더링에 사용 중인 LOD 레벨 상태 캐시 (-1: 초기값, 0 ~ 3: LOD 레벨)
   int _lastLodLevel = -1;
@@ -440,14 +439,12 @@ class ConquestGame extends FlameGame {
                       : GameColors.enemyTileColorHex)));
 
       final hasCoin = !_showFootprints && _coins.any((c) => c.tileId == id && !c.isCollected);
-      final hasPhoto = _photoTileIds.contains(id);
 
       if (_tileMap.containsKey(id)) {
         _tileMap[id]!.position = Vector2(screenOffset.dx, screenOffset.dy);
         _tileMap[id]!.updateData(
           colorHex: targetTileColorHex,
           hasCoin: hasCoin,
-          hasPhoto: hasPhoto,
         );
       } else {
         final component = HexTileComponent(
@@ -458,7 +455,6 @@ class ConquestGame extends FlameGame {
           colorHex: targetTileColorHex,
           hexSize: targetSize, // dynamicHexSize 대신 targetSize를 전달하여 렌더링 크기 일치
           hasCoin: hasCoin,
-          hasPhoto: hasPhoto,
         )
           ..position = Vector2(screenOffset.dx, screenOffset.dy)
           ..priority = 0;
@@ -490,7 +486,6 @@ class ConquestGame extends FlameGame {
     bool showFootprints = false,
     Map<String, FootprintTile>? footprints,
     String? selectedFootprintTileId,
-    Set<String>? photoTileIds,
   }) {
     _lastCapturedTiles = capturedTiles;
     _lastCapturingColorHex = capturingColorHex;
@@ -507,7 +502,6 @@ class ConquestGame extends FlameGame {
       _footprints = footprints;
     }
     _consumedTileIds = consumedTileIds ?? {};
-    _photoTileIds = photoTileIds ?? {};
     if (coins != null) {
       _coins = coins;
     }

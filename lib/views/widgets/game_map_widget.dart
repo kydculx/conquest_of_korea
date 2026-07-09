@@ -426,6 +426,54 @@ class _GameMapWidgetState extends State<GameMapWidget>
                   return tileLayer;
                 },
               ),
+
+              // [신규] 갤러리 보유 타일 기본 카메라 아이콘 마커 레이어
+              Selector<GameProvider, Set<String>>(
+                selector: (_, provider) => provider.photoTileIds,
+                builder: (context, photoTileIds, child) {
+                  // 카메라 줌 레벨이 일정 수준 이하(너무 멀리 줌아웃 - LOD 2 수준)일 때는 마커 레이어 생략
+                  if (_currentZoom < MapConfig.minZoom + 3) {
+                    return const SizedBox.shrink();
+                  }
+
+                  final markers = photoTileIds.map((tileId) {
+                    final parsed = HexService.parseTileId(tileId);
+                    if (parsed == null) return null;
+                    final q = parsed['q'] as int;
+                    final r = parsed['r'] as int;
+                    final centerLatLng = HexService.hexToLatLng(q, r);
+
+                    return Marker(
+                      point: centerLatLng,
+                      width: 24.0,
+                      height: 24.0,
+                      child: Container(
+                        decoration: BoxDecoration(
+                          color: Colors.black.withValues(alpha: 0.55),
+                          shape: BoxShape.circle,
+                          border: Border.all(
+                            color: const Color(0xFF00FFCC),
+                            width: 1.0,
+                          ),
+                          boxShadow: [
+                            BoxShadow(
+                              color: const Color(0xFF00FFCC).withValues(alpha: 0.65),
+                              blurRadius: 4.0,
+                            ),
+                          ],
+                        ),
+                        child: const Icon(
+                          Icons.photo_camera_rounded,
+                          color: Colors.white,
+                          size: 13.0,
+                        ),
+                      ),
+                    );
+                  }).whereType<Marker>().toList();
+
+                  return MarkerLayer(markers: markers);
+                },
+              ),
             ],
           ),
         ),
