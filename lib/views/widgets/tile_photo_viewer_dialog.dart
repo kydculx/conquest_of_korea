@@ -150,40 +150,59 @@ class _TilePhotoViewerDialogState extends State<TilePhotoViewerDialog> {
             decoration: BoxDecoration(
               color: GameColors.tacticalGray.withValues(alpha: 0.3),
               borderRadius: BorderRadius.circular(10),
-              border: Border.all(
-                color: GameColors.dividerColor.withValues(alpha: 0.5),
-                width: 1,
-              ),
             ),
-            clipBehavior: Clip.antiAlias,
-            child: Hero(
-              tag: 'photo_hero_$index',
-              child: Image.network(
-                photoUrl,
-                fit: BoxFit.cover,
-                loadingBuilder: (context, child, loadingProgress) {
-                  if (loadingProgress == null) return child;
-                  return const Center(
-                    child: SizedBox(
-                      width: 16,
-                      height: 16,
-                      child: CircularProgressIndicator(
-                        strokeWidth: 1.5,
-                        valueColor: AlwaysStoppedAnimation<Color>(Color(0xFF00FFCC)),
+            child: Stack(
+              children: [
+                // 1. 모서리가 안전하게 깎인 썸네일 이미지
+                Positioned.fill(
+                  child: ClipRRect(
+                    borderRadius: BorderRadius.circular(10),
+                    child: Hero(
+                      tag: 'photo_hero_$index',
+                      child: Image.network(
+                        photoUrl,
+                        fit: BoxFit.cover,
+                        loadingBuilder: (context, child, loadingProgress) {
+                          if (loadingProgress == null) return child;
+                          return const Center(
+                            child: SizedBox(
+                              width: 16,
+                              height: 16,
+                              child: CircularProgressIndicator(
+                                strokeWidth: 1.5,
+                                valueColor: AlwaysStoppedAnimation<Color>(Color(0xFF00FFCC)),
+                              ),
+                            ),
+                          );
+                        },
+                        errorBuilder: (context, error, stackTrace) {
+                          return const Center(
+                            child: Icon(
+                              Icons.broken_image_rounded,
+                              color: Colors.white24,
+                              size: 20,
+                            ),
+                          );
+                        },
                       ),
                     ),
-                  );
-                },
-                errorBuilder: (context, error, stackTrace) {
-                  return const Center(
-                    child: Icon(
-                      Icons.broken_image_rounded,
-                      color: Colors.white24,
-                      size: 20,
+                  ),
+                ),
+                // 2. 이미지 위에 정확하게 투사하여 묻히지 않게 그리는 라운드 외곽선 (Border)
+                Positioned.fill(
+                  child: IgnorePointer(
+                    child: Container(
+                      decoration: BoxDecoration(
+                        borderRadius: BorderRadius.circular(10),
+                        border: Border.all(
+                          color: GameColors.dividerColor.withValues(alpha: 0.55),
+                          width: 1.2,
+                        ),
+                      ),
                     ),
-                  );
-                },
-              ),
+                  ),
+                ),
+              ],
             ),
           ),
         );
