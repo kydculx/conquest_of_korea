@@ -380,6 +380,15 @@ export default function DashboardTab() {
                           borderRadius: '6px', border: '1px solid rgba(255,255,255,0.1)'
                         }}
                       />
+                      {photo.comment && (
+                        <div style={{ 
+                          color: '#fff', fontSize: '0.75rem', marginBottom: '0.4rem', 
+                          background: 'rgba(0, 255, 204, 0.05)', padding: '4px 8px', 
+                          borderRadius: '4px', border: '1px solid rgba(0, 255, 204, 0.1)'
+                        }}>
+                          {photo.comment}
+                        </div>
+                      )}
                       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: '0.75rem' }}>
                         <div>
                           <span style={{ color: 'var(--accent-cyan)', fontWeight: 'bold' }}>{photo.user_nickname}</span>
