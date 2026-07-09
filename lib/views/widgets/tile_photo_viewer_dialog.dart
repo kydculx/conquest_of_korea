@@ -23,6 +23,7 @@ class TilePhotoViewerDialog extends StatefulWidget {
 class _TilePhotoViewerDialogState extends State<TilePhotoViewerDialog> {
   bool _isLoading = false;
   List<Map<String, dynamic>> _photos = [];
+  int? _selectedPhotoIndex;
 
   @override
   void initState() {
@@ -54,9 +55,7 @@ class _TilePhotoViewerDialogState extends State<TilePhotoViewerDialog> {
     }
   }
 
-
-
-  Future<void> _handleDeletePhoto(String photoId, String photoUrl) async {
+  Future<bool> _handleDeletePhoto(String photoId, String photoUrl) async {
     final game = context.read<GameProvider>();
     final bool? confirm = await showDialog<bool>(
       context: context,
@@ -94,7 +93,7 @@ class _TilePhotoViewerDialogState extends State<TilePhotoViewerDialog> {
       ),
     );
 
-    if (confirm != true) return;
+    if (confirm != true) return false;
 
     if (mounted) {
       setState(() {
@@ -105,7 +104,7 @@ class _TilePhotoViewerDialogState extends State<TilePhotoViewerDialog> {
     try {
       final String? errorMsg = await game.deletePhotoForTile(widget.tileId, photoId, photoUrl);
 
-      if (!mounted) return;
+      if (!mounted) return false;
 
       if (errorMsg == null) {
         ScaffoldMessenger.of(context).showSnackBar(
@@ -118,6 +117,7 @@ class _TilePhotoViewerDialogState extends State<TilePhotoViewerDialog> {
         if (context.mounted) {
           context.read<AchievementProvider>().checkAndUnlock();
         }
+        return true;
       } else {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
@@ -125,6 +125,7 @@ class _TilePhotoViewerDialogState extends State<TilePhotoViewerDialog> {
             backgroundColor: GameColors.error,
           ),
         );
+        return false;
       }
     } catch (e) {
       if (mounted) {
@@ -135,6 +136,7 @@ class _TilePhotoViewerDialogState extends State<TilePhotoViewerDialog> {
           ),
         );
       }
+      return false;
     } finally {
       if (mounted) {
         setState(() {
@@ -149,12 +151,12 @@ class _TilePhotoViewerDialogState extends State<TilePhotoViewerDialog> {
     final size = MediaQuery.of(context).size;
 
     return TacticalDialog(
-      title: GameStrings.tileGalleryTitle,
+      title: _selectedPhotoIndex == null ? GameStrings.tileGalleryTitle : '사진 상세',
       icon: Icons.photo_library_rounded,
       accentColor: GameColors.colorAccent,
       content: SizedBox(
         width: size.width * 0.85,
-        height: size.width * 0.85, // 1:1 정사이즈 비율 영역 확보
+        height: size.width * 0.85, // 1:1 정사각형 공간
         child: _isLoading
             ? Center(
                 child: CircularProgressIndicator(
@@ -163,7 +165,7 @@ class _TilePhotoViewerDialogState extends State<TilePhotoViewerDialog> {
               )
             : _photos.isEmpty
                 ? _buildEmptyState()
-                : _buildPhotoSlider(),
+                : (_selectedPhotoIndex == null ? _buildPhotoGrid() : _buildPhotoDetail()),
       ),
       actions: [
         // 닫기 버튼
@@ -204,190 +206,274 @@ class _TilePhotoViewerDialogState extends State<TilePhotoViewerDialog> {
     );
   }
 
-  Widget _buildPhotoSlider() {
-    final auth = Provider.of<AuthProvider>(context, listen: false);
-    final currentUserId = auth.user?.id;
-
-    return PageView.builder(
-      itemCount: _photos.length,
+  Widget _buildPhotoGrid() {
+    return GridView.builder(
+      shrinkWrap: true,
       physics: const BouncingScrollPhysics(),
+      gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+        crossAxisCount: 3,
+        crossAxisSpacing: 8,
+        mainAxisSpacing: 8,
+        childAspectRatio: 1.0,
+      ),
+      itemCount: _photos.length,
       itemBuilder: (context, index) {
         final photo = _photos[index];
-        final String photoId = photo['id'] ?? '';
-        final String uploaderId = photo['user_id'] ?? '';
-        final bool isMyPhoto = currentUserId != null && uploaderId == currentUserId;
         final String photoUrl = photo['photo_url'] ?? '';
-        final String uploader = photo['user_nickname'] ?? 'None';
-        final String rawDate = photo['created_at'] ?? '';
-        
-        String dateString = '';
-        try {
-          if (rawDate.isNotEmpty) {
-            final dt = DateTime.parse(rawDate).toLocal();
-            dateString = '${dt.year}.${dt.month.toString().padLeft(2, '0')}.${dt.day.toString().padLeft(2, '0')} ${dt.hour.toString().padLeft(2, '0')}:${dt.minute.toString().padLeft(2, '0')}';
-          }
-        } catch (_) {}
 
-        return Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 4.0),
+        return GestureDetector(
+          onTap: () {
+            setState(() {
+              _selectedPhotoIndex = index;
+            });
+          },
           child: Container(
             decoration: BoxDecoration(
-              color: GameColors.tacticalGray.withValues(alpha: 0.5),
-              borderRadius: BorderRadius.circular(16),
+              color: GameColors.tacticalGray.withValues(alpha: 0.3),
+              borderRadius: BorderRadius.circular(10),
               border: Border.all(
-                color: GameColors.dividerColor,
+                color: GameColors.dividerColor.withValues(alpha: 0.5),
                 width: 1,
               ),
             ),
             clipBehavior: Clip.antiAlias,
-            child: Stack(
-              fit: StackFit.expand,
-              children: [
-                // 이미지 렌더링
-                Image.network(
-                  photoUrl,
-                  fit: BoxFit.cover,
-                  loadingBuilder: (context, child, loadingProgress) {
-                    if (loadingProgress == null) return child;
-                    return Center(
+            child: Hero(
+              tag: 'photo_hero_$index',
+              child: Image.network(
+                photoUrl,
+                fit: BoxFit.cover,
+                loadingBuilder: (context, child, loadingProgress) {
+                  if (loadingProgress == null) return child;
+                  return const Center(
+                    child: SizedBox(
+                      width: 16,
+                      height: 16,
                       child: CircularProgressIndicator(
-                        value: loadingProgress.expectedTotalBytes != null
-                            ? loadingProgress.cumulativeBytesLoaded /
-                                loadingProgress.expectedTotalBytes!
-                            : null,
-                        valueColor: AlwaysStoppedAnimation<Color>(
-                          GameColors.colorAccent,
-                        ),
-                      ),
-                    );
-                  },
-                  errorBuilder: (context, error, stackTrace) {
-                    return Center(
-                      child: Icon(
-                        Icons.broken_image_rounded,
-                        color: GameColors.error.withValues(alpha: 0.6),
-                        size: 40,
-                      ),
-                    );
-                  },
-                ),
-                // 하단 정보 그라데이션 오버레이
-                Positioned(
-                  bottom: 0,
-                  left: 0,
-                  right: 0,
-                  child: Container(
-                    decoration: BoxDecoration(
-                      gradient: LinearGradient(
-                        begin: Alignment.bottomCenter,
-                        end: Alignment.topCenter,
-                        colors: [
-                          Colors.black.withValues(alpha: 0.85),
-                          Colors.black.withValues(alpha: 0.0),
-                        ],
+                        strokeWidth: 1.5,
+                        valueColor: AlwaysStoppedAnimation<Color>(Color(0xFF00FFCC)),
                       ),
                     ),
-                    padding: const EdgeInsets.all(16.0),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        Text(
-                          '${GameStrings.photoUploader}: $uploader',
-                          style: GoogleFonts.quicksand(
-                            color: GameColors.colorAccent,
-                            fontWeight: FontWeight.bold,
-                            fontSize: 13,
-                          ),
-                        ),
-                        if (dateString.isNotEmpty) ...[
-                          const SizedBox(height: 4),
-                          Text(
-                            dateString,
-                            style: GoogleFonts.quicksand(
-                              color: GameColors.textSecondary,
-                              fontSize: 11,
-                              fontWeight: FontWeight.w600,
-                            ),
-                          ),
-                        ],
-                        if (photo['comment'] != null && (photo['comment'] as String).isNotEmpty) ...[
-                          const SizedBox(height: 8),
-                          Container(
-                            width: double.infinity,
-                            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-                            decoration: BoxDecoration(
-                              color: Colors.black.withValues(alpha: 0.45),
-                              borderRadius: BorderRadius.circular(6),
-                              border: Border.all(
-                                color: const Color(0xFF00FFCC).withValues(alpha: 0.25),
-                                width: 0.8,
-                              ),
-                            ),
-                            child: Text(
-                              photo['comment'] as String,
-                              style: const TextStyle(
-                                color: Colors.white,
-                                fontSize: 12.0,
-                                height: 1.3,
-                              ),
-                            ),
-                          ),
-                        ],
-                      ],
+                  );
+                },
+                errorBuilder: (context, error, stackTrace) {
+                  return const Center(
+                    child: Icon(
+                      Icons.broken_image_rounded,
+                      color: Colors.white24,
+                      size: 20,
                     ),
-                  ),
-                ),
-                // 슬라이더 인디케이터 수치 (예: 1 / 5)
-                Positioned(
-                  top: 12,
-                  right: 12,
-                  child: Container(
-                    padding:
-                        const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-                    decoration: BoxDecoration(
-                      color: Colors.black.withValues(alpha: 0.6),
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                    child: Text(
-                      '${index + 1} / ${_photos.length}',
-                      style: GoogleFonts.fredoka(
-                        color: GameColors.textPrimary,
-                        fontSize: 11,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                  ),
-                ),
-                if (isMyPhoto)
-                  Positioned(
-                    top: 12,
-                    left: 12,
-                    child: GestureDetector(
-                      onTap: () => _handleDeletePhoto(photoId, photoUrl),
-                      child: Container(
-                        padding: const EdgeInsets.all(8),
-                        decoration: BoxDecoration(
-                          color: Colors.black.withValues(alpha: 0.6),
-                          shape: BoxShape.circle,
-                          border: Border.all(
-                            color: GameColors.error.withValues(alpha: 0.5),
-                            width: 0.8,
-                          ),
-                        ),
-                        child: Icon(
-                          Icons.delete_forever_rounded,
-                          color: GameColors.error,
-                          size: 18,
-                        ),
-                      ),
-                    ),
-                  ),
-              ],
+                  );
+                },
+              ),
             ),
           ),
         );
       },
+    );
+  }
+
+  Widget _buildPhotoDetail() {
+    if (_selectedPhotoIndex == null || _selectedPhotoIndex! >= _photos.length) {
+      return const SizedBox.shrink();
+    }
+
+    final auth = Provider.of<AuthProvider>(context, listen: false);
+    final currentUserId = auth.user?.id;
+    final photo = _photos[_selectedPhotoIndex!];
+    final String photoId = photo['id'] ?? '';
+    final String uploaderId = photo['user_id'] ?? '';
+    final bool isMyPhoto = currentUserId != null && uploaderId == currentUserId;
+    final String photoUrl = photo['photo_url'] ?? '';
+    final String uploader = photo['user_nickname'] ?? 'None';
+    final String rawDate = photo['created_at'] ?? '';
+    
+    String dateString = '';
+    try {
+      if (rawDate.isNotEmpty) {
+        final dt = DateTime.parse(rawDate).toLocal();
+        dateString = '${dt.year}.${dt.month.toString().padLeft(2, '0')}.${dt.day.toString().padLeft(2, '0')} ${dt.hour.toString().padLeft(2, '0')}:${dt.minute.toString().padLeft(2, '0')}';
+      }
+    } catch (_) {}
+
+    return Stack(
+      fit: StackFit.expand,
+      children: [
+        // 1. 메인 큰 이미지
+        Positioned.fill(
+          child: Container(
+            decoration: BoxDecoration(
+              color: Colors.black45,
+              borderRadius: BorderRadius.circular(16),
+            ),
+            clipBehavior: Clip.antiAlias,
+            child: Hero(
+              tag: 'photo_hero_$_selectedPhotoIndex',
+              child: Image.network(
+                photoUrl,
+                fit: BoxFit.contain,
+                loadingBuilder: (context, child, loadingProgress) {
+                  if (loadingProgress == null) return child;
+                  return Center(
+                    child: CircularProgressIndicator(
+                      value: loadingProgress.expectedTotalBytes != null
+                          ? loadingProgress.cumulativeBytesLoaded /
+                              loadingProgress.expectedTotalBytes!
+                          : null,
+                      valueColor: const AlwaysStoppedAnimation<Color>(Color(0xFF00FFCC)),
+                    ),
+                  );
+                },
+                errorBuilder: (context, error, stackTrace) {
+                  return const Center(
+                    child: Icon(
+                      Icons.broken_image_rounded,
+                      color: Colors.white30,
+                      size: 40,
+                    ),
+                  );
+                },
+              ),
+            ),
+          ),
+        ),
+
+        // 2. 뒤로가기 버튼 (그리드로 컴백)
+        Positioned(
+          top: 12,
+          left: 12,
+          child: GestureDetector(
+            onTap: () {
+              setState(() {
+                _selectedPhotoIndex = null;
+              });
+            },
+            child: Container(
+              padding: const EdgeInsets.all(8),
+              decoration: BoxDecoration(
+                color: Colors.black.withValues(alpha: 0.65),
+                shape: BoxShape.circle,
+                border: Border.all(
+                  color: const Color(0xFF00FFCC).withValues(alpha: 0.3),
+                  width: 0.8,
+                ),
+              ),
+              child: const Icon(
+                Icons.arrow_back_ios_new_rounded,
+                color: Colors.white,
+                size: 16,
+              ),
+            ),
+          ),
+        ),
+
+        // 3. 우측 상단 내 사진 전용 삭제 아이콘
+        if (isMyPhoto)
+          Positioned(
+            top: 12,
+            right: 12,
+            child: GestureDetector(
+              onTap: () async {
+                final bool deleted = await _handleDeletePhoto(photoId, photoUrl);
+                if (deleted) {
+                  setState(() {
+                    _selectedPhotoIndex = null;
+                  });
+                }
+              },
+              child: Container(
+                padding: const EdgeInsets.all(8),
+                decoration: BoxDecoration(
+                  color: Colors.black.withValues(alpha: 0.65),
+                  shape: BoxShape.circle,
+                  border: Border.all(
+                    color: GameColors.error.withValues(alpha: 0.5),
+                    width: 0.8,
+                  ),
+                ),
+                child: Icon(
+                  Icons.delete_forever_rounded,
+                  color: GameColors.error,
+                  size: 16,
+                ),
+              ),
+            ),
+          ),
+
+        // 4. 하단 상세 정보 그라데이션 박스
+        Positioned(
+          bottom: 0,
+          left: 0,
+          right: 0,
+          child: Container(
+            decoration: BoxDecoration(
+              borderRadius: const BorderRadius.only(
+                bottomLeft: Radius.circular(16),
+                bottomRight: Radius.circular(16),
+              ),
+              gradient: LinearGradient(
+                begin: Alignment.bottomCenter,
+                end: Alignment.topCenter,
+                colors: [
+                  Colors.black.withValues(alpha: 0.9),
+                  Colors.black.withValues(alpha: 0.0),
+                ],
+              ),
+            ),
+            padding: const EdgeInsets.all(14.0),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Text(
+                      '${GameStrings.photoUploader}: $uploader',
+                      style: GoogleFonts.quicksand(
+                        color: const Color(0xFF00FFCC),
+                        fontWeight: FontWeight.bold,
+                        fontSize: 12.5,
+                      ),
+                    ),
+                    if (dateString.isNotEmpty)
+                      Text(
+                        dateString,
+                        style: GoogleFonts.quicksand(
+                          color: GameColors.textSecondary,
+                          fontSize: 10,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                  ],
+                ),
+                if (photo['comment'] != null && (photo['comment'] as String).isNotEmpty) ...[
+                  const SizedBox(height: 6),
+                  Container(
+                    width: double.infinity,
+                    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                    decoration: BoxDecoration(
+                      color: Colors.black.withValues(alpha: 0.5),
+                      borderRadius: BorderRadius.circular(6),
+                      border: Border.all(
+                        color: const Color(0xFF00FFCC).withValues(alpha: 0.2),
+                        width: 0.8,
+                      ),
+                    ),
+                    child: Text(
+                      photo['comment'] as String,
+                      style: const TextStyle(
+                        color: Colors.white,
+                        fontSize: 12.0,
+                        height: 1.3,
+                      ),
+                    ),
+                  ),
+                ],
+              ],
+            ),
+          ),
+        ),
+      ],
     );
   }
 }
