@@ -992,6 +992,9 @@ class GameStrings {
   /// 사진 업로드 시 코멘트 라벨
   static String get photoCommentLabel => 'photoCommentLabel'.tr();
 
+  /// 사진 상세 화면 타이틀
+  static String get photoDetailTitle => 'photoDetailTitle'.tr();
+
   /// 표시 언어 선택 타이틀
   static String get selectLanguage => 'selectLanguage'.tr();
 

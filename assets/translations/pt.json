@@ -532,5 +532,6 @@
   "supportEmailBody": "Conteúdo da Consulta:\n\n\n\n\n\n--------------------\n(Por favor, escreva sua consulta acima desta linha.)",
   "cannotOpenMailApp": "Não é possível abrir o aplicativo de e-mail. Entre em contato diretamente com {email}.",
   "photoCommentHint": "Insira um comentário simples (Opcional)",
-  "photoCommentLabel": "Comentário da foto"
+  "photoCommentLabel": "Comentário da foto",
+  "photoDetailTitle": "Detalhe da foto"
 }

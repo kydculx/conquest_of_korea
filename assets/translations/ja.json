@@ -532,5 +532,6 @@
   "supportEmailBody": "お問い合わせ内容:\n\n\n\n\n\n--------------------\n(上記のラインの上にお問い合わせ内容をご記入ください。)",
   "cannotOpenMailApp": "メールアプリを開けません。{email}に直接お問い合わせください。",
   "photoCommentHint": "簡単な説明を入力してください（任意）",
-  "photoCommentLabel": "写真のコメント"
+  "photoCommentLabel": "写真のコメント",
+  "photoDetailTitle": "写真の詳細"
 }

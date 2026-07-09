@@ -532,5 +532,6 @@
   "supportEmailBody": "Détails de la demande:\n\n\n\n\n\n--------------------\n(Veuillez écrire votre demande au-dessus de cette ligne.)",
   "cannotOpenMailApp": "Impossible d'ouvrir l'application de messagerie. Veuillez contacter directement {email}.",
   "photoCommentHint": "Entrez un commentaire simple (Optionnel)",
-  "photoCommentLabel": "Commentaire photo"
+  "photoCommentLabel": "Commentaire photo",
+  "photoDetailTitle": "Détail de la photo"
 }

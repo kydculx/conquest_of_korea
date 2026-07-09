@@ -532,5 +532,6 @@
   "supportEmailBody": "咨询内容:\n\n\n\n\n\n--------------------\n(请在此行上方填写咨询内容。)",
   "cannotOpenMailApp": "无法打开邮件应用。请直接联系 {email}。",
   "photoCommentHint": "请输入简单说明（选填）",
-  "photoCommentLabel": "照片备注"
+  "photoCommentLabel": "照片备注",
+  "photoDetailTitle": "照片详情"
 }

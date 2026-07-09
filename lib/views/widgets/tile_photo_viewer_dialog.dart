@@ -23,19 +23,11 @@ class TilePhotoViewerDialog extends StatefulWidget {
 class _TilePhotoViewerDialogState extends State<TilePhotoViewerDialog> {
   bool _isLoading = false;
   List<Map<String, dynamic>> _photos = [];
-  int? _selectedPhotoIndex;
-  PageController? _pageController;
 
   @override
   void initState() {
     super.initState();
     _loadPhotos();
-  }
-
-  @override
-  void dispose() {
-    _pageController?.dispose();
-    super.dispose();
   }
 
   Future<void> _loadPhotos() async {
@@ -62,103 +54,12 @@ class _TilePhotoViewerDialogState extends State<TilePhotoViewerDialog> {
     }
   }
 
-  Future<bool> _handleDeletePhoto(String photoId, String photoUrl) async {
-    final game = context.read<GameProvider>();
-    final bool? confirm = await showDialog<bool>(
-      context: context,
-      builder: (context) => TacticalDialog(
-        title: GameStrings.deletePhotoConfirmTitle,
-        icon: Icons.delete_forever_rounded,
-        accentColor: GameColors.error,
-        content: Text(
-          GameStrings.deletePhotoConfirmMessage,
-          style: TextStyle(color: GameColors.textSecondary, fontSize: 13),
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context, false),
-            child: Text(
-              GameStrings.cancel,
-              style: const TextStyle(fontWeight: FontWeight.bold),
-            ),
-          ),
-          ElevatedButton(
-            onPressed: () => Navigator.pop(context, true),
-            style: ElevatedButton.styleFrom(
-              backgroundColor: GameColors.error,
-              foregroundColor: GameColors.tacticalWhite,
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(16),
-              ),
-            ),
-            child: Text(
-              GameStrings.confirm,
-              style: const TextStyle(fontWeight: FontWeight.bold),
-            ),
-          ),
-        ],
-      ),
-    );
-
-    if (confirm != true) return false;
-
-    if (mounted) {
-      setState(() {
-        _isLoading = true;
-      });
-    }
-
-    try {
-      final String? errorMsg = await game.deletePhotoForTile(widget.tileId, photoId, photoUrl);
-
-      if (!mounted) return false;
-
-      if (errorMsg == null) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(GameStrings.photoDeleteSuccess),
-            backgroundColor: GameColors.success,
-          ),
-        );
-        _loadPhotos(); // 목록 리프레시
-        if (context.mounted) {
-          context.read<AchievementProvider>().checkAndUnlock();
-        }
-        return true;
-      } else {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('${GameStrings.photoDeleteFail}\n사유: $errorMsg'),
-            backgroundColor: GameColors.error,
-          ),
-        );
-        return false;
-      }
-    } catch (e) {
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('${GameStrings.photoDeleteFail}\n오류: $e'),
-            backgroundColor: GameColors.error,
-          ),
-        );
-      }
-      return false;
-    } finally {
-      if (mounted) {
-        setState(() {
-          _isLoading = false;
-        });
-      }
-    }
-  }
-
   @override
   Widget build(BuildContext context) {
     final size = MediaQuery.of(context).size;
 
     return TacticalDialog(
-      title: _selectedPhotoIndex == null ? GameStrings.tileGalleryTitle : '사진 상세',
+      title: GameStrings.tileGalleryTitle,
       icon: Icons.photo_library_rounded,
       accentColor: GameColors.colorAccent,
       content: SizedBox(
@@ -172,7 +73,7 @@ class _TilePhotoViewerDialogState extends State<TilePhotoViewerDialog> {
               )
             : _photos.isEmpty
                 ? _buildEmptyState()
-                : (_selectedPhotoIndex == null ? _buildPhotoGrid() : _buildPhotoDetailSlider()),
+                : _buildPhotoGrid(),
       ),
       actions: [
         // 닫기 버튼
@@ -229,11 +130,21 @@ class _TilePhotoViewerDialogState extends State<TilePhotoViewerDialog> {
         final String photoUrl = photo['photo_url'] ?? '';
 
         return GestureDetector(
-          onTap: () {
-            _pageController = PageController(initialPage: index);
-            setState(() {
-              _selectedPhotoIndex = index;
-            });
+          onTap: () async {
+            // 그리드 썸네일 탭 시 전체 화면 상세 슬라이더로 진입
+            final bool? needsReload = await Navigator.push<bool>(
+              context,
+              MaterialPageRoute(
+                builder: (context) => TilePhotoDetailScreen(
+                  initialPhotos: _photos,
+                  initialIndex: index,
+                  tileId: widget.tileId,
+                ),
+              ),
+            );
+            if (needsReload == true && mounted) {
+              _loadPhotos(); // 삭제 이벤트 반영 리프레시
+            }
           },
           child: Container(
             decoration: BoxDecoration(
@@ -279,24 +190,164 @@ class _TilePhotoViewerDialogState extends State<TilePhotoViewerDialog> {
       },
     );
   }
+}
 
-  Widget _buildPhotoDetailSlider() {
-    if (_selectedPhotoIndex == null || _selectedPhotoIndex! >= _photos.length) {
-      return const SizedBox.shrink();
+/// [신규] 선택된 사진부터 가득 찬 전 화면 스와이프로 감상하며
+/// 핀치 줌 확대와 상세 정보(코멘트 카드)를 보여주는 전체 화면 이미지 뷰어
+class TilePhotoDetailScreen extends StatefulWidget {
+  final List<Map<String, dynamic>> initialPhotos;
+  final int initialIndex;
+  final String tileId;
+
+  const TilePhotoDetailScreen({
+    super.key,
+    required this.initialPhotos,
+    required this.initialIndex,
+    required this.tileId,
+  });
+
+  @override
+  State<TilePhotoDetailScreen> createState() => _TilePhotoDetailScreenState();
+}
+
+class _TilePhotoDetailScreenState extends State<TilePhotoDetailScreen> {
+  late List<Map<String, dynamic>> _photos;
+  late int _currentIndex;
+  late PageController _pageController;
+  bool _isLoading = false;
+  bool _anyDeleted = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _photos = List.from(widget.initialPhotos);
+    _currentIndex = widget.initialIndex;
+    _pageController = PageController(initialPage: widget.initialIndex);
+  }
+
+  @override
+  void dispose() {
+    _pageController.dispose();
+    super.dispose();
+  }
+
+  Future<void> _handleDeletePhoto(String photoId, String photoUrl) async {
+    final game = context.read<GameProvider>();
+    final bool? confirm = await showDialog<bool>(
+      context: context,
+      builder: (context) => TacticalDialog(
+        title: GameStrings.deletePhotoConfirmTitle,
+        icon: Icons.delete_forever_rounded,
+        accentColor: GameColors.error,
+        content: Text(
+          GameStrings.deletePhotoConfirmMessage,
+          style: TextStyle(color: GameColors.textSecondary, fontSize: 13),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context, false),
+            child: Text(
+              GameStrings.cancel,
+              style: const TextStyle(fontWeight: FontWeight.bold),
+            ),
+          ),
+          ElevatedButton(
+            onPressed: () => Navigator.pop(context, true),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: GameColors.error,
+              foregroundColor: GameColors.tacticalWhite,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(16),
+              ),
+            ),
+            child: Text(
+              GameStrings.confirm,
+              style: const TextStyle(fontWeight: FontWeight.bold),
+            ),
+          ),
+        ],
+      ),
+    );
+
+    if (confirm != true) return;
+
+    setState(() {
+      _isLoading = true;
+    });
+
+    try {
+      final String? errorMsg = await game.deletePhotoForTile(widget.tileId, photoId, photoUrl);
+
+      if (!mounted) return;
+
+      if (errorMsg == null) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(GameStrings.photoDeleteSuccess),
+            backgroundColor: GameColors.success,
+          ),
+        );
+        
+        _anyDeleted = true;
+        setState(() {
+          _photos.removeAt(_currentIndex);
+          _isLoading = false;
+          if (_photos.isEmpty) {
+            // 모든 사진 삭제 시 그리드로 리턴
+            Navigator.pop(context, true);
+          } else {
+            // 인덱스 교정
+            if (_currentIndex >= _photos.length) {
+              _currentIndex = _photos.length - 1;
+            }
+            _pageController.jumpToPage(_currentIndex);
+          }
+        });
+        if (context.mounted) {
+          context.read<AchievementProvider>().checkAndUnlock();
+        }
+      } else {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('${GameStrings.photoDeleteFail}\n사유: $errorMsg'),
+            backgroundColor: GameColors.error,
+          ),
+        );
+        setState(() {
+          _isLoading = false;
+        });
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('${GameStrings.photoDeleteFail}\n오류: $e'),
+            backgroundColor: GameColors.error,
+          ),
+        );
+      }
+      setState(() {
+        _isLoading = false;
+      });
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    if (_photos.isEmpty || _currentIndex >= _photos.length) {
+      return const Scaffold(backgroundColor: Colors.black);
     }
 
     final auth = Provider.of<AuthProvider>(context, listen: false);
     final currentUserId = auth.user?.id;
-    
-    // 현재 가리키고 있는 개별 사진 정보 획득
-    final photo = _photos[_selectedPhotoIndex!];
+    final photo = _photos[_currentIndex];
     final String photoId = photo['id'] ?? '';
     final String uploaderId = photo['user_id'] ?? '';
     final bool isMyPhoto = currentUserId != null && uploaderId == currentUserId;
     final String photoUrl = photo['photo_url'] ?? '';
     final String uploader = photo['user_nickname'] ?? 'None';
     final String rawDate = photo['created_at'] ?? '';
-    
+
     String dateString = '';
     try {
       if (rawDate.isNotEmpty) {
@@ -305,244 +356,251 @@ class _TilePhotoViewerDialogState extends State<TilePhotoViewerDialog> {
       }
     } catch (_) {}
 
-    return Stack(
-      fit: StackFit.expand,
-      children: [
-        // 1. 좌/우 스와이프를 가능케 하는 PageView 슬라이더 본체
-        Positioned.fill(
-          child: Container(
-            decoration: BoxDecoration(
-              color: Colors.black54,
-              borderRadius: BorderRadius.circular(16),
-            ),
-            clipBehavior: Clip.antiAlias,
-            child: PageView.builder(
-              controller: _pageController,
-              itemCount: _photos.length,
-              physics: const BouncingScrollPhysics(),
-              onPageChanged: (index) {
-                setState(() {
-                  _selectedPhotoIndex = index;
-                });
-              },
-              itemBuilder: (context, index) {
-                final pagePhoto = _photos[index];
-                final String pagePhotoUrl = pagePhoto['photo_url'] ?? '';
+    return PopScope(
+      canPop: !_isLoading,
+      onPopInvokedWithResult: (didPop, result) {
+        if (didPop && _anyDeleted) {
+          // 뒤로가기 시 삭제 항목이 있었다면 그리드 팝업에게 리로드 시그널 반환
+          Navigator.pop(context, true);
+        }
+      },
+      child: Scaffold(
+        backgroundColor: Colors.black,
+        body: Stack(
+          fit: StackFit.expand,
+          children: [
+            // 1. 전체 화면을 슬라이딩 스와이프하는 PageView 본체
+            Positioned.fill(
+              child: PageView.builder(
+                controller: _pageController,
+                itemCount: _photos.length,
+                physics: const BouncingScrollPhysics(),
+                onPageChanged: (index) {
+                  setState(() {
+                    _currentIndex = index;
+                  });
+                },
+                itemBuilder: (context, index) {
+                  final pagePhoto = _photos[index];
+                  final String pagePhotoUrl = pagePhoto['photo_url'] ?? '';
 
-                return Hero(
-                  tag: 'photo_hero_$index',
-                  child: Image.network(
-                    pagePhotoUrl,
-                    fit: BoxFit.contain, // aspect ratio 유지하여 찌그러짐 방지
-                    loadingBuilder: (context, child, loadingProgress) {
-                      if (loadingProgress == null) return child;
-                      return Center(
-                        child: CircularProgressIndicator(
-                          value: loadingProgress.expectedTotalBytes != null
-                              ? loadingProgress.cumulativeBytesLoaded /
-                                  loadingProgress.expectedTotalBytes!
-                              : null,
-                          valueColor: const AlwaysStoppedAnimation<Color>(Color(0xFF00FFCC)),
-                        ),
-                      );
-                    },
-                    errorBuilder: (context, error, stackTrace) {
-                      return const Center(
-                        child: Icon(
-                          Icons.broken_image_rounded,
-                          color: Colors.white30,
-                          size: 40,
-                        ),
-                      );
-                    },
-                  ),
-                );
-              },
-            ),
-          ),
-        ),
-
-        // 2. 뒤로가기 버튼 (격자형 앨범 목록으로 복귀)
-        Positioned(
-          top: 12,
-          left: 12,
-          child: GestureDetector(
-            onTap: () {
-              _pageController?.dispose();
-              _pageController = null;
-              setState(() {
-                _selectedPhotoIndex = null;
-              });
-            },
-            child: Container(
-              padding: const EdgeInsets.all(8),
-              decoration: BoxDecoration(
-                color: Colors.black.withValues(alpha: 0.65),
-                shape: BoxShape.circle,
-                border: Border.all(
-                  color: const Color(0xFF00FFCC).withValues(alpha: 0.3),
-                  width: 0.8,
-                ),
-              ),
-              child: const Icon(
-                Icons.arrow_back_ios_new_rounded,
-                color: Colors.white,
-                size: 16,
-              ),
-            ),
-          ),
-        ),
-
-        // 3. 우측 상단 내 사진 전용 삭제 아이콘
-        if (isMyPhoto)
-          Positioned(
-            top: 12,
-            right: 12,
-            child: GestureDetector(
-              onTap: () async {
-                final bool deleted = await _handleDeletePhoto(photoId, photoUrl);
-                if (deleted) {
-                  // 삭제 성공 시, 만약 목록이 완전히 비었다면 그리드로 회귀
-                  if (_photos.isEmpty) {
-                    _pageController?.dispose();
-                    _pageController = null;
-                    setState(() {
-                      _selectedPhotoIndex = null;
-                    });
-                  } else {
-                    // 남은 사진이 있는 경우 뷰어 인덱스 범위 보정 바인딩
-                    setState(() {
-                      if (_selectedPhotoIndex! >= _photos.length) {
-                        _selectedPhotoIndex = _photos.length - 1;
-                      }
-                      _pageController?.jumpToPage(_selectedPhotoIndex!);
-                    });
-                  }
-                }
-              },
-              child: Container(
-                padding: const EdgeInsets.all(8),
-                decoration: BoxDecoration(
-                  color: Colors.black.withValues(alpha: 0.65),
-                  shape: BoxShape.circle,
-                  border: Border.all(
-                    color: GameColors.error.withValues(alpha: 0.5),
-                    width: 0.8,
-                  ),
-                ),
-                child: Icon(
-                  Icons.delete_forever_rounded,
-                  color: GameColors.error,
-                  size: 16,
-                ),
-              ),
-            ),
-          ),
-
-        // 4. 슬라이더 상단 인디케이터 수치 (예: 2 / 5)
-        Positioned(
-          top: 12,
-          left: 0,
-          right: 0,
-          child: Align(
-            alignment: Alignment.topCenter,
-            child: Container(
-              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-              decoration: BoxDecoration(
-                color: Colors.black.withValues(alpha: 0.65),
-                borderRadius: BorderRadius.circular(12),
-                border: Border.all(
-                  color: Colors.white12,
-                  width: 0.8,
-                ),
-              ),
-              child: Text(
-                '${_selectedPhotoIndex! + 1} / ${_photos.length}',
-                style: GoogleFonts.fredoka(
-                  color: GameColors.textPrimary,
-                  fontSize: 11,
-                  fontWeight: FontWeight.bold,
-                ),
-              ),
-            ),
-          ),
-        ),
-
-        // 5. 하단 상세 정보 그라데이션 박스
-        Positioned(
-          bottom: 0,
-          left: 0,
-          right: 0,
-          child: Container(
-            decoration: BoxDecoration(
-              borderRadius: const BorderRadius.only(
-                bottomLeft: Radius.circular(16),
-                bottomRight: Radius.circular(16),
-              ),
-              gradient: LinearGradient(
-                begin: Alignment.bottomCenter,
-                end: Alignment.topCenter,
-                colors: [
-                  Colors.black.withValues(alpha: 0.95),
-                  Colors.black.withValues(alpha: 0.0),
-                ],
-              ),
-            ),
-            padding: const EdgeInsets.all(14.0),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    Text(
-                      '${GameStrings.photoUploader}: $uploader',
-                      style: GoogleFonts.quicksand(
-                        color: const Color(0xFF00FFCC),
-                        fontWeight: FontWeight.bold,
-                        fontSize: 12.5,
+                  return InteractiveViewer(
+                    minScale: 1.0,
+                    maxScale: 3.0,
+                    child: Hero(
+                      tag: 'photo_hero_$index',
+                      child: Image.network(
+                        pagePhotoUrl,
+                        fit: BoxFit.contain,
+                        loadingBuilder: (context, child, loadingProgress) {
+                          if (loadingProgress == null) return child;
+                          return Center(
+                            child: CircularProgressIndicator(
+                              value: loadingProgress.expectedTotalBytes != null
+                                  ? loadingProgress.cumulativeBytesLoaded /
+                                      loadingProgress.expectedTotalBytes!
+                                  : null,
+                              valueColor: const AlwaysStoppedAnimation<Color>(Color(0xFF00FFCC)),
+                            ),
+                          );
+                        },
+                        errorBuilder: (context, error, stackTrace) {
+                          return const Center(
+                            child: Icon(
+                              Icons.broken_image_rounded,
+                              color: Colors.white30,
+                              size: 40,
+                            ),
+                          );
+                        },
                       ),
                     ),
-                    if (dateString.isNotEmpty)
-                      Text(
-                        dateString,
-                        style: GoogleFonts.quicksand(
-                          color: GameColors.textSecondary,
-                          fontSize: 10,
-                          fontWeight: FontWeight.w600,
-                        ),
-                      ),
-                  ],
+                  );
+                },
+              ),
+            ),
+
+            // 2. 뒤로가기 단추
+            Positioned(
+              top: MediaQuery.of(context).padding.top + 16,
+              left: 16,
+              child: GestureDetector(
+                onTap: () {
+                  Navigator.pop(context, _anyDeleted);
+                },
+                child: Container(
+                  padding: const EdgeInsets.all(10),
+                  decoration: BoxDecoration(
+                    color: Colors.black54,
+                    shape: BoxShape.circle,
+                    border: Border.all(
+                      color: const Color(0xFF00FFCC).withValues(alpha: 0.3),
+                      width: 0.8,
+                    ),
+                  ),
+                  child: const Icon(
+                    Icons.arrow_back_ios_new_rounded,
+                    color: Colors.white,
+                    size: 18,
+                  ),
                 ),
-                if (photo['comment'] != null && (photo['comment'] as String).isNotEmpty) ...[
-                  const SizedBox(height: 6),
-                  Container(
-                    width: double.infinity,
-                    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+              ),
+            ),
+
+            // 3. 우측 상단 내 사진 전용 삭제 아이콘
+            if (isMyPhoto)
+              Positioned(
+                top: MediaQuery.of(context).padding.top + 16,
+                right: 16,
+                child: GestureDetector(
+                  onTap: () => _handleDeletePhoto(photoId, photoUrl),
+                  child: Container(
+                    padding: const EdgeInsets.all(10),
                     decoration: BoxDecoration(
-                      color: Colors.black.withValues(alpha: 0.55),
-                      borderRadius: BorderRadius.circular(6),
+                      color: Colors.black54,
+                      shape: BoxShape.circle,
                       border: Border.all(
-                        color: const Color(0xFF00FFCC).withValues(alpha: 0.2),
+                        color: GameColors.error.withValues(alpha: 0.5),
                         width: 0.8,
                       ),
                     ),
-                    child: Text(
-                      photo['comment'] as String,
-                      style: const TextStyle(
-                        color: Colors.white,
-                        fontSize: 12.0,
-                        height: 1.3,
-                      ),
+                    child: Icon(
+                      Icons.delete_forever_rounded,
+                      color: GameColors.error,
+                      size: 18,
                     ),
                   ),
-                ],
-              ],
+                ),
+              ),
+
+            // 4. 슬라이더 상단 인디케이터 수치 (예: 3 / 8)
+            Positioned(
+              top: MediaQuery.of(context).padding.top + 20,
+              left: 0,
+              right: 0,
+              child: Align(
+                alignment: Alignment.topCenter,
+                child: Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                  decoration: BoxDecoration(
+                    color: Colors.black54,
+                    borderRadius: BorderRadius.circular(12),
+                    border: Border.all(
+                      color: Colors.white12,
+                      width: 0.8,
+                    ),
+                  ),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Text(
+                        '${GameStrings.photoDetailTitle}  |  ',
+                        style: const TextStyle(
+                          color: Color(0xFF00FFCC),
+                          fontSize: 11,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                      Text(
+                        '${_currentIndex + 1} / ${_photos.length}',
+                        style: GoogleFonts.fredoka(
+                          color: GameColors.textPrimary,
+                          fontSize: 11,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
             ),
-          ),
+
+            // 5. 하단 상세 정보 그라데이션 박스
+            Positioned(
+              bottom: 0,
+              left: 0,
+              right: 0,
+              child: Container(
+                decoration: BoxDecoration(
+                  gradient: LinearGradient(
+                    begin: Alignment.bottomCenter,
+                    end: Alignment.topCenter,
+                    colors: [
+                      Colors.black.withValues(alpha: 0.95),
+                      Colors.black.withValues(alpha: 0.0),
+                    ],
+                  ),
+                ),
+                padding: EdgeInsets.fromLTRB(16, 24, 16, MediaQuery.of(context).padding.bottom + 24),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        Text(
+                          '${GameStrings.photoUploader}: $uploader',
+                          style: GoogleFonts.quicksand(
+                            color: const Color(0xFF00FFCC),
+                            fontWeight: FontWeight.bold,
+                            fontSize: 14,
+                          ),
+                        ),
+                        if (dateString.isNotEmpty)
+                          Text(
+                            dateString,
+                            style: GoogleFonts.quicksand(
+                              color: GameColors.textSecondary,
+                              fontSize: 11,
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
+                      ],
+                    ),
+                    if (photo['comment'] != null && (photo['comment'] as String).isNotEmpty) ...[
+                      const SizedBox(height: 10),
+                      Container(
+                        width: double.infinity,
+                        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                        decoration: BoxDecoration(
+                          color: Colors.black54,
+                          borderRadius: BorderRadius.circular(8),
+                          border: Border.all(
+                            color: const Color(0xFF00FFCC).withValues(alpha: 0.2),
+                            width: 0.8,
+                          ),
+                        ),
+                        child: Text(
+                          photo['comment'] as String,
+                          style: const TextStyle(
+                            color: Colors.white,
+                            fontSize: 13.0,
+                            height: 1.4,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ],
+                ),
+              ),
+            ),
+            
+            // 로딩 오버레이
+            if (_isLoading)
+              Positioned.fill(
+                child: Container(
+                  color: Colors.black45,
+                  child: const Center(
+                    child: CircularProgressIndicator(
+                      valueColor: AlwaysStoppedAnimation<Color>(Color(0xFF00FFCC)),
+                    ),
+                  ),
+                ),
+              ),
+          ],
         ),
-      ],
+      ),
     );
   }
 }

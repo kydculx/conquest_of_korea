@@ -532,5 +532,6 @@
   "supportEmailBody": "문의 내용:\n\n\n\n\n\n--------------------\n(상기 라인 위에 문의 내용을 작성해 주세요.)",
   "photoCommentHint": "간단한 설명을 입력해 주세요. (선택사항)",
   "photoCommentLabel": "사진 코멘트",
+  "photoDetailTitle": "사진 상세",
   "cannotOpenMailApp": "메일 앱을 열 수 없습니다. {email}로 직접 문의해주세요."
 }

@@ -532,5 +532,6 @@
   "supportEmailBody": "Inquiry Content:\n\n\n\n\n\n--------------------\n(Please write your inquiry above this line.)",
   "cannotOpenMailApp": "Cannot open mail app. Please contact {email} directly.",
   "photoCommentHint": "Enter a simple comment (Optional)",
-  "photoCommentLabel": "Photo Comment"
+  "photoCommentLabel": "Photo Comment",
+  "photoDetailTitle": "Photo Detail"
 }
