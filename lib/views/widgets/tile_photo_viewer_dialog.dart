@@ -1,4 +1,3 @@
-import 'dart:io';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
@@ -8,20 +7,14 @@ import '../../core/constants/strings.dart';
 import '../../providers/game_provider.dart';
 import '../../providers/auth_provider.dart';
 import '../../providers/achievement_provider.dart';
-import '../../services/photo_service.dart';
 import 'tactical_dialog.dart';
 
 /// [신규] 특정 헥사곤 타일 내부 사진첩 갤러리를 전술풍 카드 스타일로 부드럽게 감상하고,
 /// 현장 카메라 사진 촬영 및 업로드 파이프라인을 중계해주는 전용 갤러리 팝업 위젯
 class TilePhotoViewerDialog extends StatefulWidget {
   final String tileId;
-  final bool showUploadButton;
 
-  const TilePhotoViewerDialog({
-    super.key,
-    required this.tileId,
-    this.showUploadButton = true,
-  });
+  const TilePhotoViewerDialog({super.key, required this.tileId});
 
   @override
   State<TilePhotoViewerDialog> createState() => _TilePhotoViewerDialogState();
@@ -61,130 +54,7 @@ class _TilePhotoViewerDialogState extends State<TilePhotoViewerDialog> {
     }
   }
 
-  Future<void> _handleCaptureAndUpload() async {
-    final game = context.read<GameProvider>();
-    final auth = context.read<AuthProvider>();
-    final currentUserId = auth.user?.id;
 
-    // 1인 1타일 1사진 업로드 규칙 위반 검사
-    final bool alreadyUploaded = _photos.any((p) => p['user_id'] == currentUserId);
-    if (alreadyUploaded) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(GameStrings.photoLimitReached),
-          backgroundColor: GameColors.error,
-        ),
-      );
-      return;
-    }
-
-    final photoService = PhotoService();
-
-    // 1. 카메라 촬영 & 최적화 압축 가공 (150KB 규격)
-    final File? imageFile = await photoService.captureCompressedPhoto();
-    if (imageFile == null) return;
-
-    if (!mounted) return;
-
-    // [신규] 사진 업로드 전 코멘트 작성 다이얼로그 가동
-    final String? comment = await showDialog<String>(
-      context: context,
-      barrierDismissible: false,
-      builder: (context) {
-        final controller = TextEditingController();
-        return TacticalDialog(
-          title: GameStrings.photoCommentLabel,
-          icon: Icons.chat_bubble_outline_rounded,
-          accentColor: const Color(0xFF00FFCC),
-          content: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              Text(
-                GameStrings.photoCommentHint,
-                style: const TextStyle(color: Colors.white70, fontSize: 13),
-              ),
-              const SizedBox(height: 12),
-              TextField(
-                controller: controller,
-                maxLength: 35,
-                autofocus: true,
-                style: const TextStyle(color: Colors.white, fontSize: 14),
-                decoration: InputDecoration(
-                  counterStyle: const TextStyle(color: Colors.white30, fontSize: 10),
-                  filled: true,
-                  fillColor: Colors.black38,
-                  enabledBorder: OutlineInputBorder(
-                    borderSide: const BorderSide(color: Colors.white24),
-                    borderRadius: BorderRadius.circular(8),
-                  ),
-                  focusedBorder: OutlineInputBorder(
-                    borderSide: const BorderSide(color: Color(0xFF00FFCC)),
-                    borderRadius: BorderRadius.circular(8),
-                  ),
-                ),
-              ),
-            ],
-          ),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.pop(context, ""), // 설명 스킵
-              child: const Text('스킵', style: TextStyle(color: Colors.white54)),
-            ),
-            ElevatedButton(
-              onPressed: () => Navigator.pop(context, controller.text.trim()),
-              style: ElevatedButton.styleFrom(
-                backgroundColor: const Color(0xFF00FFCC),
-                foregroundColor: Colors.black,
-              ),
-              child: const Text('확인'),
-            ),
-          ],
-        );
-      },
-    );
-
-    if (comment == null) return; // 다이얼로그 강제 닫힘 시 취소
-
-    if (!mounted) return;
-    setState(() {
-      _isLoading = true;
-    });
-
-    // 2. Supabase 업로드 및 연동 DB 인서트 실행 (코멘트 전달)
-    final String? errorMsg = await game.uploadPhotoForTile(
-      widget.tileId,
-      imageFile,
-      comment: comment.isEmpty ? null : comment,
-    );
-
-    if (mounted) {
-      setState(() {
-        _isLoading = false;
-      });
-
-      if (errorMsg == null) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(GameStrings.photoUploadSuccess),
-            backgroundColor: GameColors.success,
-          ),
-        );
-        _loadPhotos(); // 목록 리프레시
-        if (context.mounted) {
-          context.read<AchievementProvider>().checkAndUnlock();
-        }
-      } else {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('${GameStrings.photoUploadFail}\n사유: $errorMsg'),
-            backgroundColor: GameColors.error,
-            duration: const Duration(seconds: 4),
-          ),
-        );
-      }
-    }
-  }
 
   Future<void> _handleDeletePhoto(String photoId, String photoUrl) async {
     final game = context.read<GameProvider>();
@@ -296,24 +166,6 @@ class _TilePhotoViewerDialogState extends State<TilePhotoViewerDialog> {
                 : _buildPhotoSlider(),
       ),
       actions: [
-        // 사진 등록 액션 버튼
-        if (widget.showUploadButton)
-          ElevatedButton.icon(
-            onPressed: _isLoading ? null : _handleCaptureAndUpload,
-            style: ElevatedButton.styleFrom(
-              backgroundColor: GameColors.colorAccent,
-              foregroundColor: GameColors.tacticalBlack,
-              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(16),
-              ),
-            ),
-            icon: const Icon(Icons.photo_camera_rounded, size: 18),
-            label: Text(
-              GameStrings.uploadPhotoAction,
-              style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13),
-            ),
-          ),
         // 닫기 버튼
         TextButton(
           onPressed: () => Navigator.pop(context),

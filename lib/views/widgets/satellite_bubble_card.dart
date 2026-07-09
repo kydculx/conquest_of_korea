@@ -278,10 +278,7 @@ class BubbleBodyState extends State<BubbleBody> {
                                   final tileId = HexService.tileId(widget.q, widget.r);
                                   showDialog(
                                     context: context,
-                                    builder: (context) => TilePhotoViewerDialog(
-                                      tileId: tileId,
-                                      showUploadButton: false,
-                                    ),
+                                    builder: (context) => TilePhotoViewerDialog(tileId: tileId),
                                   );
                                 },
                                 style: TextButton.styleFrom(
