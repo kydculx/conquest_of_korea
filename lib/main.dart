@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:conquest_mobile/views/screens/splash_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -31,6 +32,11 @@ import 'package:easy_localization/easy_localization.dart';
 
 /// Flutter 앱의 메인 진입점 함수로, 각종 타사 서비스(SDK) 초기화와 화면 상태 잠금 및 의존성 주입 구조를 형성합니다.
 void main() async {
+  // 릴리즈 빌드 모드일 때 콘솔 로그(debugPrint) 출력을 원천 침묵(Silence)시킵니다.
+  if (kReleaseMode) {
+    debugPrint = (String? message, {int? wrapWidth}) {};
+  }
+
   WidgetsFlutterBinding.ensureInitialized();
   await EasyLocalization.ensureInitialized();
 
