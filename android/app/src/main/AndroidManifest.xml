@@ -9,6 +9,9 @@
     <uses-permission android:name="android.permission.VIBRATE" />
     <uses-permission android:name="android.permission.WAKE_LOCK" />
     <uses-permission android:name="android.permission.health.READ_STEPS" />
+    <uses-permission android:name="android.permission.health.WRITE_STEPS" />
+    <uses-permission android:name="androidx.permission.health.READ_STEPS" />
+    <uses-permission android:name="androidx.permission.health.WRITE_STEPS" />
     <uses-permission android:name="android.permission.ACTIVITY_RECOGNITION" />
 
     <application
@@ -45,7 +48,10 @@
                 <data android:scheme="com.watercherry.conquestofkorea" android:host="login-callback" />
             </intent-filter>
 
-            <!-- 헬스 커넥트(Health Connect) 자동 권한 요청 팝업 런처 트리거 -->
+            <!-- 헬스 커넥트(Health Connect) 자동 권한 요청 팝업 런처 트리거 (신/구 지원 규격) -->
+            <intent-filter>
+                <action android:name="androidx.health.ACTION_SHOW_PERMISSIONS_RATIONALE" />
+            </intent-filter>
             <intent-filter>
                 <action android:name="androidx.health.platform.client.ACTION_SHOW_PERMISSIONS_RATIONALE" />
             </intent-filter>
