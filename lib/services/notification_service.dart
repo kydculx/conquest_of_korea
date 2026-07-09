@@ -29,6 +29,9 @@ class NotificationService {
 
   bool _initialized = false;
 
+  /// 중복 구독 호출 차단을 위한 로컬 구독 토픽 캐시 집합
+  final Set<String> _subscribedTopics = {};
+
   /// 서비스 초기화 완료 여부를 반환합니다.
   bool get isInitialized => _initialized;
 
@@ -158,7 +161,10 @@ class NotificationService {
 
   /// 현재 로그인된 사용자 ID를 셋업합니다.
   void setCurrentUserId(String? userId) {
-    _currentUserId = userId;
+    if (_currentUserId != userId) {
+      _currentUserId = userId;
+      _subscribedTopics.clear(); // 사용자 세션이 변경되면 캐시된 토픽 목록 무효화
+    }
   }
 
   /// 로컬 푸시 알림을 즉시 화면에 노출시킵니다.
@@ -207,8 +213,14 @@ class NotificationService {
   Future<void> subscribeToTopic(String topic) async {
     if (!_initialized) return;
 
+    // [중복 구독 차단 가드] 이미 해당 토픽을 성공적으로 구독 중이라면 스킵하여 무한 반복 호출 차단
+    if (_subscribedTopics.contains(topic)) {
+      return;
+    }
+
     try {
       await _fcm?.subscribeToTopic(topic);
+      _subscribedTopics.add(topic);
       debugPrint('✅ 주제 구독 성공: $topic');
     } catch (e) {
       debugPrint('⚠️ 주제 구독 실패($topic): $e');
@@ -221,6 +233,7 @@ class NotificationService {
 
     try {
       await _fcm?.unsubscribeFromTopic(topic);
+      _subscribedTopics.remove(topic);
       debugPrint('🔔 주제 구독 해제 완료: $topic');
     } catch (e) {
       debugPrint('⚠️ 주제 구독 해제 실패($topic): $e');
