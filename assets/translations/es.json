@@ -530,5 +530,7 @@
   "patternConqueror": "Conquistador de Patrón: {char}",
   "patternTilesCountCompleted": "Completado con {count} zonas",
   "supportEmailBody": "Detalle de la Consulta:\n\n\n\n\n\n--------------------\n(Escribe tu consulta arriba de esta línea.)",
-  "cannotOpenMailApp": "No se puede abrir la app de correo. Por favor contacta directamente a {email}."
+  "cannotOpenMailApp": "No se puede abrir la aplicación de correo. Póngase en contacto directamente con {email}.",
+  "photoCommentHint": "Introduce un comentario sencillo (Opcional)",
+  "photoCommentLabel": "Comentario de foto"
 }

@@ -530,5 +530,7 @@
   "patternConqueror": "Pattern Conqueror: {char}",
   "patternTilesCountCompleted": "Completed with {count} tiles",
   "supportEmailBody": "Inquiry Content:\n\n\n\n\n\n--------------------\n(Please write your inquiry above this line.)",
-  "cannotOpenMailApp": "Cannot open mail app. Please contact {email} directly."
+  "cannotOpenMailApp": "Cannot open mail app. Please contact {email} directly.",
+  "photoCommentHint": "Enter a simple comment (Optional)",
+  "photoCommentLabel": "Photo Comment"
 }

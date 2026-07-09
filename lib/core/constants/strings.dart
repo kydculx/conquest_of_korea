@@ -986,6 +986,12 @@ class GameStrings {
   /// 동일 타일 사진 촬영 1회 제한 경고
   static String get photoLimitReached => 'photoLimitReached'.tr();
 
+  /// 사진 업로드 시 코멘트 힌트
+  static String get photoCommentHint => 'photoCommentHint'.tr();
+
+  /// 사진 업로드 시 코멘트 라벨
+  static String get photoCommentLabel => 'photoCommentLabel'.tr();
+
   /// 표시 언어 선택 타이틀
   static String get selectLanguage => 'selectLanguage'.tr();
 

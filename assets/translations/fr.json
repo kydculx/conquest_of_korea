@@ -530,5 +530,7 @@
   "patternConqueror": "Conquérant de Patron: {char}",
   "patternTilesCountCompleted": "Complété avec {count} zones",
   "supportEmailBody": "Détails de la demande:\n\n\n\n\n\n--------------------\n(Veuillez écrire votre demande au-dessus de cette ligne.)",
-  "cannotOpenMailApp": "Impossible d'ouvrir l'application de messagerie. Veuillez contacter directement {email}."
+  "cannotOpenMailApp": "Impossible d'ouvrir l'application de messagerie. Veuillez contacter directement {email}.",
+  "photoCommentHint": "Entrez un commentaire simple (Optionnel)",
+  "photoCommentLabel": "Commentaire photo"
 }

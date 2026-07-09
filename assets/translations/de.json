@@ -530,5 +530,7 @@
   "patternConqueror": "Musterbezwingung: {char}",
   "patternTilesCountCompleted": "Mit {count} Zonen fertiggestellt",
   "supportEmailBody": "Anfrage-Inhalt:\n\n\n\n\n\n--------------------\n(Bitte schreiben Sie Ihre Anfrage über diese Zeile.)",
-  "cannotOpenMailApp": "Mail-App kann nicht geöffnet werden. Bitte kontaktieren Sie direkt {email}."
+  "cannotOpenMailApp": "E-Mail-App kann nicht geöffnet werden. Bitte kontaktieren Sie {email} direkt.",
+  "photoCommentHint": "Geben Sie einen einfachen Kommentar ein (Optional)",
+  "photoCommentLabel": "Foto-Kommentar"
 }

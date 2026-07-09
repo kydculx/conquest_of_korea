@@ -473,7 +473,7 @@ class GameProvider extends ChangeNotifier with WidgetsBindingObserver {
 
   /// 현재 밟고 있는 타일에 사진첩 등록을 수행하고 연동 캐시를 리로드합니다.
   /// 성공 시 null을 반환하며, 실패 시 에러 사유 문자열을 반환합니다.
-  Future<String?> uploadPhotoForTile(String tileId, File file) async {
+  Future<String?> uploadPhotoForTile(String tileId, File file, {String? comment}) async {
     final auth = _authProvider;
     if (auth == null) {
       const msg = '인증 서비스(authProvider) 연동 실패';
@@ -498,6 +498,7 @@ class GameProvider extends ChangeNotifier with WidgetsBindingObserver {
         file: file,
         userId: profile.id,
         userNickname: profile.nickname,
+        comment: comment,
       );
 
       if (response != null) {

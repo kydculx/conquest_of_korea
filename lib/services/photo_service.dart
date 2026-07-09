@@ -95,6 +95,7 @@ class PhotoService {
     required File file,
     required String userId,
     required String userNickname,
+    String? comment,
   }) async {
     try {
       // 1. Storage 버킷에 저장할 유니크 파일 경로 이름 연산 (안전한 확장자 가드 적용)
@@ -134,6 +135,7 @@ class PhotoService {
         'user_id': userId,
         'user_nickname': userNickname,
         'photo_url': photoUrl,
+        'comment': comment,
       };
 
       try {
@@ -163,7 +165,7 @@ class PhotoService {
     try {
       final List<Map<String, dynamic>> data = await _client
           .from('tile_photos')
-          .select('id, tile_id, user_id, user_nickname, photo_url, created_at')
+          .select('id, tile_id, user_id, user_nickname, photo_url, comment, created_at')
           .eq('tile_id', tileId)
           .order('created_at', ascending: false);
 

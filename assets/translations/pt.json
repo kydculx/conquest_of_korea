@@ -530,5 +530,7 @@
   "patternConqueror": "Conquistador de Padrão: {char}",
   "patternTilesCountCompleted": "Concluído com {count} áreas",
   "supportEmailBody": "Conteúdo da Consulta:\n\n\n\n\n\n--------------------\n(Por favor, escreva sua consulta acima desta linha.)",
-  "cannotOpenMailApp": "Não é possível abrir o app de e-mail. Por favor, contate diretamente {email}."
+  "cannotOpenMailApp": "Não é possível abrir o aplicativo de e-mail. Entre em contato diretamente com {email}.",
+  "photoCommentHint": "Insira um comentário simples (Opcional)",
+  "photoCommentLabel": "Comentário da foto"
 }

@@ -80,12 +80,78 @@ class _TilePhotoViewerDialogState extends State<TilePhotoViewerDialog> {
     if (imageFile == null) return;
 
     if (!mounted) return;
+
+    // [신규] 사진 업로드 전 코멘트 작성 다이얼로그 가동
+    final String? comment = await showDialog<String>(
+      context: context,
+      barrierDismissible: false,
+      builder: (context) {
+        final controller = TextEditingController();
+        return TacticalDialog(
+          title: GameStrings.photoCommentLabel,
+          icon: Icons.chat_bubble_outline_rounded,
+          accentColor: const Color(0xFF00FFCC),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              Text(
+                GameStrings.photoCommentHint,
+                style: const TextStyle(color: Colors.white70, fontSize: 13),
+              ),
+              const SizedBox(height: 12),
+              TextField(
+                controller: controller,
+                maxLength: 35,
+                autofocus: true,
+                style: const TextStyle(color: Colors.white, fontSize: 14),
+                decoration: InputDecoration(
+                  counterStyle: const TextStyle(color: Colors.white30, fontSize: 10),
+                  filled: true,
+                  fillColor: Colors.black38,
+                  enabledBorder: OutlineInputBorder(
+                    borderSide: const BorderSide(color: Colors.white24),
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  focusedBorder: OutlineInputBorder(
+                    borderSide: const BorderSide(color: Color(0xFF00FFCC)),
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                ),
+              ),
+            ],
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(context, ""), // 설명 스킵
+              child: const Text('스킵', style: TextStyle(color: Colors.white54)),
+            ),
+            ElevatedButton(
+              onPressed: () => Navigator.pop(context, controller.text.trim()),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: const Color(0xFF00FFCC),
+                foregroundColor: Colors.black,
+              ),
+              child: const Text('확인'),
+            ),
+          ],
+        );
+      },
+    );
+
+    if (comment == null) return; // 다이얼로그 강제 닫힘 시 취소
+
+    if (!mounted) return;
     setState(() {
       _isLoading = true;
     });
 
-    // 2. Supabase 업로드 및 연동 DB 인서트 실행
-    final String? errorMsg = await game.uploadPhotoForTile(widget.tileId, imageFile);
+    // 2. Supabase 업로드 및 연동 DB 인서트 실행 (코멘트 전달)
+    final String? errorMsg = await game.uploadPhotoForTile(
+      widget.tileId,
+      imageFile,
+      comment: comment.isEmpty ? null : comment,
+    );
 
     if (mounted) {
       setState(() {
@@ -384,6 +450,29 @@ class _TilePhotoViewerDialogState extends State<TilePhotoViewerDialog> {
                               color: GameColors.textSecondary,
                               fontSize: 11,
                               fontWeight: FontWeight.w600,
+                            ),
+                          ),
+                        ],
+                        if (photo['comment'] != null && (photo['comment'] as String).isNotEmpty) ...[
+                          const SizedBox(height: 8),
+                          Container(
+                            width: double.infinity,
+                            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                            decoration: BoxDecoration(
+                              color: Colors.black.withValues(alpha: 0.45),
+                              borderRadius: BorderRadius.circular(6),
+                              border: Border.all(
+                                color: const Color(0xFF00FFCC).withValues(alpha: 0.25),
+                                width: 0.8,
+                              ),
+                            ),
+                            child: Text(
+                              photo['comment'] as String,
+                              style: const TextStyle(
+                                color: Colors.white,
+                                fontSize: 12.0,
+                                height: 1.3,
+                              ),
                             ),
                           ),
                         ],
