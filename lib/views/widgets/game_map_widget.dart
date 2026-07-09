@@ -8,6 +8,7 @@ import '../../game/conquest_game.dart';
 import '../../core/constants/colors.dart';
 import '../../core/constants/map_config.dart';
 import '../../providers/game_provider.dart';
+import '../../providers/game_tile_provider.dart';
 import '../../providers/location_provider.dart';
 import '../../providers/achievement_provider.dart';
 import '../../services/hex_service.dart';
@@ -346,6 +347,15 @@ class _GameMapWidgetState extends State<GameMapWidget>
                 gameProvider.selectScanTile(tileId);
               },
               onMapEvent: (event) {
+                // [신규] 지도 카메라 움직임이 완료되어 멈추는 시점 감지
+                if (event is MapEventMoveEnd) {
+                  final centerLatLng = _mapController.camera.center;
+                  final hex = HexService.latLngToHex(centerLatLng);
+                  // 화면 중심 기준으로 주변 5km 영역의 타일을 REST로 실시간 동적 로드 (이동 가드 내장)
+                  final tileProvider = Provider.of<GameTileProvider>(context, listen: false);
+                  tileProvider.updateTilesInArea(hex['q']!, hex['r']!, radiusKm: 5.0);
+                }
+
                 if (event.source ==
                     MapEventSource.multiFingerGestureStart) {
                   WidgetsBinding.instance.addPostFrameCallback((_) {

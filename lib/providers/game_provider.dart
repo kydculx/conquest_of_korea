@@ -692,6 +692,9 @@ class GameProvider extends ChangeNotifier with WidgetsBindingObserver {
     if (loc == null || loc.currentLocation == null) {
       return;
     }
+    if (!_tileProvider.hasInitializedLocation) {
+      _tileProvider.initializeWithLocation(loc.currentLocation!);
+    }
     if (auth == null || !auth.isAuthenticated || auth.profile == null) {
       return;
     }

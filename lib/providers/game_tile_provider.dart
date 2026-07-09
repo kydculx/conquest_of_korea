@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'package:flutter/widgets.dart';
+import 'package:latlong2/latlong.dart';
 import '../core/constants/game_config.dart';
 import '../models/tile_model.dart';
 import '../models/footprint_model.dart';
@@ -18,6 +19,8 @@ class GameTileProvider extends ChangeNotifier {
 
   /// 초기화 완료 처리를 조율하는 Completer
   final Completer<void> _initCompleter = Completer<void>();
+  bool _hasInitializedLocation = false;
+  bool get hasInitializedLocation => _hasInitializedLocation;
 
   /// 점령된 타일 목록 (Key: 타일 ID, Value: 타일 상세 모델)
   final Map<String, HexTile> _capturedTiles = {};
@@ -61,6 +64,7 @@ class GameTileProvider extends ChangeNotifier {
     _footprints.clear();
     _lastCheckedAreaTileId = null;
     _lastAreaFetchTime = null;
+    _hasInitializedLocation = false;
     notifyListeners();
   }
 
@@ -93,12 +97,9 @@ class GameTileProvider extends ChangeNotifier {
   bool get isInitialized => _isInitialized;
   Future<void> get initializationFuture => _initCompleter.future;
 
-  /// 서버에서 모든 점령 타일을 불러오고 실시간 스트림을 연결하며, 로그인된 경우 발자취 데이터도 함께 불러옵니다.
+  /// [개편] 서버 전체 로드 대신 최초 위치 획득 후 5km 선별 조회를 대기하도록 설정하며, 로그인 시 발자취 데이터만 즉시 불러옵니다.
   Future<void> init() async {
     try {
-      final tiles = await _supabase.fetchAllCapturedTiles();
-      _handleAllTilesSync(tiles);
-
       final myId = _userId;
       if (myId != null) {
         // 초기화 프로세스가 발자취 네트워크 대기에 블로킹되지 않도록 비동기 백그라운드 처리
@@ -113,6 +114,18 @@ class GameTileProvider extends ChangeNotifier {
       if (!_initCompleter.isCompleted) _initCompleter.complete();
       notifyListeners();
     }
+  }
+
+  /// [신규] 최초 위치(현재 GPS 또는 본진) 좌표가 획득되었을 때 5km 반경의 타일을 최초로 선별 로딩합니다.
+  Future<void> initializeWithLocation(LatLng location) async {
+    if (!_isInitialized || _hasInitializedLocation) return;
+    _hasInitializedLocation = true;
+    final hex = HexService.latLngToHex(location);
+    final centerQ = hex['q']!;
+    final centerR = hex['r']!;
+    
+    debugPrint('🗺️ [GameTileProvider] 최초 위치 기반 5km 이내 지도 타일 로딩 개시 (${location.latitude}, ${location.longitude})');
+    await updateTilesInArea(centerQ, centerR, radiusKm: 5.0, force: true);
   }
 
   // --- Footprint CRUD ---
@@ -261,14 +274,7 @@ class GameTileProvider extends ChangeNotifier {
 
   // --- 동기화 핸들러 ---
 
-  /// 전체 갱신 동기화 처리
-  void _handleAllTilesSync(List<HexTile> tiles) {
-    _capturedTiles.clear();
-    for (final tile in tiles) {
-      _capturedTiles[tile.id] = tile;
-    }
-    notifyListeners();
-  }
+
 
   /// 2km 사각형 범위 내의 타일 정보 머지 및 소거 처리
   void _handleAreaTilesUpdate(List<HexTile> tiles, int minQ, int maxQ, int minR, int maxR) {
@@ -307,36 +313,49 @@ class GameTileProvider extends ChangeNotifier {
       notifyListeners();
     }
   }
-  /// 서버에서 모든 타일을 다시 불러와 캐시를 갱신합니다 (포그라운드 복귀 및 강제 갱신용).
-  Future<void> refreshTilesFromServer() async {
+  /// [개편] 서버 전체 갱신 대신, 플레이어의 현재 위치 또는 본진 위치를 기준으로 주변 5km 영역을 강제로 다시 불러와 캐시를 갱신합니다.
+  Future<void> refreshTilesFromServer({LatLng? customLocation}) async {
     if (!_isInitialized) return;
     try {
-      final tiles = await _supabase.fetchAllCapturedTiles();
-      _handleAllTilesSync(tiles);
-      debugPrint('📦 서버 전체 타일 동기화 완료 (${tiles.length}개)');
+      LatLng? targetLoc = customLocation;
+      if (targetLoc == null && _authProvider != null) {
+        final mainBaseId = _userMainBaseTileId;
+        if (mainBaseId != null) {
+          final parsed = HexService.parseTileId(mainBaseId);
+          if (parsed != null) {
+            targetLoc = HexService.hexToLatLng(parsed['q']!, parsed['r']!);
+          }
+        }
+      }
+      
+      if (targetLoc != null) {
+        final hex = HexService.latLngToHex(targetLoc);
+        await updateTilesInArea(hex['q']!, hex['r']!, radiusKm: 5.0, force: true);
+        debugPrint('📦 서버 주변 타일 강제 동기화 완료');
+      }
     } catch (e) {
-      debugPrint('❌ 전체 타일 서버 동기화 실패: $e');
+      debugPrint('❌ 주변 타일 서버 동기화 실패: $e');
     }
   }
 
-  /// 내 현재 위치 타일(q, r) 기준으로 2km 반경(오프셋 ±25) 영역의 타일을 서버에서 REST로 조회하여 갱신합니다.
+  /// [개편] 내 현재 위치 또는 지도 중심 타일(q, r) 기준으로 지정된 반경(radiusKm, 기본 5km) 영역의 타일을 서버에서 REST로 조회하여 갱신합니다.
   /// 
-  /// 불필요한 서버 조회를 줄이기 위한 300m 이상 이동 가드 및 10초 시간 경과 가드가 적용되어 있습니다.
-  Future<void> updateTilesInArea(int centerQ, int centerR) async {
+  /// 불필요한 서버 조회를 줄이기 위해 500m(타일 5칸) 이상 이동했거나 force가 true일 때만 백엔드 조회를 진행하며, 10초 쿨타임 가드가 적용됩니다.
+  Future<void> updateTilesInArea(int centerQ, int centerR, {double radiusKm = 5.0, bool force = false}) async {
     if (!_isInitialized) return;
 
     final currentId = HexService.tileId(centerQ, centerR);
     final now = DateTime.now();
 
-    // 1. 이동 거리 및 시간 가드 체크
-    if (_lastCheckedAreaTileId != null && _lastAreaFetchTime != null) {
+    // 1. 이동 거리 및 시간 가드 체크 (force가 아닐 때만 작동)
+    if (!force && _lastCheckedAreaTileId != null && _lastAreaFetchTime != null) {
       final parsed = HexService.parseTileId(_lastCheckedAreaTileId!);
       if (parsed != null) {
         final dist = HexService.hexDistance(centerQ, centerR, parsed['q']!, parsed['r']!);
         final timeDiff = now.difference(_lastAreaFetchTime!);
         
-        // 약 300m(타일 3칸) 미만으로 이동했고, 마지막 조회 후 10초가 지나지 않았다면 스킵
-        if (dist < 3 && timeDiff < const Duration(seconds: 10)) {
+        // 500m (타일 5칸) 미만으로 움직였고, 마지막 조회 후 10초가 지나지 않았다면 불필요한 트래픽 유발 차단
+        if (dist < 5 && timeDiff < const Duration(seconds: 10)) {
           return;
         }
       }
@@ -346,13 +365,14 @@ class GameTileProvider extends ChangeNotifier {
     _lastAreaFetchTime = now;
 
     try {
-      // 1km 반경 사각형 범위 연산 (안전 마진 13 오프셋)
-      const int k = 13;
+      // 5km 기준 Hex 반경 오프셋 계산 (tileSize 100m 기준 5km는 50개 링. 안전 마진 추가하여 올림)
+      final int k = ((radiusKm * 1000) / GameConfig.tileSize).ceil() + 5;
       final minQ = centerQ - k;
       final maxQ = centerQ + k;
       final minR = centerR - k;
       final maxR = centerR + k;
 
+      debugPrint('🛰️ [GameTileProvider] 영역 타일 비동기 동적 수신: 중심 ($centerQ, $centerR), 오프셋 $k (약 ${radiusKm}km 범위)');
       final tiles = await _supabase.fetchCapturedTilesInArea(minQ, maxQ, minR, maxR);
       _handleAreaTilesUpdate(tiles, minQ, maxQ, minR, maxR);
     } catch (e) {
