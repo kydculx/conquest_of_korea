@@ -24,11 +24,18 @@ class _TilePhotoViewerDialogState extends State<TilePhotoViewerDialog> {
   bool _isLoading = false;
   List<Map<String, dynamic>> _photos = [];
   int? _selectedPhotoIndex;
+  PageController? _pageController;
 
   @override
   void initState() {
     super.initState();
     _loadPhotos();
+  }
+
+  @override
+  void dispose() {
+    _pageController?.dispose();
+    super.dispose();
   }
 
   Future<void> _loadPhotos() async {
@@ -165,7 +172,7 @@ class _TilePhotoViewerDialogState extends State<TilePhotoViewerDialog> {
               )
             : _photos.isEmpty
                 ? _buildEmptyState()
-                : (_selectedPhotoIndex == null ? _buildPhotoGrid() : _buildPhotoDetail()),
+                : (_selectedPhotoIndex == null ? _buildPhotoGrid() : _buildPhotoDetailSlider()),
       ),
       actions: [
         // 닫기 버튼
@@ -223,6 +230,7 @@ class _TilePhotoViewerDialogState extends State<TilePhotoViewerDialog> {
 
         return GestureDetector(
           onTap: () {
+            _pageController = PageController(initialPage: index);
             setState(() {
               _selectedPhotoIndex = index;
             });
@@ -272,13 +280,15 @@ class _TilePhotoViewerDialogState extends State<TilePhotoViewerDialog> {
     );
   }
 
-  Widget _buildPhotoDetail() {
+  Widget _buildPhotoDetailSlider() {
     if (_selectedPhotoIndex == null || _selectedPhotoIndex! >= _photos.length) {
       return const SizedBox.shrink();
     }
 
     final auth = Provider.of<AuthProvider>(context, listen: false);
     final currentUserId = auth.user?.id;
+    
+    // 현재 가리키고 있는 개별 사진 정보 획득
     final photo = _photos[_selectedPhotoIndex!];
     final String photoId = photo['id'] ?? '';
     final String uploaderId = photo['user_id'] ?? '';
@@ -298,51 +308,68 @@ class _TilePhotoViewerDialogState extends State<TilePhotoViewerDialog> {
     return Stack(
       fit: StackFit.expand,
       children: [
-        // 1. 메인 큰 이미지
+        // 1. 좌/우 스와이프를 가능케 하는 PageView 슬라이더 본체
         Positioned.fill(
           child: Container(
             decoration: BoxDecoration(
-              color: Colors.black45,
+              color: Colors.black54,
               borderRadius: BorderRadius.circular(16),
             ),
             clipBehavior: Clip.antiAlias,
-            child: Hero(
-              tag: 'photo_hero_$_selectedPhotoIndex',
-              child: Image.network(
-                photoUrl,
-                fit: BoxFit.contain,
-                loadingBuilder: (context, child, loadingProgress) {
-                  if (loadingProgress == null) return child;
-                  return Center(
-                    child: CircularProgressIndicator(
-                      value: loadingProgress.expectedTotalBytes != null
-                          ? loadingProgress.cumulativeBytesLoaded /
-                              loadingProgress.expectedTotalBytes!
-                          : null,
-                      valueColor: const AlwaysStoppedAnimation<Color>(Color(0xFF00FFCC)),
-                    ),
-                  );
-                },
-                errorBuilder: (context, error, stackTrace) {
-                  return const Center(
-                    child: Icon(
-                      Icons.broken_image_rounded,
-                      color: Colors.white30,
-                      size: 40,
-                    ),
-                  );
-                },
-              ),
+            child: PageView.builder(
+              controller: _pageController,
+              itemCount: _photos.length,
+              physics: const BouncingScrollPhysics(),
+              onPageChanged: (index) {
+                setState(() {
+                  _selectedPhotoIndex = index;
+                });
+              },
+              itemBuilder: (context, index) {
+                final pagePhoto = _photos[index];
+                final String pagePhotoUrl = pagePhoto['photo_url'] ?? '';
+
+                return Hero(
+                  tag: 'photo_hero_$index',
+                  child: Image.network(
+                    pagePhotoUrl,
+                    fit: BoxFit.contain, // aspect ratio 유지하여 찌그러짐 방지
+                    loadingBuilder: (context, child, loadingProgress) {
+                      if (loadingProgress == null) return child;
+                      return Center(
+                        child: CircularProgressIndicator(
+                          value: loadingProgress.expectedTotalBytes != null
+                              ? loadingProgress.cumulativeBytesLoaded /
+                                  loadingProgress.expectedTotalBytes!
+                              : null,
+                          valueColor: const AlwaysStoppedAnimation<Color>(Color(0xFF00FFCC)),
+                        ),
+                      );
+                    },
+                    errorBuilder: (context, error, stackTrace) {
+                      return const Center(
+                        child: Icon(
+                          Icons.broken_image_rounded,
+                          color: Colors.white30,
+                          size: 40,
+                        ),
+                      );
+                    },
+                  ),
+                );
+              },
             ),
           ),
         ),
 
-        // 2. 뒤로가기 버튼 (그리드로 컴백)
+        // 2. 뒤로가기 버튼 (격자형 앨범 목록으로 복귀)
         Positioned(
           top: 12,
           left: 12,
           child: GestureDetector(
             onTap: () {
+              _pageController?.dispose();
+              _pageController = null;
               setState(() {
                 _selectedPhotoIndex = null;
               });
@@ -375,9 +402,22 @@ class _TilePhotoViewerDialogState extends State<TilePhotoViewerDialog> {
               onTap: () async {
                 final bool deleted = await _handleDeletePhoto(photoId, photoUrl);
                 if (deleted) {
-                  setState(() {
-                    _selectedPhotoIndex = null;
-                  });
+                  // 삭제 성공 시, 만약 목록이 완전히 비었다면 그리드로 회귀
+                  if (_photos.isEmpty) {
+                    _pageController?.dispose();
+                    _pageController = null;
+                    setState(() {
+                      _selectedPhotoIndex = null;
+                    });
+                  } else {
+                    // 남은 사진이 있는 경우 뷰어 인덱스 범위 보정 바인딩
+                    setState(() {
+                      if (_selectedPhotoIndex! >= _photos.length) {
+                        _selectedPhotoIndex = _photos.length - 1;
+                      }
+                      _pageController?.jumpToPage(_selectedPhotoIndex!);
+                    });
+                  }
                 }
               },
               child: Container(
@@ -399,7 +439,36 @@ class _TilePhotoViewerDialogState extends State<TilePhotoViewerDialog> {
             ),
           ),
 
-        // 4. 하단 상세 정보 그라데이션 박스
+        // 4. 슬라이더 상단 인디케이터 수치 (예: 2 / 5)
+        Positioned(
+          top: 12,
+          left: 0,
+          right: 0,
+          child: Align(
+            alignment: Alignment.topCenter,
+            child: Container(
+              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+              decoration: BoxDecoration(
+                color: Colors.black.withValues(alpha: 0.65),
+                borderRadius: BorderRadius.circular(12),
+                border: Border.all(
+                  color: Colors.white12,
+                  width: 0.8,
+                ),
+              ),
+              child: Text(
+                '${_selectedPhotoIndex! + 1} / ${_photos.length}',
+                style: GoogleFonts.fredoka(
+                  color: GameColors.textPrimary,
+                  fontSize: 11,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+            ),
+          ),
+        ),
+
+        // 5. 하단 상세 정보 그라데이션 박스
         Positioned(
           bottom: 0,
           left: 0,
@@ -414,7 +483,7 @@ class _TilePhotoViewerDialogState extends State<TilePhotoViewerDialog> {
                 begin: Alignment.bottomCenter,
                 end: Alignment.topCenter,
                 colors: [
-                  Colors.black.withValues(alpha: 0.9),
+                  Colors.black.withValues(alpha: 0.95),
                   Colors.black.withValues(alpha: 0.0),
                 ],
               ),
@@ -452,7 +521,7 @@ class _TilePhotoViewerDialogState extends State<TilePhotoViewerDialog> {
                     width: double.infinity,
                     padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
                     decoration: BoxDecoration(
-                      color: Colors.black.withValues(alpha: 0.5),
+                      color: Colors.black.withValues(alpha: 0.55),
                       borderRadius: BorderRadius.circular(6),
                       border: Border.all(
                         color: const Color(0xFF00FFCC).withValues(alpha: 0.2),
