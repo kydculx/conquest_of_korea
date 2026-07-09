@@ -304,7 +304,7 @@
   "deletePhotoConfirmMessage": "Tem certeza que deseja excluir esta foto?",
   "photoDeleteSuccess": "Foto excluída com sucesso.",
   "photoDeleteFail": "Falha ao excluir foto.",
-  "photoLimitReached": "Uma foto já está registrada. Exclua sua foto existente antes de capturar uma nova.",
+  "photoLimitReached": "Já existe uma foto registrada para este local. Para alterá-la, exclua a foto existente e tente novamente.",
   "selectLanguage": "Selecionar Idioma",
   "languageKorean": "한국어 (Korean)",
   "languageEnglish": "English (영어)",

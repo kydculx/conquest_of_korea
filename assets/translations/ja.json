@@ -304,7 +304,7 @@
   "deletePhotoConfirmMessage": "この写真を本当に削除しますか？",
   "photoDeleteSuccess": "写真が正常に削除されました。",
   "photoDeleteFail": "写真の削除に失敗しました。",
-  "photoLimitReached": "すでに登録された写真が存在します。既存の写真を削除してから再撮影してください。",
+  "photoLimitReached": "すでに該当場所の写真が記録されています。写真を変更するには、既存の写真を削除してからもう一度お試しください。",
   "selectLanguage": "表示言語を選択",
   "languageKorean": "한국어 (Korean)",
   "languageEnglish": "English (英語)",

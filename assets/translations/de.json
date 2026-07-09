@@ -304,7 +304,7 @@
   "deletePhotoConfirmMessage": "Möchten Sie dieses Foto wirklich löschen?",
   "photoDeleteSuccess": "Foto erfolgreich gelöscht.",
   "photoDeleteFail": "Fehler beim Löschen des Fotos.",
-  "photoLimitReached": "Ein Foto ist bereits registriert. Bitte löschen Sie Ihr vorhandenes Foto, bevor Sie ein neues aufnehmen.",
+  "photoLimitReached": "Für diesen Ort wurde bereits ein Foto aufgenommen. Um es zu ändern, löschen Sie bitte das vorhandene Foto und versuchen Sie es erneut.",
   "selectLanguage": "Sprache auswählen",
   "languageKorean": "한국어 (Korean)",
   "languageEnglish": "English (영어)",
