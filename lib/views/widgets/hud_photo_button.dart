@@ -47,7 +47,10 @@ class TilePhotoActionButton extends StatelessWidget {
 
         showDialog(
           context: context,
-          builder: (context) => TilePhotoViewerDialog(tileId: tileId),
+          builder: (context) => TilePhotoViewerDialog(
+            tileId: tileId,
+            showUploadButton: true,
+          ),
         );
       },
       child: Icon(

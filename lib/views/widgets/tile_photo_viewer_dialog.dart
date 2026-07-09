@@ -15,8 +15,13 @@ import 'tactical_dialog.dart';
 /// 현장 카메라 사진 촬영 및 업로드 파이프라인을 중계해주는 전용 갤러리 팝업 위젯
 class TilePhotoViewerDialog extends StatefulWidget {
   final String tileId;
+  final bool showUploadButton;
 
-  const TilePhotoViewerDialog({super.key, required this.tileId});
+  const TilePhotoViewerDialog({
+    super.key,
+    required this.tileId,
+    this.showUploadButton = true,
+  });
 
   @override
   State<TilePhotoViewerDialog> createState() => _TilePhotoViewerDialogState();
@@ -292,22 +297,23 @@ class _TilePhotoViewerDialogState extends State<TilePhotoViewerDialog> {
       ),
       actions: [
         // 사진 등록 액션 버튼
-        ElevatedButton.icon(
-          onPressed: _isLoading ? null : _handleCaptureAndUpload,
-          style: ElevatedButton.styleFrom(
-            backgroundColor: GameColors.colorAccent,
-            foregroundColor: GameColors.tacticalBlack,
-            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(16),
+        if (widget.showUploadButton)
+          ElevatedButton.icon(
+            onPressed: _isLoading ? null : _handleCaptureAndUpload,
+            style: ElevatedButton.styleFrom(
+              backgroundColor: GameColors.colorAccent,
+              foregroundColor: GameColors.tacticalBlack,
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(16),
+              ),
+            ),
+            icon: const Icon(Icons.photo_camera_rounded, size: 18),
+            label: Text(
+              GameStrings.uploadPhotoAction,
+              style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13),
             ),
           ),
-          icon: const Icon(Icons.photo_camera_rounded, size: 18),
-          label: Text(
-            GameStrings.uploadPhotoAction,
-            style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13),
-          ),
-        ),
         // 닫기 버튼
         TextButton(
           onPressed: () => Navigator.pop(context),
