@@ -1,5 +1,5 @@
-"CFBundleDisplayName" = "Jjim! Aventura";
-"CFBundleName" = "Jjim! Aventura";
+"CFBundleDisplayName" = "¡Me lo pido! Aventura";
+"CFBundleName" = "¡Me lo pido! Aventura";
 "NSHealthShareUsageDescription" = "Se requiere acceso a datos de salud para medir tus pasos en tiempo real hoy y reflejarlos en tu movimiento del juego.";
 "NSHealthUpdateUsageDescription" = "Se requiere acceso a datos de salud para sincronizar y actualizar tus registros de entrenamiento del juego con Apple Health.";
 "NSLocationAlwaysAndWhenInUseUsageDescription" = "Se requiere acceso a la ubicación para operar el mapa táctico y asegurar las áreas.";

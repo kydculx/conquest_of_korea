@@ -1,5 +1,5 @@
-"CFBundleDisplayName" = "Jjim! Adventure";
-"CFBundleName" = "Jjim! Adventure";
+"CFBundleDisplayName" = "Dibs! Adventure";
+"CFBundleName" = "Dibs! Adventure";
 "NSHealthShareUsageDescription" = "Access to health data is required to measure today's real-time steps and apply them to in-game movement and scores.";
 "NSHealthUpdateUsageDescription" = "Access to health data is required to sync and update in-game workout records with Apple Health.";
 "NSLocationAlwaysAndWhenInUseUsageDescription" = "Location access is required to display the tactical map and secure territories.";
