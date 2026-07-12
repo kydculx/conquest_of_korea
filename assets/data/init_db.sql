@@ -544,5 +544,6 @@ END;
 $$ LANGUAGE plpgsql;
 
 
-
-
+-- [신규] profiles 테이블에 누적 사진 촬영 횟수 컬럼 안전 추가 DDL
+ALTER TABLE public.profiles 
+ADD COLUMN IF NOT EXISTS photo_upload_count INTEGER NOT NULL DEFAULT 0;

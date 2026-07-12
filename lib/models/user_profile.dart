@@ -48,6 +48,9 @@ class UserProfile {
   /// 본진 이동 횟수
   final int mainBaseMoveCount;
 
+  /// 누적 사진 업로드 성공 횟수
+  final int photoUploadCount;
+
   /// 골드가 마지막으로 계산 및 갱신된 일시
   final DateTime? lastGoldUpdatedAt;
 
@@ -107,6 +110,7 @@ class UserProfile {
     this.satelliteCaptureCount = 0,
     this.satelliteScanCount = 0,
     this.mainBaseMoveCount = 0,
+    this.photoUploadCount = 0,
     this.lastGoldUpdatedAt,
     this.lastMovedAt,
     this.lastSessionId,
@@ -146,6 +150,7 @@ class UserProfile {
       satelliteCaptureCount: (json['satellite_capture_count'] as num?)?.toInt() ?? 0,
       satelliteScanCount: (json['satellite_scan_count'] as num?)?.toInt() ?? 0,
       mainBaseMoveCount: (json['main_base_move_count'] as num?)?.toInt() ?? 0,
+      photoUploadCount: (json['photo_upload_count'] as num?)?.toInt() ?? 0,
       lastGoldUpdatedAt: json['last_gold_updated_at'] != null
           ? DateTime.parse(json['last_gold_updated_at'] as String)
           : null,
@@ -187,6 +192,7 @@ class UserProfile {
       'satellite_capture_count': satelliteCaptureCount,
       'satellite_scan_count': satelliteScanCount,
       'main_base_move_count': mainBaseMoveCount,
+      'photo_upload_count': photoUploadCount,
       'last_gold_updated_at': lastGoldUpdatedAt?.toIso8601String(),
       'last_moved_at': lastMovedAt?.toIso8601String(),
       'terms_agreed_at': termsAgreedAt?.toIso8601String(),
@@ -247,6 +253,7 @@ class UserProfile {
     int? satelliteCaptureCount,
     int? satelliteScanCount,
     int? mainBaseMoveCount,
+    int? photoUploadCount,
     DateTime? lastGoldUpdatedAt,
     DateTime? lastMovedAt,
     String? lastSessionId,
@@ -278,6 +285,7 @@ class UserProfile {
       satelliteCaptureCount: satelliteCaptureCount ?? this.satelliteCaptureCount,
       satelliteScanCount: satelliteScanCount ?? this.satelliteScanCount,
       mainBaseMoveCount: mainBaseMoveCount ?? this.mainBaseMoveCount,
+      photoUploadCount: photoUploadCount ?? this.photoUploadCount,
       lastGoldUpdatedAt: lastGoldUpdatedAt ?? this.lastGoldUpdatedAt,
       lastMovedAt: lastMovedAt ?? this.lastMovedAt,
       lastSessionId: lastSessionId ?? this.lastSessionId,

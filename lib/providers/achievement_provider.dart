@@ -285,7 +285,11 @@ class AchievementProvider extends ChangeNotifier {
       _achievementTiles.clear();
       _achievementTiles.addAll(achTiles);
 
-      _userUniquePhotoTilesCount = await _supabase.fetchUserUniquePhotoTilesCount(userId);
+      if (_authProvider != null && _authProvider!.profile != null) {
+        _userUniquePhotoTilesCount = _authProvider!.profile!.photoUploadCount;
+      } else {
+        _userUniquePhotoTilesCount = 0;
+      }
     } catch (e) {
       debugPrint('⚠️ 해금 업적 및 소비 타일 조회 실패: $e');
     } finally {
@@ -422,8 +426,7 @@ class AchievementProvider extends ChangeNotifier {
           shouldUnlock = profile.mainBaseMoveCount >= ach.threshold;
           break;
         case AchievementCategory.photoUpload:
-          final uniquePhotoCount = await _supabase.fetchUserUniquePhotoTilesCount(userId);
-          shouldUnlock = uniquePhotoCount >= ach.threshold;
+          shouldUnlock = profile.photoUploadCount >= ach.threshold;
           break;
         case AchievementCategory.patternMatch:
           if (capturedTiles != null) {

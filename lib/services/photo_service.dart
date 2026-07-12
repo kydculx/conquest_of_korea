@@ -146,6 +146,26 @@ class PhotoService {
 
         if (response.isNotEmpty) {
           debugPrint('📡 타일 사진 DB 등록 성공 (Tile: $tileId)');
+
+          // [추가] profiles 테이블의 누적 사진 업로드 횟수(photo_upload_count) 1 증가 처리
+          try {
+            final userRes = await _client
+                .from('profiles')
+                .select('photo_upload_count')
+                .eq('id', userId)
+                .maybeSingle();
+            if (userRes != null) {
+              final int currentCount = (userRes['photo_upload_count'] as num?)?.toInt() ?? 0;
+              await _client
+                  .from('profiles')
+                  .update({'photo_upload_count': currentCount + 1})
+                  .eq('id', userId);
+              debugPrint('📈 profiles.photo_upload_count 1 가산 성공 (현재: ${currentCount + 1})');
+            }
+          } catch (profileErr) {
+            debugPrint('⚠️ [PhotoService] profiles.photo_upload_count 가산 실패: $profileErr');
+          }
+
           return response.first;
         }
       } catch (dbErr, stack) {

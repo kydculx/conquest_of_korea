@@ -506,6 +506,13 @@ class GameProvider extends ChangeNotifier with WidgetsBindingObserver {
         _tileProvider.loadPhotoTileIds().catchError((e) {
           debugPrint('⚠️ 사진 업로드 후 캐시 동기화 실패: $e');
         });
+
+        // [추가] 프로필 정보(photo_upload_count) 동기화 및 즉시 업적 체크 가동
+        await auth.refreshProfile();
+        _achievementProvider?.checkAndUnlock(
+          capturedTiles: _tileProvider.capturedTiles,
+        );
+
         return null; // 성공
       }
       return '서버 응답 오류 (알 수 없음)';
