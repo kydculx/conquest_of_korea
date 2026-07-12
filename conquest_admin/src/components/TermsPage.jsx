@@ -181,7 +181,7 @@ export default function TermsPage() {
         <section>
           <h3 style={{ fontSize: '1.15rem', color: '#3b82f6', marginBottom: '0.6rem' }}>Article 1 (Purpose)</h3>
           <p style={{ color: '#d1d5db' }}>
-            The purpose of these Terms of Service is to define the rights, obligations, responsibilities, and other necessary matters between the player (hereinafter referred to as the "Player" or "Member") and the company regarding the use of the location-based mobile game service "Jjim! Adventure" (hereinafter referred to as the "Company" or "Service") and its subsidiary services.
+            The purpose of these Terms of Service is to define the rights, obligations, responsibilities, and other necessary matters between the player (hereinafter referred to as the "Player" or "Member") and the company regarding the use of the location-based mobile game service "Dibs! Adventure" (hereinafter referred to as the "Company" or "Service") and its subsidiary services.
           </p>
         </section>
 
