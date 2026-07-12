@@ -1330,7 +1330,7 @@ class GameProvider extends ChangeNotifier with WidgetsBindingObserver {
       final centerHex = HexService.latLngToHex(targetCenterLatLng);
       final int centerQ = centerHex['q']!;
       final int centerR = centerHex['r']!;
-      const int radius = GameConfig.coinSpawnRadius;
+      const int radius = GameConfig.coinSpawnMaxDistance;
 
       final List<Map<String, dynamic>> candidates = [];
       final List<Map<String, dynamic>> backupCandidates = [];
