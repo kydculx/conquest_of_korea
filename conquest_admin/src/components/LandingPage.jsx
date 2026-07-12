@@ -46,7 +46,7 @@ export default function LandingPage() {
             <div className="logo-glow-icon" style={{ display: 'flex', alignItems: 'center' }}>
               <img src="/app_icon.png" alt="Logo" style={{ width: '32px', height: '32px', objectFit: 'contain', borderRadius: '6px' }} />
             </div>
-            <span className="logo-text">찜! 대모험</span>
+            <span className="logo-text">찜! 모험</span>
           </div>
           <button onClick={() => navigate('/admin')} className="admin-gate-btn">
             <Shield size={14} />
@@ -67,7 +67,7 @@ export default function LandingPage() {
             <span className="gradient-text">나만의 전장</span>으로!
           </h1>
           <p className="hero-desc animate-slide-up-delay">
-            '찜! 대모험'은 실시간 내 위치를 기반으로 지도를 점령해 나가는 영토 쟁탈전입니다.
+            '찜! 모험'은 실시간 내 위치를 기반으로 지도를 점령해 나가는 영토 쟁탈전입니다.
             끊임없이 뺏고 뺏기는 전쟁 속에서 모든 움직임을 정복의 역사로 만드세요.
           </p>
 
@@ -205,10 +205,10 @@ export default function LandingPage() {
           <div className="footer-brand">
             <div className="logo-group">
               <img src="/app_icon.png" alt="Logo" style={{ width: '24px', height: '24px', objectFit: 'contain', borderRadius: '4px' }} />
-              <span className="brand-title">찜! 대모험</span>
+              <span className="brand-title">찜! 모험</span>
             </div>
             <p className="copy-text">
-              &copy; {new Date().getFullYear()} 찜! 대모험 Project. All rights reserved.
+              &copy; {new Date().getFullYear()} 찜! 모험 Project. All rights reserved.
             </p>
           </div>
           <div className="footer-links">

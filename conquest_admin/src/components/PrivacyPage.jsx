@@ -238,7 +238,7 @@ export default function PrivacyPage() {
           <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
             <Shield size={18} style={{ color: '#8b5cf6' }} />
             <span style={{ fontSize: '0.85rem', color: '#64748b', fontWeight: 600, fontFamily: 'var(--font-display)' }}>
-              {isEnglish ? 'Jjim! Adventure' : '찜! 대모험'}
+              {isEnglish ? 'Dibs! Adventure' : '찜! 모험'}
             </span>
           </div>
         </div>

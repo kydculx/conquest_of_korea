@@ -83,7 +83,7 @@ export default function LoginPage({ onLoginSuccess }) {
           <div className="login-logo">
             <Terminal size={28} style={{ color: 'var(--accent-cyan)' }} />
           </div>
-          <h1 className="login-title">찜! 대모험</h1>
+          <h1 className="login-title">찜! 모험</h1>
           <p className="login-subtitle">ADMIN SYSTEM GATEWAY</p>
         </div>
 

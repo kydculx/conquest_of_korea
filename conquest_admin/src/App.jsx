@@ -59,7 +59,7 @@ function AdminLayout({ user, onLogout }) {
             <Terminal size={24} style={{ color: 'var(--accent-cyan)' }} />
             <div>
               <h1 style={{ fontSize: '1.1rem', fontWeight: 800, fontFamily: 'var(--font-display)', letterSpacing: '0.05em' }}>
-                찜! 대모험
+                찜! 모험
               </h1>
               <span style={{ fontSize: '0.65rem', color: 'var(--text-muted)', fontWeight: 'bold', fontFamily: 'monospace' }}>
                 관리자 시스템 v1.0

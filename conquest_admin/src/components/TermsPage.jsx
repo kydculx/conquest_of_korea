@@ -15,7 +15,7 @@ export default function TermsPage() {
         <section>
           <h3 style={{ fontSize: '1.15rem', color: '#3b82f6', marginBottom: '0.6rem' }}>제 1 조 (목적)</h3>
           <p style={{ color: '#d1d5db' }}>
-            본 약관은 '찜! 대모험'(이하 '회사' 또는 '서비스')이 제공하는 모바일 위치기반 게임 서비스 및 이에 부수되는 제반 서비스(이하 '서비스')를 이용하는 플레이어(이하 '플레이어' 또는 '회원')와 회사 간의 서비스 이용에 관한 권리, 의무 및 책임 사항, 기타 필요한 사항을 규정함을 목적으로 합니다.
+            본 약관은 '찜! 모험'(이하 '회사' 또는 '서비스')이 제공하는 모바일 위치기반 게임 서비스 및 이에 부수되는 제반 서비스(이하 '서비스')를 이용하는 플레이어(이하 '플레이어' 또는 '회원')와 회사 간의 서비스 이용에 관한 권리, 의무 및 책임 사항, 기타 필요한 사항을 규정함을 목적으로 합니다.
           </p>
         </section>
 
@@ -354,7 +354,7 @@ export default function TermsPage() {
           <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
             <Shield size={18} style={{ color: '#3b82f6' }} />
             <span style={{ fontSize: '0.85rem', color: '#64748b', fontWeight: 600, fontFamily: 'var(--font-display)' }}>
-              {isEnglish ? 'Jjim! Adventure' : '찜! 대모험'}
+              {isEnglish ? 'Dibs! Adventure' : '찜! 모험'}
             </span>
           </div>
         </div>
