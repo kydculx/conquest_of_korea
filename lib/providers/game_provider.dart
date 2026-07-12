@@ -1292,7 +1292,7 @@ class GameProvider extends ChangeNotifier with WidgetsBindingObserver {
 
     try {
       await _regenerateCoins(myId, todayStr);
-      addAlert('동전이 현재 위치 기준으로 성공적으로 초기화되었습니다!', AlertType.info);
+      addAlert('동전이 본진 기준으로 성공적으로 재배치되었습니다!', AlertType.info);
     } catch (e) {
       addAlert('동전 초기화 실패: $e', AlertType.error);
     }
@@ -1302,16 +1302,32 @@ class GameProvider extends ChangeNotifier with WidgetsBindingObserver {
     if (_isRegeneratingCoins) return;
     _isRegeneratingCoins = true;
 
-    final loc = _locationProvider;
-    final currLoc = loc?.currentLocation;
-    if (currLoc == null) {
-      debugPrint('⚠️ 위치 정보가 없어 동전을 재생성할 수 없습니다. 다음 위치 업데이트 시도 대기.');
-      _isRegeneratingCoins = false;
-      return;
+    final hqTileId = _userMainBaseTileId;
+    final bool hasHQ = hqTileId != null && hqTileId.isNotEmpty && hqTileId != 'none';
+
+    LatLng? targetCenterLatLng;
+
+    if (hasHQ) {
+      final parsed = HexService.parseTileId(hqTileId);
+      if (parsed != null) {
+        targetCenterLatLng = HexService.hexToLatLng(parsed['q']!, parsed['r']!);
+      }
+    }
+
+    // 본진이 없거나 파싱 실패 시 기존 폴백인 내 위치(currentLocation) 사용
+    if (targetCenterLatLng == null) {
+      final loc = _locationProvider;
+      final currLoc = loc?.currentLocation;
+      if (currLoc == null) {
+        debugPrint('⚠️ 본진 위치 또는 GPS 위치 정보가 없어 동전을 재생성할 수 없습니다. 다음 업데이트 대기.');
+        _isRegeneratingCoins = false;
+        return;
+      }
+      targetCenterLatLng = currLoc;
     }
 
     try {
-      final centerHex = HexService.latLngToHex(currLoc);
+      final centerHex = HexService.latLngToHex(targetCenterLatLng);
       final int centerQ = centerHex['q']!;
       final int centerR = centerHex['r']!;
       const int radius = GameConfig.coinSpawnRadius;
