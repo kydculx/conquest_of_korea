@@ -335,7 +335,7 @@
   "loadingBaseConnection": "서버와의 연결을 수립 중입니다...",
   "splashSubtitle": "실시간 위치 기반 영토 점령 게임",
   "gameGuide": "게임 설명서",
-  "gameGuideSub": "찜! 대모험의 핵심 가이드",
+  "gameGuideSub": "찜! 모험의 핵심 가이드",
   "guideAreaTitle": "구역 (Area)",
   "guideAreaContent": "전세계 영토를 촘촘하게 나누어 놓은 육각형 모양의 가장 기본적인 영토 단위입니다. 각 구역은 고유한 좌표를 가지고 있으며, 플레이어가 직접 구역을 확보해나가며 영토를 확장하고 골드를 모을 수 있습니다.",
   "guideCaptureTitle": "구역 점령 (Capture)",

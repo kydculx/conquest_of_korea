@@ -335,7 +335,7 @@
   "loadingBaseConnection": "サーバーとの接続を確立しています...",
   "splashSubtitle": "リアルタイム位置ベース領土占領ゲーム",
   "gameGuide": "プレイガイド",
-  "gameGuideSub": "Jjim!アドベンチャー核心ガイド",
+  "gameGuideSub": "早い者勝ち！アドベンチャ核心ガイド",
   "guideAreaTitle": "エリア (Area)",
   "guideAreaContent": "世界を細分化した六角形の最小領土単位です。各エリアは固有の座標を持っており、プレイヤーが直接エリアを占領して領土を拡張し、ゴールドを貯めることができます。",
   "guideCaptureTitle": "エリア占領 (Capture)",

@@ -335,7 +335,7 @@
   "loadingBaseConnection": "Conectando de forma segura al mundo...",
   "splashSubtitle": "SISTEMA DE JUEGO EN MAPA REAL",
   "gameGuide": "Guía del Juego",
-  "gameGuideSub": "Guía básica de Jjim! Aventura",
+  "gameGuideSub": "Guía básica de ¡Me lo pido! Aventura",
   "guideAreaTitle": "Zona",
   "guideAreaContent": "La unidad hexagonal mínima que divide el mapa. Cada zona tiene coordenadas únicas y genera oro con el tiempo una vez capturada por el jugador.",
   "guideCaptureTitle": "Capturar",
