@@ -6,7 +6,7 @@ class GameConfig {
   static const LocationAccuracy gpsAccuracy = LocationAccuracy.high;
 
   /// 애플리케이션 시스템 공식 명칭
-  static const String appName = '찜! 대모험 (Jjim! Adventure)';
+  static const String appName = '찜! 모험 (Dibs! Adventure)';
 
   /// 초당 1개 타일당 획득 가능한 기본 골드 배율
   static const double defaultGoldRate = 1.0;
