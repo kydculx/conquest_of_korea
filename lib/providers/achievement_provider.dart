@@ -349,6 +349,12 @@ class AchievementProvider extends ChangeNotifier {
     final userId = _authProvider?.user?.id;
     if (profile == null || userId == null || _isLoading) return;
 
+    // [추가] 인앱 프로필의 누적 사진 촬영 개수 실시간 동기화 및 notify
+    if (_userUniquePhotoTilesCount != profile.photoUploadCount) {
+      _userUniquePhotoTilesCount = profile.photoUploadCount;
+      notifyListeners();
+    }
+
     if (_isChecking) {
       _hasPendingCheck = true;
       return;
