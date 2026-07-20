@@ -816,15 +816,27 @@ class GameProvider extends ChangeNotifier with WidgetsBindingObserver {
           if (serverTile != null) {
             _tileProvider.updateTile(tileId, serverTile);
           } else {
-            _tileProvider.removeTile(tileId);
+            // ★ 서버에 타일이 없더라도 로컬 캐시에 내 타일이 있으면 보존
+            // (네트워크 오류·DB 지연으로 서버 상태를 신뢰할 수 없는 케이스 방어)
+            final localTile = _tileProvider.tileById(tileId);
+            if (localTile?.userId != _userId) {
+              _tileProvider.removeTile(tileId);
+            }
           }
           notifyListeners();
         } catch (e) {
           debugPrint('자동 점령 전 서버 타일 정보 패치 실패: $e');
         }
 
+        // ★ 서버 fetch 결과 로컬에 내 타일이 남아있으면 점령 재시작하지 않음
+        final currentTile = _tileProvider.tileById(tileId);
+        if (currentTile?.userId == _userId) {
+          debugPrint('자동 점령 스킵 - 이미 내 타일: $tileId');
+          return;
+        }
+
         final int currentCaptureCount =
-            _tileProvider.tileById(tileId)?.captureCount ?? 0;
+            currentTile?.captureCount ?? 0;
         final int targetCaptureCount = currentCaptureCount + 1;
         final int durationSeconds =
             GameConfig.initialCaptureDurationSeconds * targetCaptureCount;
