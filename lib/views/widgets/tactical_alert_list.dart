@@ -67,7 +67,7 @@ class _TacticalAlertListState extends State<TacticalAlertList> {
           parent: animation,
           curve: Curves.easeInOut,
         ),
-        axisAlignment: -1.0, // 위에서부터 아래로 부드럽게 열리며 슬라이딩
+        alignment: Alignment.topCenter, // 위에서부터 아래로 부드럽게 열리며 슬라이딩
         child: SlideTransition(
           position: Tween<Offset>(
             begin: const Offset(0, -0.2),

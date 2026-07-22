@@ -288,7 +288,7 @@ class SupabaseService {
     }
   }
 
-  /// 특정 플레이어가 획득한 업적별 타일 맵핑 정보 (achievement_id -> List<tile_id>)를 조회하여 반환합니다.
+  /// 특정 플레이어가 획득한 업적별 타일 맵핑 정보 (`achievement_id` -> `List<tile_id>`)를 조회하여 반환합니다.
   Future<Map<String, List<String>>> fetchAchievementTiles(String userId) async {
     try {
       final response = await _client

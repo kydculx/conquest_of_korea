@@ -2,7 +2,6 @@ import 'dart:math' as math;
 import 'package:flame/components.dart';
 import 'package:flutter/material.dart';
 import '../conquest_game.dart';
-import '../../services/hex_service.dart';
 
 /// 플레이어의 본부 기지(HQ) 지리적 좌표 상에 홈(Home) 모양 아이콘 마커를 렌더링하여 본부를 시각화하는 Flame 컴포넌트
 class HQBaseMarker extends PositionComponent
@@ -15,9 +14,6 @@ class HQBaseMarker extends PositionComponent
 
   /// 본부 기지 플레이어의 식별 색상 코드 (Hex)
   String? colorHex;
-
-  /// 스크린 기준으로 투영된 본진 중심 좌표
-  Offset? _screenCenter;
 
   /// 깃발 펄럭임 애니메이션을 위한 누적 시간
   double _waveTime = 0.0;
@@ -34,6 +30,12 @@ class HQBaseMarker extends PositionComponent
     }
   }
 
+  /// 맵 스크롤/카메라 이동 시 ConquestGame에서 직접 스크린 좌표를 position에 주입하여
+  /// 게임 루프 update()를 기다리지 않고 즉시 위치를 갱신합니다 (밀림 현상 방지).
+  void updateScreenPosition(Offset screenCenter) {
+    position = Vector2(screenCenter.dx, screenCenter.dy);
+  }
+
   @override
   void update(double dt) {
     super.update(dt);
@@ -43,38 +45,24 @@ class HQBaseMarker extends PositionComponent
     if (_waveTime > math.pi * 2) {
       _waveTime -= math.pi * 2;
     }
-
-    if (game.mapController != null) {
-      final centerLatLng = HexService.hexToLatLng(q, r);
-      final offset = game.mapController!.camera.latLngToScreenOffset(
-        centerLatLng,
-      );
-      _screenCenter = Offset(offset.dx, offset.dy);
-    }
   }
 
   @override
   void render(Canvas canvas) {
-    if (_screenCenter == null) return;
-
     final gameSize = game.size;
     final isVisible =
-        _screenCenter!.dx >= -100 &&
-        _screenCenter!.dx <= gameSize.x + 100 &&
-        _screenCenter!.dy >= -100 &&
-        _screenCenter!.dy <= gameSize.y + 100;
+        position.x >= -100 &&
+        position.x <= gameSize.x + 100 &&
+        position.y >= -100 &&
+        position.y <= gameSize.y + 100;
     if (!isVisible) return;
 
     // 🚩 2D 벡터 깃발 정밀 렌더링 (이모지 대비 높은 시인성과 테마 컬러 일치화 확보)
-    _drawVectorHQFlag(
-      canvas,
-      _screenCenter!.dx,
-      _screenCenter!.dy,
-    );
+    _drawVectorHQFlag(canvas);
   }
 
-  /// 지정된 화면 중앙(cx, cy) 좌표를 기준으로 펄럭이는 캐주얼 보드게임 스타일의 2D 벡터 깃발(Flag)을 정밀 드로잉합니다.
-  void _drawVectorHQFlag(Canvas canvas, double cx, double cy) {
+  /// 로컬 좌표 (0,0) 기준으로 펄럭이는 캐주얼 보드게임 스타일의 2D 벡터 깃발(Flag)을 정밀 드로잉합니다.
+  void _drawVectorHQFlag(Canvas canvas) {
     // 16진수 진영 색상 파싱 (실패 시 기본 네온 아군 색상)
     final Color flagColor = _parseColor(colorHex) ?? const Color(0xFF00E5FF);
 
@@ -84,7 +72,7 @@ class HQBaseMarker extends PositionComponent
       ..style = PaintingStyle.fill
       ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 1.8);
     canvas.drawOval(
-      Rect.fromLTRB(cx - 7, cy + 11, cx + 7, cy + 14),
+      const Rect.fromLTRB(-7, 11, 7, 14),
       shadowPaint,
     );
 
@@ -93,7 +81,7 @@ class HQBaseMarker extends PositionComponent
       ..color = const Color(0xFF78909C)
       ..style = PaintingStyle.fill;
     canvas.drawOval(
-      Rect.fromLTRB(cx - 4.5, cy + 11.5, cx + 4.5, cy + 13.8),
+      const Rect.fromLTRB(-4.5, 11.5, 4.5, 13.8),
       basePaint,
     );
 
@@ -101,14 +89,14 @@ class HQBaseMarker extends PositionComponent
     final Paint flagpolePaint = Paint()
       ..color = const Color(0xFFB0BEC5)
       ..style = PaintingStyle.fill;
-    final Rect flagpole = Rect.fromLTRB(cx - 1.2, cy - 16, cx + 1.2, cy + 12);
+    const Rect flagpole = Rect.fromLTRB(-1.2, -16, 1.2, 12);
     canvas.drawRect(flagpole, flagpolePaint);
 
     // 4) 깃대 끝머리의 아기자기한 황금 장식 구슬 (Top Gold Ornament)
     final Paint goldPaint = Paint()
       ..color = const Color(0xFFFFD54F)
       ..style = PaintingStyle.fill;
-    canvas.drawCircle(Offset(cx, cy - 17.5), 2.8, goldPaint);
+    canvas.drawCircle(const Offset(0, -17.5), 2.8, goldPaint);
 
     // 5) 바람에 나부끼는 둥근 물결 천 (Waving Flag Banner)
     final Paint flagPaint = Paint()
@@ -120,22 +108,22 @@ class HQBaseMarker extends PositionComponent
     final double waveOffsetEnd = math.cos(_waveTime) * 1.8;
 
     final Path flagPath = Path();
-    flagPath.moveTo(cx + 1.2, cy - 14.5);
+    flagPath.moveTo(1.2, -14.5);
     // 윗변 물결 곡선 연출 (제어점과 끝점 부분에 파동 결합)
     flagPath.quadraticBezierTo(
-      cx + 8.5,
-      cy - 17.8 + waveOffsetMiddle,
-      cx + 18,
-      cy - 13.8 + waveOffsetEnd,
+      8.5,
+      -17.8 + waveOffsetMiddle,
+      18,
+      -13.8 + waveOffsetEnd,
     );
     // 우측 마감선 (끝점 위상 변위 적용)
-    flagPath.lineTo(cx + 18, cy - 3.8 + waveOffsetEnd);
+    flagPath.lineTo(18, -3.8 + waveOffsetEnd);
     // 아랫변 물결 곡선 연출
     flagPath.quadraticBezierTo(
-      cx + 8.5,
-      cy - 6.8 + waveOffsetMiddle,
-      cx + 1.2,
-      cy - 3.5,
+      8.5,
+      -6.8 + waveOffsetMiddle,
+      1.2,
+      -3.5,
     );
     flagPath.close();
 

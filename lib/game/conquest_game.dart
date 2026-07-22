@@ -694,6 +694,22 @@ class ConquestGame extends FlameGame {
       player.isVisible = true;
       _updatePlayerScreenPosition();
     }
+
+    // 본진 깃발·조준 마커 등 위치 갱신 (게임 루프 update()보다 먼저 적용되어 맵 스크롤 시 밀림 현상 방지)
+    _updateNonTileMarkersPosition();
+  }
+
+  /// 본진 깃발, 위성 조준 마커, 발자취 조준 마커 등 논타일 마커들의 스크린 위치를
+  /// 현재 카메라 상태에 맞춰 즉시 재계산합니다.
+  void _updateNonTileMarkersPosition() {
+    if (_mapController == null) return;
+
+    // HQ 마커
+    if (_hqMarker != null) {
+      final centerLatLng = HexService.hexToLatLng(_hqMarker!.q, _hqMarker!.r);
+      final offset = _mapController!.camera.latLngToScreenOffset(centerLatLng);
+      _hqMarker!.updateScreenPosition(Offset(offset.dx, offset.dy));
+    }
   }
 
   void updatePlayerLocation(LatLng location) {
