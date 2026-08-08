@@ -27,6 +27,9 @@ class CaptureController {
   /// 상태 변경 시 화면 갱신을 지시하는 콜백
   final VoidCallback onStateChanged;
 
+  /// [임시 디버그] 서버 저장 과정 로그를 화면에 노출하기 위한 콜백
+  final void Function(String message) onDebugLog;
+
   /// 현재 점령 작전을 수행 중인 대상 타일 ID
   String? _capturingTileId;
 
@@ -78,6 +81,7 @@ class CaptureController {
     required this.onAlert,
     required this.onTileCaptured,
     required this.onStateChanged,
+    required this.onDebugLog,
     this.onPreCapture,
   }) : _supabase = supabase;
 
@@ -190,11 +194,16 @@ class CaptureController {
       }
     }
 
+    // [임시 디버그] RPC 호출 전 상태 노출
+    onDebugLog('🏹 RPC 호출 시도: ${tile.id} (q=${tile.q}, r=${tile.r}, user=${tile.userId})');
+
     final success = await _supabase.captureTile(tile);
     if (success) {
+      onDebugLog('✅ RPC 성공: ${tile.id} — 서버 저장 완료');
       onTileCaptured(tile.id, tile, wasEnemyTile: _wasEnemyTile);
       onAlert(GameStrings.captureSuccessAlert, AlertType.success);
     } else {
+      onDebugLog('❌ RPC 실패: ${tile.id} | lastError: ${_supabase.lastError}');
       onAlert(GameStrings.captureFailedPreempted, AlertType.error);
     }
 

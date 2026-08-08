@@ -32,6 +32,14 @@ class GameTileProvider extends ChangeNotifier {
   /// 발자취 맵 getter
   Map<String, FootprintTile> get footprints => Map.unmodifiable(_footprints);
 
+  /// [임시 디버그] GameProvider로 서버 저장 로그를 전달하는 콜백 (HUD 오버레이 노출용)
+  void Function(String message)? onDebugLog;
+
+  /// [임시 디버그] 로그 갱신 (GameProvider 경유로 HUD에 노출)
+  void appendDebugLog(String message) {
+    onDebugLog?.call(message);
+  }
+
   /// 사진(갤러리)이 1개 이상 등록된 모든 타일 ID의 집합
   final Set<String> _photoTileIds = {};
   Set<String> get photoTileIds => Set.unmodifiable(_photoTileIds);
@@ -195,13 +203,16 @@ class GameTileProvider extends ChangeNotifier {
     notifyListeners();
 
     // 2. 서버에 곧바로 저장 (중복은 서버 UNIQUE(user_id, tile_id) 제약이 무시 처리)
+    appendDebugLog('🏹 [발자취] 서버 저장 시도: $tileId');
     final success = await _supabase.recordFootprint(userId, tileId, truncatedTime);
     if (success) {
+      appendDebugLog('✅ [발자취] 서버 저장 완료: $tileId');
       debugPrint('✅ 발자취 서버 저장 완료: $tileId');
     } else {
       // 실패 시 캐시에서 제거 → 다음 GPS 진입 시 재시도
       _footprints.remove(tileId);
       notifyListeners();
+      appendDebugLog('❌ [발자취] 서버 저장 실패 (다음 진입 시 재시도): $tileId | lastError: ${_supabase.lastError}');
       debugPrint('⚠️ 발자취 서버 저장 실패 (다음 진입 시 재시도): $tileId');
     }
   }

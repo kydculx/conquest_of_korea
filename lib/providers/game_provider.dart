@@ -279,6 +279,16 @@ class GameProvider extends ChangeNotifier with WidgetsBindingObserver {
     return _tileProvider.isAlreadyCapturedByMe(loc);
   }
 
+  // --- [임시 디버그] 화면 노출용 서버 저장 로그 ---
+
+  String _debugLog = '디버그 로그 대기 중... (타일 점령 또는 발자취 진입 시 표시)';
+  String get debugLog => _debugLog;
+
+  void updateDebugLog(String message) {
+    _debugLog = message;
+    notifyListeners();
+  }
+
   // --- 생성자 ---
   GameProvider({
     required SupabaseService supabase,
@@ -286,6 +296,8 @@ class GameProvider extends ChangeNotifier with WidgetsBindingObserver {
   })  : _supabase = supabase,
         _tileProvider = tileProvider {
     _tileProvider.addListener(notifyListeners);
+    // [임시 디버그] 발자취 서버 저장 로그를 HUD로 라우팅
+    _tileProvider.onDebugLog = updateDebugLog;
     WidgetsBinding.instance.addObserver(this);
     _startUtcTimer();
     initGpsSettings();
@@ -297,6 +309,7 @@ class GameProvider extends ChangeNotifier with WidgetsBindingObserver {
     _captureController = CaptureController(
       supabase: supabase,
       onAlert: addAlert,
+      onDebugLog: updateDebugLog,
       onTileCaptured: (id, tile, {required bool wasEnemyTile}) {
         final oldOwnerId = _tileProvider.tileById(id)?.userId;
         _tileProvider.updateTile(id, tile);
@@ -350,6 +363,7 @@ class GameProvider extends ChangeNotifier with WidgetsBindingObserver {
     _satelliteController = SatelliteCaptureController(
       supabase: supabase,
       onAlert: addAlert,
+      onDebugLog: updateDebugLog,
       onCaptureSuccess: (tileId, tile) {
         _tileProvider.updateTile(tileId, tile);
         _selectedScanTileId = null;
