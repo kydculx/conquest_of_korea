@@ -9,7 +9,6 @@ import '../providers/auth_provider.dart';
 import '../providers/location_provider.dart';
 import '../services/hex_service.dart';
 import '../services/supabase_service.dart';
-import '../services/preferences_service.dart';
 
 /// 점령된 타일 데이터의 저장소, 실시간 스트림 구독, 침공 감지, 타일 정보 해제, 
 /// 닉네임 캐싱 등 타일에 특화된 상태를 전담 관리하는 프로바이더.
@@ -156,16 +155,11 @@ class GameTileProvider extends ChangeNotifier {
   // --- Footprint CRUD ---
 
   /// 서버에서 사용자의 발자취 데이터를 불러와 캐시를 구축합니다.
-  /// [개선] 캐시 로딩 전에 로컬 대기열에 보관되어 있던 미동기화 발자취들을 비동기 동기화 진행합니다.
+  /// [개편] 일반 타일처럼 서버가 진실의 원천 — 서버 목록을 캐시에 병합하고,
+  /// 로컬에만 있고 서버에 아직 반영되지 않은 항목(저장 진행 중)은 유지합니다.
   Future<void> loadFootprints(String userId) async {
-    // 백그라운드 미동기화 대기열 동기화 기동
-    syncPendingFootprints(userId).catchError((e) {
-      debugPrint('⚠️ 미동기화 발자취 동기화 실패: $e');
-    });
-
     try {
-      _footprints.clear();
-      // Supabase DB 서버 데이터 비동기 조회하여 캐시 구축
+      // Supabase DB 서버 데이터 비동기 조회하여 캐시에 병합
       final list = await _supabase.fetchUserFootprints(userId);
       for (final tile in list) {
         _footprints[tile.tileId] = tile;
@@ -177,38 +171,9 @@ class GameTileProvider extends ChangeNotifier {
     }
   }
 
-  /// [신규] 로컬 대기열에 쌓여있는 미동기화 발자취들을 Supabase 서버로 일괄 백그라운드 동기화합니다.
-  Future<void> syncPendingFootprints(String userId) async {
-    final pendingList = await PreferencesService.getPendingFootprints();
-    if (pendingList.isEmpty) return;
-
-    debugPrint('🔄 미동기화 발자취 ${pendingList.length}건 동기화 시작...');
-    final List<String> toRemove = [];
-
-    for (final item in pendingList) {
-      final parts = item.split('|');
-      if (parts.length != 2) continue;
-      final tileId = parts[0];
-      final time = DateTime.parse(parts[1]);
-
-      final success = await _supabase.recordFootprint(userId, tileId, time);
-      if (success) {
-        toRemove.add(tileId);
-        debugPrint('✅ 미동기화 발자취 업로드 성공: $tileId');
-      } else {
-        debugPrint('⚠️ 미동기화 발자취 업로드 실패 (다음 재시도 대기): $tileId');
-      }
-    }
-
-    // 성공한 항목들은 큐에서 삭제
-    for (final tileId in toRemove) {
-      await PreferencesService.removePendingFootprint(tileId);
-    }
-  }
-
   /// 새로운 발자취를 추가합니다. 이미 캐싱되어 있다면 서버 추가를 건너뜁니다.
-  /// [개편] 로컬 메모리 캐시 및 로컬 대기열(SharedPreferences)에 즉시 임시 등록하여 
-  /// UI의 즉각적인 반영을 보장하고, 서버 전송 성공 시 대기열에서 제거하는 동기화 메커니즘을 가동합니다.
+  /// [개편] 일반 타일과 동일하게 로컬 표시 캐시에 즉시 반영하고, 서버에는
+  /// 곧바로 저장합니다. 서버 저장 실패 시 캐시에서 제거하여 다음 진입 때 재시도합니다.
   Future<void> addFootprint(String userId, String tileId, DateTime time) async {
     if (_footprints.containsKey(tileId)) return;
 
@@ -221,7 +186,7 @@ class GameTileProvider extends ChangeNotifier {
       time.minute,
     );
 
-    // 1. 로컬 즉시 반영
+    // 1. 로컬 표시 캐시에 즉시 반영
     final newFootprint = FootprintTile(
       tileId: tileId,
       recordedAt: truncatedTime,
@@ -229,22 +194,16 @@ class GameTileProvider extends ChangeNotifier {
     _footprints[tileId] = newFootprint;
     notifyListeners();
 
-    // 2. 로컬 영구 미동기화 대기열에 추가
-    await PreferencesService.addPendingFootprint(tileId, truncatedTime);
-    debugPrint('🐾 발자취 로드 메모리 즉시 반영 및 대기열 적재 완료: $tileId');
-
-    // 3. 백그라운드로 서버 업로드 시작
-    _supabase.recordFootprint(userId, tileId, truncatedTime).then((success) async {
-      if (success) {
-        // 서버 전송 완료 시 대기열에서 해제
-        await PreferencesService.removePendingFootprint(tileId);
-        debugPrint('✅ 발자취 서버 전송 성공 및 대기열 소거 완료: $tileId');
-      } else {
-        debugPrint('⚠️ 발자취 서버 전송 실패 (대기열 잔류): $tileId');
-      }
-    }).catchError((e) {
-      debugPrint('❌ 발자취 백그라운드 서버 전송 도중 오류 발생: $e');
-    });
+    // 2. 서버에 곧바로 저장 (중복은 서버 UNIQUE(user_id, tile_id) 제약이 무시 처리)
+    final success = await _supabase.recordFootprint(userId, tileId, truncatedTime);
+    if (success) {
+      debugPrint('✅ 발자취 서버 저장 완료: $tileId');
+    } else {
+      // 실패 시 캐시에서 제거 → 다음 GPS 진입 시 재시도
+      _footprints.remove(tileId);
+      notifyListeners();
+      debugPrint('⚠️ 발자취 서버 저장 실패 (다음 진입 시 재시도): $tileId');
+    }
   }
 
   // --- Tile CRUD ---
