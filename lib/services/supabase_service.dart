@@ -479,12 +479,18 @@ class SupabaseService {
         'tile_id': tileId,
         'recorded_at': time.toUtc().toIso8601String(),
       };
-      await _client.from('user_footprints').upsert(
-            data,
-            onConflict: 'user_id,tile_id',
-          );
+      await _client.from('user_footprints').insert(data);
       debugPrint('🐾 발자취 DB 등록 완료: $tileId ($time)');
       return true;
+    } on PostgrestException catch (e) {
+      // 23505: unique_violation (이미 동일한 user_id + tile_id 조합이 존재)
+      if (e.code == '23505') {
+        debugPrint('🐾 발자취 이미 존재 (중복 무시): $tileId');
+        return true;
+      }
+      lastError = e.toString();
+      debugPrint('❌ 발자취 DB 등록 실패 (PostgrestException): ${e.code} ${e.message}');
+      return false;
     } catch (e) {
       lastError = e.toString();
       debugPrint('❌ 발자취 DB 등록 실패: $e');
