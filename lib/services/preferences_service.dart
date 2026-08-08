@@ -192,4 +192,33 @@ class PreferencesService {
     final List<String> list = footprints.entries.map((e) => '${e.key}|${e.value}').toList();
     await prefs.setStringList(_footprintsKey, list);
   }
+
+  // --- 미동기화 발자취 대기열 (conquest_pending_footprints) ---
+  static const _pendingFootprintsKey = 'conquest_pending_footprints';
+
+  static Future<List<String>> getPendingFootprints() async {
+    final prefs = await SharedPreferences.getInstance();
+    return prefs.getStringList(_pendingFootprintsKey) ?? [];
+  }
+
+  static Future<void> savePendingFootprints(List<String> list) async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setStringList(_pendingFootprintsKey, list);
+  }
+
+  static Future<void> addPendingFootprint(String tileId, DateTime time) async {
+    final list = await getPendingFootprints();
+    final String timeStr = time.toUtc().toIso8601String();
+    final String entry = '$tileId|$timeStr';
+    if (!list.any((item) => item.startsWith('$tileId|'))) {
+      list.add(entry);
+      await savePendingFootprints(list);
+    }
+  }
+
+  static Future<void> removePendingFootprint(String tileId) async {
+    final list = await getPendingFootprints();
+    list.removeWhere((item) => item.startsWith('$tileId|'));
+    await savePendingFootprints(list);
+  }
 }
