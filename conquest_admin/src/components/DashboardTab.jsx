@@ -1,4 +1,5 @@
 import React, { useEffect, useState, useRef } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import { fetchTiles, fetchUsers } from '../api';
 import { supabase } from '../supabase';
 import { Radio, Compass, Layers } from 'lucide-react';
@@ -41,6 +42,9 @@ function getHexCorners(q, r) {
 
 export default function DashboardTab() {
 
+  const [searchParams] = useSearchParams();
+  const hqParam = searchParams.get('hq');
+
   const [tiles, setTiles] = useState([]);
   const [users, setUsers] = useState([]);
   const [photos, setPhotos] = useState([]);
@@ -66,6 +70,7 @@ export default function DashboardTab() {
   const mapInstance = useRef(null);
   const polygonsGroup = useRef(null);
   const myLocationMarker = useRef(null);
+  const hqMarker = useRef(null);
   const darkTileLayer = useRef(null);
   const satelliteTileLayer = useRef(null);
   const [isSatellite, setIsSatellite] = useState(false);
@@ -229,16 +234,17 @@ export default function DashboardTab() {
       const user = users.find(u => u.id === tile.user_id);
       const ownerName = user ? user.nickname : '미등록 사용자';
       const color = '#00e5ff';
+      const tileId = `hex_${tile.q}_${tile.r}`;
+      const isHQ = hqParam === tileId;
 
       const polygon = L.polygon(corners, {
         color: color,
-        weight: 1.5,
+        weight: isHQ ? 4 : 1.5,
         fillColor: color,
-        fillOpacity: 0.2,
-        dashArray: '2, 2'
+        fillOpacity: isHQ ? 0.5 : 0.2,
+        dashArray: isHQ ? null : '2, 2'
       });
 
-      const tileId = `hex_${tile.q}_${tile.r}`;
       const count = photoCounts[tileId] || 0;
       const galleryText = count > 0 
         ? `<button onclick="window.openAdminGallery('${tileId}')" style="background: #3b82f6; color: white; border: none; padding: 2px 6px; border-radius: 4px; font-size: 0.7rem; cursor: pointer; font-weight: bold; margin-top: 2px;">사진 ${count}장 보기</button>`
@@ -260,14 +266,47 @@ export default function DashboardTab() {
 
       polygonsGroup.current.addLayer(polygon);
 
-      // 첫 번째 활성 점령 타일로 카메라 맞춤 (최초 1회만)
+      // 카메라 맞춤: 본진 이동(hq) 요청이 있으면 해당 타일 우선, 없으면 첫 타일 (최초 1회만)
       if (!centerSet) {
-        const center = hexToLatLng(tile.q, tile.r);
-        mapInstance.current.setView(center, 14);
+        const hqTile = hqParam
+          ? tiles.find(t => `hex_${t.q}_${t.r}` === hqParam)
+          : null;
+        if (hqTile) {
+          mapInstance.current.setView(hexToLatLng(hqTile.q, hqTile.r), 15);
+        } else {
+          mapInstance.current.setView(hexToLatLng(tile.q, tile.r), 14);
+        }
         centerSet = true;
       }
     });
-  }, [tiles, users, photoCounts]);
+  }, [tiles, users, photoCounts, hqParam]);
+
+  // 2-1. 본진 이동(hq) 파라미터 시 지도 포커스 + 하이라이트 마커 표시
+  useEffect(() => {
+    if (hqMarker.current) {
+      hqMarker.current.remove();
+      hqMarker.current = null;
+    }
+
+    if (!mapInstance.current || !hqParam) return;
+
+    const parts = hqParam.split('_');
+    if (parts.length !== 3) return;
+    const q = parseInt(parts[1], 10);
+    const r = parseInt(parts[2], 10);
+    if (Number.isNaN(q) || Number.isNaN(r)) return;
+
+    const center = hexToLatLng(q, r);
+    mapInstance.current.setView(center, 15);
+
+    const hqIcon = L.divIcon({
+      className: 'custom-hq-marker',
+      html: `<div style="width: 18px; height: 18px; background: #FFD700; border: 2px solid white; border-radius: 50%; box-shadow: 0 0 12px rgba(255, 215, 0, 0.6);"></div>`,
+      iconSize: [18, 18],
+      iconAnchor: [9, 9]
+    });
+    hqMarker.current = L.marker(center, { icon: hqIcon }).addTo(mapInstance.current);
+  }, [hqParam]);
 
   if (error) {
     return <div style={{ color: 'var(--accent-red)', padding: '2rem' }}>{error}</div>;

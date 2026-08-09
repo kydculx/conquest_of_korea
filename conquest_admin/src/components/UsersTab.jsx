@@ -1,12 +1,14 @@
 import React, { useEffect, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { fetchUsers, updateUserGold, deleteUser, fetchUserAchievements } from '../api';
-import { Search, Edit2, RotateCcw, AlertTriangle, ShieldCheck, X, Trophy, Lock, Award } from 'lucide-react';
+import { Search, Edit2, RotateCcw, AlertTriangle, ShieldCheck, X, Trophy, Lock, Award, MapPin } from 'lucide-react';
 
 export default function UsersTab() {
   const [users, setUsers] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [searchTerm, setSearchTerm] = useState('');
+  const navigate = useNavigate();
   
   // 편집(골드 조정) 모달 제어용 상태
   const [editingUser, setEditingUser] = useState(null);
@@ -17,6 +19,14 @@ export default function UsersTab() {
   const [selectedUser, setSelectedUser] = useState(null);
   const [userAchievements, setUserAchievements] = useState([]);
   const [loadingAchievements, setLoadingAchievements] = useState(false);
+
+  const handleGoToMainBase = (user) => {
+    if (!user.main_base_tile_id) {
+      alert('본진 기지가 설정되지 않은 사용자입니다.');
+      return;
+    }
+    navigate(`/admin/dashboard?hq=${user.main_base_tile_id}`);
+  };
 
   const handleViewDetails = async (user) => {
     setSelectedUser(user);
@@ -186,6 +196,9 @@ export default function UsersTab() {
                   </td>
                   <td>
                     <div style={{ display: 'flex', gap: '0.5rem', justifyContent: 'center' }}>
+                      <button className="tactical-btn" onClick={() => handleGoToMainBase(user)}>
+                        <MapPin size={14} /> 본진 이동
+                      </button>
                       <button className="tactical-btn" onClick={() => handleViewDetails(user)}>
                         <Award size={14} /> 업적 상세
                       </button>
