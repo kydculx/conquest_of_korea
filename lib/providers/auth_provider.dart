@@ -5,6 +5,7 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 import '../core/constants/game_config.dart';
 import '../services/auth_service.dart';
 import '../services/notification_service.dart';
+import '../services/analytics_service.dart';
 import '../models/user_profile.dart';
 
 /// 사용자 인증 상태와 프로필 데이터의 수명 주기를 관리하고 UI 레이어에 이벤트를 전파하는 인증 프로바이더 클래스
@@ -215,6 +216,7 @@ class AuthProvider extends ChangeNotifier {
       // 프로필 로드 시 개인 토픽 구독 (중복 구독은 FCM 내부적으로 처리됨)
       _notificationService.setCurrentUserId(userId);
       _notificationService.subscribeToTopic('user_$userId');
+      AnalyticsService.setUserId(userId);
 
       // 만약 프로필이 없다면 (가입 시 권한 문제로 저장이 안 된 경우 등)
       if (_profile == null) {
@@ -292,6 +294,7 @@ class AuthProvider extends ChangeNotifier {
     if (user != null) {
       _notificationService.setCurrentUserId(null);
       await _notificationService.unsubscribeFromTopic('user_${user.id}');
+      AnalyticsService.setUserId(null);
     }
     await _authService.signOut();
   }
@@ -355,6 +358,7 @@ class AuthProvider extends ChangeNotifier {
       );
       await _authService.createProfile(newProfile);
       _profile = newProfile;
+      AnalyticsService.logSignUp(method: 'social');
       notifyListeners();
     } finally {
       _setLoading(false);

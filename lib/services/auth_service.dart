@@ -7,6 +7,7 @@ import '../models/user_profile.dart';
 import '../core/constants/strings.dart';
 import '../core/constants/game_config.dart';
 import '../core/app_config.dart';
+import 'analytics_service.dart';
 
 /// Supabase Auth 서비스와 소셜 로그인(구글, 애플) 연동을 총괄하는 인증 관리 서비스 클래스
 class AuthService {
@@ -68,6 +69,7 @@ class AuthService {
           'location_agreed_at': locationAgreedAt.toIso8601String(),
           'marketing_agreed_at': marketingAgreedAt?.toIso8601String(),
         });
+        AnalyticsService.logSignUp(method: 'email');
       } catch (e) {
         debugPrint('⚠️ 프로필 테이블 저장 생략 (인증 대기 중일 수 있음): $e');
       }
@@ -234,6 +236,8 @@ class AuthService {
   Future<void> deleteAccount() async {
     final user = currentUser;
     if (user == null) return;
+
+    AnalyticsService.logAccountDelete();
 
     // [추가] 해당 사용자가 촬영하여 등록한 모든 타일 사진 갤러리 물리 파일 및 DB 레코드 영구 삭제
     try {
