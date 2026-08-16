@@ -347,6 +347,7 @@ class AuthProvider extends ChangeNotifier {
         locationAgreedAt: locationAgreedAt,
         marketingAgreedAt: marketingAgreedAt,
         createdAt: DateTime.now(),
+        gold: GameConfig.defaultSignupGold,
       );
       await _authService.updateProfile(newProfile);
       _profile = newProfile;

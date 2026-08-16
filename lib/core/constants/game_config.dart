@@ -116,6 +116,9 @@ class GameConfig {
   /// 동전 획득 시 지급되는 기본 보상 골드 (수정이 용이한 전역변수)
   static double coinGoldReward = 50.0;
 
+/// 신규 가입 시 기본 지급되는 골드량 (수정이 용이한 전역변수)
+  static double defaultSignupGold = 50.0;
+
   /// 동전 스폰 최소 타일 격자 거리
   static const int coinSpawnMinDistance = 3;
 
