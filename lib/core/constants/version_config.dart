@@ -3,5 +3,5 @@ class VersionConfig {
   static const String version = '1.0.4';
 
   /// 수동 관리할 앱 빌드 번호
-  static const int buildNumber = 9;
+  static const int buildNumber = 10;
 }
