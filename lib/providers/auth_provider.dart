@@ -349,7 +349,7 @@ class AuthProvider extends ChangeNotifier {
         createdAt: DateTime.now(),
         gold: GameConfig.defaultSignupGold,
       );
-      await _authService.updateProfile(newProfile);
+      await _authService.createProfile(newProfile);
       _profile = newProfile;
       notifyListeners();
     } finally {

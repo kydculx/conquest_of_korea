@@ -5,6 +5,7 @@ import 'package:sign_in_with_apple/sign_in_with_apple.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import '../models/user_profile.dart';
 import '../core/constants/strings.dart';
+import '../core/constants/game_config.dart';
 import '../core/app_config.dart';
 
 /// Supabase Auth 서비스와 소셜 로그인(구글, 애플) 연동을 총괄하는 인증 관리 서비스 클래스
@@ -60,6 +61,7 @@ class AuthService {
           'color_hex': colorHex,
           // 'team_id': teamId, // DB 컬럼 부재로 임시 주석 처리
           'main_base_tile_id': mainBaseTileId,
+          'gold': GameConfig.defaultSignupGold,
           'created_at': DateTime.now().toIso8601String(),
           'terms_agreed_at': termsAgreedAt.toIso8601String(),
           'privacy_agreed_at': privacyAgreedAt.toIso8601String(),
@@ -167,6 +169,11 @@ class AuthService {
     } catch (e) {
       return null;
     }
+  }
+
+  /// 신규 사용자 프로필을 DB에 최초 등록(Insert/Upsert)합니다. (초기 가입 골드 등 포함)
+  Future<void> createProfile(UserProfile profile) async {
+    await _client.from('profiles').upsert(profile.toInsertJson());
   }
 
   /// 사용자 프로필 정보를 업데이트하고 기 점령 영토의 타일 컬러도 동일 색상으로 동기화 갱신합니다.

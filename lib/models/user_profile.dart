@@ -207,6 +207,26 @@ class UserProfile {
     };
   }
 
+  /// 최초 프로필 등록 시 사용하는 JSON 변환 메서드입니다. (초기 골드 포함)
+  Map<String, dynamic> toInsertJson() {
+    return {
+      'id': id,
+      'nickname': nickname,
+      'color_hex': colorHex,
+      'created_at': createdAt.toIso8601String(),
+      'main_base_tile_id': mainBaseTileId,
+      'gold': gold,
+      'terms_agreed_at': termsAgreedAt?.toIso8601String(),
+      'privacy_agreed_at': privacyAgreedAt?.toIso8601String(),
+      'location_agreed_at': locationAgreedAt?.toIso8601String(),
+      'marketing_agreed_at': marketingAgreedAt?.toIso8601String(),
+      'is_notifications_enabled': isNotificationsEnabled,
+      'notif_territory_attack': notifTerritoryAttack,
+      'notif_satellite_complete': notifSatelliteComplete,
+      'notif_system_notice': notifSystemNotice,
+    };
+  }
+
   /// 데이터베이스 업데이트 시 재화 및 점령 타일 수 등 시스템 관리 필드를 제외한
   /// 프로필 기본 속성 변경을 처리하기 위해 사용하는 JSON 변환 메서드입니다.
   Map<String, dynamic> toUpdateJson() {
