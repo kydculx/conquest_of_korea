@@ -577,6 +577,15 @@ class GameProvider extends ChangeNotifier with WidgetsBindingObserver {
         if ((localGold - serverGold).abs() > 0.5) {
           _goldManager.setGold(serverGold);
         }
+
+        // 로그인 사용자 변경 또는 프로필 최초 로드 시 알림 설정 동기화
+        if (oldProfile?.id != auth.profile!.id ||
+            oldProfile?.isNotificationsEnabled != auth.profile!.isNotificationsEnabled ||
+            oldProfile?.notifTerritoryAttack != auth.profile!.notifTerritoryAttack ||
+            oldProfile?.notifSatelliteComplete != auth.profile!.notifSatelliteComplete ||
+            oldProfile?.notifSystemNotice != auth.profile!.notifSystemNotice) {
+          _notificationController.syncFromProfile(auth.profile!);
+        }
       }
 
       _checkAndSyncCoins();
@@ -587,6 +596,7 @@ class GameProvider extends ChangeNotifier with WidgetsBindingObserver {
       }
     } else {
       _goldManager.reset();
+      _notificationController.resetToDefault();
       _isAutoCapture = false;
       _isScanMode = false;
       _selectedScanTileId = null;

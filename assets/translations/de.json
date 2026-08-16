@@ -533,5 +533,7 @@
   "cannotOpenMailApp": "E-Mail-App kann nicht geöffnet werden. Bitte kontaktieren Sie {email} direkt.",
   "photoCommentHint": "Geben Sie einen einfachen Kommentar ein (Optional)",
   "photoCommentLabel": "Foto-Kommentar",
-  "photoDetailTitle": "Foto-Details"
+  "photoDetailTitle": "Foto-Details",
+  "languageChineseSimplified": "Chinesisch Vereinfacht (Chinese Simplified)",
+  "languageChineseTraditional": "Chinesisch Traditionell (Chinese Traditional)"
 }

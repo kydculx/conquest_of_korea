@@ -78,9 +78,25 @@ class LanguageSettingsScreen extends StatelessWidget {
                     ),
                     _buildLanguageItem(
                       context: context,
-                      title: GameStrings.languageChinese,
+                      title: GameStrings.languageChineseSimplified,
                       locale: const Locale('zh'),
-                      isSelected: currentLocale.languageCode == 'zh',
+                      isSelected: currentLocale.languageCode == 'zh' &&
+                          (currentLocale.countryCode == null ||
+                              currentLocale.countryCode!.isEmpty ||
+                              currentLocale.countryCode == 'CN'),
+                    ),
+                    Divider(
+                      height: 1,
+                      color: GameColors.dividerColor.withValues(alpha: 30 / 255),
+                      indent: 16,
+                      endIndent: 16,
+                    ),
+                    _buildLanguageItem(
+                      context: context,
+                      title: GameStrings.languageChineseTraditional,
+                      locale: const Locale('zh', 'TW'),
+                      isSelected: currentLocale.languageCode == 'zh' &&
+                          currentLocale.countryCode == 'TW',
                     ),
                     Divider(
                       height: 1,

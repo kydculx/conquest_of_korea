@@ -70,6 +70,7 @@ void main() async {
         Locale('ko'),
         Locale('en'),
         Locale('zh'),
+        Locale('zh', 'TW'),
         Locale('ja'),
         Locale('es'),
         Locale('fr'),
@@ -78,7 +79,7 @@ void main() async {
       ],
       path: 'assets/translations',
       fallbackLocale: const Locale('en'),
-      useOnlyLangCode: true,
+      useOnlyLangCode: false,
       child: MultiProvider(
         providers: [
           // 순수 서비스 레이어

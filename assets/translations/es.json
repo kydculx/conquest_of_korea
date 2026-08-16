@@ -533,5 +533,7 @@
   "cannotOpenMailApp": "No se puede abrir la aplicación de correo. Póngase en contacto directamente con {email}.",
   "photoCommentHint": "Introduce un comentario sencillo (Opcional)",
   "photoCommentLabel": "Comentario de foto",
-  "photoDetailTitle": "Detalle de foto"
+  "photoDetailTitle": "Detalle de foto",
+  "languageChineseSimplified": "Chino Simplificado (Chinese Simplified)",
+  "languageChineseTraditional": "Chino Tradicional (Chinese Traditional)"
 }

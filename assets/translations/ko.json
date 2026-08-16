@@ -533,5 +533,7 @@
   "photoCommentHint": "간단한 설명을 입력해 주세요. (선택사항)",
   "photoCommentLabel": "사진 코멘트",
   "photoDetailTitle": "사진 상세",
-  "cannotOpenMailApp": "메일 앱을 열 수 없습니다. {email}로 직접 문의해주세요."
+  "cannotOpenMailApp": "메일 앱을 열 수 없습니다. {email}로 직접 문의해주세요.",
+  "languageChineseSimplified": "중국어 간체 (Simplified Chinese)",
+  "languageChineseTraditional": "중국어 번체 (Traditional Chinese)"
 }

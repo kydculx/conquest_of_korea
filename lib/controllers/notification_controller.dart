@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'package:flutter/foundation.dart';
+import '../models/user_profile.dart';
 import '../services/preferences_service.dart';
 import '../services/notification_service.dart';
 
@@ -41,6 +42,38 @@ class NotificationController {
     required this.getUserId,
     required this.onSyncToRemote,
   });
+
+  /// 로그인된 사용자의 DB 프로필 설정값으로 알림 상태를 동기화합니다.
+  Future<void> syncFromProfile(UserProfile profile) async {
+    _isNotificationEnabled = profile.isNotificationsEnabled;
+    _isNotifTerritoryAttack = profile.notifTerritoryAttack;
+    _isNotifSatelliteComplete = profile.notifSatelliteComplete;
+    _isNotifSystemNotice = profile.notifSystemNotice;
+
+    // 로컬 저장소도 해당 사용자의 프로필 설정값으로 갱신
+    await PreferencesService.setNotificationEnabled(_isNotificationEnabled);
+    await PreferencesService.setNotifTerritoryAttackEnabled(_isNotifTerritoryAttack);
+    await PreferencesService.setNotifSatelliteCompleteEnabled(_isNotifSatelliteComplete);
+    await PreferencesService.setNotifSystemNoticeEnabled(_isNotifSystemNotice);
+
+    onStateChanged();
+    await _updateFcmSubscriptions();
+  }
+
+  /// 로그아웃 시 알림 설정을 기본값으로 초기화합니다.
+  Future<void> resetToDefault() async {
+    _isNotificationEnabled = true;
+    _isNotifTerritoryAttack = true;
+    _isNotifSatelliteComplete = true;
+    _isNotifSystemNotice = true;
+
+    await PreferencesService.setNotificationEnabled(true);
+    await PreferencesService.setNotifTerritoryAttackEnabled(true);
+    await PreferencesService.setNotifSatelliteCompleteEnabled(true);
+    await PreferencesService.setNotifSystemNoticeEnabled(true);
+
+    onStateChanged();
+  }
 
   /// PreferencesService에서 알림 설정을 불러오고 FCM 구독을 동기화합니다.
   Future<void> loadFromPrefs() async {

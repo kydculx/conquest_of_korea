@@ -1004,8 +1004,14 @@ class GameStrings {
   /// 영어
   static String get languageEnglish => 'languageEnglish'.tr();
 
-  /// 중국어
+  /// 중국어 (간체)
   static String get languageChinese => 'languageChinese'.tr();
+
+  /// 중국어 간체
+  static String get languageChineseSimplified => 'languageChineseSimplified'.tr();
+
+  /// 중국어 번체
+  static String get languageChineseTraditional => 'languageChineseTraditional'.tr();
 
   /// 일본어
   static String get languageJapanese => 'languageJapanese'.tr();

@@ -533,5 +533,7 @@
   "cannotOpenMailApp": "无法打开邮件应用。请直接联系 {email}。",
   "photoCommentHint": "请输入简单说明（选填）",
   "photoCommentLabel": "照片备注",
-  "photoDetailTitle": "照片详情"
+  "photoDetailTitle": "照片详情",
+  "languageChineseSimplified": "简体中文 (Simplified Chinese)",
+  "languageChineseTraditional": "繁体中文 (Traditional Chinese)"
 }

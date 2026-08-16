@@ -1,0 +1,9 @@
+"CFBundleDisplayName" = "先到先得！冒險";
+"CFBundleName" = "先到先得！冒險";
+"NSHealthShareUsageDescription" = "需要讀取健康資料，以測量今天的即時步數並將其應用於遊戲內移動數據和玩家成績。";
+"NSHealthUpdateUsageDescription" = "需要寫入健康資料，以將遊戲內獲得的運動記錄與健康資訊連動更新。";
+"NSLocationAlwaysAndWhenInUseUsageDescription" = "需要位置資訊來運行地圖和區域佔領系統。";
+"NSLocationAlwaysUsageDescription" = "即使在背景運行，也需要位置權限來即時進行基於位置的區域佔領。";
+"NSLocationWhenInUseUsageDescription" = "需要當前位置資訊以展示即時區域佔領地圖。";
+"NSCameraUsageDescription" = "需要相機權限來拍攝並註冊區域現場照片。";
+"NSPhotoLibraryUsageDescription" = "需要相簿訪問權限以從相簿中選擇要上傳到區域的照片。";

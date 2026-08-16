@@ -533,5 +533,7 @@
   "cannotOpenMailApp": "メールアプリを開けません。{email}に直接お問い合わせください。",
   "photoCommentHint": "簡単な説明を入力してください（任意）",
   "photoCommentLabel": "写真のコメント",
-  "photoDetailTitle": "写真の詳細"
+  "photoDetailTitle": "写真の詳細",
+  "languageChineseSimplified": "中国語（簡体字）",
+  "languageChineseTraditional": "中国語（繁体字）"
 }

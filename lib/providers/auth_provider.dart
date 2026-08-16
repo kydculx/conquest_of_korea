@@ -173,7 +173,11 @@ class AuthProvider extends ChangeNotifier {
               // 골드 잔액이 변경되었거나, 테마 색상, 본진 설정 등이 수정되었을 때
               if (diff > 0.05 ||
                   updatedProfile.colorHex != _profile!.colorHex ||
-                  updatedProfile.mainBaseTileId != _profile!.mainBaseTileId) {
+                  updatedProfile.mainBaseTileId != _profile!.mainBaseTileId ||
+                  updatedProfile.isNotificationsEnabled != _profile!.isNotificationsEnabled ||
+                  updatedProfile.notifTerritoryAttack != _profile!.notifTerritoryAttack ||
+                  updatedProfile.notifSatelliteComplete != _profile!.notifSatelliteComplete ||
+                  updatedProfile.notifSystemNotice != _profile!.notifSystemNotice) {
                 _profile = updatedProfile;
                 notifyListeners();
               }
