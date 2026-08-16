@@ -710,6 +710,12 @@ class ConquestGame extends FlameGame {
       final offset = _mapController!.camera.latLngToScreenOffset(centerLatLng);
       _hqMarker!.updateScreenPosition(Offset(offset.dx, offset.dy));
     }
+
+    // 위성 조준 타겟 마커 및 연결 점선/화살표
+    _scanTargetMarker?.updateScreenPosition();
+
+    // 발자취 조준 타겟 마커
+    _footprintTargetMarker?.updateScreenPosition();
   }
 
   void updatePlayerLocation(LatLng location) {
@@ -789,6 +795,7 @@ class ConquestGame extends FlameGame {
 
     if (targetQ != null && targetR != null) {
       _scanTargetMarker = ScanTargetMarker(q: targetQ, r: targetR);
+      _scanTargetMarker!.updateScreenPosition();
       add(_scanTargetMarker!);
     }
   }
@@ -820,6 +827,7 @@ class ConquestGame extends FlameGame {
 
     if (targetQ != null && targetR != null) {
       _footprintTargetMarker = FootprintTargetMarker(q: targetQ, r: targetR);
+      _footprintTargetMarker!.updateScreenPosition();
       add(_footprintTargetMarker!);
     }
   }
