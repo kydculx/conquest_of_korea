@@ -279,16 +279,6 @@ class GameProvider extends ChangeNotifier with WidgetsBindingObserver {
     return _tileProvider.isAlreadyCapturedByMe(loc);
   }
 
-  // --- [임시 디버그] 화면 노출용 서버 저장 로그 ---
-
-  String _debugLog = '디버그 로그 대기 중... (타일 점령 또는 발자취 진입 시 표시)';
-  String get debugLog => _debugLog;
-
-  void updateDebugLog(String message) {
-    _debugLog = message;
-    notifyListeners();
-  }
-
   // --- 생성자 ---
   GameProvider({
     required SupabaseService supabase,
@@ -296,8 +286,6 @@ class GameProvider extends ChangeNotifier with WidgetsBindingObserver {
   })  : _supabase = supabase,
         _tileProvider = tileProvider {
     _tileProvider.addListener(notifyListeners);
-    // [임시 디버그] 발자취 서버 저장 로그를 HUD로 라우팅
-    _tileProvider.onDebugLog = updateDebugLog;
     WidgetsBinding.instance.addObserver(this);
     _startUtcTimer();
     initGpsSettings();
@@ -309,7 +297,6 @@ class GameProvider extends ChangeNotifier with WidgetsBindingObserver {
     _captureController = CaptureController(
       supabase: supabase,
       onAlert: addAlert,
-      onDebugLog: updateDebugLog,
       onTileCaptured: (id, tile, {required bool wasEnemyTile}) {
         final oldOwnerId = _tileProvider.tileById(id)?.userId;
         _tileProvider.updateTile(id, tile);
@@ -363,7 +350,6 @@ class GameProvider extends ChangeNotifier with WidgetsBindingObserver {
     _satelliteController = SatelliteCaptureController(
       supabase: supabase,
       onAlert: addAlert,
-      onDebugLog: updateDebugLog,
       onCaptureSuccess: (tileId, tile) {
         _tileProvider.updateTile(tileId, tile);
         _selectedScanTileId = null;
@@ -1300,34 +1286,6 @@ class GameProvider extends ChangeNotifier with WidgetsBindingObserver {
       }
     } catch (e) {
       debugPrint('⚠️ 동전 상태 체크 및 동기화 실패: $e');
-    }
-  }
-
-  Future<void> debugRegenerateCoins() async {
-    final myId = _userId;
-    if (myId == null) {
-      addAlert('로그인이 필요한 작업입니다.', AlertType.error);
-      return;
-    }
-    if (_isRegeneratingCoins) {
-      addAlert('이미 동전 재배치가 진행 중입니다. 잠시만 기다려주세요.', AlertType.error);
-      return;
-    }
-
-    _coins = [];
-    notifyListeners();
-
-    final nowUtc = DateTime.now().toUtc();
-    final todayStr =
-        "${nowUtc.year}-${nowUtc.month.toString().padLeft(2, '0')}-${nowUtc.day.toString().padLeft(2, '0')}";
-
-    addAlert('동전을 즉시 재배치하는 중...', AlertType.info);
-
-    try {
-      await _regenerateCoins(myId, todayStr);
-      addAlert('동전이 본진 기준으로 성공적으로 재배치되었습니다!', AlertType.info);
-    } catch (e) {
-      addAlert('동전 초기화 실패: $e', AlertType.error);
     }
   }
 

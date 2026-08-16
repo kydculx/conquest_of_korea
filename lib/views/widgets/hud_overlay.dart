@@ -15,7 +15,6 @@ import 'hud_hq_move_button.dart';
 import 'hud_photo_button.dart';
 import 'hud_satellite_bubble.dart';
 import 'hud_footprint_bubble.dart';
-import 'tactical_press_button.dart';
 
 /// 인게임 HUD 오버레이 (점수판, 점령 버튼, 유틸리티 버튼, 위성 스캔 연동)
 class HudOverlay extends StatelessWidget {
@@ -118,42 +117,6 @@ class HudOverlay extends StatelessWidget {
         // [하단 중앙] 콤팩트해진 점령 조작 버튼 (항상 자동 기동되므로 버튼 미노출)
         const SizedBox.shrink(),
 
-        // [임시 디버그 - 서버 저장 로그 화면 노출 박스] USB 없이 저장 실패 원인 확인용.
-        // 점령/발자취 서버 저장 시도 결과가 실시간으로 표시됩니다. (디버깅 완료 후 제거 예정)
-        Positioned(
-          top: topOffset + 96.0,
-          left: 20.0,
-          right: 20.0,
-          child: IgnorePointer(
-            child: Selector<GameProvider, String>(
-              selector: (_, provider) => provider.debugLog,
-              builder: (context, debugLog, _) {
-                return Container(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 10,
-                    vertical: 6,
-                  ),
-                  decoration: BoxDecoration(
-                    color: Colors.black.withValues(alpha: 0.55),
-                    borderRadius: BorderRadius.circular(8),
-                  ),
-                  child: Text(
-                    debugLog,
-                    style: const TextStyle(
-                      color: Colors.white,
-                      fontSize: 11,
-                      fontFamily: 'monospace',
-                      height: 1.3,
-                    ),
-                    maxLines: 4,
-                    overflow: TextOverflow.ellipsis,
-                  ),
-                );
-              },
-            ),
-          ),
-        ),
-
         // [하단 우측 - 맵 뷰 모드 통합 토글 버튼] 테마 순환 버튼 바로 위에 배치 (44x44)
         Positioned(
           bottom: baseBottomMargin + bottomPadding + 16.0 + 44.0 + 10.0,
@@ -240,34 +203,6 @@ class HudOverlay extends StatelessWidget {
           },
         ),
       ],
-    );
-  }
-}
-
-/// 상단 우측 동전 강제 초기화(재생성) 버튼 (황금 젤리 스타일)
-class CoinResetActionButton extends StatelessWidget {
-  final double size;
-
-  const CoinResetActionButton({required this.size, super.key});
-
-  @override
-  Widget build(BuildContext context) {
-    // 황금빛 그라데이션 적용
-    final gradientColors = [const Color(0xFFFFD700), const Color(0xFFFF8C00)];
-    const shadowColor = Color(0xFFFF8C00);
-
-    return TacticalPressButton(
-      size: size,
-      onTap: () {
-        context.read<GameProvider>().debugRegenerateCoins();
-      },
-      gradientColors: gradientColors,
-      shadowColor: shadowColor,
-      child: const Icon(
-        Icons.cached_rounded,
-        color: Colors.black, // 황금 배경이므로 검정 아이콘으로 높은 시인성 확보
-        size: 20,
-      ),
     );
   }
 }

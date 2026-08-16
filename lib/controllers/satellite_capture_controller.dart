@@ -35,9 +35,6 @@ class SatelliteCaptureController {
   /// 상태 변경 시 화면 갱신을 지시하는 콜백
   final VoidCallback onStateChanged;
 
-  /// [임시 디버그] 서버 저장 과정 로그를 화면에 노출하기 위한 콜백
-  final void Function(String message) onDebugLog;
-
   // --- 데이터 접근자 (순환 의존성 방지를 위해 GameProvider에서 주입) ---
 
   /// 현재 점령된 타일 맵을 반환하는 접근자
@@ -112,7 +109,6 @@ class SatelliteCaptureController {
     required this.onAlert,
     required this.onCaptureSuccess,
     required this.onStateChanged,
-    required this.onDebugLog,
     required this.getCapturedTiles,
     required this.getUserId,
     required this.getColorHex,
@@ -352,7 +348,6 @@ class SatelliteCaptureController {
 
     final success = await _supabase.captureTile(tile);
     if (success) {
-      onDebugLog('✅ [위성] RPC 성공: ${tile.id} — 서버 저장 완료');
       _lastCaptureTime = DateTime.now();
 
       // 쿨타임 저장은 백그라운드 비동기로 처리
@@ -409,7 +404,6 @@ class SatelliteCaptureController {
       // 프로필 갱신
       await refreshProfile();
     } else {
-      onDebugLog('❌ [위성] RPC 실패: ${tile.id} | lastError: ${_supabase.lastError}');
       final errMsg = _supabase.lastError != null
           ? ': ${_supabase.lastError}'
           : '';
