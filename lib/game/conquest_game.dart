@@ -159,6 +159,18 @@ class ConquestGame extends FlameGame {
   /// 이전 프레임의 지도 뷰포트 크기 캐시 (동기화 감시용)
   Size? _prevCameraSize;
 
+  /// 마지막으로 실제 타일 재계산에 적용한 카메라 중심좌표 캐시 (중복 연산 차단용)
+  LatLng? _appliedCameraCenter;
+
+  /// 마지막으로 실제 타일 재계산에 적용한 카메라 줌 레벨 캐시 (중복 연산 차단용)
+  double? _appliedCameraZoom;
+
+  /// 마지막으로 실제 타일 재계산에 적용한 카메라 회전각 캐시 (중복 연산 차단용)
+  double? _appliedCameraRotation;
+
+  /// 마지막으로 실제 타일 재계산에 적용한 카메라 뷰포트 크기 캐시 (중복 연산 차단용)
+  Size? _appliedCameraSize;
+
   /// 프레임 갱신 주기를 제어하기 위해 누적 보관하는 델타 타임 합산 값
   double _dtSum = 0.0;
 
@@ -646,9 +658,41 @@ class ConquestGame extends FlameGame {
   void _updateAllPositions() {
     if (_mapController == null) return;
 
-    // 카메라 이동 시 렌더링 중인 모든 타일들의 픽셀 꼭짓점 패스 캐시 무효화
-    for (final component in _tileMap.values) {
-      component.invalidateCache();
+    final camera = _mapController!.camera;
+    final LatLng currentCenter = camera.center;
+    final double currentZoom = camera.zoom;
+    final double currentRotation = camera.rotation;
+    final Size currentSize = camera.nonRotatedSize;
+
+    // [중복 연산 차단] 직전 적용 시점과 카메라 상태가 완전히 동일하면 즉시 스킵.
+    // onPositionChanged / onMapEvent / 게임 루프가 같은 프레임에 중복 호출해도
+    // 실제 전량 재계산은 카메라가 변한 시점에 단 1회만 수행되어 드래그 중 프레임 붕괴를 방지합니다.
+    final bool isFirstApply = _appliedCameraCenter == null;
+    final bool cameraChanged = isFirstApply ||
+        _appliedCameraCenter!.latitude != currentCenter.latitude ||
+        _appliedCameraCenter!.longitude != currentCenter.longitude ||
+        _appliedCameraZoom != currentZoom ||
+        _appliedCameraRotation != currentRotation ||
+        _appliedCameraSize == null ||
+        _appliedCameraSize!.width != currentSize.width ||
+        _appliedCameraSize!.height != currentSize.height;
+    if (!cameraChanged) return;
+
+    // 줌/회전이 실제로 바뀐 경우에만 타일 패스 캐시 무효화.
+    // 헥사곤 패스는 타일 중심 기준 로컬 좌표계이므로 순수 이동(팬)에는 영향이 없어,
+    // 팬 중에는 캐시를 유지하고 position 갱신만 수행하여 렌더링 비용을 대폭 절감합니다.
+    final double prevZoom = _appliedCameraZoom ?? currentZoom;
+    final double prevRotation = _appliedCameraRotation ?? currentRotation;
+    _appliedCameraCenter = currentCenter;
+    _appliedCameraZoom = currentZoom;
+    _appliedCameraRotation = currentRotation;
+    _appliedCameraSize = currentSize;
+
+    if ((currentZoom - prevZoom).abs() > 0.001 ||
+        (currentRotation - prevRotation).abs() > 0.001) {
+      for (final component in _tileMap.values) {
+        component.invalidateCache();
+      }
     }
 
     // 점령 중인 타일 ID를 컴포넌트 상태에서 추출 (culling 제외 대상)
