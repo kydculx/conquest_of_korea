@@ -382,6 +382,9 @@ class _GameMapWidgetState extends State<GameMapWidget>
                       }
                     });
                   }
+                  // [수정] 맵 드레그 시작 시 선택된 타일 상태 초기화: 스크롤 시 타일 위치가 변하므로
+                  // 정보창( SatelliteMapBubble )이旧旧 위치에 고정되어 맵과 분리되는 현상 방지
+                  gameProvider.selectScanTile(null);
                   _stopAnimation();
                 }
                 widget.game.updateProjection(_mapController);

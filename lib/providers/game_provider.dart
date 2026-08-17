@@ -1065,27 +1065,33 @@ class GameProvider extends ChangeNotifier with WidgetsBindingObserver {
     notifyListeners();
   }
 
-  void selectScanTile(String tileId) {
+  void selectScanTile(String? tileId) {
     if (!_isAuthenticated) return;
 
-    if (_selectedScanTileId == tileId) {
+    if (tileId == _selectedScanTileId) {
       _selectedScanTileId = null;
       _selectedScanTileLatLng = null;
       notifyListeners();
     } else {
       _selectedScanTileId = tileId;
-      final parts = tileId.split('_');
-      if (parts.length == 3) {
-        final q = int.tryParse(parts[1]);
-        final r = int.tryParse(parts[2]);
-        if (q != null && r != null) {
-          _selectedScanTileLatLng = HexService.hexToLatLng(q, r);
+      if (tileId != null) {
+        final parts = tileId.split('_');
+        if (parts.length == 3) {
+          final q = int.tryParse(parts[1]);
+          final r = int.tryParse(parts[2]);
+          if (q != null && r != null) {
+            _selectedScanTileLatLng = HexService.hexToLatLng(q, r);
+          }
         }
+      } else {
+        _selectedScanTileLatLng = null;
       }
       notifyListeners();
 
       // 조준 즉시 서버에서 타일 최신 정보 패치
-      _tileProvider.fetchAndUpdateTile(tileId);
+      if (tileId != null) {
+        _tileProvider.fetchAndUpdateTile(tileId);
+      }
     }
   }
 
