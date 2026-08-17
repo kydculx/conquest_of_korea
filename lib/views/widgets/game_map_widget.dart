@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:math' as math;
 import 'package:flutter/material.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:flame/game.dart';
@@ -41,6 +42,8 @@ class _GameMapWidgetState extends State<GameMapWidget>
   GameProvider? _gameProvider; // 추가: GameProvider 참조 보관
   AnimationController? _animationController; // 추가: 내 위치 애니메이션 컨트롤러
   StreamSubscription<LatLng>? _mapMoveSub; // 추가: 지도 카메라 이동 수신용 구독
+  Offset? _lastPointerPos; // 진단: 마지막 손가락 위치
+  LatLng? _lastCamPos; // 진단: 마지막 카메라 중심
 
   @override
   void initState() {
@@ -258,9 +261,40 @@ class _GameMapWidgetState extends State<GameMapWidget>
           },
           onPointerUp: (event) {
             _pointerCount = (_pointerCount - 1).clamp(0, 10);
+            _lastPointerPos = null;
+            _lastCamPos = null;
           },
           onPointerCancel: (event) {
             _pointerCount = (_pointerCount - 1).clamp(0, 10);
+            _lastPointerPos = null;
+            _lastCamPos = null;
+          },
+          onPointerMove: (event) {
+            // [진단] 드래그 증폭 계측: 손가락 이동량(px) 대비 카메라 이동량(px) 비율
+            final cam = _mapController.camera;
+            if (_lastPointerPos != null &&
+                _lastCamPos != null &&
+                cam.size.width > 0) {
+              final fingerPx = (event.position - _lastPointerPos!).distance;
+              final deg2px = 256.0 * math.pow(2.0, cam.zoom) / 360.0;
+              final dLat = (cam.center.latitude - _lastCamPos!.latitude) * deg2px;
+              final dLng =
+                  (cam.center.longitude - _lastCamPos!.longitude) * deg2px;
+              final camPx = math.sqrt(dLat * dLat + dLng * dLng);
+              if (fingerPx > 0.3 && camPx > fingerPx * 1.3) {
+                debugPrint(
+                  '진단:드래그증폭 finger=${fingerPx.toStringAsFixed(1)}px '
+                  'cam=${camPx.toStringAsFixed(1)}px '
+                  '(${(camPx / fingerPx).toStringAsFixed(1)}배) '
+                  'zoom=${cam.zoom.toStringAsFixed(1)} '
+                  'follow=$_lastIsFollowing '
+                  'scan=${_gameProvider?.isScanMode} '
+                  '포인터=$_pointerCount',
+                );
+              }
+            }
+            _lastPointerPos = event.position;
+            _lastCamPos = cam.center;
           },
           child: FlutterMap(
             mapController: _mapController,
