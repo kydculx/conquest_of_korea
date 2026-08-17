@@ -20,27 +20,16 @@ class FootprintTargetMarker extends PositionComponent
   }
 
   @override
-  void onLoad() {
-    super.onLoad();
-    updateScreenPosition();
-  }
+  void update(double dt) {
+    super.update(dt);
+    _timer += dt;
 
-  /// 맵 스크롤/제스처 발생 시 ConquestGame에서 직접 호출하여 게임 루프(30fps)를 기다리지 않고
-  /// 매 프레임 즉시 스크린 좌표를 재계산합니다 (밀림 및 지연 현상 완벽 방지).
-  void updateScreenPosition() {
     if (game.mapController != null) {
       _screenCorners = _latLngCorners.map((latlng) {
         final offset = game.mapController!.camera.latLngToScreenOffset(latlng);
         return Offset(offset.dx, offset.dy);
       }).toList();
     }
-  }
-
-  @override
-  void update(double dt) {
-    super.update(dt);
-    _timer += dt;
-    updateScreenPosition();
   }
 
   @override
