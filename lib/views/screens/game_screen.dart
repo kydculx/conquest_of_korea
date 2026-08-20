@@ -323,6 +323,23 @@ class _GameScreenState extends State<GameScreen> {
             },
           ),
 
+          // GPS 위치 미획득 로딩 오버레이
+          // 첫 위치 수신 전까지 "로딩중" 원형 인디케이터를 화면 중앙에 표시
+          Selector<LocationProvider, bool>(
+            selector: (_, loc) => loc.currentLocation == null,
+            builder: (context, waitingForLocation, child) {
+              return AnimatedSwitcher(
+                duration: const Duration(milliseconds: 400),
+                child: waitingForLocation
+                    ? LoadingOverlay(
+                        key: const ValueKey('gps-waiting'),
+                        message: GameStrings.searchingSignal,
+                      )
+                    : const SizedBox.shrink(key: ValueKey('gps-ready')),
+              );
+            },
+          ),
+
           // 온보딩 가이드 오버레이 (최초 진입 시)
           if (_showOnboarding)
             OnboardingOverlay(
