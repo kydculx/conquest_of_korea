@@ -61,6 +61,13 @@ void main() async {
     debugPrint('⚠️ Firebase 초기화 실패 (알림 기능 제한): $e');
   }
 
+  // 위치 권한 요청 — 알림 권한과 동일하게 앱 시작 시 1회만 시스템 다이얼로그로 안내
+  try {
+    await GeoService().checkPermissions();
+  } catch (e) {
+    debugPrint('⚠️ 위치 권한 확인 실패: $e');
+  }
+
   // 세로 모드 고정
   await SystemChrome.setPreferredOrientations([DeviceOrientation.portraitUp]);
 
