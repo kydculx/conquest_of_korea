@@ -384,8 +384,10 @@ class _GameScreenState extends State<GameScreen> {
               ),
             ),
             ElevatedButton(
-              onPressed: () {
+              onPressed: () async {
                 Navigator.pop(context);
+                // 설정 화면을 열었으면 이번에는 안내를 다시 띄우지 않도록 저장
+                await PreferencesService.setBgBatteryDismissed();
                 geo.requestIgnoreBatteryOptimizations();
               },
               style: ElevatedButton.styleFrom(
