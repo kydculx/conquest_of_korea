@@ -50,23 +50,52 @@ class GeoService {
   Stream<Position> get locationStream => _locationController.stream;
 
   /// 시스템 GPS 기능 활성화 상태 및 앱의 위치 정보 접근 권한을 확인하고 필요한 경우 권한을 요청합니다.
+  ///
+  /// 시스템 권한 다이얼로그와 설정 화면 유도는 각각 1회만 수행합니다.
+  /// (거절/미설정 상태가 계속돼도 매 실행마다 팝업이 반복되지 않도록)
   Future<bool> checkPermissions() async {
     bool serviceEnabled;
     LocationPermission permission;
 
     serviceEnabled = await Geolocator.isLocationServiceEnabled();
     if (!serviceEnabled) {
-      await Geolocator.openLocationSettings();
+      // GPS 꺼짐 안내는 1회만, 이후엔 조용히 false 반환
+      final guided = await PreferencesService.isLocationSettingsGuided();
+      if (!guided) {
+        await PreferencesService.setLocationSettingsGuided();
+        await Geolocator.openLocationSettings();
+      }
       return false;
     }
 
     permission = await Geolocator.checkPermission();
     if (permission == LocationPermission.denied) {
-      permission = await Geolocator.requestPermission();
-      if (permission == LocationPermission.denied) return false;
+      // 시스템 권한 다이얼로그는 1회만 요청
+      final asked = await PreferencesService.isLocationPermissionAsked();
+      if (!asked) {
+        await PreferencesService.setLocationPermissionAsked();
+        permission = await Geolocator.requestPermission();
+        if (permission == LocationPermission.denied) return false;
+      } else {
+        // 이미 거절한 이력이 있으면 다이얼로그 대신 설정 화면으로 유도(1회)
+        final guided = await PreferencesService.isLocationSettingsGuided();
+        if (!guided) {
+          await PreferencesService.setLocationSettingsGuided();
+          await Geolocator.openAppSettings();
+        }
+        return false;
+      }
     }
 
-    if (permission == LocationPermission.deniedForever) return false;
+    if (permission == LocationPermission.deniedForever) {
+      // 재요청이 불가능한 상태: 설정 화면으로 유도(1회)
+      final guided = await PreferencesService.isLocationSettingsGuided();
+      if (!guided) {
+        await PreferencesService.setLocationSettingsGuided();
+        await Geolocator.openAppSettings();
+      }
+      return false;
+    }
 
     return true;
   }

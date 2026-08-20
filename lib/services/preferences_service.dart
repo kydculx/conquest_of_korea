@@ -32,6 +32,33 @@ class PreferencesService {
     await prefs.setBool(_bgBatteryKey, true);
   }
 
+  // --- 위치 권한 안내 상태 (geo_service) ---
+  // 시스템 권한 다이얼로그는 1회만, 설정 화면 유도는 1회만 하여
+  // 매 실행마다 팝업이 반복되는 것을 방지합니다.
+
+  static const _locationPermissionAskedKey = 'location_permission_asked';
+  static const _locationSettingsGuidedKey = 'location_settings_guided';
+
+  static Future<bool> isLocationPermissionAsked() async {
+    final prefs = await SharedPreferences.getInstance();
+    return prefs.getBool(_locationPermissionAskedKey) ?? false;
+  }
+
+  static Future<void> setLocationPermissionAsked() async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setBool(_locationPermissionAskedKey, true);
+  }
+
+  static Future<bool> isLocationSettingsGuided() async {
+    final prefs = await SharedPreferences.getInstance();
+    return prefs.getBool(_locationSettingsGuidedKey) ?? false;
+  }
+
+  static Future<void> setLocationSettingsGuided() async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setBool(_locationSettingsGuidedKey, true);
+  }
+
   // --- 알림 설정 (game_provider) ---
 
   static const _notifKey = 'conquest_notifications_enabled';
