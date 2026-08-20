@@ -767,12 +767,6 @@ class ConquestGame extends FlameGame {
     if (isLoaded) player.updateHeading(heading);
   }
 
-  /// GPS 신호 수신 활성 상태를 플레이어 컴포넌트에 동기화합니다.
-  /// (미수신 시 플레이어 마커가 심플 원형 인디케이터로 전환됩니다)
-  void updateGpsSignal(bool active) {
-    if (isLoaded) player.updateGpsSignal(active);
-  }
-
   /// 플레이어의 현재 지도 GPS 위치(LatLng)를 기반으로 하여 디바이스 화면 상의 픽셀 좌표값으로 최종 정렬시킵니다.
   void _updatePlayerScreenPosition() {
     if (_mapController != null) {
