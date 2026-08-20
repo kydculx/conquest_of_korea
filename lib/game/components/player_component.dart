@@ -20,6 +20,12 @@ class PlayerComponent extends PositionComponent {
   /// 플레이어 커서 컴포넌트의 가시성(화면 렌더링) 여부
   bool isVisible = true;
 
+  /// GPS 신호가 실시간으로 수신되고 있는지 여부 (false면 심플 원형 인디케이터로 전환)
+  bool isGpsSignalActive = true;
+
+  /// 원형 인디케이터 펄스 애니메이션 위상 (라디안)
+  double _pulsePhase = 0.0;
+
   /// PlayerComponent 생성자로 앵커를 중앙으로 고정합니다.
   PlayerComponent() : super(anchor: Anchor.center);
 
@@ -28,6 +34,11 @@ class PlayerComponent extends PositionComponent {
     // 크기는 기존대로 유지 (40x40)
     size = Vector2(40, 40);
     anchor = Anchor.center;
+  }
+
+  /// GPS 신호 수신 활성 상태를 갱신합니다.
+  void updateGpsSignal(bool active) {
+    isGpsSignalActive = active;
   }
 
   /// 플레이어의 지리적 위치(LatLng)를 동기화합니다.
@@ -47,9 +58,23 @@ class PlayerComponent extends PositionComponent {
   }
 
   @override
+  void update(double dt) {
+    super.update(dt);
+    // 원형 인디케이터 펄스 위상 진행 (2초 주기 왕복)
+    _pulsePhase += dt * (2 * math.pi) / 2.0;
+  }
+
+  @override
   void render(Canvas canvas) {
     if (!isVisible) return;
     final center = Offset(size.x / 2, size.y / 2);
+
+    // GPS 신호 미수신 시 심플 원형 인디케이터로 전환
+    if (!isGpsSignalActive) {
+      _renderSignalLostIndicator(canvas, center);
+      return;
+    }
+
     final baseRadius = size.x * 0.35;
     final radius = baseRadius; // 정적 스케일 적용 (산만한 펄싱 애니메이션 완벽 소거)
 
@@ -234,6 +259,34 @@ class PlayerComponent extends PositionComponent {
     );
 
     canvas.restore();
+  }
+
+  /// GPS 신호가 수신되지 않을 때 마지막 위치에 표시하는 심플 원형 인디케이터
+  /// (펄싱 링 + 반투명 채움 원 + 중심 도트)
+  void _renderSignalLostIndicator(Canvas canvas, Offset center) {
+    final double pulse = (math.sin(_pulsePhase) + 1.0) / 2.0; // 0.0 ~ 1.0
+
+    // 1. 반투명 채움 원 (위치 영역 표시)
+    canvas.drawCircle(
+      center,
+      16.0,
+      Paint()
+        ..color = GameColors.error.withValues(alpha: 0.12)
+        ..style = PaintingStyle.fill,
+    );
+
+    // 2. 펄싱 외곽 링 (수신 대기 중 연출)
+    canvas.drawCircle(
+      center,
+      12.0 + pulse * 10.0,
+      Paint()
+        ..color = GameColors.error.withValues(alpha: 0.35 + pulse * 0.4)
+        ..style = PaintingStyle.stroke
+        ..strokeWidth = 1.5,
+    );
+
+    // 3. 중심 도트 (마지막 수신 위치 핵심 표시)
+    canvas.drawCircle(center, 3.0, Paint()..color = GameColors.error);
   }
 
   /// 4방위 지시 문자를 극극미니멀한 폰트 스타일로 렌더링하는 헬퍼 메서드

@@ -166,6 +166,9 @@ class _GameMapWidgetState extends State<GameMapWidget>
     widget.game.updatePlayerHeading(
       gameProvider.isMapRotationMode ? 0.0 : loc.heading,
     );
+
+    // GPS 신호 수신 상태 동기화 (30초 무수신 시 플레이어 마커가 원형 인디케이터로 전환)
+    widget.game.updateGpsSignal(loc.isGpsActive);
   }
 
   @override
