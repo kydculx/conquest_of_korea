@@ -7,31 +7,6 @@ import 'package:shared_preferences/shared_preferences.dart';
 class PreferencesService {
   PreferencesService._();
 
-  // --- GPS 프롬프트 Dismiss 상태 (game_screen) ---
-
-  static const _bgLocationKey = 'bg_location_prompt_dismissed';
-  static const _bgBatteryKey = 'bg_battery_prompt_dismissed';
-
-  static Future<bool> isBgLocationDismissed() async {
-    final prefs = await SharedPreferences.getInstance();
-    return prefs.getBool(_bgLocationKey) ?? false;
-  }
-
-  static Future<void> setBgLocationDismissed() async {
-    final prefs = await SharedPreferences.getInstance();
-    await prefs.setBool(_bgLocationKey, true);
-  }
-
-  static Future<bool> isBgBatteryDismissed() async {
-    final prefs = await SharedPreferences.getInstance();
-    return prefs.getBool(_bgBatteryKey) ?? false;
-  }
-
-  static Future<void> setBgBatteryDismissed() async {
-    final prefs = await SharedPreferences.getInstance();
-    await prefs.setBool(_bgBatteryKey, true);
-  }
-
   // --- 위치 권한 안내 상태 (geo_service) ---
   // 시스템 권한 다이얼로그는 1회만, 설정 화면 유도는 1회만 하여
   // 매 실행마다 팝업이 반복되는 것을 방지합니다.
