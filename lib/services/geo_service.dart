@@ -140,6 +140,7 @@ class GeoService {
         foregroundNotificationConfig: ForegroundNotificationConfig(
           notificationText: GameStrings.gpsServiceNotificationText,
           notificationTitle: GameStrings.gpsServiceNotificationTitle,
+          notificationIcon: const AndroidResource(name: 'launcher_icon'),
           enableWakeLock: true,
         ),
       );
