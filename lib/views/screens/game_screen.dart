@@ -340,18 +340,25 @@ class _GameScreenState extends State<GameScreen> {
             },
           ),
 
-          // 온보딩 가이드 오버레이 (최초 진입 시)
-          if (_showOnboarding)
-            OnboardingOverlay(
-              onFinish: () async {
-                await PreferencesService.setSeenOnboarding();
-                if (mounted) {
-                  setState(() {
-                    _showOnboarding = false;
-                  });
-                }
-              },
-            ),
+          // 온보딩 가이드 오버레이 (첫 GPS 위치 수신 전에는 표시하지 않고, 수신 후 자동 표시)
+          Selector<LocationProvider, bool>(
+            selector: (_, loc) => loc.currentLocation != null,
+            builder: (context, gpsReceived, child) {
+              if (!_showOnboarding || !gpsReceived) {
+                return const SizedBox.shrink();
+              }
+              return OnboardingOverlay(
+                onFinish: () async {
+                  await PreferencesService.setSeenOnboarding();
+                  if (mounted) {
+                    setState(() {
+                      _showOnboarding = false;
+                    });
+                  }
+                },
+              );
+            },
+          ),
         ],
       ),
     );
