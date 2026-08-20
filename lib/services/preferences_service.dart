@@ -34,6 +34,22 @@ class PreferencesService {
     await prefs.setBool(_locationSettingsGuidedKey, true);
   }
 
+  // --- 걸음 수 권한 안내 상태 (main) ---
+  // Health Connect 권한 요청은 앱 시작 시 1회만 하여
+  // 매 실행마다 권한 화면/설치 리다이렉트가 반복되는 것을 방지합니다.
+
+  static const _stepPermissionAskedKey = 'step_permission_asked';
+
+  static Future<bool> isStepPermissionAsked() async {
+    final prefs = await SharedPreferences.getInstance();
+    return prefs.getBool(_stepPermissionAskedKey) ?? false;
+  }
+
+  static Future<void> setStepPermissionAsked() async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setBool(_stepPermissionAskedKey, true);
+  }
+
   // --- 알림 설정 (game_provider) ---
 
   static const _notifKey = 'conquest_notifications_enabled';

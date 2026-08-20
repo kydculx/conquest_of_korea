@@ -16,6 +16,8 @@ import 'providers/game_provider.dart';
 import 'providers/game_tile_provider.dart';
 import 'providers/location_provider.dart';
 import 'services/geo_service.dart';
+import 'services/health_service.dart';
+import 'services/preferences_service.dart';
 import 'services/supabase_service.dart';
 import 'views/screens/auth/login_screen.dart';
 import 'views/screens/auth/terms_agreement_screen.dart';
@@ -66,6 +68,20 @@ void main() async {
     await GeoService().checkPermissions();
   } catch (e) {
     debugPrint('⚠️ 위치 권한 확인 실패: $e');
+  }
+
+  // 걸음 수(Health Connect/HealthKit) 권한 요청 — 앱 시작 시 1회만
+  // (Health Connect가 없는 기기에서는 Play Store 리다이렉트가 매번 발생할 수 있어 1회 가드 적용)
+  try {
+    final stepAsked = await PreferencesService.isStepPermissionAsked();
+    if (!stepAsked) {
+      await PreferencesService.setStepPermissionAsked();
+      if (!await HealthService.instance.hasStepPermissions()) {
+        await HealthService.instance.requestStepPermissions();
+      }
+    }
+  } catch (e) {
+    debugPrint('⚠️ 걸음 수 권한 확인 실패: $e');
   }
 
   // 세로 모드 고정
