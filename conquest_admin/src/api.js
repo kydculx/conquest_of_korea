@@ -102,6 +102,16 @@ export async function fetchTiles() {
   return data || [];
 }
 
+export async function fetchUserCapturedTiles(userId) {
+  const { data, error } = await supabase
+    .from('captured_tiles')
+    .select('*')
+    .eq('user_id', userId)
+    .order('captured_at', { ascending: false });
+  if (error) throw error;
+  return data || [];
+}
+
 export async function neutralizeTile(tileId) {
   const { error } = await supabase
     .from('captured_tiles')

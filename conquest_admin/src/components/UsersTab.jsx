@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { fetchUsers, updateUserGold, updateUserMainBase, deleteUser, fetchUserAchievements } from '../api';
-import { Search, Edit2, RotateCcw, AlertTriangle, ShieldCheck, X, Trophy, Lock, Award, MapPin } from 'lucide-react';
+import { Search, Edit2, RotateCcw, AlertTriangle, ShieldCheck, X, Trophy, Lock, Award, MapPin, Map } from 'lucide-react';
 
 export default function UsersTab() {
   const [users, setUsers] = useState([]);
@@ -29,6 +29,10 @@ export default function UsersTab() {
       return;
     }
     navigate(`/admin/dashboard?hq=${user.main_base_tile_id}`);
+  };
+
+  const handleGoToUserTiles = (user) => {
+    navigate(`/admin/user-tiles?userId=${user.id}&nickname=${encodeURIComponent(user.nickname || '')}`);
   };
 
   const handleViewDetails = async (user) => {
@@ -246,6 +250,9 @@ export default function UsersTab() {
                     <div style={{ display: 'flex', gap: '0.5rem', justifyContent: 'center' }}>
                       <button className="tactical-btn" onClick={() => handleGoToMainBase(user)}>
                         <MapPin size={14} /> 본진 이동
+                      </button>
+                      <button className="tactical-btn" onClick={() => handleGoToUserTiles(user)}>
+                        <Map size={14} /> 점령목록
                       </button>
                       <button className="tactical-btn" onClick={() => handleViewDetails(user)}>
                         <Award size={14} /> 업적 상세

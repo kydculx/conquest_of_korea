@@ -5,6 +5,7 @@ import RankingTab from './components/RankingTab';
 import UsersTab from './components/UsersTab';
 import NotificationsTab from './components/NotificationsTab';
 import MapEditorTab from './components/MapEditorTab';
+import UserTilesTab from './components/UserTilesTab';
 import LandingPage from './components/LandingPage';
 import TermsPage from './components/TermsPage';
 import PrivacyPage from './components/PrivacyPage';
@@ -307,6 +308,7 @@ export default function App() {
         <Route path="dashboard" element={<DashboardTab />} />
         <Route path="ranking" element={<RankingTab />} />
         <Route path="users" element={<UsersTab />} />
+        <Route path="user-tiles" element={<UserTilesTab />} />
         <Route path="notifications" element={<NotificationsTab />} />
         <Route path="map-editor" element={<MapEditorTab />} />
       </Route>
