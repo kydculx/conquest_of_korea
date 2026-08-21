@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useSearchParams, useNavigate } from 'react-router-dom';
-import { ArrowLeft } from 'lucide-react';
+import { ArrowLeft, MapPin } from 'lucide-react';
 import { fetchUserCapturedTiles } from '../api';
 
 export default function UserTilesTab() {
@@ -68,6 +68,7 @@ export default function UserTilesTab() {
                 <th>상태</th>
                 <th>점령 횟수</th>
                 <th>점령 시각</th>
+                <th>맵 보기</th>
               </tr>
             </thead>
             <tbody>
@@ -90,6 +91,11 @@ export default function UserTilesTab() {
                   <td>{t.capture_status || 'captured'}</td>
                   <td>{t.capture_count ?? 1}</td>
                   <td>{t.captured_at ? new Date(t.captured_at).toLocaleString('ko-KR') : '-'}</td>
+                  <td>
+                    <button className="tactical-btn" onClick={() => navigate(`/admin/dashboard?hq=${t.id}`)}>
+                      <MapPin size={14} /> 맵에서 보기
+                    </button>
+                  </td>
                 </tr>
               ))}
             </tbody>
