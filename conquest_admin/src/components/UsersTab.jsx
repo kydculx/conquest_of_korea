@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { fetchUsers, updateUserGold, deleteUser, fetchUserAchievements } from '../api';
+import { fetchUsers, updateUserGold, updateUserMainBase, deleteUser, fetchUserAchievements } from '../api';
 import { Search, Edit2, RotateCcw, AlertTriangle, ShieldCheck, X, Trophy, Lock, Award, MapPin } from 'lucide-react';
 
 export default function UsersTab() {
@@ -14,6 +14,9 @@ export default function UsersTab() {
   const [editingUser, setEditingUser] = useState(null);
   const [goldInput, setGoldInput] = useState('');
   const [submitting, setSubmitting] = useState(false);
+
+  const [editingBaseId, setEditingBaseId] = useState(null);
+  const [baseInput, setBaseInput] = useState('');
 
   // 사용자 상세 및 업적 제어용 상태
   const [selectedUser, setSelectedUser] = useState(null);
@@ -80,6 +83,27 @@ export default function UsersTab() {
     } catch (err) {
       console.error(err);
       alert('재화 조정 중 에러가 발생했습니다.');
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
+  const handleEditBase = (user) => {
+    setEditingBaseId(user.id);
+    setBaseInput(user.main_base_tile_id || '');
+  };
+
+  const handleSaveBase = async (user) => {
+    try {
+      setSubmitting(true);
+      const value = baseInput.trim() === '' ? null : baseInput.trim();
+      await updateUserMainBase(user.id, value);
+      alert('성공적으로 본진 기지가 수정되었습니다.');
+      setEditingBaseId(null);
+      loadUsers();
+    } catch (err) {
+      console.error(err);
+      alert('본진 기지 수정 중 에러가 발생했습니다.');
     } finally {
       setSubmitting(false);
     }
@@ -180,12 +204,36 @@ export default function UsersTab() {
                     })}
                   </td>
                   <td>
-                    {user.main_base_tile_id ? (
-                      <span style={{ color: 'var(--accent-cyan)', fontFamily: 'monospace' }}>
-                        {user.main_base_tile_id}
-                      </span>
+                    {editingBaseId === user.id ? (
+                      <div style={{ display: 'flex', gap: '0.4rem', alignItems: 'center' }}>
+                        <input
+                          type="text"
+                          className="tactical-input"
+                          style={{ width: '150px', fontFamily: 'monospace' }}
+                          value={baseInput}
+                          onChange={(e) => setBaseInput(e.target.value)}
+                          placeholder="hex_q_r"
+                        />
+                        <button className="tactical-btn" onClick={() => handleSaveBase(user)} disabled={submitting}>
+                          저장
+                        </button>
+                        <button className="tactical-btn danger" onClick={() => setEditingBaseId(null)}>
+                          취소
+                        </button>
+                      </div>
                     ) : (
-                      <span style={{ color: 'var(--text-muted)' }}>설정되지 않음</span>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
+                        {user.main_base_tile_id ? (
+                          <span style={{ color: 'var(--accent-cyan)', fontFamily: 'monospace' }}>
+                            {user.main_base_tile_id}
+                          </span>
+                        ) : (
+                          <span style={{ color: 'var(--text-muted)' }}>설정되지 않음</span>
+                        )}
+                        <button className="tactical-btn" onClick={() => handleEditBase(user)} title="본진 기지 수정">
+                          <Edit2 size={14} />
+                        </button>
+                      </div>
                     )}
                   </td>
                   <td style={{ fontWeight: 'bold', color: 'var(--accent-cyan)' }}>

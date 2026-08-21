@@ -71,6 +71,16 @@ export async function updateUserGold(userId, goldAmount) {
   return data;
 }
 
+export async function updateUserMainBase(userId, mainBaseTileId) {
+  const { data, error } = await supabase
+    .rpc('update_user_main_base_admin', {
+      p_user_id: userId,
+      p_main_base_tile_id: mainBaseTileId
+    });
+  if (error) throw error;
+  return data;
+}
+
 export async function deleteUser(userId) {
   const { data, error } = await supabase
     .rpc('delete_user_by_admin', {

@@ -181,6 +181,21 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql;
 
+-- [신규] 관리자용 본진 기지(main_base_tile_id) 업데이트 RPC 함수 (RLS 우회)
+CREATE OR REPLACE FUNCTION public.update_user_main_base_admin(
+  p_user_id uuid,
+  p_main_base_tile_id text
+) RETURNS void
+  SECURITY DEFINER
+  SET search_path = public
+AS $$
+BEGIN
+  UPDATE public.profiles
+  SET main_base_tile_id = p_main_base_tile_id
+  WHERE id = p_user_id;
+END;
+$$ LANGUAGE plpgsql;
+
 -- [신규] 골드 획득율(gold_rate) 및 점령 타일 수 기준 골드 및 개수 동기화 펑션
 CREATE OR REPLACE FUNCTION public.sync_user_gold_and_count(
   p_user_id uuid,
