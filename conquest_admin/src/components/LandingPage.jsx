@@ -60,15 +60,15 @@ export default function LandingPage() {
         <div className="hero-content">
           <div className="tag-badge animate-fade-in">
             <Zap size={14} className="glow-icon" />
-            <span>뺏고 뺏기는 실시간 영토 쟁탈전</span>
+            <span>실시간 위치 기반 영토 점령 게임</span>
           </div>
           <h1 className="hero-title animate-slide-up">
             지루했던 일상을<br />
-            <span className="gradient-text">나만의 전장</span>으로!
+            <span className="gradient-text">나만의 영토</span>로!
           </h1>
           <p className="hero-desc animate-slide-up-delay">
-            '찜! 모험'은 실시간 내 위치를 기반으로 지도를 점령해 나가는 영토 쟁탈전입니다.
-            끊임없이 뺏고 뺏기는 전쟁 속에서 모든 움직임을 정복의 역사로 만드세요.
+            '찜! 모험'은 실시간 내 위치를 기반으로 지도를 점령해 나가는 영토 점령 게임입니다.
+            꾸준한 일상의 이동으로 점령지를 넓히고 나만의 영토 기록을 완성해보세요.
           </p>
 
           <div className="download-badges animate-slide-up-delay-2">
@@ -122,9 +122,9 @@ export default function LandingPage() {
       {/* 라이프스타일 유스케이스 섹션 */}
       <section className="features-section">
         <div className="features-header">
-          <h2 className="section-title">뺏고 뺏기는 일상 전술 플레이</h2>
+          <h2 className="section-title">일상 속 즐거운 영토 점령 플레이</h2>
           <p className="section-subtitle">
-            러닝, 출퇴근, 동네 산책까지. 평범한 발걸음이 세력을 넓히는 가장 강력한 전술이 됩니다.
+            러닝, 출퇴근, 동네 산책까지. 평범한 발걸음이 영토를 넓히는 가장 자연스러운 플레이가 됩니다.
           </p>
         </div>
 
@@ -136,7 +136,7 @@ export default function LandingPage() {
             </div>
             <h3 className="card-heading">🏃‍♂️ 러닝 & 조깅 페이스메이커</h3>
             <p className="card-body-text">
-              달리는 모든 미터가 실시간으로 영토가 됩니다. 뺏고 뺏기는 쟁탈 경쟁을 통해 운동에 강력한 동기를 부여받으세요.
+              달리는 모든 미터가 실시간으로 내 영토가 됩니다. 친구들과의 점령 경쟁을 통해 운동에 강력한 동기를 부여받으세요.
             </p>
           </div>
 
@@ -145,9 +145,9 @@ export default function LandingPage() {
             <div className="card-icon-wrapper cyan">
               <Navigation size={22} style={{ transform: 'rotate(45deg)' }} />
             </div>
-            <h3 className="card-heading">🚌 출퇴근길 자동 영토 정찰</h3>
+            <h3 className="card-heading">🚌 출퇴근길 자동 영토 점령</h3>
             <p className="card-body-text">
-              대중교통 이동 경로에 맞춰 점령지가 자동으로 칠해집니다. 백그라운드 모드만 켜두면 일상의 이동이 곧 정복 루트가 됩니다.
+              대중교통 이동 경로에 맞춰 점령지가 자동으로 칠해집니다. 백그라운드 모드만 켜두면 일상의 이동이 곧 점령 루트가 됩니다.
             </p>
           </div>
 
@@ -180,7 +180,7 @@ export default function LandingPage() {
             </div>
             <h3 className="card-heading">🛋️ 집 안에서 즐기는 원격 점령</h3>
             <p className="card-body-text">
-              직접 가기 힘든 강 너머나 사유지, 혹은 날씨가 나쁜 날에는 비축한 골드를 사용해 방 안에서 원격으로 영토를 사수하세요.
+              직접 가기 힘든 강 너머나 사유지, 혹은 날씨가 나쁜 날에는 비축한 골드를 사용해 방 안에서 원격으로 영토를 넓혀보세요.
             </p>
           </div>
 
@@ -224,6 +224,10 @@ export default function LandingPage() {
         /* 프리미엄 리셋 및 베이스 */
         .premium-landing-root {
           background-color: #060913;
+          background-image:
+            radial-gradient(1200px 600px at 12% -10%, rgba(56, 189, 248, 0.08), transparent 60%),
+            radial-gradient(1000px 520px at 100% 8%, rgba(167, 139, 250, 0.08), transparent 55%),
+            radial-gradient(900px 600px at 50% 112%, rgba(52, 211, 153, 0.06), transparent 60%);
           color: #f1f5f9;
           font-family: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
           min-height: 100vh;
@@ -242,30 +246,31 @@ export default function LandingPage() {
           position: absolute;
           border-radius: 50%;
           pointer-events: none;
-          filter: blur(140px);
-          opacity: 0.15;
+          filter: blur(160px);
+          opacity: 0.12;
+          mix-blend-mode: screen;
           z-index: 0;
         }
         .orb-1 {
-          width: 500px;
-          height: 500px;
-          background: radial-gradient(circle, #3b82f6 0%, transparent 80%);
-          top: -100px;
-          left: 20%;
+          width: 520px;
+          height: 520px;
+          background: radial-gradient(circle, #38bdf8 0%, transparent 70%);
+          top: -120px;
+          left: 15%;
         }
         .orb-2 {
-          width: 600px;
-          height: 600px;
-          background: radial-gradient(circle, #8b5cf6 0%, transparent 80%);
-          top: 30%;
-          right: -100px;
+          width: 620px;
+          height: 620px;
+          background: radial-gradient(circle, #a78bfa 0%, transparent 70%);
+          top: 28%;
+          right: -120px;
         }
         .orb-3 {
-          width: 400px;
-          height: 400px;
-          background: radial-gradient(circle, #10b981 0%, transparent 80%);
-          bottom: 10%;
-          left: -50px;
+          width: 420px;
+          height: 420px;
+          background: radial-gradient(circle, #34d399 0%, transparent 70%);
+          bottom: 8%;
+          left: -60px;
         }
 
         /* 글래스 헤더 */
@@ -496,14 +501,14 @@ export default function LandingPage() {
         
         /* 프리미엄 카드 디자인 */
         .feature-premium-card {
-          background: rgba(30, 41, 59, 0.25);
-          border: 1px solid rgba(255, 255, 255, 0.04);
-          border-radius: 20px;
+          background: linear-gradient(160deg, rgba(30, 41, 59, 0.35), rgba(15, 23, 42, 0.25));
+          border: 1px solid rgba(255, 255, 255, 0.06);
+          border-radius: 22px;
           padding: 2.5rem;
           display: flex;
           flex-direction: column;
           gap: 1.2rem;
-          box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+          box-shadow: 0 12px 30px rgba(0, 0, 0, 0.25);
           backdrop-filter: blur(10px);
           -webkit-backdrop-filter: blur(10px);
           transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
