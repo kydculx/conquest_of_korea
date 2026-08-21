@@ -250,10 +250,15 @@ export default function DashboardTab() {
         ? `<button onclick="window.openAdminGallery('${tileId}')" style="background: #3b82f6; color: white; border: none; padding: 2px 6px; border-radius: 4px; font-size: 0.7rem; cursor: pointer; font-weight: bold; margin-top: 2px;">사진 ${count}장 보기</button>`
         : '<span style="color: var(--text-secondary);">없음</span>';
 
+      const capturedAt = tile.captured_at
+        ? new Date(tile.captured_at).toLocaleString('ko-KR')
+        : '-';
+
       const popupContent = `
         <div style="font-family: monospace; color: var(--text-primary); line-height: 1.4; font-size: 0.8rem;">
           <strong style="color: ${color}">[사용자]</strong> ${ownerName}<br/>
           <strong>[점령]</strong> ${tile.capture_count}회 중첩<br/>
+          <strong>[점령날짜]</strong> ${capturedAt}<br/>
           <strong>[갤러리]</strong> ${galleryText}<br/>
           <strong>[좌표]</strong> Q:${tile.q}, R:${tile.r}
         </div>
