@@ -244,10 +244,10 @@ BEGIN
 
     v_earned_gold := FLOOR(v_seconds_diff::numeric / 21600.0) * v_current_count * v_gold_rate;
 
-    -- 4. 골드 및 타일 개수 갱신 (개수는 최소 0 보장, 골드는 정수로 가산)
+    -- 4. 골드 갱신 및 타일 개수 재계산 (실제 행 수 기준 → 증분 오차로 인한 드리프트 방지)
     UPDATE public.profiles
     SET gold = FLOOR(gold + v_earned_gold),
-        captured_tiles_count = GREATEST(0, captured_tiles_count + p_count_delta),
+        captured_tiles_count = (SELECT COUNT(*) FROM public.captured_tiles WHERE user_id = p_user_id),
         last_gold_updated_at = now()
     WHERE id = p_user_id;
   END IF;
