@@ -780,19 +780,24 @@ class GameProvider extends ChangeNotifier with WidgetsBindingObserver {
 
     _captureController.checkCaptureStatus(loc.currentLocation);
 
-    final now = DateTime.now();
-    final lastCheck = _tileProvider.lastServerCheckTime;
-    if (lastCheck == null ||
-        now.difference(lastCheck) >= GameConfig.serverCheckDelay) {
-      _tileProvider.updateLastServerCheckTime();
+    // 본진(메인 베이스)에 있으면 캡처가 불가하므로 매초 서버 상태 조회(1초 폴링)를 생략한다.
+    // 조회 결과는 항상 'mine'으로 고정되어, 무의미한 네트워크 왕복만 발생하기 때문이다.
+    final myMainBaseId = auth.profile!.mainBaseTileId;
+    if (myMainBaseId == null || myMainBaseId.isEmpty || tileId != myMainBaseId) {
+      final now = DateTime.now();
+      final lastCheck = _tileProvider.lastServerCheckTime;
+      if (lastCheck == null ||
+          now.difference(lastCheck) >= GameConfig.serverCheckDelay) {
+        _tileProvider.updateLastServerCheckTime();
 
-      _tileProvider
-          .checkCurrentLocationTileStatusFromServer(loc, auth)
-          .then((status) {
-        _processCaptureDecision(tileId, status);
-      }).catchError((e) {
-        debugPrint('⚠️ 위치 기반 타일 상태 서버 조회 실패: $e');
-      });
+        _tileProvider
+            .checkCurrentLocationTileStatusFromServer(loc, auth)
+            .then((status) {
+          _processCaptureDecision(tileId, status);
+        }).catchError((e) {
+          debugPrint('⚠️ 위치 기반 타일 상태 서버 조회 실패: $e');
+        });
+      }
     }
 
     _achievementProvider?.checkAndUnlock(capturedTiles: capturedTiles);

@@ -1,0 +1,114 @@
+- generic [ref=e3]:
+  - banner [ref=e4]:
+    - generic [ref=e5]:
+      - generic [ref=e6]:
+        - img "Logo" [ref=e8]
+        - generic [ref=e9]: 찜! 모험
+      - button "어드민 시스템" [ref=e10] [cursor=pointer]
+  - generic [ref=e14]:
+    - generic [ref=e15]:
+      - generic [ref=e16]: 실시간 위치 기반 영토 점령 게임
+      - heading "지루했던 일상을 나만의 영토로!" [level=1] [ref=e20]: 지루했던 일상을나만의 영토로!
+      - paragraph [ref=e21]: "'찜! 모험'은 실시간 내 위치를 기반으로 지도를 점령해 나가는 영토 점령 게임입니다. 꾸준한 일상의 이동으로 점령지를 넓히고 나만의 영토 기록을 완성해보세요."
+      - generic [ref=e22]:
+        - link [ref=e23] [cursor=pointer]:
+          - /url: https://play.google.com/store/apps/details?id=com.watercherry.conquestofkorea
+          - img "Get it on Google Play" [ref=e24]
+        - link [ref=e25] [cursor=pointer]:
+          - /url: https://apps.apple.com/kr/app/%EC%B0%9C-%EB%8C%80%EB%AA%A8%ED%97%98/id6769717240
+          - img "Download on the App Store" [ref=e26]
+    - img "게임 화면 미리보기" [ref=e29]
+  - generic [ref=e32]:
+    - generic [ref=e33]: 지도 기반 실시간 점령
+    - generic [ref=e39]: 이동만으로 자동 성장
+    - generic [ref=e44]: 맵 아트 & 갤러리
+    - generic [ref=e53]: 전 세계 어디서나 점령
+  - generic [ref=e59]:
+    - generic [ref=e60]:
+      - generic [ref=e61]: 플레이 특징
+      - heading "일상이 영토가 되는 순간들" [level=2] [ref=e62]
+    - generic [ref=e63]:
+      - generic [ref=e64]:
+        - generic [ref=e66]:
+          - img "Feature 1" [ref=e67]
+          - generic [ref=e68]: "01"
+        - generic [ref=e69]:
+          - generic [ref=e74]:
+            - heading "🏃 러닝 & 조깅 페이스메이커" [level=3] [ref=e75]
+            - paragraph [ref=e76]: 달리는 매 순간이 내 영토로 바뀝니다. 내가 그은 러닝 루트가 지도 위 점령지가 되고, 매일의 운동이 게임처럼 즐거워집니다.
+          - generic [ref=e81]:
+            - heading "🚌 출퇴근길 자동 영토 점령" [level=3] [ref=e82]
+            - paragraph [ref=e83]: 출퇴근 버스·지하철 이동이 자동으로 점령지가 됩니다. 앱을 켜두기만 하면 매일의 통근이 눈에 보이는 영토로 쌓입니다.
+      - generic [ref=e84]:
+        - generic [ref=e86]:
+          - img "Feature 2" [ref=e87]
+          - generic [ref=e88]: "02"
+        - generic [ref=e89]:
+          - generic [ref=e98]:
+            - heading "🎨 내 발자국으로 그리는 맵 아트" [level=3] [ref=e99]
+            - paragraph [ref=e100]: 점령한 타일을 이어 하트·글자 등 나만의 무늬를 완성하세요. 지도가 점점 나만의 작품으로 채워집니다.
+          - generic [ref=e108]:
+            - heading "🪙 골목 산책과 보물찾기" [level=3] [ref=e109]
+            - paragraph [ref=e110]: 안 가본 골목을 돌다 보면 숨겨진 골드가 나타납니다. 일상 속 작은 탐험이 보상이 되는 경험을 줍니다.
+      - generic [ref=e111]:
+        - generic [ref=e113]:
+          - img "Feature 3" [ref=e114]
+          - generic [ref=e115]: "03"
+        - generic [ref=e116]:
+          - generic [ref=e122]:
+            - heading "🛋️ 집 안에서 즐기는 원격 점령" [level=3] [ref=e123]
+            - paragraph [ref=e124]: 강 건너나 먼 곳, 날씨가 안 좋은 날엔 모아둔 골드로 원격 점령합니다. 직접 가지 않아도 내 영토는 계속 넓어집니다.
+          - generic [ref=e130]:
+            - heading "📸 내 주변 현장 촬영 및 갤러리 공유" [level=3] [ref=e131]
+            - paragraph [ref=e132]: 점령한 타일에서 찍은 사진이 지도 갤러리에 남습니다. 내 발자국이 남긴 풍경을 다른 플레이어와 나눌 수 있습니다.
+  - generic [ref=e133]:
+    - generic [ref=e134]:
+      - generic [ref=e135]: 핵심 시스템
+      - heading "점령을 완성하는 세 가지 축" [level=2] [ref=e136]
+    - generic [ref=e137]:
+      - generic [ref=e138]:
+        - heading "전 세계 랭킹" [level=3] [ref=e146]
+        - paragraph [ref=e147]: 내 점령 면적은 전 세계 랭킹에 기록됩니다. 동네를 넘어 전 세계 플레이어와 기록을 겨룰 수 있습니다.
+      - generic [ref=e148]:
+        - heading "헥스 타일 정복" [level=3] [ref=e154]
+        - paragraph [ref=e155]: 지도는 육각 타일로 이루어져 있습니다. 한 칸씩 방문해 채우며 전 세계를 내 영토로 만들어가세요.
+      - generic [ref=e156]:
+        - heading "골드 & 업적" [level=3] [ref=e161]
+        - paragraph [ref=e162]: 이동과 탐험으로 골드를 모으고, 다양한 업적을 달성하며 성장의 보상을 얻으세요.
+  - generic [ref=e163]:
+    - generic [ref=e164]:
+      - generic [ref=e165]: 시작하는 방법
+      - heading "세 단계로 끝나는 점령 라이프" [level=2] [ref=e166]
+    - generic [ref=e167]:
+      - generic [ref=e168]:
+        - generic [ref=e172]: "01"
+        - heading "앱 설치 후 위치 권한을 켜세요" [level=3] [ref=e173]
+        - paragraph [ref=e174]: 스마트폰 하나면 준비 끝. 이동 경로를 지도 위에 그대로 옮깁니다.
+      - generic [ref=e175]:
+        - generic [ref=e180]: "02"
+        - heading "움직일수록 영토가 늘어납니다" [level=3] [ref=e181]
+        - paragraph [ref=e182]: 러닝, 출퇴근, 산책까지 모든 이동이 실시간으로 내 점령지가 됩니다.
+      - generic [ref=e183]:
+        - generic [ref=e188]: "03"
+        - heading "나만의 지도를 완성하세요" [level=3] [ref=e189]
+        - paragraph [ref=e190]: 점령 타일로 맵 아트를 그리고, 사진을 남기고, 기록을 비교해보세요.
+  - generic [ref=e192]:
+    - heading "지금, 나만의 영토 점령을 시작하세요" [level=2] [ref=e193]
+    - paragraph [ref=e194]: 가까운 길부터 시작되는 실시간 위치 기반 점령 게임.
+    - generic [ref=e195]:
+      - link [ref=e196] [cursor=pointer]:
+        - /url: https://play.google.com/store/apps/details?id=com.watercherry.conquestofkorea
+        - img "Get it on Google Play" [ref=e197]
+      - link [ref=e198] [cursor=pointer]:
+        - /url: https://apps.apple.com/kr/app/%EC%B0%9C-%EB%8C%80%EB%AA%A8%ED%97%98/id6769717240
+        - img "Download on the App Store" [ref=e199]
+  - contentinfo [ref=e200]:
+    - generic [ref=e201]:
+      - generic [ref=e202]:
+        - generic [ref=e203]:
+          - img "Logo" [ref=e204]
+          - generic [ref=e205]: 찜! 모험
+        - paragraph [ref=e206]: © 2026 찜! 모험 Project. All rights reserved.
+      - generic [ref=e207]:
+        - generic [ref=e208] [cursor=pointer]: 서비스 이용약관
+        - generic [ref=e209] [cursor=pointer]: 개인정보 처리방침

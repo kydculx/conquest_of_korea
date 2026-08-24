@@ -1,0 +1,99 @@
+- generic [ref=e3]:
+  - banner [ref=e4]:
+    - generic [ref=e5]:
+      - generic [ref=e6]:
+        - img "Logo" [ref=e8]
+        - generic [ref=e9]: 찜! 모험
+      - button "어드민 시스템" [ref=e10] [cursor=pointer]
+  - generic [ref=e14]:
+    - generic [ref=e15]:
+      - generic [ref=e16]: 실시간 위치 기반 영토 점령 게임
+      - heading "지루했던 일상을 나만의 영토로!" [level=1] [ref=e20]: 지루했던 일상을나만의 영토로!
+      - paragraph [ref=e21]: "'찜! 모험'은 실시간 내 위치를 기반으로 지도를 점령해 나가는 영토 점령 게임입니다. 꾸준한 일상의 이동으로 점령지를 넓히고 나만의 영토 기록을 완성해보세요."
+      - generic [ref=e22]:
+        - link [ref=e23] [cursor=pointer]:
+          - /url: https://play.google.com/store/apps/details?id=com.watercherry.conquestofkorea
+          - img "Get it on Google Play" [ref=e24]
+        - link [ref=e25] [cursor=pointer]:
+          - /url: https://apps.apple.com/kr/app/%EC%B0%9C-%EB%8C%80%EB%AA%A8%ED%97%98/id6769717240
+          - img "Download on the App Store" [ref=e26]
+    - img "게임 화면 미리보기" [ref=e29]
+  - generic [ref=e32]:
+    - generic [ref=e33]: 지도 기반 실시간 점령
+    - generic [ref=e39]: 이동만으로 자동 성장
+    - generic [ref=e44]: 맵 아트 & 갤러리
+    - generic [ref=e53]: 전 세계 어디서나 점령
+  - generic [ref=e59]:
+    - generic [ref=e60]:
+      - generic [ref=e61]: 플레이 특징
+      - heading "일상이 영토가 되는 순간들" [level=2] [ref=e62]
+    - generic [ref=e63]:
+      - generic [ref=e68]:
+        - heading "🏃 러닝 & 조깅 페이스메이커" [level=3] [ref=e69]
+        - paragraph [ref=e70]: 달리는 매 순간이 내 영토로 바뀝니다. 내가 그은 러닝 루트가 지도 위 점령지가 되고, 매일의 운동이 게임처럼 즐거워집니다.
+      - generic [ref=e75]:
+        - heading "🚌 출퇴근길 자동 영토 점령" [level=3] [ref=e76]
+        - paragraph [ref=e77]: 출퇴근 버스·지하철 이동이 자동으로 점령지가 됩니다. 앱을 켜두기만 하면 매일의 통근이 눈에 보이는 영토로 쌓입니다.
+      - generic [ref=e86]:
+        - heading "🎨 내 발자국으로 그리는 맵 아트" [level=3] [ref=e87]
+        - paragraph [ref=e88]: 점령한 타일을 이어 하트·글자 등 나만의 무늬를 완성하세요. 지도가 점점 나만의 작품으로 채워집니다.
+      - generic [ref=e96]:
+        - heading "🪙 골목 산책과 보물찾기" [level=3] [ref=e97]
+        - paragraph [ref=e98]: 안 가본 골목을 돌다 보면 숨겨진 골드가 나타납니다. 일상 속 작은 탐험이 보상이 되는 경험을 줍니다.
+      - generic [ref=e104]:
+        - heading "🛋️ 집 안에서 즐기는 원격 점령" [level=3] [ref=e105]
+        - paragraph [ref=e106]: 강 건너나 먼 곳, 날씨가 안 좋은 날엔 모아둔 골드로 원격 점령합니다. 직접 가지 않아도 내 영토는 계속 넓어집니다.
+      - generic [ref=e112]:
+        - heading "📸 내 주변 현장 촬영 및 갤러리 공유" [level=3] [ref=e113]
+        - paragraph [ref=e114]: 점령한 타일에서 찍은 사진이 지도 갤러리에 남습니다. 내 발자국이 남긴 풍경을 다른 플레이어와 나눌 수 있습니다.
+  - generic [ref=e115]:
+    - generic [ref=e116]:
+      - generic [ref=e117]: 핵심 시스템
+      - heading "점령을 완성하는 세 가지 축" [level=2] [ref=e118]
+    - generic [ref=e119]:
+      - generic [ref=e120]:
+        - heading "전 세계 랭킹" [level=3] [ref=e128]
+        - paragraph [ref=e129]: 내 점령 면적은 전 세계 랭킹에 기록됩니다. 동네를 넘어 전 세계 플레이어와 기록을 겨룰 수 있습니다.
+      - generic [ref=e130]:
+        - heading "헥스 타일 정복" [level=3] [ref=e136]
+        - paragraph [ref=e137]: 지도는 육각 타일로 이루어져 있습니다. 한 칸씩 방문해 채우며 전 세계를 내 영토로 만들어가세요.
+      - generic [ref=e138]:
+        - heading "골드 & 업적" [level=3] [ref=e143]
+        - paragraph [ref=e144]: 이동과 탐험으로 골드를 모으고, 다양한 업적을 달성하며 성장의 보상을 얻으세요.
+  - generic [ref=e145]:
+    - generic [ref=e146]:
+      - generic [ref=e147]: 시작하는 방법
+      - heading "세 단계로 끝나는 점령 라이프" [level=2] [ref=e148]
+    - generic [ref=e149]:
+      - generic [ref=e150]:
+        - generic [ref=e154]: "01"
+        - heading "앱 설치 후 위치 권한을 켜세요" [level=3] [ref=e155]
+        - paragraph [ref=e156]: 스마트폰 하나면 준비 끝. 이동 경로를 지도 위에 그대로 옮깁니다.
+      - generic [ref=e157]:
+        - generic [ref=e162]: "02"
+        - heading "움직일수록 영토가 늘어납니다" [level=3] [ref=e163]
+        - paragraph [ref=e164]: 러닝, 출퇴근, 산책까지 모든 이동이 실시간으로 내 점령지가 됩니다.
+      - generic [ref=e165]:
+        - generic [ref=e170]: "03"
+        - heading "나만의 지도를 완성하세요" [level=3] [ref=e171]
+        - paragraph [ref=e172]: 점령 타일로 맵 아트를 그리고, 사진을 남기고, 기록을 비교해보세요.
+  - generic [ref=e174]:
+    - heading "지금, 나만의 영토 점령을 시작하세요" [level=2] [ref=e175]
+    - paragraph [ref=e176]: 가까운 길부터 시작되는 실시간 위치 기반 점령 게임.
+    - generic [ref=e177]:
+      - link [ref=e178] [cursor=pointer]:
+        - /url: https://play.google.com/store/apps/details?id=com.watercherry.conquestofkorea
+        - img "Get it on Google Play" [ref=e179]
+      - link [ref=e180] [cursor=pointer]:
+        - /url: https://apps.apple.com/kr/app/%EC%B0%9C-%EB%8C%80%EB%AA%A8%ED%97%98/id6769717240
+        - img "Download on the App Store" [ref=e181]
+  - contentinfo [ref=e182]:
+    - generic [ref=e183]:
+      - generic [ref=e184]:
+        - generic [ref=e185]:
+          - img "Logo" [ref=e186]
+          - generic [ref=e187]: 찜! 모험
+        - paragraph [ref=e188]: © 2026 찜! 모험 Project. All rights reserved.
+      - generic [ref=e189]:
+        - generic [ref=e190] [cursor=pointer]: 서비스 이용약관
+        - generic [ref=e191] [cursor=pointer]: 개인정보 처리방침
