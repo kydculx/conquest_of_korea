@@ -123,44 +123,22 @@ class _LoginScreenState extends State<LoginScreen> {
                               ],
                             ),
                           ),
-                          // 귀여운 젤리 클라우드 쉐이프
+                          // 앱 런처 아이콘과 동일한 공식 로고
                           Container(
                             width: 84,
                             height: 84,
                             decoration: BoxDecoration(
-                              gradient: const LinearGradient(
-                                colors: [Color(0x33FFFFFF), Color(0x0FFFFFFF)],
-                                begin: Alignment.topLeft,
-                                end: Alignment.bottomRight,
-                              ),
                               borderRadius: BorderRadius.circular(28),
                               border: Border.all(
                                 color: Colors.white.withValues(alpha: 0.15),
                                 width: 1.5,
                               ),
                             ),
-                            child: Center(
-                              child: Stack(
-                                alignment: Alignment.center,
-                                children: [
-                                  // 부드러운 지도 베이스
-                                  Icon(
-                                    Icons.map_rounded,
-                                    size: 44,
-                                    color: GameColors.textSecondary.withValues(
-                                      alpha: 0.3,
-                                    ),
-                                  ),
-                                  // 솜사탕 핑크 레드 깃발
-                                  Transform.translate(
-                                    offset: const Offset(4, -4),
-                                    child: const Icon(
-                                      Icons.flag_rounded,
-                                      size: 44,
-                                      color: Color(0xFFE57373),
-                                    ),
-                                  ),
-                                ],
+                            child: ClipRRect(
+                              borderRadius: BorderRadius.circular(26),
+                              child: Image.asset(
+                                'assets/images/app_icon.png',
+                                fit: BoxFit.cover,
                               ),
                             ),
                           ),
@@ -174,7 +152,7 @@ class _LoginScreenState extends State<LoginScreen> {
                       shaderCallback: (bounds) => LinearGradient(
                         colors: [
                           GameColors.accentNeon,
-                          const Color(0xFFE57373),
+                          Palette.softRed,
                         ],
                         begin: Alignment.topLeft,
                         end: Alignment.bottomRight,
@@ -198,7 +176,7 @@ class _LoginScreenState extends State<LoginScreen> {
                       textAlign: TextAlign.center,
                       style: GoogleFonts.quicksand(
                         fontSize: 14,
-                        color: const Color(0xFFFFB74D), // 솜사탕 옐로우 오렌지
+                        color: Palette.orangeWarning, // 솜사탕 옐로우 오렌지
                         letterSpacing: 0.8,
                         fontWeight: FontWeight.bold,
                       ),
@@ -473,7 +451,7 @@ class _LoginScreenState extends State<LoginScreen> {
           fontSize: 13,
           fontWeight: FontWeight.bold,
         ),
-        prefixIcon: Icon(icon, color: const Color(0xFFE57373), size: 20),
+        prefixIcon: Icon(icon, color: Palette.softRed, size: 20),
         suffixIcon: suffixIcon,
         border: OutlineInputBorder(
           borderRadius: BorderRadius.circular(20),
