@@ -193,3 +193,129 @@ class GameColors {
     }
   }
 }
+
+/// 게임 UI 전반에서 사용하는 고정 컬러 팔레트 (컴파일 타임 상수).
+///
+/// 하드코딩된 `Color(0x...)` 리터럴을 대체하기 위한 단일 참조 지점입니다.
+/// 서버/외부 설정으로 동적 변경이 필요한 색상은 [GameColors]를 사용하세요.
+class Palette {
+  Palette._();
+
+  // --- 액센트 ---
+  /// 네온 사이버 시안 액센트 (기본 버튼 글로우, 강조 테두리)
+  static const Color accentCyan = Color(0xFF00E5FF);
+
+  /// 딥 시안 (액센트 그라데이션 하단)
+  static const Color cyanDeep = Color(0xFF00838F);
+
+  /// 발자취 조회 전용 네온 민트
+  static const Color footprintMint = Color(0xFF00FFCC);
+
+  /// 브라이트 블루 (패턴/맵 모드 포인트)
+  static const Color brightBlue = Color(0xFF0066FF);
+
+  /// 딥 블루 (브라이트 블루 그라데이션 하단)
+  static const Color deepBlue = Color(0xFF0033AA);
+
+  /// 스카이 블루 (그라데이션 보조)
+  static const Color skyBlue = Color(0xFF00BFFF);
+
+  // --- 상태 · 위험 ---
+  /// 위성 점령·경고 강조 레드
+  static const Color redAccent = Color(0xFFFF5252);
+
+  /// 소프트 레드 (에러 계열)
+  static const Color softRed = Color(0xFFE57373);
+
+  /// 다크 레드 (레드 그라데이션 하단)
+  static const Color darkRed = Color(0xFFC62828);
+
+  /// 연한 로즈 (하이라이트 레드)
+  static const Color roseLight = Color(0xFFFF8A80);
+
+  /// 성공 상태 그린
+  static const Color greenSoft = Color(0xFF81C784);
+
+  /// 확인/완료 그린
+  static const Color greenConfirm = Color(0xFF4CAF50);
+
+  /// 네온 그린 (즉시 획득 계열)
+  static const Color neonGreen = Color(0xFF00E676);
+
+  /// 안정 청록
+  static const Color tealOk = Color(0xFF00AA88);
+
+  /// 경고 오렌지 (소프트)
+  static const Color orangeWarning = Color(0xFFFFB74D);
+
+  /// 앰버 하이라이트
+  static const Color amberHighlight = Color(0xFFFFD54F);
+
+  /// 정보 블루
+  static const Color blueInfo = Color(0xFF64B5F6);
+
+  /// 연한 정보 블루
+  static const Color blueSoft = Color(0xFF90CAF9);
+
+  /// 라벤더 (상대 영토 계열 보조)
+  static const Color lavender = Color(0xFF9FA8DA);
+
+  // --- 랭킹 메달 ---
+  /// 랭킹 골드 (브라이트)
+  static const Color gold = Color(0xFFFFD700);
+
+  /// 클래식 골드
+  static const Color goldClassic = Color(0xFFD4AF37);
+
+  /// 다크 골드
+  static const Color goldDark = Color(0xFFB8860B);
+
+  /// 딥 골드
+  static const Color goldDeep = Color(0xFF8B6508);
+
+  /// 실버
+  static const Color silver = Color(0xFFC0C0C0);
+
+  /// 브론즈
+  static const Color bronze = Color(0xFFCD7F32);
+
+  // --- 오렌지 스케일 (진행도/포인트) ---
+  static const Color orangeVivid = Color(0xFFFF9900);
+  static const Color orangeSunset = Color(0xFFFF9100);
+  static const Color orangeStrong = Color(0xFFFF8800);
+  static const Color orangeWarm = Color(0xFFFF7700);
+  static const Color orange = Color(0xFFFFA500);
+  static const Color orangeCoral = Color(0xFFFF8A65);
+  static const Color orangeBurnt = Color(0xFFE65100);
+  static const Color orangeRust = Color(0xFFD84315);
+
+  // --- 중립 · 배경 ---
+  static const Color white = Color(0xFFFFFFFF);
+  static const Color black = Color(0xFF000000);
+  static const Color transparent = Color(0x00000000);
+  static const Color snowWhite = Color(0xFFECEFF1);
+  static const Color creamYellow = Color(0xFFFFF7C2);
+  static const Color greyLight = Color(0xFFE0E0E0);
+  static const Color greyMid = Color(0xFF9E9E9E);
+  static const Color greyBlue = Color(0xFFB0BEC5);
+  static const Color greyBlueMid = Color(0xFF78909C);
+  static const Color greyBlueLight = Color(0xFF90A4AE);
+  static const Color slateDark = Color(0xFF263238);
+  static const Color slateBlue = Color(0xFF37474F);
+  static const Color graphite = Color(0xFF212121);
+  static const Color charcoalLight = Color(0xFF1E1E1E);
+  static const Color charcoal = Color(0xFF121212);
+  static const Color deepNavy = Color(0xFF0F1626);
+  static const Color midnightNavy = Color(0xFF121824);
+  static const Color indigoNight = Color(0xFF1C2434);
+  static const Color brownDark = Color(0xFF5D4037);
+  static const Color magentaBrand = Color(0xFFFF17AB);
+
+  // --- 반투명 오버레이 ---
+  static const Color navyOverlay92 = Color(0xF21A2232);
+  static const Color navyOverlay80 = Color(0xCC1A2232);
+  static const Color whiteOpacity20 = Color(0x33FFFFFF);
+  static const Color cyanOpacity20 = Color(0x3300E5FF);
+  static const Color whiteOpacity8 = Color(0x15FFFFFF);
+  static const Color whiteOpacity2 = Color(0x0FFFFFFF);
+}
