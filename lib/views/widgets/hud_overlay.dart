@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import '../../models/map_mode.dart';
 import '../../providers/game_provider.dart';
 import '../../providers/auth_provider.dart';
 import 'hud_header_bar.dart';

@@ -1,6 +1,5 @@
 import 'dart:async';
 import 'dart:io';
-import 'dart:math' as math;
 import 'package:flutter/widgets.dart';
 import 'package:latlong2/latlong.dart';
 import '../controllers/capture_controller.dart';
@@ -10,6 +9,7 @@ import '../services/geo_service.dart';
 import '../services/photo_service.dart';
 import '../controllers/satellite_capture_controller.dart';
 import '../models/alert_model.dart';
+import '../models/map_mode.dart';
 import '../models/tile_model.dart';
 import '../models/user_profile.dart';
 import '../models/user_coin.dart';
@@ -23,16 +23,15 @@ import '../services/supabase_service.dart';
 import '../services/notification_service.dart';
 import '../services/audio_service.dart';
 import '../controllers/gold_manager.dart';
+import '../controllers/coin_manager.dart';
+import '../controllers/game_alert_manager.dart';
+import '../controllers/map_view_controller.dart';
+import '../controllers/tile_selection_controller.dart';
+import '../controllers/utc_countdown_controller.dart';
 import '../core/constants/game_config.dart';
 import '../core/constants/map_config.dart';
 import '../core/constants/strings.dart';
 import '../services/health_service.dart';
-
-enum MapMode {
-  normal,
-  footprint,
-  pattern,
-}
 
 /// 게임의 핵심 인게임 비즈니스 상태 및 점령 로직을 관리하고 UI에 변경을 전파하는 메인 프로바이더.
 ///
@@ -60,17 +59,14 @@ class GameProvider extends ChangeNotifier with WidgetsBindingObserver {
   /// 백그라운드 점령 및 침공 상태 정기 검사를 수행하는 타이머
   Timer? _backgroundPollingTimer;
 
-  /// UTC 자정 카운트다운을 업데이트하는 1초 주기 타이머
-  Timer? _utcTimer;
+  /// UTC 자정 카운트다운을 전담 관리하는 컨트롤러
+  late final UtcCountdownController _utcCountdown;
 
-  /// UTC 00시까지 남은 시간 문자열 (HH:MM:SS)
-  String _utcTimeString = '00:00:00';
-
-  String get utcTimeString => _utcTimeString;
+  String get utcTimeString => _utcCountdown.timeString;
 
   // --- 상태 ---
-  /// 화면 상단에 표시될 인게임 알림/경고 목록
-  final List<GameAlert> _alerts = [];
+  /// 인게임 알림 배너를 전담 관리하는 매니저
+  late final GameAlertManager _alertManager;
 
   /// 오늘의 누적 걸음수 데이터
   int _todaySteps = 0;
@@ -83,63 +79,31 @@ class GameProvider extends ChangeNotifier with WidgetsBindingObserver {
   /// 타일 ID별 등록된 사진 데이터 목록 캐시
   final Map<String, List<Map<String, dynamic>>> _tilePhotosCache = {};
   Map<String, List<Map<String, dynamic>>> get tilePhotosCache => _tilePhotosCache;
-
   /// 자동 점령 모드 활성화 여부
   bool _isAutoCapture = false;
 
-  /// 현재 적용 중인 지도 스타일 인덱스
-  int _currentMapStyleIndex = 0;
+  // --- 지도 뷰 상태 ---
+  /// 지도 카메라/스타일/뷰 모드 상태를 전담 관리하는 컨트롤러
+  late final MapViewController _mapView;
 
-  /// 지도 회전 모드(나침반 정렬) 사용 여부
-  bool _isMapRotationMode = false;
+  Stream<LatLng> get mapMoveRequests => _mapView.mapMoveRequests;
 
-  /// 지도 카메라가 플레이어의 GPS 실시간 위치를 추적하고 있는지 여부
-  bool _isFollowingUser = true;
+  void requestMapMove(LatLng destination) =>
+      _mapView.requestMapMove(destination);
 
-  /// 맵 뷰 모드 통합 관리 상태
-  MapMode _mapMode = MapMode.normal;
-  MapMode get mapMode => _mapMode;
-
-  bool get isFootprintMode => _mapMode == MapMode.footprint;
-  bool get showCompletedPatterns => _mapMode == MapMode.pattern;
-
-  /// 지도 카메라 이동 요청을 중계하기 위한 브로드캐스트 스트림 컨트롤러
-  final StreamController<LatLng> _mapMoveRequestController = StreamController<LatLng>.broadcast();
-  Stream<LatLng> get mapMoveRequests => _mapMoveRequestController.stream;
-
-  void requestMapMove(LatLng destination) {
-    // 🧭 수동 맵 카메라 이동(본진 이동, 패턴 조회 등) 시 나침반 회전 모드를 꺼서 불필요한 강제 회전 방지
-    if (_isMapRotationMode) {
-      _isMapRotationMode = false;
-      PreferencesService.setMapRotationMode(false).catchError((e) {
-        debugPrint('❌ MapRotationMode 저장 실패: $e');
-      });
-      notifyListeners();
-    }
-    _mapMoveRequestController.add(destination);
-  }
-
-  // --- 위성 스캔 상태 ---
-  bool _isScanMode = false;
-  String? _selectedScanTileId;
-  LatLng? _selectedScanTileLatLng;
-
-  // --- 발자취 선택 상태 ---
-  String? _selectedFootprintTileId;
-  LatLng? _selectedFootprintTileLatLng;
-  String? get selectedFootprintTileId => _selectedFootprintTileId;
-  LatLng? get selectedFootprintTileLatLng => _selectedFootprintTileLatLng;
+  // --- 타일 선택 상태 (위성 스캔 / 발자국) ---
+  /// 위성 스캔 대상 및 발자국 조회 타일 선택 상태를 전담 관리하는 컨트롤러
+  late final TileSelectionController _tileSelection;
 
   // --- 편법 방지용 최근 방문한 2개 타일 ID 캐시 ---
   String? _lastTileId;
   String? _secondLastTileId;
 
-  // --- 동전 아이템 상태 ---
-  List<UserCoin> _coins = [];
-  List<UserCoin> get coins => List.unmodifiable(_coins);
+  // --- 동전 아이템 ---
+  /// 동전 생성/수집 상태를 전담 관리하는 컨트롤러
+  late final CoinManager _coinManager;
 
-  /// 동전 재생성이 비동기적으로 중복 실행되는 것을 방지하는 뮤텍스 락 플래그
-  bool _isRegeneratingCoins = false;
+  List<UserCoin> get coins => _coinManager.coins;
 
   // --- 관련 Provider 참조 ---
   LocationProvider? _locationProvider;
@@ -188,9 +152,14 @@ class GameProvider extends ChangeNotifier with WidgetsBindingObserver {
 
   // --- Public Getters (Satellite) ---
   bool get isScanMode =>
-      _selectedScanTileId != null || _satelliteController.isCapturing;
-  String? get selectedScanTileId => _selectedScanTileId;
-  LatLng? get selectedScanTileLatLng => _selectedScanTileLatLng;
+      _tileSelection.selectedScanTileId != null ||
+      _satelliteController.isCapturing;
+  String? get selectedScanTileId => _tileSelection.selectedScanTileId;
+  LatLng? get selectedScanTileLatLng => _tileSelection.selectedScanTileLatLng;
+  String? get selectedFootprintTileId =>
+      _tileSelection.selectedFootprintTileId;
+  LatLng? get selectedFootprintTileLatLng =>
+      _tileSelection.selectedFootprintTileLatLng;
 
   SatelliteCapturePhase get satelliteCapturePhase =>
       _satelliteController.phase;
@@ -206,14 +175,14 @@ class GameProvider extends ChangeNotifier with WidgetsBindingObserver {
       _satelliteController.remainingCoolSeconds;
 
   // --- Public Getters (Alert) ---
-  List<GameAlert> get alerts => List.unmodifiable(_alerts);
+  List<GameAlert> get alerts => _alertManager.alerts;
 
   // --- Public Getters (Init / State) ---
   bool get isInitialized => _tileProvider.isInitialized;
   Future<void> get initializationFuture => _tileProvider.initializationFuture;
 
   bool get isAutoCapture => _isAutoCapture;
-  int get currentMapStyleIndex => _currentMapStyleIndex;
+  int get currentMapStyleIndex => _mapView.currentMapStyleIndex;
 
   // --- Public Getters (Notification — NotificationController 위임) ---
   bool get isNotificationEnabled =>
@@ -224,12 +193,15 @@ class GameProvider extends ChangeNotifier with WidgetsBindingObserver {
       _notificationController.isNotifSatelliteComplete;
   bool get isNotifSystemNotice => _notificationController.isNotifSystemNotice;
 
-  // --- Public Getters (Map) ---
-  bool get isMapRotationMode => _isMapRotationMode;
-  bool get isFollowingUser => _isFollowingUser;
+  // --- Public Getters (Map — MapViewController 위임) ---
+  bool get isMapRotationMode => _mapView.isMapRotationMode;
+  bool get isFollowingUser => _mapView.isFollowingUser;
   bool get showMap => currentMapStyle.url.isNotEmpty;
 
-  MapStyle get currentMapStyle => MapConfig.mapStyles[_currentMapStyleIndex];
+  MapStyle get currentMapStyle => _mapView.currentMapStyle;
+  MapMode get mapMode => _mapView.mapMode;
+  bool get isFootprintMode => _mapView.isFootprintMode;
+  bool get showCompletedPatterns => _mapView.showCompletedPatterns;
 
   // --- Capture Getters ---
   String? get capturingTileId => _captureController.capturingTileId;
@@ -285,9 +257,25 @@ class GameProvider extends ChangeNotifier with WidgetsBindingObserver {
     required GameTileProvider tileProvider,
   })  : _supabase = supabase,
         _tileProvider = tileProvider {
+    _alertManager = GameAlertManager(notifyListeners: notifyListeners);
+    _tileSelection = TileSelectionController(
+      notifyListeners: notifyListeners,
+      isAuthenticated: () => _isAuthenticated,
+      onScanTileSelected: _tileProvider.fetchAndUpdateTile,
+    );
+    _coinManager = CoinManager(
+      supabase: supabase,
+      getAuthProvider: () => _authProvider,
+      getLocationProvider: () => _locationProvider,
+      notifyListeners: notifyListeners,
+      onAlert: addAlert,
+      onCoinCollected: () => _goldManager.syncWithServer(),
+    );
+    _mapView = MapViewController(notifyListeners: notifyListeners);
     _tileProvider.addListener(notifyListeners);
     WidgetsBinding.instance.addObserver(this);
-    _startUtcTimer();
+    _utcCountdown = UtcCountdownController(notifyListeners: notifyListeners);
+    _utcCountdown.start();
     initGpsSettings();
     _goldManager = GoldManager(
       supabase: supabase,
@@ -352,10 +340,9 @@ class GameProvider extends ChangeNotifier with WidgetsBindingObserver {
       onAlert: addAlert,
       onCaptureSuccess: (tileId, tile) {
         _tileProvider.updateTile(tileId, tile);
-        _selectedScanTileId = null;
-        _selectedScanTileLatLng = null;
+        _tileSelection.clearScanSelectionQuietly();
 
-        _checkCoinCollection(tileId);
+        _coinManager.checkCoinCollection(tileId);
         AudioService().playNotification();
 
         final String? currentUserId = _userId;
@@ -436,7 +423,7 @@ class GameProvider extends ChangeNotifier with WidgetsBindingObserver {
         'system_notice' => AlertType.info,
         _ => AlertType.info,
       };
-      _addAlertInternal('[$title] $body', alertType);
+      _alertManager.add('[$title] $body', alertType);
     };
 
     // 틸 프로바이더 침공 감지 시 알림/금/반격 처리
@@ -588,7 +575,7 @@ class GameProvider extends ChangeNotifier with WidgetsBindingObserver {
         }
       }
 
-      _checkAndSyncCoins();
+      _coinManager.checkAndSyncCoins();
 
       if ((oldProfile == null && auth.profile != null) ||
           !_goldManager.isTimerActive) {
@@ -598,9 +585,7 @@ class GameProvider extends ChangeNotifier with WidgetsBindingObserver {
       _goldManager.reset();
       _notificationController.resetToDefault();
       _isAutoCapture = false;
-      _isScanMode = false;
-      _selectedScanTileId = null;
-      _selectedScanTileLatLng = null;
+      _tileSelection.resetScanState();
       _satelliteController.cancelCapture();
       _captureController.cancelCapture();
     }
@@ -610,7 +595,7 @@ class GameProvider extends ChangeNotifier with WidgetsBindingObserver {
   // --- 초기화 ---
   Future<void> _init() async {
     try {
-      _isMapRotationMode = await PreferencesService.isMapRotationMode();
+      await _mapView.loadFromPrefs();
       _lastTileId = await PreferencesService.getLastVisitedTileId();
       _secondLastTileId =
           await PreferencesService.getSecondLastVisitedTileId();
@@ -687,7 +672,7 @@ class GameProvider extends ChangeNotifier with WidgetsBindingObserver {
       title: GameStrings.notificationInvasionTitle,
       body: GameStrings.notificationInvasionBody,
     );
-    _addAlertInternal(
+    _alertManager.add(
       '[${GameStrings.notificationInvasionTitle}] ${GameStrings.notificationInvasionBody}',
       AlertType.error,
     );
@@ -713,6 +698,11 @@ class GameProvider extends ChangeNotifier with WidgetsBindingObserver {
   }
 
   // --- 위치 기반 점령 오케스트레이션 ---
+
+  /// GPS 위치 변경 시 전체 처리 파이프라인을 실행하는 진입점입니다.
+  ///
+  /// 흐름: 동전 처리 → 주변 타일 갱신 → 이동/발자국 기록 →
+  /// 점령 상태 체크 → 서버 타일 상태 폴링 → 업적 검사
   void onLocationUpdated() {
     if (!isInitialized) return;
     final loc = _locationProvider;
@@ -730,17 +720,30 @@ class GameProvider extends ChangeNotifier with WidgetsBindingObserver {
     final hex = HexService.latLngToHex(loc.currentLocation!);
     final tileId = HexService.tileId(hex['q']!, hex['r']!);
 
-    _checkAndSyncCoins();
-    _checkCoinCollection(tileId);
+    _processCoinsForCurrentTile(tileId);
+    _refreshNearbyTiles(hex['q']!, hex['r']!);
+    _recordMovementAndFootprint(auth, tileId);
+    _captureController.checkCaptureStatus(loc.currentLocation);
+    _pollCurrentTileStatusIfNeeded(loc, auth, tileId);
 
-    // 내 주변 2km 범위의 타일 실시간 갱신 트리거 작동
-    _tileProvider.updateTilesInArea(hex['q']!, hex['r']!);
+    _achievementProvider?.checkAndUnlock(capturedTiles: capturedTiles);
+  }
 
-    // 편법 방지 타일 이동 카운팅 및 발자취 기록
-    final myId = auth.profile!.id;
+  /// 현재 타일 기준으로 동전 동기화 및 획득 여부를 확인합니다.
+  void _processCoinsForCurrentTile(String tileId) {
+    _coinManager.checkAndSyncCoins();
+    _coinManager.checkCoinCollection(tileId);
+  }
 
+  /// 내 주변 2km 범위의 타일 실시간 갱신 트리거 작동
+  void _refreshNearbyTiles(int q, int r) {
+    _tileProvider.updateTilesInArea(q, r);
+  }
+
+  /// 편법 방지용 최근 방문 타일 카운팅과 발자취 기록을 수행합니다.
+  void _recordMovementAndFootprint(AuthProvider auth, String tileId) {
     // [보완] 현재 밟고 있는 타일의 발자취 기록을 매번 확인 시도 (내부 캐시 조건으로 중복 저장 원천 차단됨)
-    _tileProvider.addFootprint(myId, tileId, DateTime.now());
+    _tileProvider.addFootprint(auth.profile!.id, tileId, DateTime.now());
 
     if (_lastTileId == null) {
       _lastTileId = tileId;
@@ -777,30 +780,35 @@ class GameProvider extends ChangeNotifier with WidgetsBindingObserver {
         PreferencesService.setSecondLastVisitedTileId(oldLastTileId);
       }
     }
+  }
 
-    _captureController.checkCaptureStatus(loc.currentLocation);
-
+  /// 주기 throttling에 따라 현재 위치 타일의 서버 상태를 조회하고 점령 판정을 수행합니다.
+  /// 본진(메인 베이스)에 있으면 캡처가 불가하므로 조회를 생략합니다.
+  void _pollCurrentTileStatusIfNeeded(
+      LocationProvider loc, AuthProvider auth, String tileId) {
     // 본진(메인 베이스)에 있으면 캡처가 불가하므로 매초 서버 상태 조회(1초 폴링)를 생략한다.
     // 조회 결과는 항상 'mine'으로 고정되어, 무의미한 네트워크 왕복만 발생하기 때문이다.
     final myMainBaseId = auth.profile!.mainBaseTileId;
-    if (myMainBaseId == null || myMainBaseId.isEmpty || tileId != myMainBaseId) {
-      final now = DateTime.now();
-      final lastCheck = _tileProvider.lastServerCheckTime;
-      if (lastCheck == null ||
-          now.difference(lastCheck) >= GameConfig.serverCheckDelay) {
-        _tileProvider.updateLastServerCheckTime();
-
-        _tileProvider
-            .checkCurrentLocationTileStatusFromServer(loc, auth)
-            .then((status) {
-          _processCaptureDecision(tileId, status);
-        }).catchError((e) {
-          debugPrint('⚠️ 위치 기반 타일 상태 서버 조회 실패: $e');
-        });
-      }
+    if (myMainBaseId != null &&
+        myMainBaseId.isNotEmpty &&
+        tileId == myMainBaseId) {
+      return;
     }
 
-    _achievementProvider?.checkAndUnlock(capturedTiles: capturedTiles);
+    final now = DateTime.now();
+    final lastCheck = _tileProvider.lastServerCheckTime;
+    if (lastCheck == null ||
+        now.difference(lastCheck) >= GameConfig.serverCheckDelay) {
+      _tileProvider.updateLastServerCheckTime();
+
+      _tileProvider
+          .checkCurrentLocationTileStatusFromServer(loc, auth)
+          .then((status) {
+        _processCaptureDecision(tileId, status);
+      }).catchError((e) {
+        debugPrint('⚠️ 위치 기반 타일 상태 서버 조회 실패: $e');
+      });
+    }
   }
 
   Future<void> _processCaptureDecision(
@@ -938,64 +946,43 @@ class GameProvider extends ChangeNotifier with WidgetsBindingObserver {
     notifyListeners();
   }
 
-  // --- Map State ---
-  void setFollowingUser(bool value) {
-    if (_isFollowingUser != value) {
-      _isFollowingUser = value;
-      notifyListeners();
-    }
-  }
+  // --- Map State (MapViewController 위임 + 모드 전환 오케스트레이션) ---
+  void setFollowingUser(bool value) => _mapView.setFollowingUser(value);
 
-  void toggleFollowingUser() {
-    _isFollowingUser = !_isFollowingUser;
-    notifyListeners();
-  }
+  void toggleFollowingUser() => _mapView.toggleFollowingUser();
 
   void cycleMapMode() {
-    final oldMode = _mapMode;
-    switch (_mapMode) {
-      case MapMode.normal:
-        _mapMode = MapMode.footprint;
-        break;
-      case MapMode.footprint:
-        _mapMode = MapMode.pattern;
-        break;
-      case MapMode.pattern:
-        _mapMode = MapMode.normal;
-        break;
+    final oldMode = _mapView.cycleModeQuiet();
+    if (!_mapView.isFootprintMode) {
+      _tileSelection.clearSelectedFootprintQuietly();
     }
-    _clearFootprintSelectionIfNeeded();
     notifyListeners();
     _showMapModeAlert(oldMode);
   }
 
   void toggleCompletedPatternsView() {
-    final oldMode = _mapMode;
-    _mapMode = (_mapMode == MapMode.pattern) ? MapMode.normal : MapMode.pattern;
-    _clearFootprintSelectionIfNeeded();
+    final oldMode = _mapView.toggleCompletedPatternsViewQuiet();
+    if (!_mapView.isFootprintMode) {
+      _tileSelection.clearSelectedFootprintQuietly();
+    }
     notifyListeners();
     _showMapModeAlert(oldMode);
   }
 
   void toggleFootprintMode() {
-    final oldMode = _mapMode;
-    _mapMode = (_mapMode == MapMode.footprint) ? MapMode.normal : MapMode.footprint;
-    _clearFootprintSelectionIfNeeded();
+    final oldMode = _mapView.toggleFootprintModeQuiet();
+    if (!_mapView.isFootprintMode) {
+      _tileSelection.clearSelectedFootprintQuietly();
+    }
     notifyListeners();
     _showMapModeAlert(oldMode);
   }
 
-  void _clearFootprintSelectionIfNeeded() {
-    if (_mapMode != MapMode.footprint) {
-      _selectedFootprintTileId = null;
-      _selectedFootprintTileLatLng = null;
-    }
-  }
-
   void _showMapModeAlert(MapMode oldMode) {
-    if (oldMode != _mapMode) {
+    final currentMode = _mapView.mapMode;
+    if (oldMode != currentMode) {
       String message;
-      switch (_mapMode) {
+      switch (currentMode) {
         case MapMode.normal:
           message = GameStrings.mapModeNormalAlert;
           break;
@@ -1010,44 +997,14 @@ class GameProvider extends ChangeNotifier with WidgetsBindingObserver {
     }
   }
 
-  void cycleMapStyle() {
-    _currentMapStyleIndex =
-        (_currentMapStyleIndex + 1) % MapConfig.mapStyles.length;
-    notifyListeners();
-  }
+  void cycleMapStyle() => _mapView.cycleMapStyle();
 
-  Future<void> toggleMapRotationMode() async {
-    _isMapRotationMode = !_isMapRotationMode;
-    notifyListeners();
-    PreferencesService.setMapRotationMode(_isMapRotationMode).catchError((e) {
-      debugPrint('⚠️ 회전 모드 설정 저장 실패: $e');
-    });
-  }
+  Future<void> toggleMapRotationMode() =>
+      _mapView.toggleMapRotationMode();
 
-  // --- Alert System ---
+  // --- Alert System (GameAlertManager 위임) ---
   void addAlert(String message, AlertType type) {
-    _addAlertInternal(message, type);
-  }
-
-  bool _addAlertInternal(String message, AlertType type) {
-    if (_alerts.any((a) => a.message == message)) return false;
-
-    final alert = GameAlert.create(message: message, type: type);
-    _alerts.insert(0, alert);
-    if (_alerts.length > 5) _alerts.removeLast();
-    notifyListeners();
-    AudioService().playNotification();
-
-    Timer(
-      const Duration(seconds: GameConfig.alertDismissDurationSeconds),
-      () => _removeAlert(alert.id),
-    );
-    return true;
-  }
-
-  void _removeAlert(String id) {
-    _alerts.removeWhere((a) => a.id == id);
-    notifyListeners();
+    _alertManager.add(message, type);
   }
 
   // --- Notification (NotificationController 위임) ---
@@ -1063,60 +1020,16 @@ class GameProvider extends ChangeNotifier with WidgetsBindingObserver {
   Future<void> toggleNotifSystemNotice() =>
       _notificationController.toggleNotifSystemNotice();
 
-  // --- Satellite Scan ---
-  void toggleScanMode() {
-    _isScanMode = !_isScanMode;
-    _selectedScanTileId = null;
-    notifyListeners();
-  }
+  // --- Satellite Scan / Footprint Selection (TileSelectionController 위임) ---
+  void toggleScanMode() => _tileSelection.toggleScanMode();
 
-  void selectScanTile(String tileId) {
-    if (!_isAuthenticated) return;
+  void selectScanTile(String tileId) => _tileSelection.selectScanTile(tileId);
 
-    if (_selectedScanTileId == tileId) {
-      _selectedScanTileId = null;
-      _selectedScanTileLatLng = null;
-      notifyListeners();
-    } else {
-      _selectedScanTileId = tileId;
-      final parts = tileId.split('_');
-      if (parts.length == 3) {
-        final q = int.tryParse(parts[1]);
-        final r = int.tryParse(parts[2]);
-        if (q != null && r != null) {
-          _selectedScanTileLatLng = HexService.hexToLatLng(q, r);
-        }
-      }
-      notifyListeners();
+  void selectFootprintTile(String tileId) =>
+      _tileSelection.selectFootprintTile(tileId);
 
-      // 조준 즉시 서버에서 타일 최신 정보 패치
-      _tileProvider.fetchAndUpdateTile(tileId);
-    }
-  }
-
-  void selectFootprintTile(String tileId) {
-    if (_selectedFootprintTileId == tileId) {
-      _selectedFootprintTileId = null;
-      _selectedFootprintTileLatLng = null;
-    } else {
-      _selectedFootprintTileId = tileId;
-      final parts = tileId.split('_');
-      if (parts.length == 3) {
-        final q = int.tryParse(parts[1]);
-        final r = int.tryParse(parts[2]);
-        if (q != null && r != null) {
-          _selectedFootprintTileLatLng = HexService.hexToLatLng(q, r);
-        }
-      }
-    }
-    notifyListeners();
-  }
-
-  void clearSelectedFootprint() {
-    _selectedFootprintTileId = null;
-    _selectedFootprintTileLatLng = null;
-    notifyListeners();
-  }
+  void clearSelectedFootprint() =>
+      _tileSelection.clearSelectedFootprint();
 
   // --- Satellite Capture (SatelliteCaptureController 위임) ---
   int getTileDistance(String targetTileId) =>
@@ -1258,271 +1171,14 @@ class GameProvider extends ChangeNotifier with WidgetsBindingObserver {
     WidgetsBinding.instance.removeObserver(this);
     _goldManager.dispose();
     _backgroundPollingTimer?.cancel();
-    _utcTimer?.cancel();
     _stepsTimer?.cancel();
+    _utcCountdown.dispose();
     _satelliteController.dispose();
     _locationProvider?.removeListener(onLocationUpdated);
     _captureController.dispose();
     _tileProvider.removeListener(notifyListeners);
     _tileProvider.dispose();
-    _mapMoveRequestController.close();
+    _mapView.dispose();
     super.dispose();
-  }
-
-  // --- Coin System ---
-  Future<void> _checkAndSyncCoins() async {
-    final myId = _userId;
-    if (myId == null) return;
-    if (_isRegeneratingCoins) {
-      debugPrint('🪙 [동전 가드] 이미 동전 재생성이 진행 중이므로 중복 동기화 패치를 취소합니다.');
-      return;
-    }
-
-    try {
-      final nowUtc = DateTime.now().toUtc();
-      final todayStr =
-          "${nowUtc.year}-${nowUtc.month.toString().padLeft(2, '0')}-${nowUtc.day.toString().padLeft(2, '0')}";
-
-      final lastDate = await PreferencesService.getLastCoinGeneratedDate();
-
-      if (_coins.isNotEmpty && lastDate == todayStr) {
-        return;
-      }
-
-      final existingCoins = await _supabase.fetchUserCoins(myId);
-
-      if (lastDate != todayStr || existingCoins.isEmpty) {
-        debugPrint(
-            '🪙 자정 경과 또는 동전 없음 감지 ➔ 동전 재생성 시작 (UTC: $todayStr)');
-        await _regenerateCoins(myId, todayStr);
-      } else {
-        _coins = existingCoins;
-        notifyListeners();
-      }
-    } catch (e) {
-      debugPrint('⚠️ 동전 상태 체크 및 동기화 실패: $e');
-    }
-  }
-
-  Future<void> _regenerateCoins(String userId, String todayStr) async {
-    if (_isRegeneratingCoins) return;
-    _isRegeneratingCoins = true;
-
-    final hqTileId = _userMainBaseTileId;
-    final bool hasHQ = hqTileId != null && hqTileId.isNotEmpty && hqTileId != 'none';
-
-    LatLng? targetCenterLatLng;
-
-    if (hasHQ) {
-      final parsed = HexService.parseTileId(hqTileId);
-      if (parsed != null) {
-        targetCenterLatLng = HexService.hexToLatLng(parsed['q']!, parsed['r']!);
-      }
-    }
-
-    // 본진이 없거나 파싱 실패 시 기존 폴백인 내 위치(currentLocation) 사용
-    if (targetCenterLatLng == null) {
-      final loc = _locationProvider;
-      final currLoc = loc?.currentLocation;
-      if (currLoc == null) {
-        debugPrint('⚠️ 본진 위치 또는 GPS 위치 정보가 없어 동전을 재생성할 수 없습니다. 다음 업데이트 대기.');
-        _isRegeneratingCoins = false;
-        return;
-      }
-      targetCenterLatLng = currLoc;
-    }
-
-    try {
-      final centerHex = HexService.latLngToHex(targetCenterLatLng);
-      final int centerQ = centerHex['q']!;
-      final int centerR = centerHex['r']!;
-      const int radius = GameConfig.coinSpawnMaxDistance;
-
-      final List<Map<String, dynamic>> candidates = [];
-      final List<Map<String, dynamic>> backupCandidates = [];
-      final centerLatLng = HexService.hexToLatLng(centerQ, centerR);
-
-      for (int q = -radius; q <= radius; q++) {
-        final int rMin = math.max(-radius, -q - radius);
-        final int rMax = math.min(radius, -q + radius);
-        for (int r = rMin; r <= rMax; r++) {
-          if (q == 0 && r == 0) continue;
-          final targetQ = centerQ + q;
-          final targetR = centerR + r;
-          final targetLatLng = HexService.hexToLatLng(targetQ, targetR);
-
-          final double dLat =
-              targetLatLng.latitude - centerLatLng.latitude;
-          final double dLng =
-              targetLatLng.longitude - centerLatLng.longitude;
-          final double angle = math.atan2(dLat, dLng);
-
-          final int distance =
-              ((q.abs() + r.abs() + (q + r).abs()) / 2).round();
-
-          final item = {
-            'q': targetQ,
-            'r': targetR,
-            'angle': angle,
-          };
-
-          if (distance >= GameConfig.coinSpawnMinDistance &&
-              distance <= GameConfig.coinSpawnMaxDistance) {
-            candidates.add(item);
-          } else {
-            backupCandidates.add(item);
-          }
-        }
-      }
-
-      if (candidates.isEmpty && backupCandidates.isEmpty) return;
-
-      final List<Map<String, int>> selected = [];
-      const int numSlices = 10;
-      const double sliceWidth = (2 * math.pi) / numSlices;
-
-      for (int i = 0; i < numSlices; i++) {
-        final double sliceMin = -math.pi + (i * sliceWidth);
-        final double sliceMax = sliceMin + sliceWidth;
-
-        final sliceCandidates = candidates.where((c) {
-          final double angle = c['angle'] as double;
-          return angle >= sliceMin && angle < sliceMax;
-        }).toList();
-
-        if (sliceCandidates.isNotEmpty) {
-          sliceCandidates.shuffle();
-          final chosen = sliceCandidates.first;
-          selected.add({
-            'q': chosen['q'] as int,
-            'r': chosen['r'] as int,
-          });
-        }
-      }
-
-      if (selected.length < 10) {
-        candidates.shuffle();
-        for (final c in candidates) {
-          if (selected.length >= 10) break;
-          final targetQ = c['q'] as int;
-          final targetR = c['r'] as int;
-          final isDuplicate =
-              selected.any((s) => s['q'] == targetQ && s['r'] == targetR);
-          if (!isDuplicate) {
-            selected.add({'q': targetQ, 'r': targetR});
-          }
-        }
-      }
-
-      if (selected.length < 10) {
-        backupCandidates.shuffle();
-        for (final c in backupCandidates) {
-          if (selected.length >= 10) break;
-          final targetQ = c['q'] as int;
-          final targetR = c['r'] as int;
-          final isDuplicate =
-              selected.any((s) => s['q'] == targetQ && s['r'] == targetR);
-          if (!isDuplicate) {
-            selected.add({'q': targetQ, 'r': targetR});
-          }
-        }
-      }
-
-      final List<UserCoin> newCoins = selected.map((c) {
-        final q = c['q']!;
-        final r = c['r']!;
-        final tileId = HexService.tileId(q, r);
-        return UserCoin(
-          userId: userId,
-          tileId: tileId,
-          q: q,
-          r: r,
-          isCollected: false,
-          createdAt: DateTime.now().toUtc(),
-        );
-      }).toList();
-
-      await _supabase.clearUserCoins(userId);
-      final insertSuccess = await _supabase.insertUserCoins(newCoins);
-
-      if (insertSuccess) {
-        _coins = newCoins;
-        await PreferencesService.setLastCoinGeneratedDate(todayStr);
-        debugPrint('🪙 동전 10개 재생성 및 원격 DB 등록 완료.');
-        notifyListeners();
-      }
-    } catch (e) {
-      debugPrint('⚠️ 동전 생성 중 오류 발생: $e');
-    } finally {
-      _isRegeneratingCoins = false;
-    }
-  }
-
-  Future<void> _checkCoinCollection(String tileId) async {
-    final myId = _userId;
-    if (myId == null) return;
-
-    final coinIndex =
-        _coins.indexWhere((c) => c.tileId == tileId && !c.isCollected);
-    if (coinIndex == -1) return;
-
-    final targetCoin = _coins[coinIndex];
-    debugPrint('🪙 동전 발견! 타일 ID: ${targetCoin.tileId}. 획득 시도 중...');
-
-    final originalCoins = List<UserCoin>.from(_coins);
-    final updatedCoins = List<UserCoin>.from(_coins);
-    updatedCoins[coinIndex] = UserCoin(
-      userId: targetCoin.userId,
-      tileId: targetCoin.tileId,
-      q: targetCoin.q,
-      r: targetCoin.r,
-      isCollected: true,
-      createdAt: targetCoin.createdAt,
-      collectedAt: DateTime.now(),
-    );
-    _coins = updatedCoins;
-    notifyListeners();
-
-    try {
-      final success =
-          await _supabase.collectCoin(myId, tileId, GameConfig.coinGoldReward);
-      if (success) {
-        AudioService().playNotification();
-        addAlert(
-          '동전을 발견하여 ${GameConfig.coinGoldReward.toInt()}골드를 획득했습니다!',
-          AlertType.info,
-        );
-        await _goldManager.syncWithServer();
-      } else {
-        debugPrint('⚠️ 동전 획득 DB 처리 실패 ➔ 롤백 수행');
-        _coins = originalCoins;
-        notifyListeners();
-      }
-    } catch (e) {
-      debugPrint('⚠️ 동전 획득 처리 중 예외 발생 ➔ 롤백 수행: $e');
-      _coins = originalCoins;
-      notifyListeners();
-    }
-  }
-
-  // --- UTC Timer ---
-  void _startUtcTimer() {
-    _updateUtcTimeString();
-    _utcTimer = Timer.periodic(const Duration(seconds: 1), (_) {
-      _updateUtcTimeString();
-    });
-  }
-
-  void _updateUtcTimeString() {
-    final nowUtc = DateTime.now().toUtc();
-    final targetUtc = DateTime.utc(nowUtc.year, nowUtc.month, nowUtc.day + 1);
-    final diff = targetUtc.difference(nowUtc);
-
-    final hours = diff.inHours.toString().padLeft(2, '0');
-    final minutes = (diff.inMinutes % 60).toString().padLeft(2, '0');
-    final seconds = (diff.inSeconds % 60).toString().padLeft(2, '0');
-
-    _utcTimeString = '$hours:$minutes:$seconds';
-    notifyListeners();
   }
 }

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../../core/constants/colors.dart';
+import '../../models/map_mode.dart';
 import '../../providers/game_provider.dart';
 import 'tactical_press_button.dart';
 
@@ -33,15 +34,15 @@ class MapModeToggleButton extends StatelessWidget {
             break;
           case MapMode.footprint:
             // 발자취 모드: 네온 민트 그린 그라데이션 및 걷기 아이콘
-            gradientColors = [const Color(0xFF00FFCC), const Color(0xFF00AA88)];
-            shadowColor = const Color(0xFF00FFCC);
+            gradientColors = [Palette.footprintMint, Palette.tealOk];
+            shadowColor = Palette.footprintMint;
             iconData = Icons.directions_walk_rounded;
-            iconColor = const Color(0xFF121212);
+            iconColor = Palette.charcoal;
             break;
           case MapMode.pattern:
             // 패턴 도감 모드: 네온 블루 그라데이션 및 퍼즐 아이콘
-            gradientColors = [const Color(0xFF0066FF), const Color(0xFF0033AA)];
-            shadowColor = const Color(0xFF0066FF);
+            gradientColors = [Palette.brightBlue, Palette.deepBlue];
+            shadowColor = Palette.brightBlue;
             iconData = Icons.extension_rounded;
             iconColor = Colors.white;
             break;
