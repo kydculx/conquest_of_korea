@@ -17,13 +17,13 @@ import 'components/footprint_target_marker.dart';
 import '../core/constants/game_config.dart';
 
 /// Flame 게임 엔진을 상속받아 인게임 지도상에 헥사곤 타일 영역, 플레이어의 물리 위치 마커, 본부 기지(HQ), 위성 조준 마커 등을 렌더링하고 업데이트를 감시하는 커스텀 게임 엔진 클래스
-/// 줌 레벨별 동적 LOD(Level of Detail) 타일 규격 계층화 및 실시간 영토 병합(Clustering) 시스템을 이식받아 30 FPS 드래그 및 전국구 줌아웃 성능을 완벽 보장합니다.
+/// 줌 레벨별 동적 LOD(Level of Detail) 타일 규격 계층화 및 실시간 영토 병합(Clustering) 시스템을 이식받아 60 FPS 드래그 및 전국구 줌아웃 성능을 완벽 보장합니다.
 class ConquestGame extends FlameGame {
-  /// 30 FPS 제한을 위한 프레임 스로틀링 누적 타임 (초 단위)
+  /// 60 FPS 제한을 위한 프레임 스로틀링 누적 타임 (초 단위)
   double _frameTimeAccumulator = 0.0;
 
-  /// 30 FPS 기준의 프레임 시간 (1초 / 30 = 0.033333초)
-  static const double _targetFrameTime = 1 / 30;
+  /// 60 FPS 기준의 프레임 시간 (1초 / 60 = 0.016666초)
+  static const double _targetFrameTime = 1 / 60;
 
   /// 플레이어 본인을 지도 상에 나타내는 2D 방향 컴포넌트
   late PlayerComponent player;
@@ -174,8 +174,8 @@ class ConquestGame extends FlameGame {
   /// 프레임 갱신 주기를 제어하기 위해 누적 보관하는 델타 타임 합산 값
   double _dtSum = 0.0;
 
-  /// 프레임 오차를 방지하고 연산을 규격화하기 위해 30 FPS 주기로 강제하는 고정 타임 기준값 (1/30초)
-  static const double _fixedDeltaTime = 1 / 30; // 30 FPS 강제 제한
+  /// 프레임 오차를 방지하고 연산을 규격화하기 위해 60 FPS 주기로 강제하는 고정 타임 기준값 (1/60초)
+  static const double _fixedDeltaTime = 1 / 60; // 60 FPS 강제 제한
 
   /// Flame 엔진의 생명주기 갱신 콜백으로, 고정 델타 타임을 기반으로 하여 컴포넌트 트리를 규칙적으로 갱신합니다.
   @override
