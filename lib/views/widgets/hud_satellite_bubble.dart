@@ -98,18 +98,18 @@ class SatelliteMapBubbleState extends State<SatelliteMapBubble> {
     String actionButtonText = '';
     VoidCallback? onActionPressed;
     List<Color> buttonGradient = [
-      const Color(0xFF00E5FF),
-      const Color(0xFF00838F),
+      Palette.accentCyan,
+      Palette.cyanDeep,
     ];
 
     if (isCapturing) {
       final remainingSec = game.remainingSatelliteCaptureSeconds;
-      themeColor = const Color(0xFFFF5252);
+      themeColor = Palette.redAccent;
       detailsText = GameStrings.satCapturingAttempt;
       timeStr = GameStrings.secondsUnit(remainingSec.toString());
       showActionButton = true;
       actionButtonText = GameStrings.cancel;
-      buttonGradient = [const Color(0xFFFF5252), const Color(0xFFC62828)];
+      buttonGradient = [Palette.redAccent, Palette.darkRed];
       onActionPressed = game.cancelSatelliteCapture;
     } else {
       if (isTileEmpty) {
@@ -118,7 +118,7 @@ class SatelliteMapBubbleState extends State<SatelliteMapBubble> {
         if (satCooltime > 0) {
           final minutes = satCooltime ~/ 60;
           final seconds = satCooltime % 60;
-          themeColor = const Color(0xFFFF9900);
+          themeColor = Palette.orangeVivid;
           isCooltime = true;
           detailsText = GameStrings.satCooltimeWaitingLabel;
           timeStr =
@@ -144,7 +144,7 @@ class SatelliteMapBubbleState extends State<SatelliteMapBubble> {
           } else {
             showActionButton = true;
             actionButtonText = GameStrings.satCaptureAction;
-            buttonGradient = [const Color(0xFF00E5FF), const Color(0xFF00838F)];
+            buttonGradient = [Palette.accentCyan, Palette.cyanDeep];
             onActionPressed = () => game.executeSatelliteCapture(selectedId);
           }
           timeStr = GameStrings.secondsUnit(durationSec.toString());
@@ -170,13 +170,13 @@ class SatelliteMapBubbleState extends State<SatelliteMapBubble> {
 
             // 상대 타일이고 보안 판독 전인 경우 -> [동네 엿보기] 유료 버튼 바인딩
             if (!isRevealed) {
-              themeColor = const Color(0xFFFF7700);
+              themeColor = Palette.orangeWarm;
               final dist = game.getTileDistance(selectedId);
               showActionButton = true;
               actionButtonText = GameStrings.satRevealVillageWithGp(
                 dist.toString(),
               );
-              buttonGradient = [const Color(0xFFFF8800), const Color(0xFFE65100)];
+              buttonGradient = [Palette.orangeStrong, Palette.orangeBurnt];
               onActionPressed = onRevealPressed;
             }
           }

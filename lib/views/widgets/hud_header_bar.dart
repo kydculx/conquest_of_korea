@@ -49,7 +49,7 @@ class CozyHeaderBar extends StatelessWidget {
               // 3D 보석 느낌의 입체 사이버 시안 코인 엠블럼
               const Icon(
                 Icons.monetization_on_rounded,
-                color: Color(0xFF00E5FF),
+                color: Palette.accentCyan,
                 size: 18.0,
               ),
               const SizedBox(width: 6),
@@ -92,7 +92,7 @@ class UtcTimerHeaderBar extends StatelessWidget {
             shape: RoundedRectangleBorder(
               borderRadius: BorderRadius.circular(20),
               side: BorderSide(
-                color: const Color(0xFFFF9100).withValues(alpha: 0.25), // 리셋 마감 임박을 뜻하는 비비드 오렌지/앰버 네온 보더
+                color: Palette.orangeSunset.withValues(alpha: 0.25), // 리셋 마감 임박을 뜻하는 비비드 오렌지/앰버 네온 보더
                 width: 1.2,
               ),
             ),
@@ -111,7 +111,7 @@ class UtcTimerHeaderBar extends StatelessWidget {
               // 회수/대기 시간을 연출하는 정밀 시계 토글 아이콘
               const Icon(
                 Icons.history_toggle_off_rounded,
-                color: Color(0xFFFF9100),
+                color: Palette.orangeSunset,
                 size: 18.0,
               ),
               const SizedBox(width: 6),
@@ -158,7 +158,7 @@ class UtcTimerHeaderBar extends StatelessWidget {
               shape: RoundedRectangleBorder(
                 borderRadius: BorderRadius.circular(20),
                 side: BorderSide(
-                  color: const Color(0xFF00E676).withValues(alpha: 0.25), // 에메랄드 그린 보더
+                  color: Palette.neonGreen.withValues(alpha: 0.25), // 에메랄드 그린 보더
                   width: 1.2,
                 ),
               ),
@@ -176,7 +176,7 @@ class UtcTimerHeaderBar extends StatelessWidget {
               children: [
                 const Icon(
                   Icons.directions_run_rounded,
-                  color: Color(0xFF00E676),
+                  color: Palette.neonGreen,
                   size: 18.0,
                 ),
                 const SizedBox(width: 6),

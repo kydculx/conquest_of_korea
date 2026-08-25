@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../../core/constants/strings.dart';
 import '../../providers/game_provider.dart';
+import '../../core/constants/colors.dart';
 
 /// [신규] 발자취 모드에서 선택된 타일의 발자취 정밀 세부 정보를 보여주는 플로팅 정보 카드 위젯
 class FootprintInfoBubble extends StatelessWidget {
@@ -25,15 +26,15 @@ class FootprintInfoBubble extends StatelessWidget {
         width: 250,
         padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
         decoration: BoxDecoration(
-          color: const Color(0xFF1E1E1E).withValues(alpha: 0.9),
+          color: Palette.charcoalLight.withValues(alpha: 0.9),
           borderRadius: BorderRadius.circular(16),
           border: Border.all(
-            color: const Color(0xFF00FFCC), // 발자취 전용 네온 청록색
+            color: Palette.footprintMint, // 발자취 전용 네온 청록색
             width: 1.5,
           ),
           boxShadow: [
             BoxShadow(
-              color: const Color(0xFF00FFCC).withValues(alpha: 0.25),
+              color: Palette.footprintMint.withValues(alpha: 0.25),
               blurRadius: 10,
               offset: const Offset(0, 4),
             )
@@ -51,7 +52,7 @@ class FootprintInfoBubble extends StatelessWidget {
                   children: [
                     const Icon(
                       Icons.directions_walk_rounded,
-                      color: Color(0xFF00FFCC),
+                      color: Palette.footprintMint,
                       size: 16,
                     ),
                     const SizedBox(width: 6),
@@ -98,7 +99,7 @@ class FootprintInfoBubble extends StatelessWidget {
             Text(
               '기록 일시: ${footprint.formattedTime}',
               style: const TextStyle(
-                color: Color(0xFFE0E0E0),
+                color: Palette.greyLight,
                 fontSize: 12,
               ),
             ),

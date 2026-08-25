@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../core/constants/colors.dart';
 
 /// HUD 원형 버튼의 공통 누름 상태(press-state) 애니메이션과 3D 젤리 스타일을
 /// 캡슐화한 재사용 가능한 버튼 위젯.
@@ -22,8 +23,8 @@ class TacticalPressButton extends StatefulWidget {
     required this.onTap,
     required this.child,
     this.pressedScale = 0.88,
-    this.gradientColors = const [Color(0xFF00E5FF), Color(0xFF00838F)],
-    this.shadowColor = const Color(0xFF00E5FF),
+    this.gradientColors = const [Palette.accentCyan, Palette.cyanDeep],
+    this.shadowColor = Palette.accentCyan,
     this.shadowBlur = 6.0,
     super.key,
   });

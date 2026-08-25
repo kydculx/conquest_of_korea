@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import '../../core/constants/strings.dart';
 import '../../providers/game_provider.dart';
+import '../../core/constants/colors.dart';
 
 /// 점령 시작/중지 버튼
 class StartStopCaptureButton extends StatefulWidget {
@@ -45,12 +46,12 @@ class StartStopCaptureButtonState extends State<StartStopCaptureButton> {
               end: Alignment.bottomCenter,
               colors: isRunning
                   ? [
-                      const Color(0xFFFF5252),
-                      const Color(0xFFC62828),
+                      Palette.redAccent,
+                      Palette.darkRed,
                     ] // 작전 기동 중: 네온 레드
                   : [
-                      const Color(0xFF00E5FF),
-                      const Color(0xFF00838F),
+                      Palette.accentCyan,
+                      Palette.cyanDeep,
                     ], // 대기: 사이버 네온 시안
             ),
             border: Border.all(
@@ -62,8 +63,8 @@ class StartStopCaptureButtonState extends State<StartStopCaptureButton> {
               BoxShadow(
                 color:
                     (isRunning
-                            ? const Color(0xFFFF5252)
-                            : const Color(0xFF00E5FF))
+                            ? Palette.redAccent
+                            : Palette.accentCyan)
                         .withValues(alpha: _isPressed ? 0.15 : 0.35),
                 blurRadius: _isPressed ? 8.0 : 16.0,
                 spreadRadius: 1.0,

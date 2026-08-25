@@ -170,7 +170,7 @@ class _TilePhotoViewerDialogState extends State<TilePhotoViewerDialog> {
                               height: 16,
                               child: CircularProgressIndicator(
                                 strokeWidth: 1.5,
-                                valueColor: AlwaysStoppedAnimation<Color>(Color(0xFF00FFCC)),
+                                valueColor: AlwaysStoppedAnimation<Color>(Palette.footprintMint),
                               ),
                             ),
                           );
@@ -419,7 +419,7 @@ class _TilePhotoDetailScreenState extends State<TilePhotoDetailScreen> {
                                   ? loadingProgress.cumulativeBytesLoaded /
                                       loadingProgress.expectedTotalBytes!
                                   : null,
-                              valueColor: const AlwaysStoppedAnimation<Color>(Color(0xFF00FFCC)),
+                              valueColor: const AlwaysStoppedAnimation<Color>(Palette.footprintMint),
                             ),
                           );
                         },
@@ -453,7 +453,7 @@ class _TilePhotoDetailScreenState extends State<TilePhotoDetailScreen> {
                     color: Colors.black54,
                     shape: BoxShape.circle,
                     border: Border.all(
-                      color: const Color(0xFF00FFCC).withValues(alpha: 0.3),
+                      color: Palette.footprintMint.withValues(alpha: 0.3),
                       width: 0.8,
                     ),
                   ),
@@ -515,7 +515,7 @@ class _TilePhotoDetailScreenState extends State<TilePhotoDetailScreen> {
                       Text(
                         '${GameStrings.photoDetailTitle}  |  ',
                         style: const TextStyle(
-                          color: Color(0xFF00FFCC),
+                          color: Palette.footprintMint,
                           fontSize: 11,
                           fontWeight: FontWeight.bold,
                         ),
@@ -561,7 +561,7 @@ class _TilePhotoDetailScreenState extends State<TilePhotoDetailScreen> {
                         Text(
                           '${GameStrings.photoUploader}: $uploader',
                           style: GoogleFonts.quicksand(
-                            color: const Color(0xFF00FFCC),
+                            color: Palette.footprintMint,
                             fontWeight: FontWeight.bold,
                             fontSize: 14,
                           ),
@@ -586,7 +586,7 @@ class _TilePhotoDetailScreenState extends State<TilePhotoDetailScreen> {
                           color: Colors.black54,
                           borderRadius: BorderRadius.circular(8),
                           border: Border.all(
-                            color: const Color(0xFF00FFCC).withValues(alpha: 0.2),
+                            color: Palette.footprintMint.withValues(alpha: 0.2),
                             width: 0.8,
                           ),
                         ),
@@ -612,7 +612,7 @@ class _TilePhotoDetailScreenState extends State<TilePhotoDetailScreen> {
                   color: Colors.black45,
                   child: const Center(
                     child: CircularProgressIndicator(
-                      valueColor: AlwaysStoppedAnimation<Color>(Color(0xFF00FFCC)),
+                      valueColor: AlwaysStoppedAnimation<Color>(Palette.footprintMint),
                     ),
                   ),
                 ),

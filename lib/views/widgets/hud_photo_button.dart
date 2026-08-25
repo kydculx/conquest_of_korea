@@ -83,7 +83,7 @@ class TilePhotoActionButton extends StatelessWidget {
             return TacticalDialog(
               title: GameStrings.photoCommentLabel,
               icon: Icons.chat_bubble_outline_rounded,
-              accentColor: const Color(0xFF00FFCC),
+              accentColor: Palette.footprintMint,
               content: Column(
                 mainAxisSize: MainAxisSize.min,
                 crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -107,7 +107,7 @@ class TilePhotoActionButton extends StatelessWidget {
                         borderRadius: BorderRadius.circular(8),
                       ),
                       focusedBorder: OutlineInputBorder(
-                        borderSide: const BorderSide(color: Color(0xFF00FFCC)),
+                        borderSide: const BorderSide(color: Palette.footprintMint),
                         borderRadius: BorderRadius.circular(8),
                       ),
                     ),
@@ -122,7 +122,7 @@ class TilePhotoActionButton extends StatelessWidget {
                 ElevatedButton(
                   onPressed: () => Navigator.pop(context, controller.text.trim()),
                   style: ElevatedButton.styleFrom(
-                    backgroundColor: const Color(0xFF00FFCC),
+                    backgroundColor: Palette.footprintMint,
                     foregroundColor: Colors.black,
                   ),
                   child: const Text('확인'),

@@ -116,11 +116,11 @@ class CompletedPatternList extends StatelessWidget {
                     width: 48,
                     height: 48,
                     decoration: ShapeDecoration(
-                      color: const Color(0xFF0066FF).withValues(alpha: 0.15),
+                      color: Palette.brightBlue.withValues(alpha: 0.15),
                       shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(12),
                         side: const BorderSide(
-                          color: Color(0xFF0066FF),
+                          color: Palette.brightBlue,
                           width: 1.2,
                         ),
                       ),
@@ -136,7 +136,7 @@ class CompletedPatternList extends StatelessWidget {
                       child: Text(
                         item.char,
                         style: GoogleFonts.fredoka(
-                          color: const Color(0xFF0066FF),
+                          color: Palette.brightBlue,
                           fontSize: 20,
                           fontWeight: FontWeight.bold,
                         ),

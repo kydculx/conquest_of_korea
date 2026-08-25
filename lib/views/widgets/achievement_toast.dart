@@ -2,6 +2,7 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import '../../models/achievement_model.dart';
 import '../../core/constants/strings.dart';
+import '../../core/constants/colors.dart';
 
 /// 업적 해금 시 화면 상단에 표시되는 3D 네온 플로팅 토스트 연출 위젯
 class AchievementToast extends StatefulWidget {
@@ -124,7 +125,7 @@ class _AchievementToastState extends State<AchievementToast>
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
         decoration: BoxDecoration(
           // 어두운 보드 패널과 반투명 아크릴 느낌
-          color: const Color(0xFF0F1626).withValues(alpha: 0.95),
+          color: Palette.deepNavy.withValues(alpha: 0.95),
           borderRadius: BorderRadius.circular(20),
           border: Border.all(
             color: tierColor,
@@ -175,7 +176,7 @@ class _AchievementToastState extends State<AchievementToast>
                   Text(
                     GameStrings.achievementUnlocked,
                     style: const TextStyle(
-                      color: Color(0xFF00FFCC), // 네온 민트
+                      color: Palette.footprintMint, // 네온 민트
                       fontSize: 11,
                       fontWeight: FontWeight.bold,
                       letterSpacing: 1.0,
@@ -230,13 +231,13 @@ class _AchievementToastState extends State<AchievementToast>
   Color _getTierColor(int tier) {
     switch (tier) {
       case 1:
-        return const Color(0xFFCD7F32); // 브론즈
+        return Palette.bronze; // 브론즈
       case 2:
-        return const Color(0xFFC0C0C0); // 실버
+        return Palette.silver; // 실버
       case 3:
-        return const Color(0xFFFFD700); // 골드
+        return Palette.gold; // 골드
       case 4:
-        return const Color(0xFF00E5FF); // 다이아몬드/플래티넘 네온 민트
+        return Palette.accentCyan; // 다이아몬드/플래티넘 네온 민트
       default:
         return Colors.white70;
     }

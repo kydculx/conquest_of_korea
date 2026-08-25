@@ -334,7 +334,7 @@ class _GameMapWidgetState extends State<GameMapWidget>
                           children: [
                             const Icon(
                               Icons.grid_on_rounded,
-                              color: Color(0xFF0066FF),
+                              color: Palette.brightBlue,
                               size: 20,
                             ),
                             const SizedBox(width: 10),
@@ -353,7 +353,7 @@ class _GameMapWidgetState extends State<GameMapWidget>
                                   Text(
                                     GameStrings.patternTileAlreadyUsed,
                                     style: const TextStyle(
-                                      color: Color(0xFFE0E0E0),
+                                      color: Palette.greyLight,
                                       fontSize: 12,
                                     ),
                                   ),
@@ -362,13 +362,13 @@ class _GameMapWidgetState extends State<GameMapWidget>
                             ),
                           ],
                         ),
-                        backgroundColor: const Color(0xFF1E1E1E),
+                        backgroundColor: Palette.charcoalLight,
                         duration: const Duration(seconds: 4),
                         behavior: SnackBarBehavior.floating,
                         shape: RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(12),
                           side: const BorderSide(
-                            color: Color(0xFF0066FF),
+                            color: Palette.brightBlue,
                             width: 1.0,
                           ),
                         ),
@@ -486,12 +486,12 @@ class _GameMapWidgetState extends State<GameMapWidget>
                           color: Colors.black.withValues(alpha: 0.55),
                           shape: BoxShape.circle,
                           border: Border.all(
-                            color: const Color(0xFF00FFCC),
+                            color: Palette.footprintMint,
                             width: 1.0,
                           ),
                           boxShadow: [
                             BoxShadow(
-                              color: const Color(0xFF00FFCC).withValues(alpha: 0.65),
+                              color: Palette.footprintMint.withValues(alpha: 0.65),
                               blurRadius: 4.0,
                             ),
                           ],

@@ -127,8 +127,8 @@ class _ModernCompassPainter extends CustomPainter {
         begin: Alignment.topCenter,
         end: Alignment.bottomCenter,
         colors: [
-          Color(0xFFFF5252),
-          Color(0xFFFF8A80),
+          Palette.redAccent,
+          Palette.roseLight,
         ],
       ).createShader(Rect.fromLTRB(-pinWidth, -pinLength, pinWidth, 0))
       ..style = PaintingStyle.fill;
@@ -141,7 +141,7 @@ class _ModernCompassPainter extends CustomPainter {
       ..close();
 
     final northShadowPaint = Paint()
-      ..color = const Color(0xFFC62828).withValues(alpha: 0.85)
+      ..color = Palette.darkRed.withValues(alpha: 0.85)
       ..style = PaintingStyle.fill;
     canvas.drawPath(northShadowPath, northShadowPaint);
 
@@ -170,7 +170,7 @@ class _ModernCompassPainter extends CustomPainter {
 
     // 정북 방향 미세 하이테크 N 마커 도트
     final nMarkerPaint = Paint()
-      ..color = const Color(0xFFFF5252)
+      ..color = Palette.redAccent
       ..style = PaintingStyle.fill;
     canvas.drawCircle(Offset(0, -pinLength + 3), 1.5, nMarkerPaint);
 

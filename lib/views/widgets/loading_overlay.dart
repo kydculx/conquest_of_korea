@@ -112,9 +112,9 @@ class _CozyBubbleSpinnerPainter extends CustomPainter {
 
     // 2. 3색 파스텔 솜사탕 버블 (120도 간격)
     final colors = [
-      const Color(0xFFE57373), // 솜사탕 핑크
-      const Color(0xFF90CAF9), // 솜사탕 블루
-      const Color(0xFFFFB74D), // 솜사탕 옐로우
+      Palette.softRed, // 솜사탕 핑크
+      Palette.blueSoft, // 솜사탕 블루
+      Palette.orangeWarning, // 솜사탕 옐로우
     ];
 
     final double baseAngle = progress * math.pi * 2;

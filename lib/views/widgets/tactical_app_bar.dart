@@ -14,7 +14,7 @@ class TacticalBackButton extends StatelessWidget {
     return IconButton(
       icon: Icon(
         Icons.arrow_back_ios_new_rounded,
-        color: const Color(0xFFE57373), // 솜사탕 핑크 레드 액센트
+        color: Palette.softRed, // 솜사탕 핑크 레드 액센트
         size: size,
       ),
       onPressed: onPressed ?? () => Navigator.of(context).pop(),
@@ -32,7 +32,7 @@ class TacticalCloseButton extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return IconButton(
-      icon: Icon(Icons.close_rounded, color: const Color(0xFFE57373), size: size),
+      icon: Icon(Icons.close_rounded, color: Palette.softRed, size: size),
       onPressed: onPressed,
     );
   }

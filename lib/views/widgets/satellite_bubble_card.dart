@@ -165,14 +165,14 @@ class BubbleBodyState extends State<BubbleBody> {
                         // 📍 좌표 칩
                         _buildMiniBadge(
                           '${GameStrings.hudCoordinateLabel}: ${widget.q}, ${widget.r}',
-                          const Color(0xFF00E5FF),
+                          Palette.accentCyan,
                         ),
                         // 🔥 점령 빈도 칩
                         _buildMiniBadge(
                           GameStrings.satCaptureCount(
                             widget.captureCount.toString(),
                           ),
-                          const Color(0xFFFF9900),
+                          Palette.orangeVivid,
                         ),
                         // 🛡️ 쉴드 활성 칩 (활성화 시에만 노출)
                         if (widget.isShieldActive &&
@@ -188,7 +188,7 @@ class BubbleBodyState extends State<BubbleBody> {
                                   '${m.toString().padLeft(2, '0')}:${s.toString().padLeft(2, '0')}';
                               return _buildMiniBadge(
                                 GameStrings.satShieldWithTime(timeStr),
-                                const Color(0xFF4CAF50),
+                                Palette.greenConfirm,
                               );
                             }
                             return const SizedBox.shrink();
@@ -207,7 +207,7 @@ class BubbleBodyState extends State<BubbleBody> {
                                   '${m.toString().padLeft(2, '0')}:${s.toString().padLeft(2, '0')}';
                               return _buildMiniBadge(
                                 GameStrings.satPeekTimeWithTime(timeStr),
-                                const Color(0xFFFFD54F),
+                                Palette.amberHighlight,
                               );
                             }
                             return const SizedBox.shrink();
@@ -250,11 +250,11 @@ class BubbleBodyState extends State<BubbleBody> {
                       children: [
                         _buildMiniBadge(
                           GameStrings.satSecretArea,
-                          const Color(0xFFFF5252),
+                          Palette.redAccent,
                         ),
                         _buildMiniBadge(
                           GameStrings.satSecretHidden,
-                          const Color(0xFFFF5252),
+                          Palette.redAccent,
                         ),
                       ],
                     ),
@@ -433,14 +433,14 @@ class BubbleBodyState extends State<BubbleBody> {
             const SizedBox(width: 4),
             const Icon(
               Icons.monetization_on_rounded,
-              color: Color(0xFF00E5FF),
+              color: Palette.accentCyan,
               size: 14.0,
             ),
             const SizedBox(width: 2),
             Text(
               suffix,
               style: GoogleFonts.fredoka(
-                color: const Color(0xFF00E5FF),
+                color: Palette.accentCyan,
                 fontSize: 12.0,
                 fontWeight: FontWeight.w900,
                 letterSpacing: 0.5,
@@ -546,7 +546,7 @@ class BubbleBodyState extends State<BubbleBody> {
           Text(
             isGold ? value.replaceAll(RegExp(r'[\$\s]'), '') : value,
             style: GoogleFonts.quicksand(
-              color: isGold ? const Color(0xFF00E5FF) : color, // 값은 굵고 고유 색상있게
+              color: isGold ? Palette.accentCyan : color, // 값은 굵고 고유 색상있게
               fontSize: 9.5,
               fontWeight: FontWeight.w900,
             ),
