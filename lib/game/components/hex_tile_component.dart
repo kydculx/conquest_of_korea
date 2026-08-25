@@ -348,7 +348,7 @@ class HexTileComponent extends PositionComponent
 
       // 1) 동전 그림자/외각 광채 (Glow)
       final Paint coinGlow = Paint()
-        ..color = const Color(0xFFFFD700).withValues(alpha: 0.25)
+        ..color = Palette.gold.withValues(alpha: 0.25)
         ..style = PaintingStyle.fill
         ..maskFilter = const MaskFilter.blur(BlurStyle.normal, baseRadius * 0.4);
       final Rect glowRect = Rect.fromCenter(
@@ -360,7 +360,7 @@ class HexTileComponent extends PositionComponent
 
       // 2) 2.5D 두께 연출 (Side Edge) - 뒷면(Dark Edge)을 아래에 먼저 드로잉
       final Paint coinEdge = Paint()
-        ..color = const Color(0xFFB8860B) // 어두운 황금/동색
+        ..color = Palette.goldDark // 어두운 황금/동색
         ..style = PaintingStyle.fill;
       final Rect edgeRect = Rect.fromCenter(
         center: edgeCenter,
@@ -376,9 +376,9 @@ class HexTileComponent extends PositionComponent
           Offset(gradCenterX, -1.0),
           baseRadius,
           [
-            const Color(0xFFFFF7C2), // 밝은 금색 중심부
-            const Color(0xFFFFD700), // 선명한 골드
-            const Color(0xFFB8860B), // 어두운 테두리
+            Palette.creamYellow, // 밝은 금색 중심부
+            Palette.gold, // 선명한 골드
+            Palette.goldDark, // 어두운 테두리
           ],
           const [0.0, 0.7, 1.0],
         )
@@ -392,7 +392,7 @@ class HexTileComponent extends PositionComponent
 
       // 4) 선명한 코인 테두리선 (화면 기준 항상 1.2 픽셀 두께 테두리)
       final Paint coinBorder = Paint()
-        ..color = const Color(0xFFD4AF37)
+        ..color = Palette.goldClassic
         ..style = PaintingStyle.stroke
         ..strokeWidth = 1.2;
       canvas.drawOval(bodyRect, coinBorder);
@@ -403,7 +403,7 @@ class HexTileComponent extends PositionComponent
           text: const TextSpan(
             text: '\$',
             style: TextStyle(
-              color: Color(0xFF8B6508),
+              color: Palette.goldDeep,
               fontSize: height * 1.05,
               fontWeight: FontWeight.bold,
               fontFamily: 'Roboto',

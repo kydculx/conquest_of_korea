@@ -102,7 +102,7 @@ class PlayerComponent extends PositionComponent {
       center,
       'N',
       Offset(0, -textDist),
-      const Color(0xFFFF5252),
+      Palette.redAccent,
     ); // 북쪽은 강렬한 네온 레드
     _drawMiniDirText(
       canvas,
@@ -255,7 +255,7 @@ class PlayerComponent extends PositionComponent {
           shadows: [
             // 밝은 배경 맵 타일 위에서도 또렷이 분리되는 다크 섀도 드롭
             Shadow(
-              color: const Color(0xFF121212).withValues(alpha: 0.85),
+              color: Palette.charcoal.withValues(alpha: 0.85),
               offset: const Offset(0.5, 0.5),
               blurRadius: 2.0,
             ),

@@ -2,6 +2,7 @@ import 'dart:math' as math;
 import 'package:flame/components.dart';
 import 'package:flutter/material.dart';
 import '../conquest_game.dart';
+import '../../core/constants/colors.dart';
 
 /// 플레이어의 본부 기지(HQ) 지리적 좌표 상에 홈(Home) 모양 아이콘 마커를 렌더링하여 본부를 시각화하는 Flame 컴포넌트
 class HQBaseMarker extends PositionComponent
@@ -64,11 +65,11 @@ class HQBaseMarker extends PositionComponent
   /// 로컬 좌표 (0,0) 기준으로 펄럭이는 캐주얼 보드게임 스타일의 2D 벡터 깃발(Flag)을 정밀 드로잉합니다.
   void _drawVectorHQFlag(Canvas canvas) {
     // 16진수 진영 색상 파싱 (실패 시 기본 네온 아군 색상)
-    final Color flagColor = _parseColor(colorHex) ?? const Color(0xFF00E5FF);
+    final Color flagColor = _parseColor(colorHex) ?? Palette.accentCyan;
 
     // 1) 깃발 바닥 오프셋 그림자 (Drop Shadow로 공중 입체감 부여)
     final Paint shadowPaint = Paint()
-      ..color = const Color(0xFF000000).withValues(alpha: 0.28)
+      ..color = Palette.black.withValues(alpha: 0.28)
       ..style = PaintingStyle.fill
       ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 1.8);
     canvas.drawOval(
@@ -78,7 +79,7 @@ class HQBaseMarker extends PositionComponent
 
     // 2) 깃대 바닥 꽂임용 원형 링 받침대 (Flag Base)
     final Paint basePaint = Paint()
-      ..color = const Color(0xFF78909C)
+      ..color = Palette.greyBlueMid
       ..style = PaintingStyle.fill;
     canvas.drawOval(
       const Rect.fromLTRB(-4.5, 11.5, 4.5, 13.8),
@@ -87,14 +88,14 @@ class HQBaseMarker extends PositionComponent
 
     // 3) 단단한 은색 메탈 재질의 깃대 (Flagpole)
     final Paint flagpolePaint = Paint()
-      ..color = const Color(0xFFB0BEC5)
+      ..color = Palette.greyBlue
       ..style = PaintingStyle.fill;
     const Rect flagpole = Rect.fromLTRB(-1.2, -16, 1.2, 12);
     canvas.drawRect(flagpole, flagpolePaint);
 
     // 4) 깃대 끝머리의 아기자기한 황금 장식 구슬 (Top Gold Ornament)
     final Paint goldPaint = Paint()
-      ..color = const Color(0xFFFFD54F)
+      ..color = Palette.amberHighlight
       ..style = PaintingStyle.fill;
     canvas.drawCircle(const Offset(0, -17.5), 2.8, goldPaint);
 

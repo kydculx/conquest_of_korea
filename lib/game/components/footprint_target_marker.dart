@@ -4,6 +4,7 @@ import 'package:flame/components.dart';
 import 'package:latlong2/latlong.dart' hide Path;
 import '../../services/hex_service.dart';
 import '../conquest_game.dart';
+import '../../core/constants/colors.dart';
 
 /// [신규] 발자취 모드에서 선택한 타일의 네온 청록색 하이라이팅 조준 마커 컴포넌트
 class FootprintTargetMarker extends PositionComponent
@@ -46,7 +47,7 @@ class FootprintTargetMarker extends PositionComponent
     cy /= _screenCorners.length;
 
     final double pulse = 1.0 + 0.1 * math.sin(_timer * 6.0);
-    const themeColor = Color(0xFF00FFCC); // 발자취 전용 네온 청록색
+    const themeColor = Palette.footprintMint; // 발자취 전용 네온 청록색
 
     // 2. 헥사곤 하이라이트 그리기
     final path = Path();
