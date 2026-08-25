@@ -119,7 +119,7 @@ class _SplashScreenState extends State<SplashScreen> {
     final double bottomPadding = MediaQuery.of(context).padding.bottom;
 
     // 테마 컬러 셋팅
-    const Color neonCyan = Color(0xFF00E5FF);
+    const Color neonCyan = Palette.accentCyan;
     const Color textWhite = Colors.white;
 
     return Scaffold(
@@ -202,7 +202,7 @@ class _SplashScreenState extends State<SplashScreen> {
                     child: CircularProgressIndicator(
                       strokeWidth: 1.8,
                       valueColor: AlwaysStoppedAnimation<Color>(
-                        Color(0xFFFFFFFF),
+                        Palette.white,
                       ), // 로더도 흰색으로 통일
                     ),
                   ),
@@ -231,7 +231,7 @@ class _SplashScreenState extends State<SplashScreen> {
                 child: Text(
                   _appVersion,
                   style: GoogleFonts.quicksand(
-                    color: const Color(0xFFFFFFFF).withValues(alpha: 1.0),
+                    color: Palette.white.withValues(alpha: 1.0),
                     fontSize: 10,
                     fontWeight: FontWeight.w700,
                     letterSpacing: 1.2,

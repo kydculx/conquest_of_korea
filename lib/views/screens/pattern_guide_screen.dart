@@ -69,14 +69,14 @@ class HexPatternPainter extends CustomPainter {
     final Paint fillPaint = Paint()
       ..style = PaintingStyle.fill
       ..shader = const LinearGradient(
-        colors: [Color(0xFF00FFCC), Color(0xFF00BFFF)],
+        colors: [Palette.footprintMint, Palette.skyBlue],
         begin: Alignment.topLeft,
         end: Alignment.bottomRight,
       ).createShader(Rect.fromLTWH(0, 0, size.width, size.height));
 
     // 헥사곤 검은색 음영 입체 테두리
     final Paint borderPaint = Paint()
-      ..color = const Color(0xFF0F1626)
+      ..color = Palette.deepNavy
       ..style = PaintingStyle.stroke
       ..strokeWidth = 2.0;
 
@@ -351,7 +351,7 @@ class _PatternGuideScreenState extends State<PatternGuideScreen> {
                         color: isSelected
                             ? GameColors.accentNeon
                             : (isCompleted
-                                  ? const Color(0xFF00FFCC)
+                                  ? Palette.footprintMint
                                   : GameColors.textSecondary),
                         fontSize: 18,
                         fontWeight: FontWeight.bold,
@@ -369,7 +369,7 @@ class _PatternGuideScreenState extends State<PatternGuideScreen> {
                             child: Icon(
                               Icons.check_circle,
                               size: 11,
-                              color: Color(0xFF00FFCC),
+                              color: Palette.footprintMint,
                             ),
                           ),
                         ],
@@ -468,11 +468,11 @@ class _PatternGuideScreenState extends State<PatternGuideScreen> {
                       ),
                       padding: const EdgeInsets.all(20),
                       decoration: BoxDecoration(
-                        color: const Color(0xFF0F1626).withValues(alpha: 0.8),
+                        color: Palette.deepNavy.withValues(alpha: 0.8),
                         borderRadius: BorderRadius.circular(24),
                         border: Border.all(
                           color: isCompleted
-                              ? const Color(0xFF00FFCC).withValues(alpha: 0.5)
+                              ? Palette.footprintMint.withValues(alpha: 0.5)
                               : GameColors.borderNeon,
                           width: isCompleted ? 1.5 : 1.0,
                         ),
@@ -521,14 +521,14 @@ class _PatternGuideScreenState extends State<PatternGuideScreen> {
                                         ).withValues(alpha: 0.15),
                                         borderRadius: BorderRadius.circular(12),
                                         border: Border.all(
-                                          color: const Color(0xFF00FFCC),
+                                          color: Palette.footprintMint,
                                           width: 1.0,
                                         ),
                                       ),
                                       child: Text(
                                         GameStrings.patternCompletedBadge,
                                         style: GoogleFonts.outfit(
-                                          color: const Color(0xFF00FFCC),
+                                          color: Palette.footprintMint,
                                           fontSize: 12,
                                           fontWeight: FontWeight.bold,
                                         ),

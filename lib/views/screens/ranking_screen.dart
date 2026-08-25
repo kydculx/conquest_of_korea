@@ -36,7 +36,7 @@ class _RankingScreenState extends State<RankingScreen> {
         color: GameColors.backgroundMedium.withValues(alpha: 0.3),
         borderRadius: BorderRadius.circular(14),
         border: Border.all(
-          color: const Color(0xFF00E5FF).withValues(alpha: 0.15),
+          color: Palette.accentCyan.withValues(alpha: 0.15),
           width: 1.0,
         ),
       ),
@@ -79,7 +79,7 @@ class _RankingScreenState extends State<RankingScreen> {
           padding: const EdgeInsets.symmetric(vertical: 10),
           decoration: BoxDecoration(
             color: isActive
-                ? const Color(0xFF00E5FF).withValues(alpha: 0.15)
+                ? Palette.accentCyan.withValues(alpha: 0.15)
                 : Colors.transparent,
             borderRadius: BorderRadius.circular(10),
           ),
@@ -87,7 +87,7 @@ class _RankingScreenState extends State<RankingScreen> {
             child: Text(
               label,
               style: TextStyle(
-                color: isActive ? const Color(0xFF00E5FF) : GameColors.textSecondary,
+                color: isActive ? Palette.accentCyan : GameColors.textSecondary,
                 fontSize: 12.0,
                 fontWeight: FontWeight.bold,
               ),
@@ -113,7 +113,7 @@ class _RankingScreenState extends State<RankingScreen> {
         color: GameColors.backgroundMedium.withValues(alpha: 0.2),
         borderRadius: BorderRadius.circular(12),
         border: Border.all(
-          color: const Color(0xFF00E5FF).withValues(alpha: 0.1),
+          color: Palette.accentCyan.withValues(alpha: 0.1),
           width: 1.0,
         ),
       ),
@@ -125,7 +125,7 @@ class _RankingScreenState extends State<RankingScreen> {
               child: Text(
                 GameStrings.rankingHeaderRank,
                 style: const TextStyle(
-                  color: Color(0xFF00E5FF),
+                  color: Palette.accentCyan,
                   fontSize: 12,
                   fontWeight: FontWeight.bold,
                 ),
@@ -137,7 +137,7 @@ class _RankingScreenState extends State<RankingScreen> {
             child: Text(
               GameStrings.nickname,
               style: const TextStyle(
-                color: Color(0xFF00E5FF),
+                color: Palette.accentCyan,
                 fontSize: 12,
                 fontWeight: FontWeight.bold,
               ),
@@ -146,7 +146,7 @@ class _RankingScreenState extends State<RankingScreen> {
           Text(
             rightText,
             style: const TextStyle(
-              color: Color(0xFF00E5FF),
+              color: Palette.accentCyan,
               fontSize: 12,
               fontWeight: FontWeight.bold,
             ),
@@ -272,7 +272,7 @@ class _TacticalGridPainter extends CustomPainter {
   @override
   void paint(Canvas canvas, Size size) {
     final paint = Paint()
-      ..color = const Color(0xFF00E5FF).withValues(alpha: 0.02)
+      ..color = Palette.accentCyan.withValues(alpha: 0.02)
       ..strokeWidth = 0.5;
 
     const double step = 40.0;
@@ -372,13 +372,13 @@ class _RankingListTile extends StatelessWidget {
     Color rankTextColor = Colors.white;
 
     if (rank == 1) {
-      medalGradient = [const Color(0xFFFFD700), const Color(0xFFFFA500)]; // Gold
-      rankTextColor = const Color(0xFF5D4037);
+      medalGradient = [Palette.gold, Palette.orange]; // Gold
+      rankTextColor = Palette.brownDark;
     } else if (rank == 2) {
-      medalGradient = [const Color(0xFFE0E0E0), const Color(0xFF9E9E9E)]; // Silver
-      rankTextColor = const Color(0xFF37474F);
+      medalGradient = [Palette.greyLight, Palette.greyMid]; // Silver
+      rankTextColor = Palette.slateBlue;
     } else if (rank == 3) {
-      medalGradient = [const Color(0xFFFF8A65), const Color(0xFFD84315)]; // Bronze
+      medalGradient = [Palette.orangeCoral, Palette.orangeRust]; // Bronze
       rankTextColor = Colors.white;
     }
 
@@ -391,19 +391,19 @@ class _RankingListTile extends StatelessWidget {
           child: Container(
             decoration: BoxDecoration(
               color: isMe
-                  ? const Color(0xFF00E5FF).withValues(alpha: 0.08)
+                  ? Palette.accentCyan.withValues(alpha: 0.08)
                   : GameColors.backgroundMedium.withValues(alpha: 0.45),
               borderRadius: BorderRadius.circular(16),
               border: Border.all(
                 color: isMe
-                    ? const Color(0xFF00E5FF).withValues(alpha: 0.4)
-                    : const Color(0xFF00E5FF).withValues(alpha: 0.08),
+                    ? Palette.accentCyan.withValues(alpha: 0.4)
+                    : Palette.accentCyan.withValues(alpha: 0.08),
                 width: isMe ? 1.5 : 1.0,
               ),
               boxShadow: isMe
                   ? [
                       BoxShadow(
-                        color: const Color(0xFF00E5FF).withValues(alpha: 0.06),
+                        color: Palette.accentCyan.withValues(alpha: 0.06),
                         blurRadius: 10,
                         spreadRadius: 0.5,
                       ),
@@ -458,7 +458,7 @@ class _RankingListTile extends StatelessWidget {
                             shape: BoxShape.circle,
                             color: GameColors.tacticalGray.withValues(alpha: 0.3),
                             border: Border.all(
-                              color: const Color(0xFF00E5FF).withValues(alpha: 0.15),
+                              color: Palette.accentCyan.withValues(alpha: 0.15),
                               width: 0.8,
                             ),
                           ),
@@ -481,7 +481,7 @@ class _RankingListTile extends StatelessWidget {
                     child: Text(
                       profile.nickname,
                       style: GoogleFonts.fredoka(
-                        color: isMe ? const Color(0xFF00E5FF) : GameColors.textPrimary,
+                        color: isMe ? Palette.accentCyan : GameColors.textPrimary,
                         fontSize: 14.5,
                         fontWeight: FontWeight.bold,
                       ),
@@ -493,7 +493,7 @@ class _RankingListTile extends StatelessWidget {
               trailing: Text(
                 _formatRankingValue(rankingType, profile),
                 style: GoogleFonts.quicksand(
-                  color: isMe ? const Color(0xFF00E5FF) : GameColors.textSecondary,
+                  color: isMe ? Palette.accentCyan : GameColors.textSecondary,
                   fontSize: 13.5,
                   fontWeight: FontWeight.bold,
                   letterSpacing: 0.2,
@@ -542,12 +542,12 @@ class _MyRankingFloatingBanner extends StatelessWidget {
             color: GameColors.backgroundMedium.withValues(alpha: 0.92),
             borderRadius: BorderRadius.circular(20),
             border: Border.all(
-              color: const Color(0xFF00E5FF).withValues(alpha: 0.35),
+              color: Palette.accentCyan.withValues(alpha: 0.35),
               width: 1.5,
             ),
             boxShadow: [
               BoxShadow(
-                color: const Color(0xFF00E5FF).withValues(alpha: 0.05),
+                color: Palette.accentCyan.withValues(alpha: 0.05),
                 blurRadius: 16.0,
                 spreadRadius: 1.0,
                 offset: const Offset(0, -4),
@@ -564,11 +564,11 @@ class _MyRankingFloatingBanner extends StatelessWidget {
                   gradient: const LinearGradient(
                     begin: Alignment.topCenter,
                     end: Alignment.bottomCenter,
-                    colors: [Color(0xFF00E5FF), Color(0xFF00838F)],
+                    colors: [Palette.accentCyan, Palette.cyanDeep],
                   ),
                   boxShadow: [
                     BoxShadow(
-                      color: const Color(0xFF00E5FF).withValues(alpha: 0.2),
+                      color: Palette.accentCyan.withValues(alpha: 0.2),
                       blurRadius: 6,
                       offset: const Offset(0, 1.5),
                     ),
@@ -600,7 +600,7 @@ class _MyRankingFloatingBanner extends StatelessWidget {
               Text(
                 _formatMyValue(ranking.currentType),
                 style: GoogleFonts.quicksand(
-                  color: const Color(0xFF00E5FF),
+                  color: Palette.accentCyan,
                   fontSize: 15.5,
                   fontWeight: FontWeight.w900,
                   letterSpacing: 0.2,
