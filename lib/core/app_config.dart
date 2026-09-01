@@ -18,4 +18,8 @@ class AppConfig {
   /// 구글 iOS 클라이언트 ID (환경 변수 로드)
   static String get googleIosClientId =>
       dotenv.env['GOOGLE_IOS_CLIENT_ID'] ?? '';
+
+  /// CARTO Basemaps API 키 (환경 변수 로드).
+  /// 비어 있으면 CARTO 워터마크가 타일에 주기적으로 표시됨.
+  static String get cartoApiKey => dotenv.env['CARTO_API_KEY'] ?? '';
 }

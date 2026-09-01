@@ -1,4 +1,5 @@
 import 'package:latlong2/latlong.dart';
+import '../app_config.dart';
 
 /// 지도의 기본 위치, 줌 레벨 및 제공 스타일 설정을 관리하는 클래스
 class MapConfig {
@@ -20,26 +21,35 @@ class MapConfig {
   /// 포커스 시 지도의 줌 레벨
   static const double focusZoom = 16.0;
 
-  /// 앱에서 지원하는 지도 스타일 리스트
-  static const List<MapStyle> mapStyles = [
-    MapStyle(
-      name: 'mapStyleDark',
-      url: 'https://{s}.basemaps.cartocdn.com/dark_nolabels/{z}/{x}/{y}{r}.png',
-      icon: 'dark_mode',
-      colorMatrix: <double>[
-        1.35, 0.15, 0.45, 0, 10.0, // Red (솜사탕 핑크 로즈 채도 강화, 화사한 오프셋 추가)
-        0.10, 1.20, 0.25, 0, 15.0, // Green (상큼하고 맑은 라임 민트 톤 증폭)
-        0.15, 0.15, 1.65, 0, 30.0, // Blue (세련되고 밝은 스카이 블루 채도/명도 대폭 향상)
-        0, 0, 0, 1, 0, // Alpha
-      ],
-    ),
-    MapStyle(
-      name: 'mapStyleSatellite',
-      url:
-          'https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}',
-      icon: 'public',
-    ),
-  ];
+  /// 앱에서 지원하는 지도 스타일 리스트.
+  /// CARTO 타일은 api_key 쿼리 파라미터가 없으면 일부 타일이
+  /// 'carto.com/basemaps/apikey' 워터마크로 치환되므로 런타임에 주입한다.
+  static List<MapStyle> get mapStyles {
+    final cartoKey = AppConfig.cartoApiKey;
+    const darkBase =
+        'https://{s}.basemaps.cartocdn.com/dark_nolabels/{z}/{x}/{y}{r}.png';
+    final darkUrl = cartoKey.isEmpty ? darkBase : '$darkBase?key=$cartoKey';
+
+    return [
+      MapStyle(
+        name: 'mapStyleDark',
+        url: darkUrl,
+        icon: 'dark_mode',
+        colorMatrix: <double>[
+          1.35, 0.15, 0.45, 0, 10.0, // Red (솜사탕 핑크 로즈 채도 강화, 화사한 오프셋 추가)
+          0.10, 1.20, 0.25, 0, 15.0, // Green (상큼하고 맑은 라임 민트 톤 증폭)
+          0.15, 0.15, 1.65, 0, 30.0, // Blue (세련되고 밝은 스카이 블루 채도/명도 대폭 향상)
+          0, 0, 0, 1, 0, // Alpha
+        ],
+      ),
+      const MapStyle(
+        name: 'mapStyleSatellite',
+        url:
+            'https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}',
+        icon: 'public',
+      ),
+    ];
+  }
 }
 
 /// 지도 스타일 정보를 나타내는 데이터 클래스
