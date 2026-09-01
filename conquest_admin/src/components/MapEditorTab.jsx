@@ -87,7 +87,7 @@ export default function MapEditorTab() {
       attributionControl: false
     }).setView([originLat, originLng], 14);
 
-    L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_nolabels/{z}/{x}/{y}{r}.png', {
+    L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_nolabels/{z}/{x}/{y}{r}.png?key=cb1_2pao_1_f708f02cfdb298af5ba94a21', {
       maxZoom: 20
     }).addTo(map);
 

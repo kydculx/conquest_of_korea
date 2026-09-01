@@ -176,7 +176,7 @@ export default function DashboardTab() {
       attributionControl: false
     }).setView([originLat, originLng], 14);
 
-    const darkLayer = L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_nolabels/{z}/{x}/{y}{r}.png', {
+    const darkLayer = L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_nolabels/{z}/{x}/{y}{r}.png?key=cb1_2pao_1_f708f02cfdb298af5ba94a21', {
       maxZoom: 20
     });
 
