@@ -56,8 +56,9 @@ class GameProvider extends ChangeNotifier with WidgetsBindingObserver {
   late final GoldManager _goldManager;
 
   // --- 백그라운드 타이머 ---
-  /// 백그라운드 점령 및 침공 상태 정기 검사를 수행하는 타이머
-  Timer? _backgroundPollingTimer;
+  /// 마지막으로 무거운 위치 파이프라인을 실행한 타일 ID.
+  /// 사용자가 같은 타일 안에 머무르는 동안에는 네트워크 호출이 발생하지 않도록 게이트 역할을 한다.
+  String? _lastProcessedTileId;
 
   /// UTC 자정 카운트다운을 전담 관리하는 컨트롤러
   late final UtcCountdownController _utcCountdown;
@@ -641,28 +642,15 @@ class GameProvider extends ChangeNotifier with WidgetsBindingObserver {
 
   // --- 백그라운드 폴링 ---
   void _startBackgroundPolling() {
-    _backgroundPollingTimer?.cancel();
-    _backgroundPollingTimer = Timer.periodic(
-      GameConfig.backgroundCheckInterval,
-      (_) => _refreshTilesAndCheckInvasion(),
-    );
-
-    // 30초마다 건강 앱 걸음수 동기화
+    // [개편] 1초 주기 폴링 타이머 제거. 위치 변경에 따른 무거운 파이프라인은
+    // [onLocationUpdated]의 타일 ID 변경 게이트가 담당한다. GPS 리스너가
+    // 매 위치 업데이트마다 호출해주므로 별도 타이머가 필요 없다.
+    // 걸음수 동기화만 30초 주기로 유지.
     _stepsTimer?.cancel();
     _stepsTimer = Timer.periodic(
       const Duration(seconds: 30),
       (_) => updateStepsState(),
     );
-  }
-
-  Future<void> _refreshTilesAndCheckInvasion() async {
-    if (!isInitialized) return;
-    try {
-      debugPrint('🔍 백그라운드 정기 정밀 점검 중...');
-      onLocationUpdated();
-    } catch (e) {
-      debugPrint('❌ 백그라운드 동기화 실패: $e');
-    }
   }
 
   /// 침공 감지 시 알림/반격 처리
@@ -701,8 +689,14 @@ class GameProvider extends ChangeNotifier with WidgetsBindingObserver {
 
   /// GPS 위치 변경 시 전체 처리 파이프라인을 실행하는 진입점입니다.
   ///
-  /// 흐름: 동전 처리 → 주변 타일 갱신 → 이동/발자국 기록 →
-  /// 점령 상태 체크 → 서버 타일 상태 폴링 → 업적 검사
+  /// [개편] 무거운 네트워크 호출 파이프라인(동전 처리 → 주변 타일 갱신 → 이동/발자국
+  /// 기록 → 서버 타일 상태 폴링 → 업적 검사)은 **현재 타일 ID가 직전 처리 타일과
+  /// 달라진 경우에만** 실행된다. GPS 리스너가 초당 호출되지만 같은 타일 안에서는
+  /// 네트워크가 발생하지 않는다. 점령 진행 체크는 게이트 외부에서 항상 실행된다(로컬
+  /// 로직만, 네트워크 없음).
+  ///
+  /// 트레이드오프: 사용자가 정지해 있는 동안에는 다른 플레이어가 현재 타일을 침공해도
+  /// 감지하지 못한다. 서버측 FCM 푸시 알림이 보완한다.
   void onLocationUpdated() {
     if (!isInitialized) return;
     final loc = _locationProvider;
@@ -720,13 +714,18 @@ class GameProvider extends ChangeNotifier with WidgetsBindingObserver {
     final hex = HexService.latLngToHex(loc.currentLocation!);
     final tileId = HexService.tileId(hex['q']!, hex['r']!);
 
-    _processCoinsForCurrentTile(tileId);
-    _refreshNearbyTiles(hex['q']!, hex['r']!);
-    _recordMovementAndFootprint(auth, tileId);
-    _captureController.checkCaptureStatus(loc.currentLocation);
-    _pollCurrentTileStatusIfNeeded(loc, auth, tileId);
+    // [신규] 타일 ID 변경 게이트: 같은 타일에 머무는 동안에는 무거운 파이프라인 스킵
+    if (_lastProcessedTileId != tileId) {
+      _processCoinsForCurrentTile(tileId);
+      _refreshNearbyTiles(hex['q']!, hex['r']!);
+      _recordMovementAndFootprint(auth, tileId);
+      _pollCurrentTileStatusIfNeeded(loc, auth, tileId);
+      _achievementProvider?.checkAndUnlock(capturedTiles: capturedTiles);
+      _lastProcessedTileId = tileId;
+    }
 
-    _achievementProvider?.checkAndUnlock(capturedTiles: capturedTiles);
+    // 점령 진행 중 체크는 항상 실행 (로컬 로직만, 네트워크 없음)
+    _captureController.checkCaptureStatus(loc.currentLocation);
   }
 
   /// 현재 타일 기준으로 동전 동기화 및 획득 여부를 확인합니다.
@@ -1170,7 +1169,6 @@ class GameProvider extends ChangeNotifier with WidgetsBindingObserver {
   void dispose() {
     WidgetsBinding.instance.removeObserver(this);
     _goldManager.dispose();
-    _backgroundPollingTimer?.cancel();
     _stepsTimer?.cancel();
     _utcCountdown.dispose();
     _satelliteController.dispose();
