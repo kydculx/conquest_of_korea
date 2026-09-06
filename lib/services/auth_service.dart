@@ -68,6 +68,10 @@ class AuthService {
           'privacy_agreed_at': privacyAgreedAt.toIso8601String(),
           'location_agreed_at': locationAgreedAt.toIso8601String(),
           'marketing_agreed_at': marketingAgreedAt?.toIso8601String(),
+          'is_notifications_enabled': marketingAgreedAt != null,
+          'notif_territory_attack': marketingAgreedAt != null,
+          'notif_satellite_complete': marketingAgreedAt != null,
+          'notif_system_notice': marketingAgreedAt != null,
         });
         AnalyticsService.logSignUp(method: 'email');
       } catch (e) {

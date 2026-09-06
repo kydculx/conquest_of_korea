@@ -56,7 +56,7 @@ export default function NotificationsTab() {
       return;
     }
 
-    let topic = 'system_notice';
+    let topic = 'conquest_system_notice';
     if (targetType === 'individual') {
       if (!userUuid.trim()) {
         alert('발송 대상 사용자를 선택해 주세요.');

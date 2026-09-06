@@ -213,9 +213,13 @@ class AuthProvider extends ChangeNotifier {
     try {
       _profile = await _authService.getUserProfile(userId);
 
-      // 프로필 로드 시 개인 토픽 구독 (중복 구독은 FCM 내부적으로 처리됨)
+      // 프로필 로드 시 알림 설정 상태에 맞춰 개인 토픽 동기화
       _notificationService.setCurrentUserId(userId);
-      _notificationService.subscribeToTopic('user_$userId');
+      if (_profile?.isNotificationsEnabled ?? true) {
+        _notificationService.subscribeToTopic('user_$userId');
+      } else {
+        _notificationService.unsubscribeFromTopic('user_$userId');
+      }
       AnalyticsService.setUserId(userId);
 
       // 만약 프로필이 없다면 (가입 시 권한 문제로 저장이 안 된 경우 등)
@@ -353,6 +357,10 @@ class AuthProvider extends ChangeNotifier {
         privacyAgreedAt: privacyAgreedAt,
         locationAgreedAt: locationAgreedAt,
         marketingAgreedAt: marketingAgreedAt,
+        isNotificationsEnabled: marketingAgreedAt != null,
+        notifTerritoryAttack: marketingAgreedAt != null,
+        notifSatelliteComplete: marketingAgreedAt != null,
+        notifSystemNotice: marketingAgreedAt != null,
         createdAt: DateTime.now(),
         gold: GameConfig.defaultSignupGold,
       );

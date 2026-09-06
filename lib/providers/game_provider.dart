@@ -415,16 +415,24 @@ class GameProvider extends ChangeNotifier with WidgetsBindingObserver {
       },
     );
     NotificationService().onForegroundMessageReceived = (title, body, type) {
-      if (type == 'territory_attack' || type == 'satellite_complete') {
-        debugPrint(
-            '🔔 [포그라운드 FCM 중복 차단] $type 타입의 알림은 로컬 화면에 이미 표시되었으므로 배너 생성을 무시합니다.');
+      // 본인이 직접 수행한 위성 점령은 로컬 화면에서 이미 성공 배너가 표시되었으므로 중복 방지
+      if (type == 'satellite_complete') {
+        debugPrint('🔔 [포그라운드 FCM 중복 차단] satellite_complete 알림은 로컬 화면에 이미 표시되어 배너 생성을 무시합니다.');
         return;
       }
+
       final alertType = switch (type) {
+        'territory_attack' => AlertType.error,
         'system_notice' => AlertType.info,
         _ => AlertType.info,
       };
-      _alertManager.add('[$title] $body', alertType);
+
+      final message = title.isNotEmpty ? '[$title] $body' : body;
+      _alertManager.add(message, alertType);
+
+      if (type == 'territory_attack') {
+        AudioService().playNotification();
+      }
     };
 
     // 틸 프로바이더 침공 감지 시 알림/금/반격 처리

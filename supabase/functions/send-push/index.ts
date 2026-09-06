@@ -45,8 +45,8 @@ Deno.serve(async (req: Request) => {
           if (error) {
             console.error(`⚠️ DB 프로필 조회 실패 (user: ${userId}):`, error.message);
           } else if (profile) {
-            // 마스터 알림 스위치 꺼짐 여부
-            if (profile.is_notifications_enabled === false) {
+            // 마스터 알림 스위치 꺼짐 여부 (명시적 true가 아니면 차단)
+            if (profile.is_notifications_enabled !== true) {
               console.log(`🔔 [알림 마스터 차단] 플레이어(${userId})의 마스터 알림 비활성화로 푸시 취소`);
               return new Response(JSON.stringify({ success: true, filtered: true, reason: "master_disabled" }), {
                 headers: {
@@ -62,13 +62,13 @@ Deno.serve(async (req: Request) => {
               let shouldFilter = false;
               let filterReason = "";
 
-              if (notificationType === "territory_attack" && profile.notif_territory_attack === false) {
+              if (notificationType === "territory_attack" && profile.notif_territory_attack !== true) {
                 shouldFilter = true;
                 filterReason = "territory_attack_disabled";
-              } else if (notificationType === "satellite_complete" && profile.notif_satellite_complete === false) {
+              } else if (notificationType === "satellite_complete" && profile.notif_satellite_complete !== true) {
                 shouldFilter = true;
                 filterReason = "satellite_complete_disabled";
-              } else if (notificationType === "system_notice" && profile.notif_system_notice === false) {
+              } else if (notificationType === "system_notice" && profile.notif_system_notice !== true) {
                 shouldFilter = true;
                 filterReason = "system_notice_disabled";
               }
