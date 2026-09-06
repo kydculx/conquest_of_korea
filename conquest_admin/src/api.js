@@ -224,3 +224,145 @@ export async function fetchUserAchievements(userId) {
   if (error) throw error;
   return data || [];
 }
+
+/**
+ * 7. 타일 속성 맵 에디터 API (타입 및 속성 관리)
+ */
+
+// 기본 프리셋 타입 세트
+export const DEFAULT_TILE_TYPES = [
+  { id: 0, name: '기본 타일 (Default)', color_hex: '#334155', description: '일반 평지 및 기본 타일 구역', is_blocked: false },
+  { id: 1, name: '보너스 거점 (Bonus)', color_hex: '#fbbf24', description: '추가 보상 및 점령 포인트 획득 구역', is_blocked: false },
+  { id: 2, name: '진입 불가 (Restricted)', color_hex: '#ef4444', description: '플레이어 진입이 차단된 위험 구역', is_blocked: true },
+  { id: 3, name: '트래킹 코스 (Trail)', color_hex: '#10b981', description: '걷기/런닝 추천 및 가중치 경로', is_blocked: false },
+  { id: 4, name: '랜드마크 (Landmark)', color_hex: '#a855f7', description: '특수 이벤트 및 미션 목적지', is_blocked: false },
+];
+
+const LOCAL_STORAGE_TYPES_KEY = 'conquest_map_tile_types';
+const LOCAL_STORAGE_ATTRIBUTES_KEY = 'conquest_map_tile_attributes';
+
+/**
+ * 타일 타입 목록 조회 (Supabase 우선, Fallback으로 로컬스토리지/기본 프리셋)
+ */
+export async function fetchTileTypes() {
+  try {
+    const { data, error } = await supabase
+      .from('map_tile_types')
+      .select('*')
+      .order('id', { ascending: true });
+
+    if (error || !data || data.length === 0) {
+      const local = localStorage.getItem(LOCAL_STORAGE_TYPES_KEY);
+      if (local) return JSON.parse(local);
+      return DEFAULT_TILE_TYPES;
+    }
+    localStorage.setItem(LOCAL_STORAGE_TYPES_KEY, JSON.stringify(data));
+    return data;
+  } catch (err) {
+    console.warn('⚠️ Supabase map_tile_types 조회 실패, 로컬 스토리지 데이터 사용:', err);
+    const local = localStorage.getItem(LOCAL_STORAGE_TYPES_KEY);
+    return local ? JSON.parse(local) : DEFAULT_TILE_TYPES;
+  }
+}
+
+/**
+ * 타일 타입 추가 또는 수정
+ */
+export async function saveTileType(typeData) {
+  try {
+    await supabase.from('map_tile_types').upsert({
+      id: Number(typeData.id),
+      name: typeData.name,
+      color_hex: typeData.color_hex,
+      description: typeData.description || '',
+      is_blocked: Boolean(typeData.is_blocked),
+    });
+  } catch (err) {
+    console.warn('⚠️ Supabase map_tile_types upsert 실패 (로컬 저장 유지):', err);
+  }
+
+  // 로컬 스토리지 동기화
+  const currentTypes = await fetchTileTypes();
+  const existingIdx = currentTypes.findIndex(t => Number(t.id) === Number(typeData.id));
+  if (existingIdx >= 0) {
+    currentTypes[existingIdx] = { ...currentTypes[existingIdx], ...typeData };
+  } else {
+    currentTypes.push(typeData);
+  }
+  localStorage.setItem(LOCAL_STORAGE_TYPES_KEY, JSON.stringify(currentTypes));
+  return currentTypes;
+}
+
+/**
+ * 타일 타입 삭제
+ */
+export async function deleteTileType(typeId) {
+  if (Number(typeId) === 0) {
+    throw new Error('기본 타일(0번) 타입은 삭제할 수 없습니다.');
+  }
+  try {
+    await supabase.from('map_tile_types').delete().eq('id', typeId);
+  } catch (err) {
+    console.warn('⚠️ Supabase map_tile_types delete 실패:', err);
+  }
+
+  const currentTypes = (await fetchTileTypes()).filter(t => Number(t.id) !== Number(typeId));
+  localStorage.setItem(LOCAL_STORAGE_TYPES_KEY, JSON.stringify(currentTypes));
+  return currentTypes;
+}
+
+/**
+ * 속성이 부여된 타일 전체 목록 조회 (Map 형태 반환: { "q_r": { type_id, memo, ... } })
+ */
+export async function fetchTileAttributes() {
+  try {
+    const { data, error } = await supabase
+      .from('map_tile_attributes')
+      .select('*');
+
+    if (error || !data) {
+      const local = localStorage.getItem(LOCAL_STORAGE_ATTRIBUTES_KEY);
+      return local ? JSON.parse(local) : {};
+    }
+
+    const resultMap = {};
+    data.forEach(item => {
+      resultMap[item.id] = item;
+    });
+    localStorage.setItem(LOCAL_STORAGE_ATTRIBUTES_KEY, JSON.stringify(resultMap));
+    return resultMap;
+  } catch (err) {
+    console.warn('⚠️ Supabase map_tile_attributes 조회 실패, 로컬 캐시 사용:', err);
+    const local = localStorage.getItem(LOCAL_STORAGE_ATTRIBUTES_KEY);
+    return local ? JSON.parse(local) : {};
+  }
+}
+
+/**
+ * 변경된 타일 속성 일괄 저장
+ */
+export async function saveTileAttributes(attributesMap) {
+  const records = Object.values(attributesMap).map(item => ({
+    id: item.id,
+    q: item.q,
+    r: item.r,
+    type_id: Number(item.type_id || 0),
+    memo: item.memo || '',
+    updated_at: new Date().toISOString(),
+  }));
+
+  // 로컬 스토리지 즉시 캐시
+  localStorage.setItem(LOCAL_STORAGE_ATTRIBUTES_KEY, JSON.stringify(attributesMap));
+
+  if (records.length > 0) {
+    try {
+      const { error } = await supabase.from('map_tile_attributes').upsert(records);
+      if (error) throw error;
+    } catch (err) {
+      console.warn('⚠️ Supabase map_tile_attributes 일괄 저장 실패 (로컬 스토리지 유지):', err);
+    }
+  }
+
+  return attributesMap;
+}
+

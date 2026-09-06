@@ -5,6 +5,7 @@ import RankingTab from './components/RankingTab';
 import UsersTab from './components/UsersTab';
 import NotificationsTab from './components/NotificationsTab';
 import MapEditorTab from './components/MapEditorTab';
+import TileAttributeEditorTab from './components/TileAttributeEditorTab';
 import UserTilesTab from './components/UserTilesTab';
 import LandingPage from './components/LandingPage';
 import TermsPage from './components/TermsPage';
@@ -21,6 +22,7 @@ import {
   Menu,
   X,
   Map,
+  Layers,
   LogOut
 } from 'lucide-react';
 
@@ -34,7 +36,8 @@ function AdminLayout({ user, onLogout }) {
     { id: 'ranking', label: '사용자 랭킹', icon: Trophy, path: '/admin/ranking' },
     { id: 'users', label: '사용자 관리', icon: Users, path: '/admin/users' },
     { id: 'notifications', label: '푸시 알림', icon: Bell, path: '/admin/notifications' },
-    { id: 'map-editor', label: '맵 에디터', icon: Map, path: '/admin/map-editor' },
+    { id: 'tile-editor', label: '타일 속성 에디터', icon: Layers, path: '/admin/tile-editor' },
+    { id: 'map-editor', label: '패턴 에디터', icon: Map, path: '/admin/map-editor' },
   ];
 
   const getPageTitle = () => {
@@ -310,6 +313,7 @@ export default function App() {
         <Route path="users" element={<UsersTab />} />
         <Route path="user-tiles" element={<UserTilesTab />} />
         <Route path="notifications" element={<NotificationsTab />} />
+        <Route path="tile-editor" element={<TileAttributeEditorTab />} />
         <Route path="map-editor" element={<MapEditorTab />} />
       </Route>
 
