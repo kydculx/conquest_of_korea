@@ -226,9 +226,17 @@ export default function TileAttributeEditorTab() {
           }
         } else {
           // 브러시: 선택된 타입(1번 이상) 부여
+          let nextTypeId = activeTypeId;
           setAttributes((prev) => {
             const current = prev[tileId];
-            if (current && current.type_id === activeTypeId) return prev; // 변경 없음
+            if (current && current.type_id === activeTypeId) {
+              // 이미 같은 속성이 부여된 타일을 다시 클릭하면 기본타일(0번)로 토글
+              const next = { ...prev };
+              delete next[tileId];
+              nextTypeId = 0;
+              setIsDirty(true);
+              return next;
+            }
 
             const next = {
               ...prev,
@@ -243,6 +251,18 @@ export default function TileAttributeEditorTab() {
             setIsDirty(true);
             return next;
           });
+
+          if (selectedTile?.id === tileId) {
+            setSelectedTile((prev) =>
+              prev
+                ? {
+                    ...prev,
+                    type_id: nextTypeId,
+                    memo: nextTypeId === 0 ? '' : prev.memo,
+                  }
+                : null
+            );
+          }
         }
       } else if (tool === 'inspect') {
         // 단일 선택 인스펙터
@@ -933,6 +953,34 @@ export default function TileAttributeEditorTab() {
                     </option>
                   ))}
                 </select>
+                {selectedTile.type_id !== 0 && (
+                  <button
+                    onClick={() => {
+                      const tileId = selectedTile.id;
+                      setAttributes((prev) => {
+                        const next = { ...prev };
+                        delete next[tileId];
+                        return next;
+                      });
+                      setSelectedTile((prev) => ({ ...prev, type_id: 0, memo: '' }));
+                      setIsDirty(true);
+                    }}
+                    style={{
+                      marginTop: '0.4rem',
+                      width: '100%',
+                      padding: '0.35rem 0.6rem',
+                      background: 'rgba(239, 68, 68, 0.15)',
+                      border: '1px solid rgba(239, 68, 68, 0.4)',
+                      color: '#ef4444',
+                      borderRadius: '4px',
+                      cursor: 'pointer',
+                      fontSize: '0.75rem',
+                      fontWeight: 600,
+                    }}
+                  >
+                    기본 타일(0번)로 초기화
+                  </button>
+                )}
               </div>
 
               <div>
