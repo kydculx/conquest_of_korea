@@ -125,7 +125,8 @@ export default function TileAttributeEditorTab() {
   const mapInstance = useRef(null);
   const gridLayerGroup = useRef(null);
   const attributesLayerGroup = useRef(null);
-  const isMouseDown = useRef(false);
+  const isDraggingMap = useRef(false);
+  const mouseDownPosRef = useRef(null);
   const fileInputRef = useRef(null);
 
   // 1. 초기 데이터 로드 (타입 및 속성)
@@ -157,33 +158,40 @@ export default function TileAttributeEditorTab() {
     attributesLayerGroup.current = L.layerGroup().addTo(map);
     mapInstance.current = map;
 
-    // 마우스 이벤트 바인딩
-    map.on('mousedown', () => {
-      isMouseDown.current = true;
+    // 마우스 다운 좌표 기록 (드래그와 클릭을 정확히 구분하기 위함)
+    const handleGlobalMouseDown = (e) => {
+      mouseDownPosRef.current = { x: e.clientX, y: e.clientY };
+    };
+    window.addEventListener('mousedown', handleGlobalMouseDown);
+
+    // 지도 드래그(이동) 감지 플래그
+    map.on('movestart dragstart', () => {
+      isDraggingMap.current = true;
     });
 
-    window.addEventListener('mouseup', () => {
-      isMouseDown.current = false;
-    });
-
-    // 지도 클릭 시 타일 적용
-    map.on('click', (e) => {
-      handleMapClick(e.latlng);
-    });
-
-    // 지도 드래그 시 브러시 연속 칠하기
-    map.on('mousemove', (e) => {
-      if (isMouseDown.current && (activeTool === 'brush' || activeTool === 'eraser')) {
-        handleMapDrag(e.latlng);
-      }
-    });
-
-    // 뷰포트 이동/줌 시 그리드 재렌더링
-    map.on('moveend', () => {
+    map.on('moveend dragend', () => {
+      setTimeout(() => {
+        isDraggingMap.current = false;
+      }, 150);
       renderViewportGrid();
     });
 
+    // 순수 클릭 시에만 타일 속성 적용 (지도 드래그 이동 시에는 절대 칠해지지 않음)
+    map.on('click', (e) => {
+      if (isDraggingMap.current) return;
+      if (mouseDownPosRef.current && e.originalEvent) {
+        const dx = e.originalEvent.clientX - mouseDownPosRef.current.x;
+        const dy = e.originalEvent.clientY - mouseDownPosRef.current.y;
+        if (Math.sqrt(dx * dx + dy * dy) > 5) return; // 5px 이상 이동했으면 드래그(이동)로 판정하여 무시
+      }
+      handleMapClick(e.latlng);
+    });
+
     renderViewportGrid();
+
+    return () => {
+      window.removeEventListener('mousedown', handleGlobalMouseDown);
+    };
   }, []);
 
   // 3. 브러시/지우개 타일 속성 적용 함수
@@ -246,11 +254,6 @@ export default function TileAttributeEditorTab() {
     applyTileAttribute(q, r);
   };
 
-  const handleMapDrag = (latlng) => {
-    const { q, r } = latLngToHex(latlng.lat, latlng.lng);
-    applyTileAttribute(q, r);
-  };
-
   // 4. 지도 상에 현재 뷰포트 헥스 그리드 및 속성 타일 렌더링
   const renderViewportGrid = useCallback(() => {
     if (!mapInstance.current || !gridLayerGroup.current || !attributesLayerGroup.current)
@@ -294,6 +297,12 @@ export default function TileAttributeEditorTab() {
 
         polygon.on('click', (e) => {
           L.DomEvent.stopPropagation(e);
+          if (isDraggingMap.current) return;
+          if (mouseDownPosRef.current && e.originalEvent) {
+            const dx = e.originalEvent.clientX - mouseDownPosRef.current.x;
+            const dy = e.originalEvent.clientY - mouseDownPosRef.current.y;
+            if (Math.sqrt(dx * dx + dy * dy) > 5) return;
+          }
           applyTileAttribute(attr.q, attr.r);
         });
 
@@ -340,6 +349,12 @@ export default function TileAttributeEditorTab() {
 
             gridPoly.on('click', (e) => {
               L.DomEvent.stopPropagation(e);
+              if (isDraggingMap.current) return;
+              if (mouseDownPosRef.current && e.originalEvent) {
+                const dx = e.originalEvent.clientX - mouseDownPosRef.current.x;
+                const dy = e.originalEvent.clientY - mouseDownPosRef.current.y;
+                if (Math.sqrt(dx * dx + dy * dy) > 5) return;
+              }
               applyTileAttribute(q, r);
             });
 
