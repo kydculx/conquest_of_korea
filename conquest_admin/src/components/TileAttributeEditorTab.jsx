@@ -127,6 +127,7 @@ export default function TileAttributeEditorTab() {
   const attributesLayerGroup = useRef(null);
   const isDraggingMap = useRef(false);
   const mouseDownPosRef = useRef(null);
+  const renderGuideGridRef = useRef(null);
   const fileInputRef = useRef(null);
 
   // 1. 초기 데이터 로드 (타입 및 속성)
@@ -169,11 +170,11 @@ export default function TileAttributeEditorTab() {
       isDraggingMap.current = true;
     });
 
-    map.on('moveend dragend', () => {
+    map.on('moveend dragend zoomend', () => {
       setTimeout(() => {
         isDraggingMap.current = false;
       }, 150);
-      renderViewportGrid();
+      renderGuideGridRef.current?.();
     });
 
     // 순수 클릭 시에만 타일 속성 적용 (지도 드래그 이동 시에는 절대 칠해지지 않음)
@@ -186,8 +187,6 @@ export default function TileAttributeEditorTab() {
       }
       handleMapClick(e.latlng);
     });
-
-    renderViewportGrid();
 
     return () => {
       window.removeEventListener('mousedown', handleGlobalMouseDown);
@@ -254,121 +253,128 @@ export default function TileAttributeEditorTab() {
     applyTileAttribute(q, r);
   };
 
-  // 4. 지도 상에 현재 뷰포트 헥스 그리드 및 속성 타일 렌더링
-  const renderViewportGrid = useCallback(() => {
-    if (!mapInstance.current || !gridLayerGroup.current || !attributesLayerGroup.current)
-      return;
+  // 4-1. 속성이 부여된 타일 전용 렌더링 (attributes나 types가 변경될 때만 갱신)
+  // 지도 확대/축소 시 clearLayers가 발생하지 않아 색상이 절대 깜빡이거나 사라지지 않습니다.
+  const renderAttributesLayer = useCallback(() => {
+    if (!attributesLayerGroup.current) return;
 
-    const map = mapInstance.current;
-    const zoom = map.getZoom();
-
-    gridLayerGroup.current.clearLayers();
     attributesLayerGroup.current.clearLayers();
 
-    // 줌 레벨 13 미만에서는 성능을 위해 기본 그리드 렌더링 생략 (속성 타일만 표시)
-    const bounds = map.getBounds();
     const typeMap = {};
     types.forEach((t) => {
       typeMap[t.id] = t;
     });
 
-    // 1) 속성이 부여된 타일들 우선 렌더링
     Object.values(attributes).forEach((attr) => {
-      const center = hexToLatLng(attr.q, attr.r);
-      // 뷰포트 범위 내에 있는지 대략 체크
-      if (bounds.contains([center[0], center[1]])) {
-        const typeInfo = typeMap[attr.type_id] || DEFAULT_TILE_TYPES[0];
-        const corners = getHexCorners(attr.q, attr.r);
+      const typeInfo = typeMap[attr.type_id] || DEFAULT_TILE_TYPES[0];
+      const corners = getHexCorners(attr.q, attr.r);
 
-        const polygon = L.polygon(corners, {
-          color: typeInfo.color_hex,
-          weight: 2,
-          fillColor: typeInfo.color_hex,
-          fillOpacity: 0.45,
-          interactive: true,
-        });
+      const polygon = L.polygon(corners, {
+        color: typeInfo.color_hex,
+        weight: 2,
+        fillColor: typeInfo.color_hex,
+        fillOpacity: 0.5,
+        interactive: true,
+      });
 
-        polygon.bindTooltip(
-          `<b>${typeInfo.name}</b> (Type ${attr.type_id})<br/>ID: ${attr.id}${
-            attr.memo ? `<br/>메모: ${attr.memo}` : ''
-          }`,
-          { permanent: false, direction: 'top', opacity: 0.9 }
-        );
+      polygon.bindTooltip(
+        `<b>${typeInfo.name}</b> (Type ${attr.type_id})<br/>ID: ${attr.id}${
+          attr.memo ? `<br/>메모: ${attr.memo}` : ''
+        }`,
+        { permanent: false, direction: 'top', opacity: 0.9 }
+      );
 
-        polygon.on('click', (e) => {
-          L.DomEvent.stopPropagation(e);
-          if (isDraggingMap.current) return;
-          if (mouseDownPosRef.current && e.originalEvent) {
-            const dx = e.originalEvent.clientX - mouseDownPosRef.current.x;
-            const dy = e.originalEvent.clientY - mouseDownPosRef.current.y;
-            if (Math.sqrt(dx * dx + dy * dy) > 5) return;
-          }
-          applyTileAttribute(attr.q, attr.r);
-        });
+      polygon.on('click', (e) => {
+        L.DomEvent.stopPropagation(e);
+        if (isDraggingMap.current) return;
+        if (mouseDownPosRef.current && e.originalEvent) {
+          const dx = e.originalEvent.clientX - mouseDownPosRef.current.x;
+          const dy = e.originalEvent.clientY - mouseDownPosRef.current.y;
+          if (Math.sqrt(dx * dx + dy * dy) > 5) return;
+        }
+        applyTileAttribute(attr.q, attr.r);
+      });
 
-        attributesLayerGroup.current.addLayer(polygon);
-      }
+      attributesLayerGroup.current.addLayer(polygon);
     });
+  }, [attributes, types, applyTileAttribute]);
 
-    // 2) 고배율(zoom >= 14)일 때 빈 기본 타일 가이드 그리드 렌더링
-    if (zoom >= 14) {
-      const north = bounds.getNorth();
-      const south = bounds.getSouth();
-      const east = bounds.getEast();
-      const west = bounds.getWest();
+  // 4-2. 빈 가이드 그리드 전용 렌더링 (뷰포트 이동/줌 완료 시 고배율에서만 갱신)
+  const renderGuideGrid = useCallback(() => {
+    if (!mapInstance.current || !gridLayerGroup.current) return;
 
-      const minHex = latLngToHex(south, west);
-      const maxHex = latLngToHex(north, east);
+    const map = mapInstance.current;
+    const zoom = map.getZoom();
 
-      const qMin = Math.min(minHex.q, maxHex.q) - 2;
-      const qMax = Math.max(minHex.q, maxHex.q) + 2;
-      const rMin = Math.min(minHex.r, maxHex.r) - 2;
-      const rMax = Math.max(minHex.r, maxHex.r) + 2;
+    gridLayerGroup.current.clearLayers();
 
-      for (let q = qMin; q <= qMax; q++) {
-        for (let r = rMin; r <= rMax; r++) {
-          const tileId = `${q}_${r}`;
-          // 이미 속성이 부여된 타일은 건너뜀
-          if (attributes[tileId]) continue;
+    // 줌 레벨 14 미만에서는 성능을 위해 빈 가이드 그리드 생략
+    if (zoom < 14) return;
 
-          const center = hexToLatLng(q, r);
-          if (
-            center[0] >= south &&
-            center[0] <= north &&
-            center[1] >= west &&
-            center[1] <= east
-          ) {
-            const corners = getHexCorners(q, r);
-            const gridPoly = L.polygon(corners, {
-              color: 'rgba(255, 255, 255, 0.08)',
-              weight: 1,
-              fillColor: 'transparent',
-              fillOpacity: 0,
-              interactive: true,
-            });
+    // 뷰포트 경계에 여유 마진(pad 0.2)을 주어 경계 부근 타일이 잘리는 현상 방지
+    const bounds = map.getBounds().pad(0.2);
+    const north = bounds.getNorth();
+    const south = bounds.getSouth();
+    const east = bounds.getEast();
+    const west = bounds.getWest();
 
-            gridPoly.on('click', (e) => {
-              L.DomEvent.stopPropagation(e);
-              if (isDraggingMap.current) return;
-              if (mouseDownPosRef.current && e.originalEvent) {
-                const dx = e.originalEvent.clientX - mouseDownPosRef.current.x;
-                const dy = e.originalEvent.clientY - mouseDownPosRef.current.y;
-                if (Math.sqrt(dx * dx + dy * dy) > 5) return;
-              }
-              applyTileAttribute(q, r);
-            });
+    const minHex = latLngToHex(south, west);
+    const maxHex = latLngToHex(north, east);
 
-            gridLayerGroup.current.addLayer(gridPoly);
-          }
+    const qMin = Math.min(minHex.q, maxHex.q) - 2;
+    const qMax = Math.max(minHex.q, maxHex.q) + 2;
+    const rMin = Math.min(minHex.r, maxHex.r) - 2;
+    const rMax = Math.max(minHex.r, maxHex.r) + 2;
+
+    for (let q = qMin; q <= qMax; q++) {
+      for (let r = rMin; r <= rMax; r++) {
+        const tileId = `${q}_${r}`;
+        // 이미 속성이 부여된 타일은 가이드 그리드에서 제외
+        if (attributes[tileId]) continue;
+
+        const center = hexToLatLng(q, r);
+        if (
+          center[0] >= south &&
+          center[0] <= north &&
+          center[1] >= west &&
+          center[1] <= east
+        ) {
+          const corners = getHexCorners(q, r);
+          const gridPoly = L.polygon(corners, {
+            color: 'rgba(255, 255, 255, 0.08)',
+            weight: 1,
+            fillColor: 'transparent',
+            fillOpacity: 0,
+            interactive: true,
+          });
+
+          gridPoly.on('click', (e) => {
+            L.DomEvent.stopPropagation(e);
+            if (isDraggingMap.current) return;
+            if (mouseDownPosRef.current && e.originalEvent) {
+              const dx = e.originalEvent.clientX - mouseDownPosRef.current.x;
+              const dy = e.originalEvent.clientY - mouseDownPosRef.current.y;
+              if (Math.sqrt(dx * dx + dy * dy) > 5) return;
+            }
+            applyTileAttribute(q, r);
+          });
+
+          gridLayerGroup.current.addLayer(gridPoly);
         }
       }
     }
-  }, [attributes, types, applyTileAttribute]);
+  }, [attributes, applyTileAttribute]);
 
-  // 속성이나 타입 변경 시 렌더링 갱신
+  // 속성 타일 렌더링 갱신
   useEffect(() => {
-    renderViewportGrid();
-  }, [renderViewportGrid]);
+    renderAttributesLayer();
+  }, [renderAttributesLayer]);
+
+  // 가이드 그리드 렌더링 갱신
+  useEffect(() => {
+    renderGuideGridRef.current = renderGuideGrid;
+    renderGuideGrid();
+  }, [renderGuideGrid]);
 
   // 5. DB 저장 처리
   const handleSaveToDb = async () => {
