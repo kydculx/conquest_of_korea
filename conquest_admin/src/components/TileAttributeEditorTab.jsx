@@ -19,8 +19,6 @@ import {
   Trash2,
   Edit2,
   MousePointer,
-  Paintbrush,
-  Eraser,
   HelpCircle,
   Compass,
   Check,
@@ -101,9 +99,7 @@ export default function TileAttributeEditorTab() {
   // 미저장 변경 플래그
   const [isDirty, setIsDirty] = useState(false);
 
-  // 에디터 도구 상태: 기본 모드를 'inspect' (타일 선택 및 조회)로 설정하여 원치 않는 타일 변경 방지
-  const [activeTool, setActiveTool] = useState('inspect');
-  // 현재 선택된 브러시 타입 ID (기본값: 0)
+  // 선택된 타입 ID (팔레트 선택용, 기본값: 0)
   const [activeTypeId, setActiveTypeId] = useState(0);
 
   // 선택된 단일 타일 정보 (인스펙터용)
@@ -198,93 +194,23 @@ export default function TileAttributeEditorTab() {
     };
   }, []);
 
-  // 3. 브러시/지우개 타일 속성 적용 함수
+  // 3. 단일 선택 타일 인스펙터 함수
   const applyTileAttribute = useCallback(
-    (q, r, toolOverride) => {
-      const tool = toolOverride || activeTool;
+    (q, r) => {
       const tileId = `${q}_${r}`;
-
-      if (tool === 'eraser') {
-        // 지우개: 해당 타일의 속성을 제거(기본값 0으로 리셋)
-        setAttributes((prev) => {
-          if (!prev[tileId]) return prev;
-          const next = { ...prev };
-          delete next[tileId];
-          setIsDirty(true);
-          return next;
-        });
-        if (selectedTile?.id === tileId) {
-          setSelectedTile(null);
-        }
-      } else if (tool === 'brush') {
-        if (activeTypeId === 0) {
-          // 0번(기본 타일)을 브러시로 칠할 경우 속성 레코드 제거 (기본값 0으로 복원)
-          setAttributes((prev) => {
-            if (!prev[tileId]) return prev;
-            const next = { ...prev };
-            delete next[tileId];
-            setIsDirty(true);
-            return next;
-          });
-          if (selectedTile?.id === tileId) {
-            setSelectedTile((prev) => (prev ? { ...prev, type_id: 0, memo: '' } : null));
-          }
-        } else {
-          // 브러시: 선택된 타입(1번 이상) 부여
-          let nextTypeId = activeTypeId;
-          setAttributes((prev) => {
-            const current = prev[tileId];
-            if (current && current.type_id === activeTypeId) {
-              // 이미 같은 속성이 부여된 타일을 다시 클릭하면 기본타일(0번)로 토글
-              const next = { ...prev };
-              delete next[tileId];
-              nextTypeId = 0;
-              setIsDirty(true);
-              return next;
-            }
-
-            const next = {
-              ...prev,
-              [tileId]: {
-                id: tileId,
-                q,
-                r,
-                type_id: activeTypeId,
-                memo: current?.memo || '',
-              },
-            };
-            setIsDirty(true);
-            return next;
-          });
-
-          if (selectedTile?.id === tileId) {
-            setSelectedTile((prev) =>
-              prev
-                ? {
-                    ...prev,
-                    type_id: nextTypeId,
-                    memo: nextTypeId === 0 ? '' : prev.memo,
-                  }
-                : null
-            );
-          }
-        }
-      } else if (tool === 'inspect') {
-        // 단일 선택 인스펙터
-        const attr = attributes[tileId];
-        const center = hexToLatLng(q, r);
-        setSelectedTile({
-          id: tileId,
-          q,
-          r,
-          type_id: attr ? attr.type_id : 0,
-          memo: attr ? attr.memo : '',
-          lat: center[0],
-          lng: center[1],
-        });
-      }
+      const attr = attributes[tileId];
+      const center = hexToLatLng(q, r);
+      setSelectedTile({
+        id: tileId,
+        q,
+        r,
+        type_id: attr ? attr.type_id : 0,
+        memo: attr ? attr.memo : '',
+        lat: center[0],
+        lng: center[1],
+      });
     },
-    [activeTool, activeTypeId, attributes, selectedTile]
+    [attributes]
   );
 
   const handleMapClick = (latlng) => {
@@ -559,69 +485,27 @@ export default function TileAttributeEditorTab() {
           gap: '1rem',
         }}
       >
-        {/* 도구 선택기 */}
-        <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-          <span
+        {/* 단일 선택 모드 안내 */}
+        <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem' }}>
+          <div
             style={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: '0.4rem',
+              padding: '0.45rem 0.85rem',
+              background: 'rgba(0, 229, 255, 0.08)',
+              border: '1px solid rgba(0, 229, 255, 0.3)',
+              borderRadius: '8px',
               fontSize: '0.85rem',
+              color: 'var(--accent-cyan)',
               fontWeight: 700,
-              color: 'var(--text-secondary)',
-              marginRight: '0.5rem',
             }}
           >
-            모드:
+            <MousePointer size={15} /> 타일 단일 선택
+          </div>
+          <span style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>
+            지도에서 원하는 타일을 클릭하여 속성을 조회하고 편집하세요.
           </span>
-          <button
-            className={`btn-tactical ${activeTool === 'inspect' ? 'btn-primary' : ''}`}
-            onClick={() => setActiveTool('inspect')}
-            style={{
-              display: 'flex',
-              alignItems: 'center',
-              gap: '0.4rem',
-              padding: '0.45rem 0.8rem',
-              fontSize: '0.85rem',
-              background: activeTool === 'inspect' ? 'var(--accent-cyan)' : 'transparent',
-              color: activeTool === 'inspect' ? '#000' : 'var(--text-primary)',
-              border: activeTool === 'inspect' ? '1px solid var(--accent-cyan)' : '1px solid var(--border-color)',
-              fontWeight: activeTool === 'inspect' ? 800 : 500,
-            }}
-          >
-            <MousePointer size={16} /> 단일 선택 (기본)
-          </button>
-          <button
-            className={`btn-tactical ${activeTool === 'brush' ? 'btn-primary' : ''}`}
-            onClick={() => setActiveTool('brush')}
-            style={{
-              display: 'flex',
-              alignItems: 'center',
-              gap: '0.4rem',
-              padding: '0.45rem 0.8rem',
-              fontSize: '0.85rem',
-              background: activeTool === 'brush' ? 'var(--accent-neon)' : 'transparent',
-              color: activeTool === 'brush' ? '#fff' : 'var(--text-primary)',
-              border: '1px solid var(--border-color)',
-              fontWeight: activeTool === 'brush' ? 800 : 500,
-            }}
-          >
-            <Paintbrush size={16} /> 브러시 칠하기
-          </button>
-          <button
-            className={`btn-tactical ${activeTool === 'eraser' ? 'btn-primary' : ''}`}
-            onClick={() => setActiveTool('eraser')}
-            style={{
-              display: 'flex',
-              alignItems: 'center',
-              gap: '0.4rem',
-              padding: '0.45rem 0.8rem',
-              fontSize: '0.85rem',
-              background: activeTool === 'eraser' ? '#ef4444' : 'transparent',
-              color: activeTool === 'eraser' ? '#fff' : 'var(--text-primary)',
-              border: '1px solid var(--border-color)',
-              fontWeight: activeTool === 'eraser' ? 800 : 500,
-            }}
-          >
-            <Eraser size={16} /> 지우개 (기본값 0)
-          </button>
         </div>
 
         {/* 데이터 액션 버튼군 */}
@@ -748,13 +632,35 @@ export default function TileAttributeEditorTab() {
         </span>
 
         {types.map((t) => {
-          const isSelected = activeTypeId === t.id && activeTool === 'brush';
+          const isSelected = selectedTile ? selectedTile.type_id === t.id : activeTypeId === t.id;
           return (
             <div
               key={t.id}
               onClick={() => {
                 setActiveTypeId(t.id);
-                setActiveTool('brush');
+                if (selectedTile) {
+                  const tileId = selectedTile.id;
+                  if (t.id === 0) {
+                    setAttributes((prev) => {
+                      const next = { ...prev };
+                      delete next[tileId];
+                      return next;
+                    });
+                  } else {
+                    setAttributes((prev) => ({
+                      ...prev,
+                      [tileId]: {
+                        id: tileId,
+                        q: selectedTile.q,
+                        r: selectedTile.r,
+                        type_id: t.id,
+                        memo: selectedTile.memo || '',
+                      },
+                    }));
+                  }
+                  setSelectedTile((prev) => ({ ...prev, type_id: t.id }));
+                  setIsDirty(true);
+                }
               }}
               style={{
                 display: 'flex',
