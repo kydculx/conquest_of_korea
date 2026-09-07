@@ -99,8 +99,8 @@ export default function TileAttributeEditorTab() {
   // 미저장 변경 플래그
   const [isDirty, setIsDirty] = useState(false);
 
-  // 선택된 타입 ID (팔레트 선택용, 기본값: 0)
-  const [activeTypeId, setActiveTypeId] = useState(0);
+  // 선택된 타입 ID (팔레트 선택용, 기본값: 1 - 랜드마크)
+  const [activeTypeId, setActiveTypeId] = useState(1);
 
   // 선택된 단일 타일 정보 (인스펙터용)
   const [selectedTile, setSelectedTile] = useState(null);
@@ -194,23 +194,68 @@ export default function TileAttributeEditorTab() {
     };
   }, []);
 
-  // 3. 단일 선택 타일 인스펙터 함수
+  // 3. 타일 클릭 핸들러 (선택된 팔레트 속성 칠하기 & 재클릭 시 기본 타일 토글)
   const applyTileAttribute = useCallback(
     (q, r) => {
       const tileId = `${q}_${r}`;
-      const attr = attributes[tileId];
+      let nextTypeId = 0;
+      let finalMemo = '';
+
+      setAttributes((prev) => {
+        const current = prev[tileId];
+
+        if (activeTypeId === 0) {
+          // 0번(기본) 팔레트 선택 상태: 타일 속성 제거하여 기본 타일로 복원
+          if (!current) return prev;
+          const next = { ...prev };
+          delete next[tileId];
+          setIsDirty(true);
+          nextTypeId = 0;
+          finalMemo = '';
+          return next;
+        }
+
+        // 1번 이상(랜드마크 등) 팔레트 선택 상태
+        if (current && current.type_id === activeTypeId) {
+          // 이미 같은 속성이 부여된 타일을 다시 클릭 -> 기본 타일(0번)로 토글!
+          const next = { ...prev };
+          delete next[tileId];
+          setIsDirty(true);
+          nextTypeId = 0;
+          finalMemo = '';
+          return next;
+        }
+
+        // 다른 속성이거나 기본 타일인 경우 -> 선택한 팔레트 속성 부여
+        nextTypeId = activeTypeId;
+        finalMemo = current?.memo || '';
+        const next = {
+          ...prev,
+          [tileId]: {
+            id: tileId,
+            q,
+            r,
+            type_id: activeTypeId,
+            memo: finalMemo,
+          },
+        };
+        setIsDirty(true);
+        return next;
+      });
+
+      // 단일 선택 인스펙터 패널 상태 동기화 (클릭한 타일의 최신 정보 표시)
       const center = hexToLatLng(q, r);
       setSelectedTile({
         id: tileId,
         q,
         r,
-        type_id: attr ? attr.type_id : 0,
-        memo: attr ? attr.memo : '',
+        type_id: nextTypeId,
+        memo: finalMemo,
         lat: center[0],
         lng: center[1],
       });
     },
-    [attributes]
+    [activeTypeId]
   );
 
   const handleMapClick = (latlng) => {
@@ -632,12 +677,13 @@ export default function TileAttributeEditorTab() {
         </span>
 
         {types.map((t) => {
-          const isSelected = selectedTile ? selectedTile.type_id === t.id : activeTypeId === t.id;
+          const isSelected = activeTypeId === t.id;
           return (
             <div
               key={t.id}
               onClick={() => {
                 setActiveTypeId(t.id);
+                // 이미 타일이 선택되어 있는 경우 해당 타일의 속성도 즉시 변경
                 if (selectedTile) {
                   const tileId = selectedTile.id;
                   if (t.id === 0) {
