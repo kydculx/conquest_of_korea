@@ -101,10 +101,10 @@ export default function TileAttributeEditorTab() {
   // 미저장 변경 플래그
   const [isDirty, setIsDirty] = useState(false);
 
-  // 에디터 도구 상태: 'brush' (칠하기), 'eraser' (지우기/0번), 'inspect' (단일 선택)
-  const [activeTool, setActiveTool] = useState('brush');
-  // 현재 선택된 브러시 타입 ID
-  const [activeTypeId, setActiveTypeId] = useState(1);
+  // 에디터 도구 상태: 기본 모드를 'inspect' (타일 선택 및 조회)로 설정하여 원치 않는 타일 변경 방지
+  const [activeTool, setActiveTool] = useState('inspect');
+  // 현재 선택된 브러시 타입 ID (기본값: 0)
+  const [activeTypeId, setActiveTypeId] = useState(0);
 
   // 선택된 단일 타일 정보 (인스펙터용)
   const [selectedTile, setSelectedTile] = useState(null);
@@ -212,24 +212,38 @@ export default function TileAttributeEditorTab() {
           setSelectedTile(null);
         }
       } else if (tool === 'brush') {
-        // 브러시: 현재 선택된 타입 부여
-        setAttributes((prev) => {
-          const current = prev[tileId];
-          if (current && current.type_id === activeTypeId) return prev; // 변경 없음
+        if (activeTypeId === 0) {
+          // 0번(기본 타일)을 브러시로 칠할 경우 속성 레코드 제거 (기본값 0으로 복원)
+          setAttributes((prev) => {
+            if (!prev[tileId]) return prev;
+            const next = { ...prev };
+            delete next[tileId];
+            setIsDirty(true);
+            return next;
+          });
+          if (selectedTile?.id === tileId) {
+            setSelectedTile((prev) => (prev ? { ...prev, type_id: 0, memo: '' } : null));
+          }
+        } else {
+          // 브러시: 선택된 타입(1번 이상) 부여
+          setAttributes((prev) => {
+            const current = prev[tileId];
+            if (current && current.type_id === activeTypeId) return prev; // 변경 없음
 
-          const next = {
-            ...prev,
-            [tileId]: {
-              id: tileId,
-              q,
-              r,
-              type_id: activeTypeId,
-              memo: current?.memo || '',
-            },
-          };
-          setIsDirty(true);
-          return next;
-        });
+            const next = {
+              ...prev,
+              [tileId]: {
+                id: tileId,
+                q,
+                r,
+                type_id: activeTypeId,
+                memo: current?.memo || '',
+              },
+            };
+            setIsDirty(true);
+            return next;
+          });
+        }
       } else if (tool === 'inspect') {
         // 단일 선택 인스펙터
         const attr = attributes[tileId];
@@ -516,6 +530,23 @@ export default function TileAttributeEditorTab() {
             모드:
           </span>
           <button
+            className={`btn-tactical ${activeTool === 'inspect' ? 'btn-primary' : ''}`}
+            onClick={() => setActiveTool('inspect')}
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: '0.4rem',
+              padding: '0.45rem 0.8rem',
+              fontSize: '0.85rem',
+              background: activeTool === 'inspect' ? 'var(--accent-cyan)' : 'transparent',
+              color: activeTool === 'inspect' ? '#000' : 'var(--text-primary)',
+              border: activeTool === 'inspect' ? '1px solid var(--accent-cyan)' : '1px solid var(--border-color)',
+              fontWeight: activeTool === 'inspect' ? 800 : 500,
+            }}
+          >
+            <MousePointer size={16} /> 단일 선택 (기본)
+          </button>
+          <button
             className={`btn-tactical ${activeTool === 'brush' ? 'btn-primary' : ''}`}
             onClick={() => setActiveTool('brush')}
             style={{
@@ -524,9 +555,10 @@ export default function TileAttributeEditorTab() {
               gap: '0.4rem',
               padding: '0.45rem 0.8rem',
               fontSize: '0.85rem',
-              background: activeTool === 'brush' ? 'var(--accent-cyan)' : 'transparent',
-              color: activeTool === 'brush' ? '#000' : 'var(--text-primary)',
+              background: activeTool === 'brush' ? 'var(--accent-neon)' : 'transparent',
+              color: activeTool === 'brush' ? '#fff' : 'var(--text-primary)',
               border: '1px solid var(--border-color)',
+              fontWeight: activeTool === 'brush' ? 800 : 500,
             }}
           >
             <Paintbrush size={16} /> 브러시 칠하기
@@ -543,25 +575,10 @@ export default function TileAttributeEditorTab() {
               background: activeTool === 'eraser' ? '#ef4444' : 'transparent',
               color: activeTool === 'eraser' ? '#fff' : 'var(--text-primary)',
               border: '1px solid var(--border-color)',
+              fontWeight: activeTool === 'eraser' ? 800 : 500,
             }}
           >
             <Eraser size={16} /> 지우개 (기본값 0)
-          </button>
-          <button
-            className={`btn-tactical ${activeTool === 'inspect' ? 'btn-primary' : ''}`}
-            onClick={() => setActiveTool('inspect')}
-            style={{
-              display: 'flex',
-              alignItems: 'center',
-              gap: '0.4rem',
-              padding: '0.45rem 0.8rem',
-              fontSize: '0.85rem',
-              background: activeTool === 'inspect' ? 'var(--accent-neon)' : 'transparent',
-              color: activeTool === 'inspect' ? '#fff' : 'var(--text-primary)',
-              border: '1px solid var(--border-color)',
-            }}
-          >
-            <MousePointer size={16} /> 단일 선택
           </button>
         </div>
 
