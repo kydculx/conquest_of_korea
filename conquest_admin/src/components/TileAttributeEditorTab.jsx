@@ -118,17 +118,59 @@ export default function TileAttributeEditorTab() {
 
   const [isSaving, setIsSaving] = useState(false);
   const [saveProgress, setSaveProgress] = useState('');
+  const [isSatellite, setIsSatellite] = useState(false);
 
   // 지도 관련 Ref
   const mapRef = useRef(null);
   const mapInstance = useRef(null);
   const gridLayerGroup = useRef(null);
   const attributesLayerGroup = useRef(null);
+  const darkTileLayer = useRef(null);
+  const satelliteTileLayer = useRef(null);
+  const myLocationMarker = useRef(null);
   const isDraggingMap = useRef(false);
   const mouseDownPosRef = useRef(null);
   const renderGuideGridRef = useRef(null);
   const fileInputRef = useRef(null);
   const initialAttributesRef = useRef({});
+
+  // 내 위치로 이동 핸들러
+  const handleGoToMyLocation = () => {
+    if (!mapInstance.current) return;
+
+    if (!navigator.geolocation) {
+      alert('이 브라우저는 위치 정보를 지원하지 않습니다.');
+      return;
+    }
+
+    navigator.geolocation.getCurrentPosition(
+      (position) => {
+        const { latitude, longitude } = position.coords;
+        mapInstance.current.setView([latitude, longitude], 15);
+
+        // 이전 마커 제거 후 신규 생성
+        if (myLocationMarker.current) {
+          myLocationMarker.current.remove();
+        }
+
+        const myIcon = L.divIcon({
+          className: 'custom-my-location-marker',
+          html: `<div style="width: 14px; height: 14px; background-color: var(--accent-cyan); border: 2px solid white; border-radius: 50%; box-shadow: 0 0 8px rgba(59, 130, 246, 0.4);"></div>`,
+          iconSize: [14, 14],
+          iconAnchor: [7, 7],
+        });
+
+        myLocationMarker.current = L.marker([latitude, longitude], { icon: myIcon }).addTo(
+          mapInstance.current
+        );
+      },
+      (error) => {
+        console.error(error);
+        alert('현재 위치 정보를 가져올 수 없습니다. 위치 권한 허용 여부를 확인해 주세요.');
+      },
+      { enableHighAccuracy: true }
+    );
+  };
 
   // 1. 초기 데이터 로드 (타입 및 속성)
   useEffect(() => {
@@ -151,10 +193,19 @@ export default function TileAttributeEditorTab() {
       attributionControl: false,
     }).setView([originLat, originLng], 15);
 
-    L.tileLayer(
+    const darkLayer = L.tileLayer(
       'https://{s}.basemaps.cartocdn.com/dark_nolabels/{z}/{x}/{y}{r}.png?key=cb1_2pao_1_f708f02cfdb298af5ba94a21',
       { maxZoom: 20 }
-    ).addTo(map);
+    );
+
+    const satelliteLayer = L.tileLayer(
+      'https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}',
+      { maxZoom: 19 }
+    );
+
+    darkTileLayer.current = darkLayer;
+    satelliteTileLayer.current = satelliteLayer;
+    darkLayer.addTo(map);
 
     gridLayerGroup.current = L.layerGroup().addTo(map);
     attributesLayerGroup.current = L.layerGroup().addTo(map);
@@ -193,6 +244,19 @@ export default function TileAttributeEditorTab() {
       window.removeEventListener('mousedown', handleGlobalMouseDown);
     };
   }, []);
+
+  // 2-2. 위성 맵 토글에 따른 레이어 탈착 효과
+  useEffect(() => {
+    if (!mapInstance.current || !darkTileLayer.current || !satelliteTileLayer.current) return;
+
+    if (isSatellite) {
+      mapInstance.current.removeLayer(darkTileLayer.current);
+      mapInstance.current.addLayer(satelliteTileLayer.current);
+    } else {
+      mapInstance.current.removeLayer(satelliteTileLayer.current);
+      mapInstance.current.addLayer(darkTileLayer.current);
+    }
+  }, [isSatellite]);
 
   // 3. 타일 클릭 핸들러 (선택된 팔레트 속성 칠하기 & 재클릭 시 기본 타일 토글)
   const applyTileAttribute = useCallback(
@@ -748,7 +812,23 @@ export default function TileAttributeEditorTab() {
       </div>
 
       {/* 3. 메인 맵 에디터 뷰포트 및 우측 인스펙터 */}
-      <div style={{ flex: 1, position: 'relative', borderRadius: '12px', overflow: 'hidden' }}>
+      <div className="map-wrapper" style={{ flex: 1, position: 'relative', borderRadius: '12px', overflow: 'hidden' }}>
+        {/* 오버레이 맵 조작 버튼 (위성 맵 토글 & 내 위치 이동) */}
+        <button
+          onClick={() => setIsSatellite(!isSatellite)}
+          className={`map-overlay-btn-satellite ${isSatellite ? 'active' : ''}`}
+          style={{ zIndex: 1000 }}
+        >
+          <Layers size={14} /> {isSatellite ? '일반 맵' : '위성 맵'}
+        </button>
+        <button
+          onClick={handleGoToMyLocation}
+          className="map-overlay-btn-location"
+          style={{ zIndex: 1000 }}
+        >
+          <Compass size={14} /> 내 위치로
+        </button>
+
         <div ref={mapRef} style={{ width: '100%', height: '100%' }} />
 
         {/* 맵 좌하단 안내 정보 뱃지 */}
