@@ -696,60 +696,9 @@ export default function TileAttributeEditorTab() {
               >
                 [{t.id}] {t.name}
               </span>
-              {t.id !== 0 && (
-                <button
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    handleDeleteType(t.id);
-                  }}
-                  style={{
-                    background: 'none',
-                    border: 'none',
-                    color: 'var(--text-muted)',
-                    cursor: 'pointer',
-                    padding: 0,
-                    display: 'flex',
-                  }}
-                  title="타입 삭제"
-                >
-                  <X size={13} />
-                </button>
-              )}
             </div>
           );
         })}
-
-        {/* 타입 추가 버튼 */}
-        <button
-          onClick={() => {
-            const nextId =
-              types.length > 0 ? Math.max(...types.map((t) => Number(t.id))) + 1 : 1;
-            setTypeForm({
-              id: nextId,
-              name: '',
-              color_hex: '#00e5ff',
-              description: '',
-              is_blocked: false,
-            });
-            setShowTypeModal(true);
-          }}
-          style={{
-            display: 'flex',
-            alignItems: 'center',
-            gap: '0.3rem',
-            padding: '0.35rem 0.65rem',
-            borderRadius: '6px',
-            background: 'rgba(0, 229, 255, 0.1)',
-            border: '1px dashed var(--accent-cyan)',
-            color: 'var(--accent-cyan)',
-            fontSize: '0.8rem',
-            fontWeight: 700,
-            cursor: 'pointer',
-            whiteSpace: 'nowrap',
-          }}
-        >
-          <Plus size={14} /> 새 타입 추가
-        </button>
       </div>
 
       {/* 3. 메인 맵 에디터 뷰포트 및 우측 인스펙터 */}

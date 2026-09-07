@@ -9,21 +9,21 @@ export async function fetchDashboardStats() {
     const { count: usersCount, error: err1 } = await supabase
       .from('profiles')
       .select('*', { count: 'exact', head: true });
-    
+
     if (err1) throw err1;
 
     // 총 점령지 수
     const { count: tilesCount, error: err2 } = await supabase
       .from('captured_tiles')
       .select('*', { count: 'exact', head: true });
-      
+
     if (err2) throw err2;
 
     // 총 유통 골드량
     const { data: goldData, error: err3 } = await supabase
       .from('profiles')
       .select('gold');
-      
+
     if (err3) throw err3;
     const totalGold = goldData.reduce((sum, item) => sum + (Number(item.gold) || 0), 0);
 
@@ -128,7 +128,7 @@ export async function transferTileOwnership(tileId, userId, userColor) {
       color_hex: userColor,
       captured_at: new Date().toISOString(),
       // 소유주 변경 시 쉴드는 즉시 만료(0초) 또는 리셋 처리
-      shield_expiration: new Date(0).toISOString(), 
+      shield_expiration: new Date(0).toISOString(),
     })
     .eq('id', tileId)
     .select();
@@ -184,7 +184,7 @@ export async function sendFcmNotification(title, body, targetTopic, notifType = 
   }
 
   console.log(`[FCM 발송 요청] 토픽: ${targetTopic}, 제목: ${title}, 본문: ${body} | 타입: ${notifType} | 타일ID: ${tileId}`);
-  
+
   const response = await fetch(`${supabaseUrl}/functions/v1/send-push`, {
     method: 'POST',
     headers: {
@@ -204,7 +204,7 @@ export async function sendFcmNotification(title, body, targetTopic, notifType = 
   });
 
   const resData = await response.json();
-  
+
   if (!response.ok) {
     throw new Error(resData.error || `HTTP 에러 status: ${response.status}`);
   }
@@ -229,39 +229,42 @@ export async function fetchUserAchievements(userId) {
  * 7. 타일 속성 맵 에디터 API (타입 및 속성 관리)
  */
 
-// 기본 프리셋 타입 세트
+// 기본 프리셋 타입 세트 (기본과 랜드마크만 유지)
 export const DEFAULT_TILE_TYPES = [
-  { id: 0, name: '기본 타일 (Default)', color_hex: '#334155', description: '일반 평지 및 기본 타일 구역', is_blocked: false },
-  { id: 1, name: '보너스 거점 (Bonus)', color_hex: '#fbbf24', description: '추가 보상 및 점령 포인트 획득 구역', is_blocked: false },
-  { id: 2, name: '진입 불가 (Restricted)', color_hex: '#ef4444', description: '플레이어 진입이 차단된 위험 구역', is_blocked: true },
-  { id: 3, name: '트래킹 코스 (Trail)', color_hex: '#10b981', description: '걷기/런닝 추천 및 가중치 경로', is_blocked: false },
-  { id: 4, name: '랜드마크 (Landmark)', color_hex: '#a855f7', description: '특수 이벤트 및 미션 목적지', is_blocked: false },
+  { id: 0, name: '기본', color_hex: '#334155', description: '일반 평지 및 기본 타일 구역', is_blocked: false },
+  { id: 1, name: '랜드마크', color_hex: '#a855f7', description: '랜드마크 및 특수 점령 지역', is_blocked: false },
 ];
 
 const LOCAL_STORAGE_TYPES_KEY = 'conquest_map_tile_types';
 const LOCAL_STORAGE_ATTRIBUTES_KEY = 'conquest_map_tile_attributes';
 
 /**
- * 타일 타입 목록 조회 (Supabase 우선, Fallback으로 로컬스토리지/기본 프리셋)
+ * 타일 타입 목록 조회 ('기본'과 '랜드마크'만 조회 및 유지)
  */
 export async function fetchTileTypes() {
   try {
+    // 0과 1번만 조회
     const { data, error } = await supabase
       .from('map_tile_types')
       .select('*')
+      .in('id', [0, 1])
       .order('id', { ascending: true });
 
+    // 기존에 존재하던 2번 이상의 불필요한 타입은 백그라운드에서 정리
+    supabase.from('map_tile_types').delete().gt('id', 1).then(() => {});
+
     if (error || !data || data.length === 0) {
-      const local = localStorage.getItem(LOCAL_STORAGE_TYPES_KEY);
-      if (local) return JSON.parse(local);
+      localStorage.setItem(LOCAL_STORAGE_TYPES_KEY, JSON.stringify(DEFAULT_TILE_TYPES));
       return DEFAULT_TILE_TYPES;
     }
+
+    // 0, 1번 데이터 동기화
     localStorage.setItem(LOCAL_STORAGE_TYPES_KEY, JSON.stringify(data));
     return data;
   } catch (err) {
-    console.warn('⚠️ Supabase map_tile_types 조회 실패, 로컬 스토리지 데이터 사용:', err);
-    const local = localStorage.getItem(LOCAL_STORAGE_TYPES_KEY);
-    return local ? JSON.parse(local) : DEFAULT_TILE_TYPES;
+    console.warn('⚠️ Supabase map_tile_types 조회 실패, 기본 프리셋 사용:', err);
+    localStorage.setItem(LOCAL_STORAGE_TYPES_KEY, JSON.stringify(DEFAULT_TILE_TYPES));
+    return DEFAULT_TILE_TYPES;
   }
 }
 
