@@ -120,6 +120,9 @@ export default function TileAttributeEditorTab() {
     is_blocked: false,
   });
 
+  const [isSaving, setIsSaving] = useState(false);
+  const [saveProgress, setSaveProgress] = useState('');
+
   // 지도 관련 Ref
   const mapRef = useRef(null);
   const mapInstance = useRef(null);
@@ -129,6 +132,7 @@ export default function TileAttributeEditorTab() {
   const mouseDownPosRef = useRef(null);
   const renderGuideGridRef = useRef(null);
   const fileInputRef = useRef(null);
+  const initialAttributesRef = useRef({});
 
   // 1. 초기 데이터 로드 (타입 및 속성)
   useEffect(() => {
@@ -137,6 +141,7 @@ export default function TileAttributeEditorTab() {
       setTypes(loadedTypes);
       const loadedAttrs = await fetchTileAttributes();
       setAttributes(loadedAttrs);
+      initialAttributesRef.current = { ...loadedAttrs };
     }
     loadData();
   }, []);
@@ -410,17 +415,34 @@ export default function TileAttributeEditorTab() {
     renderGuideGrid();
   }, [renderGuideGrid]);
 
-  // 5. DB 저장 처리
+  // 5. DB 저장 처리 (Diff 기반 삭제 동기화 + 청크 전송)
   const handleSaveToDb = async () => {
+    if (isSaving) return;
+    setIsSaving(true);
+    setSaveProgress('저장 준비 중...');
+
     try {
-      await saveTileAttributes(attributes);
+      const result = await saveTileAttributes(
+        attributes,
+        initialAttributesRef.current,
+        ({ percentage, message }) => {
+          setSaveProgress(`${message} (${percentage}%)`);
+        }
+      );
+
+      // 저장 성공 시 현재 상태를 새로운 스냅샷으로 갱신
+      initialAttributesRef.current = { ...attributes };
       setIsDirty(false);
+
       alert(
-        `✅ 타일 속성 데이터 ${Object.keys(attributes).length}개가 성공적으로 저장되었습니다.`
+        `✅ 타일 속성 동기화 완료!\n- 저장/수정: ${result.upsertCount}개\n- 기본 타일 복원(DB 삭제): ${result.deleteCount}개\n- 총 활성 타일: ${result.totalCount}개`
       );
     } catch (err) {
       console.error(err);
-      alert('⚠️ 타일 속성 저장 중 오류가 발생했습니다.');
+      alert('⚠️ 타일 속성 저장 중 오류가 발생했습니다. 콘솔을 확인해주세요.');
+    } finally {
+      setIsSaving(false);
+      setSaveProgress('');
     }
   };
 
@@ -606,6 +628,7 @@ export default function TileAttributeEditorTab() {
         <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem' }}>
           <button
             onClick={handleSaveToDb}
+            disabled={isSaving}
             style={{
               display: 'flex',
               alignItems: 'center',
@@ -613,14 +636,21 @@ export default function TileAttributeEditorTab() {
               padding: '0.5rem 1rem',
               borderRadius: '8px',
               border: 'none',
-              background: isDirty ? 'var(--accent-cyan)' : 'rgba(59, 130, 246, 0.2)',
-              color: isDirty ? '#000' : 'var(--accent-cyan)',
+              background: isSaving
+                ? 'rgba(59, 130, 246, 0.4)'
+                : isDirty
+                ? 'var(--accent-cyan)'
+                : 'rgba(59, 130, 246, 0.2)',
+              color: isSaving ? '#fff' : isDirty ? '#000' : 'var(--accent-cyan)',
               fontWeight: 800,
-              cursor: 'pointer',
-              boxShadow: isDirty ? '0 0 12px rgba(0, 229, 255, 0.4)' : 'none',
+              cursor: isSaving ? 'not-allowed' : 'pointer',
+              boxShadow: isDirty && !isSaving ? '0 0 12px rgba(0, 229, 255, 0.4)' : 'none',
+              opacity: isSaving ? 0.85 : 1,
+              transition: 'all 0.2s',
             }}
           >
-            <Save size={16} /> DB 저장 {isDirty && '(미저장)'}
+            <Save size={16} />
+            {isSaving ? saveProgress || '저장 중...' : `DB 저장 ${isDirty ? '(미저장)' : ''}`}
           </button>
 
           <button
@@ -675,6 +705,7 @@ export default function TileAttributeEditorTab() {
               ) {
                 fetchTileAttributes().then((data) => {
                   setAttributes(data);
+                  initialAttributesRef.current = { ...data };
                   setIsDirty(false);
                 });
               }

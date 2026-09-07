@@ -339,30 +339,112 @@ export async function fetchTileAttributes() {
 }
 
 /**
- * 변경된 타일 속성 일괄 저장
+ * 변경된 타일 속성 일괄 저장 (Diff 기반 삭제 동기화 및 대용량 청크 분할 전송)
+ * @param {Object} currentMap 현재 에디터 상의 속성 맵 ({ [id]: { id, q, r, type_id, memo } })
+ * @param {Object} initialMap 초기 로드 시점의 속성 맵 (삭제 감지용)
+ * @param {Function} onProgress 진행 상태 콜백 ({ currentStep, totalSteps, percentage, message })
  */
-export async function saveTileAttributes(attributesMap) {
-  const records = Object.values(attributesMap).map(item => ({
-    id: item.id,
-    q: item.q,
-    r: item.r,
-    type_id: Number(item.type_id || 0),
-    memo: item.memo || '',
-    updated_at: new Date().toISOString(),
-  }));
+export async function saveTileAttributes(currentMap, initialMap = {}, onProgress = null) {
+  const CHUNK_SIZE = 500;
 
-  // 로컬 스토리지 즉시 캐시
-  localStorage.setItem(LOCAL_STORAGE_ATTRIBUTES_KEY, JSON.stringify(attributesMap));
+  // 1. 삭제 대상 추출 (initialMap에는 있었으나 currentMap에서 제거된 타일 ID)
+  const initialIds = Object.keys(initialMap);
+  const deletedIds = initialIds.filter(id => !currentMap[id]);
 
-  if (records.length > 0) {
-    try {
-      const { error } = await supabase.from('map_tile_attributes').upsert(records);
-      if (error) throw error;
-    } catch (err) {
-      console.warn('⚠️ Supabase map_tile_attributes 일괄 저장 실패 (로컬 스토리지 유지):', err);
-    }
+  // 2. 추가 및 수정 대상 추출 (신규이거나 type_id, memo 등이 변경된 타일)
+  const currentValues = Object.values(currentMap);
+  const upsertRecords = currentValues
+    .filter(item => {
+      const initial = initialMap[item.id];
+      if (!initial) return true; // 신규 추가
+      return initial.type_id !== item.type_id || (initial.memo || '') !== (item.memo || '');
+    })
+    .map(item => ({
+      id: item.id,
+      q: item.q,
+      r: item.r,
+      type_id: Number(item.type_id || 0),
+      memo: item.memo || '',
+      updated_at: new Date().toISOString(),
+    }));
+
+  // 3. 총 작업 스텝 수 계산
+  const deleteChunks = [];
+  for (let i = 0; i < deletedIds.length; i += CHUNK_SIZE) {
+    deleteChunks.push(deletedIds.slice(i, i + CHUNK_SIZE));
   }
 
-  return attributesMap;
+  const upsertChunks = [];
+  for (let i = 0; i < upsertRecords.length; i += CHUNK_SIZE) {
+    upsertChunks.push(upsertRecords.slice(i, i + CHUNK_SIZE));
+  }
+
+  const totalSteps = deleteChunks.length + upsertChunks.length;
+  let currentStep = 0;
+
+  // 4. 로컬 스토리지 즉시 캐시 (네트워크 장애 대비)
+  localStorage.setItem(LOCAL_STORAGE_ATTRIBUTES_KEY, JSON.stringify(currentMap));
+
+  if (totalSteps === 0) {
+    return {
+      success: true,
+      upsertCount: 0,
+      deleteCount: 0,
+      totalCount: Object.keys(currentMap).length,
+    };
+  }
+
+  try {
+    // 5. 삭제 청크 순차 실행 (기본 타일로 복원된 타일 DB 물리 제거)
+    for (let i = 0; i < deleteChunks.length; i++) {
+      currentStep++;
+      const chunk = deleteChunks[i];
+      if (onProgress) {
+        onProgress({
+          currentStep,
+          totalSteps,
+          percentage: Math.round((currentStep / totalSteps) * 100),
+          message: `기본 타일 복원(삭제) 동기화 중... (${currentStep}/${totalSteps})`,
+        });
+      }
+
+      const { error } = await supabase
+        .from('map_tile_attributes')
+        .delete()
+        .in('id', chunk);
+
+      if (error) throw error;
+    }
+
+    // 6. 업서트 청크 순차 실행 (추가/수정 타일 500개씩 전송)
+    for (let i = 0; i < upsertChunks.length; i++) {
+      currentStep++;
+      const chunk = upsertChunks[i];
+      if (onProgress) {
+        onProgress({
+          currentStep,
+          totalSteps,
+          percentage: Math.round((currentStep / totalSteps) * 100),
+          message: `타일 속성 저장 중... (${currentStep}/${totalSteps})`,
+        });
+      }
+
+      const { error } = await supabase
+        .from('map_tile_attributes')
+        .upsert(chunk);
+
+      if (error) throw error;
+    }
+
+    return {
+      success: true,
+      upsertCount: upsertRecords.length,
+      deleteCount: deletedIds.length,
+      totalCount: Object.keys(currentMap).length,
+    };
+  } catch (err) {
+    console.error('⚠️ Supabase map_tile_attributes 동기화 실패:', err);
+    throw err;
+  }
 }
 
