@@ -27,6 +27,11 @@ class HexTileComponent extends PositionComponent
   /// 타일이 점령되었을 때 칠해질 플레이어의 진영 색상 (Hex)
   String? colorHex;
 
+  /// [신규] 어드민 맵 에디터가 부여한 속성 색상 (Hex).
+  ///
+  /// 점령 여부와 무관하게 타일 외곽선으로만 표시되며, null이면 외곽선을 그리지 않는다.
+  String? adminColorHex;
+
   /// 현재 이 타일이 플레이어(물리/위성)에 의해 점령 시도 중인지 여부
   bool isCapturing;
 
@@ -74,6 +79,7 @@ class HexTileComponent extends PositionComponent
     required this.cornerLatLngs,
     required this.colorHex,
     required this.hexSize,
+    this.adminColorHex,
     this.isCapturing = false,
     this.progress = 0.0,
     this.capturingColorHex,
@@ -83,6 +89,7 @@ class HexTileComponent extends PositionComponent
   /// 점령 플레이어의 식별 색상, 점령 진행도 상태가 갱신되었을 때 해당 상태를 반영하고 화면 갱신을 준비합니다.
   void updateData({
     String? colorHex,
+    String? adminColorHex,
     bool? isCapturing,
     double? progress,
     String? capturingColorHex,
@@ -91,6 +98,10 @@ class HexTileComponent extends PositionComponent
     if (colorHex != null && this.colorHex != colorHex) {
       this.colorHex = colorHex;
       if (isMounted) _updateStyles();
+    }
+    // 어드민 속성 색상은 비교 없이 무조건 갱신 (null로 바뀌면 외곽선 제거)
+    if (adminColorHex != null) {
+      this.adminColorHex = adminColorHex;
     }
     if (isCapturing != null) this.isCapturing = isCapturing;
     if (progress != null) this.progress = progress;
@@ -323,6 +334,29 @@ class HexTileComponent extends PositionComponent
 
       canvas.drawRect(fillRect, fillPaint);
       canvas.restore();
+    }
+
+    // 4.5 [신규] 어드민 속성 외곽선 — 점령/중립 여부와 무관하게 속성 색상이 항상 보인다.
+    //      점령된 타일: 점령 채우기 위에 외곽선 오버레이
+    //      중립 어드민 타일: 채우기 없이 외곽선만 표시되어 정적 지형(랜드마크 등)으로 인식
+    if (adminColorHex != null) {
+      final Color adminColor =
+          _parseColor(adminColorHex) ?? GameColors.transparent;
+
+      // 1) 부드러운 외곽 글로우 (시인성 보강)
+      final Paint adminGlowPaint = Paint()
+        ..color = adminColor.withValues(alpha: 0.35)
+        ..style = PaintingStyle.stroke
+        ..strokeWidth = 4.5
+        ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 1.8);
+      canvas.drawPath(_cachedPath!, adminGlowPaint);
+
+      // 2) 또렷한 메인 외곽선
+      final Paint adminBorderPaint = Paint()
+        ..color = adminColor.withValues(alpha: 0.92)
+        ..style = PaintingStyle.stroke
+        ..strokeWidth = 2.2;
+      canvas.drawPath(_cachedPath!, adminBorderPaint);
     }
 
     // 5. 동전 아이템 렌더링 (미획득 상태의 동전이 있는 경우)

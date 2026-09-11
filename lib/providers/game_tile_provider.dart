@@ -4,6 +4,7 @@ import 'package:latlong2/latlong.dart';
 import '../core/constants/game_config.dart';
 import '../core/constants/map_config.dart';
 import '../models/tile_model.dart';
+import '../models/tile_attribute_model.dart';
 import '../models/footprint_model.dart';
 import '../providers/auth_provider.dart';
 import '../providers/location_provider.dart';
@@ -29,12 +30,25 @@ class GameTileProvider extends ChangeNotifier {
   /// 플레이어의 발자취 타일 목록 (Key: 타일 ID, Value: 발자취 모델)
   final Map<String, FootprintTile> _footprints = {};
 
+  /// 어드민이 정의한 타일 타입 캐시 (Key: 타입 ID, Value: TileType)
+  final Map<int, TileType> _tileTypes = {};
+
+  /// 어드민이 부여한 타일 속성 캐시 (Key: 모바일 정규화 타일 ID "hex_q_r", Value: TileAttribute)
+  final Map<String, TileAttribute> _tileAttributes = {};
+
   /// 발자취 맵 getter
   Map<String, FootprintTile> get footprints => Map.unmodifiable(_footprints);
 
   /// 사진(갤러리)이 1개 이상 등록된 모든 타일 ID의 집합
   final Set<String> _photoTileIds = {};
   Set<String> get photoTileIds => Set.unmodifiable(_photoTileIds);
+
+  /// 어드민이 정의한 타일 타입 캐시 (Key: 타입 ID).
+  Map<int, TileType> get tileTypes => Map.unmodifiable(_tileTypes);
+
+  /// 어드민이 부여한 타일 속성 캐시 (Key: 모바일 정규화 타일 ID `"hex_q_r"`).
+  Map<String, TileAttribute> get tileAttributes =>
+      Map.unmodifiable(_tileAttributes);
 
   /// 프로바이더 내부 데이터 초기화 완료 여부
   bool _isInitialized = false;
@@ -68,6 +82,8 @@ class GameTileProvider extends ChangeNotifier {
     _capturedTiles.clear();
     _footprints.clear();
     _photoTileIds.clear();
+    // 어드민 속성은 사용자 전환과 무관한 전역 데이터이므로 유지하되
+    // 영역 캐시 강제 플래그만 무효화한다.
     _lastCheckedAreaTileId = null;
     _lastAreaFetchTime = null;
     _hasInitializedLocation = false;
@@ -116,9 +132,13 @@ class GameTileProvider extends ChangeNotifier {
           debugPrint('⚠️ 초기 발자취 백그라운드 로드 실패: $e');
         });
         loadPhotoTileIds().catchError((e) {
-          debugPrint('⚠️ 초기 사진 타일 ID 로드 실패: $e');
+          debugPrint('⚠️ 초기 사진 타일 ID 백그라운드 로드 실패: $e');
         });
       }
+      // 어드민이 정의한 타일 타입은 전역 캐시이므로 초기화 시 1회 로드
+      loadTileTypes().catchError((e) {
+        debugPrint('⚠️ 초기 타일 타입 백그라운드 로드 실패: $e');
+      });
     } catch (e) {
       debugPrint('GameTileProvider 초기 데이터 로드 실패: $e');
     } finally {
@@ -137,6 +157,20 @@ class GameTileProvider extends ChangeNotifier {
       notifyListeners();
     } catch (e) {
       debugPrint('❌ 사진 등록 타일 ID 캐시 로드 실패: $e');
+    }
+  }
+
+  /// [신규] 어드민이 정의한 타일 타입(색상·차단 여부 포함)을 서버에서 일괄 로드하여 캐시에 저장합니다.
+  Future<void> loadTileTypes() async {
+    try {
+      final types = await _supabase.fetchTileTypes();
+      _tileTypes
+        ..clear()
+        ..addEntries(types.map((t) => MapEntry(t.id, t)));
+      debugPrint('🎨 타일 타입 ${_tileTypes.length}개 로드 완료');
+      notifyListeners();
+    } catch (e) {
+      debugPrint('❌ 타일 타입 로드 실패: $e');
     }
   }
 
@@ -405,10 +439,70 @@ class GameTileProvider extends ChangeNotifier {
       final maxR = centerR + k;
 
       debugPrint('🛰️ [GameTileProvider] 영역 타일 비동기 동적 수신: 중심 ($centerQ, $centerR), 오프셋 $k (약 ${radiusKm}km 범위)');
-      final tiles = await _supabase.fetchCapturedTilesInArea(minQ, maxQ, minR, maxR);
+
+      // 점령 타일과 어드민 속성을 병렬로 동시 수신하여 왕복 지연을 최소화한다.
+      final results = await Future.wait([
+        _supabase.fetchCapturedTilesInArea(minQ, maxQ, minR, maxR),
+        _supabase.fetchTileAttributesInArea(minQ, maxQ, minR, maxR),
+      ]);
+      final tiles = results[0] as List<HexTile>;
+      final attributes = results[1] as List<TileAttribute>;
+
       _handleAreaTilesUpdate(tiles, minQ, maxQ, minR, maxR);
+      _handleAreaAttributesUpdate(attributes, minQ, maxQ, minR, maxR);
     } catch (e) {
       debugPrint('❌ 주변 영역 타일 조회 실패 ($currentId): $e');
+    }
+  }
+
+  /// [신규] 영역 내 어드민 부여 타일 속성을 머지/소거 처리합니다.
+  ///
+  /// 점령 타일과 동일한 머지 정책을 따르며, 모바일 정규화 ID(`hex_q_r`)로 변환하여 캐시합니다.
+  void _handleAreaAttributesUpdate(
+    List<TileAttribute> attributes,
+    int minQ,
+    int maxQ,
+    int minR,
+    int maxR,
+  ) {
+    bool changed = false;
+
+    // 1. 영역 내 기존 캐시 ID 추출
+    final localIdsInArea = _tileAttributes.entries
+        .where((e) =>
+            e.value.q >= minQ &&
+            e.value.q <= maxQ &&
+            e.value.r >= minR &&
+            e.value.r <= maxR)
+        .map((e) => e.key)
+        .toSet();
+
+    // 2. 들어온 속성 ID 집합
+    final incomingIds = attributes
+        .map((a) => TileAttribute.normalizeId(a.id))
+        .toSet();
+
+    // 3. 영역 내에서 사라진 속성 제거
+    final removedIds = localIdsInArea.difference(incomingIds);
+    for (final id in removedIds) {
+      _tileAttributes.remove(id);
+      changed = true;
+    }
+
+    // 4. 신규 / 변경 속성 반영
+    for (final attr in attributes) {
+      final normalizedId = TileAttribute.normalizeId(attr.id);
+      final existing = _tileAttributes[normalizedId];
+      if (existing == null ||
+          existing.typeId != attr.typeId ||
+          existing.memo != attr.memo) {
+        _tileAttributes[normalizedId] = attr;
+        changed = true;
+      }
+    }
+
+    if (changed) {
+      notifyListeners();
     }
   }
 
@@ -570,5 +664,38 @@ class GameTileProvider extends ChangeNotifier {
     }
   }
 
+  /// [신규] 특정 타일 ID의 어드민 속성 + 타입 정보를 한 번에 조회합니다.
+  ///
+  /// 렌더링 단계에서 어드민 색상이 점령 색상보다 우선 적용되도록 결정하는 데 사용됩니다.
+  /// - 속성이 없거나 type_id가 0이면 어드민 색상이 없는 것으로 간주 (null 반환).
+  /// - 타입을 찾을 수 없는 비정상 데이터도 안전하게 null 반환.
+  TileAttributeResolution? resolveTileAttribute(String tileId) {
+    final attr = _tileAttributes[tileId];
+    if (attr == null || attr.typeId == 0) return null;
 
+    final type = _tileTypes[attr.typeId];
+    if (type == null || type.colorHex.isEmpty) return null;
+
+    return TileAttributeResolution(
+      attribute: attr,
+      type: type,
+      colorHex: type.colorHex,
+      isBlocked: type.isBlocked,
+    );
+  }
+}
+
+/// [GameTileProvider.resolveTileAttribute]의 결과 묶음.
+class TileAttributeResolution {
+  final TileAttribute attribute;
+  final TileType type;
+  final String colorHex;
+  final bool isBlocked;
+
+  const TileAttributeResolution({
+    required this.attribute,
+    required this.type,
+    required this.colorHex,
+    required this.isBlocked,
+  });
 }

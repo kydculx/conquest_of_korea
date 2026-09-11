@@ -9,6 +9,7 @@ import 'components/scan_target_marker.dart';
 import 'components/tile_cluster_helper.dart';
 import '../services/hex_service.dart';
 import '../models/tile_model.dart';
+import '../models/tile_attribute_model.dart';
 import '../models/user_coin.dart';
 import '../models/footprint_model.dart';
 import '../controllers/satellite_capture_controller.dart';
@@ -36,6 +37,12 @@ class ConquestGame extends FlameGame {
 
   /// 최근에 빌드 완료된 LOD 병합 영토 타일 맵 캐시
   Map<String, HexTile> _lastClusteredTiles = {};
+
+  /// [신규] 어드민이 정의한 타일 타입 캐시 (Key: 타입 ID).
+  Map<int, TileType> _tileTypes = {};
+
+  /// [신규] 어드민이 부여한 타일 속성 캐시 (Key: 모바일 정규화 타일 ID "hex_q_r").
+  Map<String, TileAttribute> _tileAttributes = {};
 
   /// 현재 활성화된 동전 목록 캐시
   List<UserCoin> _coins = [];
@@ -104,6 +111,48 @@ class ConquestGame extends FlameGame {
 
   /// 투영을 담당하는 내부 맵 컨트롤러 반환
   MapController? get mapController => _mapController;
+
+  /// 타일 렌더링 색상(fill)을 결정합니다.
+  ///
+  /// 어드민 속성 색상은 [resolveAdminBorderColorHex]로 별도 해소되며,
+  /// 본 메서드는 점령/중립 상태에 따른 fill만 반환합니다 (어드민은 외곽선 전용).
+  String? _resolveTileColorHex(HexTile tileData) {
+    if (tileData.userId == 'footprint_marker') return tileData.colorHex;
+    if (tileData.userId == 'pattern_consumed') return '#0066FF';
+
+    // 동전 마커 또는 중립 타일 (어드민 속성은 별도 외곽선으로 표시)
+    if (tileData.userId == 'coin_marker' ||
+        tileData.userId == 'none' ||
+        tileData.userId == null) {
+      return null;
+    }
+
+    // 기본 점령 색상
+    if (tileData.userId == _currentUserId) {
+      return GameColors.myTileColorHex;
+    }
+    return GameColors.enemyTileColorHex;
+  }
+
+  /// [신규] 어드민 부여 속성에 대응하는 외곽선 색상 코드를 반환합니다.
+  ///
+  /// 동전이 표시되는 타일은 어드민 외곽선을 그리지 않습니다 (기존 동작 보존).
+  String? resolveAdminBorderColorHex(String tileId) {
+    // 동전 표시 타일은 어드민 외곽선 적용 제외 (기존 동작 유지)
+    final hasCoin = _coins.any((c) => c.tileId == tileId && !c.isCollected);
+    if (hasCoin) return null;
+
+    if (_tileAttributes.isEmpty || _tileTypes.isEmpty) return null;
+
+    final attr = _tileAttributes[tileId];
+    if (attr == null || attr.typeId == 0) return null;
+
+    final type = _tileTypes[attr.typeId];
+    if (type == null) return null;
+    if (type.colorHex.isEmpty) return null;
+
+    return type.colorHex;
+  }
 
   /// 본부 기지가 설치된 타일 ID 반환
   String? get currentHQTileId => _currentHQTileId;
@@ -250,6 +299,8 @@ class ConquestGame extends FlameGame {
         selectedFootprintTileId: _footprintTargetMarker != null
             ? HexService.tileId(_footprintTargetMarker!.q, _footprintTargetMarker!.r)
             : null,
+        tileTypes: _tileTypes,
+        tileAttributes: _tileAttributes,
       );
     } else {
       _updateAllPositions();
@@ -414,6 +465,40 @@ class ConquestGame extends FlameGame {
       }
     }
 
+    // [신규] 어드민이 부여한 속성 타일을 가식 영역 체크 후 렌더링 목록에 주입.
+    // 점령 여부와 무관하게 외곽선만 표시되어 정적 지형(랜드마크 / 차단 구역) 표시를 보장한다.
+    // 발자취·패턴 도감 모드에서는 일반 점령지를 생략하므로 어드민 외곽선도 함께 생략한다.
+    if (!_showFootprints && !_showCompletedPatterns) {
+      _tileAttributes.forEach((tileId, attr) {
+        // 이미 다른 모드(점령/동전)에 의해 추가된 타일은 스킵
+        if (visibleIds.contains(tileId)) return;
+        // 기본(0번) 타입은 색상 외곽선 의미가 없으므로 제외
+        if (attr.typeId == 0) return;
+
+        final centerLatLng =
+            _clusterHelper.getTileCenter(attr.q, attr.r, tileId, dynamicHexSize);
+        final double lat = centerLatLng.latitude;
+        final double lng = centerLatLng.longitude;
+
+        // LOD 3 이상 줌아웃에서는 일반 적군 타일도 은폐되므로 어드민 외곽선도 함께 은폐
+        if (dynamicHexSize >= GameConfig.lodSize3) return;
+
+        if (lat >= minLat && lat <= maxLat && lng >= minLng && lng <= maxLng) {
+          visibleIds.add(tileId);
+          // 어드민 전용 마커 — fill은 null, 외곽선만 adminColorHex로 그려진다.
+          visibleTiles.add(HexTile(
+            id: tileId,
+            q: attr.q,
+            r: attr.r,
+            userId: 'admin_attribute',
+            colorHex: null,
+            capturedAt: DateTime.now(),
+            captureCount: 0,
+          ));
+        }
+      });
+    }
+
     // 2. 화면 영역 밖으로 벗어났거나 실제 점령 데이터가 없는 기존 컴포넌트 타일들은 즉시 소멸시켜 CPU/메모리 부하 차단 (단, 현재 점령 진행 중인 타일은 예외 수호)
     final existingIds = _tileMap.keys.toSet();
     for (final id in existingIds) {
@@ -440,15 +525,8 @@ class ConquestGame extends FlameGame {
       final cornerLatLngs = _clusterHelper.getTileCorners(q, r, id, targetSize);
       final screenOffset = _mapController!.camera.latLngToScreenOffset(centerLatLng);
 
-      final String? targetTileColorHex = (tileData.userId == 'footprint_marker')
-          ? tileData.colorHex
-          : ((tileData.userId == 'pattern_consumed')
-              ? '#0066FF'
-              : ((tileData.userId == 'coin_marker' || tileData.userId == 'none' || tileData.userId == null)
-                  ? null
-                  : ((tileData.userId == _currentUserId)
-                      ? GameColors.myTileColorHex
-                      : GameColors.enemyTileColorHex)));
+      final String? targetTileColorHex = _resolveTileColorHex(tileData);
+      final String? targetAdminBorderColorHex = resolveAdminBorderColorHex(id);
 
       final hasCoin = !_showFootprints && _coins.any((c) => c.tileId == id && !c.isCollected);
 
@@ -456,6 +534,7 @@ class ConquestGame extends FlameGame {
         _tileMap[id]!.position = Vector2(screenOffset.dx, screenOffset.dy);
         _tileMap[id]!.updateData(
           colorHex: targetTileColorHex,
+          adminColorHex: targetAdminBorderColorHex,
           hasCoin: hasCoin,
         );
       } else {
@@ -465,6 +544,7 @@ class ConquestGame extends FlameGame {
           centerLatLng: centerLatLng,
           cornerLatLngs: cornerLatLngs,
           colorHex: targetTileColorHex,
+          adminColorHex: targetAdminBorderColorHex,
           hexSize: targetSize, // dynamicHexSize 대신 targetSize를 전달하여 렌더링 크기 일치
           hasCoin: hasCoin,
         )
@@ -498,6 +578,9 @@ class ConquestGame extends FlameGame {
     bool showFootprints = false,
     Map<String, FootprintTile>? footprints,
     String? selectedFootprintTileId,
+    // [신규] 어드민 정의 타일 타입/속성 맵. 미전달 시 기존 동작 유지.
+    Map<int, TileType>? tileTypes,
+    Map<String, TileAttribute>? tileAttributes,
   }) {
     _lastCapturedTiles = capturedTiles;
     _lastCapturingColorHex = capturingColorHex;
@@ -512,6 +595,12 @@ class ConquestGame extends FlameGame {
     _showFootprints = showFootprints;
     if (footprints != null) {
       _footprints = footprints;
+    }
+    if (tileTypes != null) {
+      _tileTypes = tileTypes;
+    }
+    if (tileAttributes != null) {
+      _tileAttributes = tileAttributes;
     }
     _consumedTileIds = consumedTileIds ?? {};
     if (coins != null) {
@@ -586,6 +675,9 @@ class ConquestGame extends FlameGame {
         isCapturing: isCapturing,
         progress: progress,
         capturingColorHex: colorHex,
+        // 점령 진행 중에도 어드민 외곽선은 유지 (점령이 끝나면 _renderVisibleTiles에서
+        // 일반 점령 색상으로 fill이 들어오고 외곽선은 유지된다)
+        adminColorHex: resolveAdminBorderColorHex(tileId),
       );
       // 타일 고유의 격자 크기 획득 (LOD 줌 레벨과 무관하게 고정 위치 유지)
       final parsed = HexService.parseTileId(tileId);

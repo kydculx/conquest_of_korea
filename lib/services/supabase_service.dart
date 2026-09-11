@@ -2,6 +2,7 @@ import 'package:flutter/foundation.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import '../core/app_config.dart';
 import '../models/tile_model.dart';
+import '../models/tile_attribute_model.dart';
 import '../models/user_profile.dart';
 import '../models/user_coin.dart';
 import '../models/footprint_model.dart';
@@ -495,6 +496,71 @@ class SupabaseService {
       lastError = e.toString();
       debugPrint('❌ 발자취 DB 등록 실패: $e');
       return false;
+    }
+  }
+
+  // ============================================================
+  // 8. 어드민 맵 에디터 — 타일 속성 (map_tile_types / map_tile_attributes)
+  // ============================================================
+
+  /// 어드민이 정의한 모든 타일 타입 목록을 조회합니다.
+  ///
+  /// 0번(기본) 타입이 누락된 경우 자동 보정하여 반환합니다.
+  Future<List<TileType>> fetchTileTypes() async {
+    try {
+      final response = await _client
+          .from('map_tile_types')
+          .select('*')
+          .order('id', ascending: true);
+      final list = (response as List)
+          .map((e) => TileType.fromJson(_toMap(e)))
+          .toList();
+
+      // 0번(기본) 누락 시 안전 기본값 보정
+      if (!list.any((t) => t.id == 0)) {
+        list.insert(
+          0,
+          const TileType(
+            id: 0,
+            name: '기본',
+            colorHex: '#334155',
+            description: '기본 타일',
+            isBlocked: false,
+          ),
+        );
+      }
+      return list;
+    } catch (e) {
+      debugPrint('⚠️ 타일 타입 조회 실패, 기본 프리셋 반환: $e');
+      return const [
+        TileType(id: 0, name: '기본', colorHex: '#334155'),
+        TileType(id: 1, name: '랜드마크', colorHex: '#a855f7'),
+      ];
+    }
+  }
+
+  /// 지정한 사각형 헥사 좌표 범위(minQ ~ maxQ, minR ~ maxR) 내의
+  /// 어드민 부여 타일 속성 목록을 조회합니다.
+  Future<List<TileAttribute>> fetchTileAttributesInArea(
+    int minQ,
+    int maxQ,
+    int minR,
+    int maxR,
+  ) async {
+    try {
+      final response = await _client
+          .from('map_tile_attributes')
+          .select('*')
+          .gte('q', minQ)
+          .lte('q', maxQ)
+          .gte('r', minR)
+          .lte('r', maxR);
+      return (response as List)
+          .map((e) => TileAttribute.fromJson(_toMap(e)))
+          .toList();
+    } catch (e) {
+      debugPrint('⚠️ 타일 속성 영역 조회 실패: $e');
+      return [];
     }
   }
 }
