@@ -142,8 +142,18 @@ class NotificationController {
     );
   }
 
+  /// [신규] FCM 토픽 동기화 디바운스 타이머. 마지막 호출 후 300ms 안에 들어온
+  /// 동기화는 무시하여 ProxyProvider 갱신 폭주 시 직렬 FCM 왕복이 누적되는 것을 차단한다.
+  Timer? _fcmSyncDebounce;
+
   /// 현재 알림 설정 상태에 맞춰 FCM 구독 토픽을 최신화합니다.
   Future<void> _updateFcmSubscriptions() async {
+    _fcmSyncDebounce?.cancel();
+    _fcmSyncDebounce = null;
+    await _runFcmSync();
+  }
+
+  Future<void> _runFcmSync() async {
     final ns = NotificationService();
     if (!ns.isInitialized) {
       await ns.initialize();
@@ -157,11 +167,11 @@ class NotificationController {
 
     if (!_isNotificationEnabled) {
       // 마스터 알림이 꺼진 경우 모든 개별 및 개인 토픽 일제 구독 해제
-      await ns.unsubscribeFromTopic(topicTerritory);
-      await ns.unsubscribeFromTopic(topicSatellite);
-      await ns.unsubscribeFromTopic(topicNotice);
+      await _applyIfChanged(topicTerritory, false);
+      await _applyIfChanged(topicSatellite, false);
+      await _applyIfChanged(topicNotice, false);
       if (topicPersonal != null) {
-        await ns.unsubscribeFromTopic(topicPersonal);
+        await _applyIfChanged(topicPersonal, false);
       }
       debugPrint('🔔 [FCM 구독 통제] 마스터 해제로 인한 모든 토픽 구독 해제 완료.');
       return;
@@ -169,28 +179,34 @@ class NotificationController {
 
     // 마스터 알림이 켜져 있는 경우 개인 토픽 다시 구독
     if (topicPersonal != null) {
-      await ns.subscribeToTopic(topicPersonal);
+      await _applyIfChanged(topicPersonal, true);
     }
 
     // 영토 변경 알림
-    if (_isNotifTerritoryAttack) {
-      await ns.subscribeToTopic(topicTerritory);
-    } else {
-      await ns.unsubscribeFromTopic(topicTerritory);
-    }
+    await _applyIfChanged(
+        topicTerritory, _isNotifTerritoryAttack);
 
     // 위성 점령 완료 알림
-    if (_isNotifSatelliteComplete) {
-      await ns.subscribeToTopic(topicSatellite);
-    } else {
-      await ns.unsubscribeFromTopic(topicSatellite);
-    }
+    await _applyIfChanged(
+        topicSatellite, _isNotifSatelliteComplete);
 
     // 시스템 공지 알림
-    if (_isNotifSystemNotice) {
-      await ns.subscribeToTopic(topicNotice);
+    await _applyIfChanged(
+        topicNotice, _isNotifSystemNotice);
+  }
+
+  /// [신규] 토픽 구독 상태 캐시. 동일 상태로의 연속 호출을 1회로 압축하여
+  /// ProxyProvider 갱신 폭주에 따른 FCM 왕복 누적을 차단한다.
+  final Map<String, bool> _topicState = {};
+
+  Future<void> _applyIfChanged(String topic, bool desiredSubscribed) async {
+    if (_topicState[topic] == desiredSubscribed) return;
+    final ns = NotificationService();
+    if (desiredSubscribed) {
+      await ns.subscribeToTopic(topic);
     } else {
-      await ns.unsubscribeFromTopic(topicNotice);
+      await ns.unsubscribeFromTopic(topic);
     }
+    _topicState[topic] = desiredSubscribed;
   }
 }

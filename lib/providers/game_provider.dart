@@ -310,6 +310,7 @@ class GameProvider extends ChangeNotifier with WidgetsBindingObserver {
               'send-push',
               body: {
                 'topic': 'user_$oldOwnerId',
+                'user_id': oldOwnerId,
                 'title': GameStrings.notificationInvasionTitle,
                 'body': GameStrings.notificationInvasionBody,
                 'data_payload': {
@@ -560,6 +561,14 @@ class GameProvider extends ChangeNotifier with WidgetsBindingObserver {
     }
   }
 
+  /// [setAuthProvider]가 같은 사용자/같은 알림 설정으로 중복 호출될 때를 막는 가드.
+  /// ProxyProvider 갱신이 부팅 직후 여러 번 발화되어 FCM 토픽 동기화가 폭주하는 것을 차단한다.
+  String? _lastNotifSyncUserId;
+  bool? _lastNotifMaster;
+  bool? _lastNotifTerritory;
+  bool? _lastNotifSatellite;
+  bool? _lastNotifNotice;
+
   void setAuthProvider(AuthProvider auth) {
     final oldProfile = _profile;
     _authProvider = auth;
@@ -574,13 +583,20 @@ class GameProvider extends ChangeNotifier with WidgetsBindingObserver {
           _goldManager.setGold(serverGold);
         }
 
-        // 로그인 사용자 변경 또는 프로필 최초 로드 시 알림 설정 동기화
-        if (oldProfile?.id != auth.profile!.id ||
-            oldProfile?.isNotificationsEnabled != auth.profile!.isNotificationsEnabled ||
-            oldProfile?.notifTerritoryAttack != auth.profile!.notifTerritoryAttack ||
-            oldProfile?.notifSatelliteComplete != auth.profile!.notifSatelliteComplete ||
-            oldProfile?.notifSystemNotice != auth.profile!.notifSystemNotice) {
-          _notificationController.syncFromProfile(auth.profile!);
+        // 알림 설정 동기화: 동일 사용자/동일 설정이면 FCM 토픽 재호출 생략
+        final p = auth.profile!;
+        final sameNotifState = _lastNotifSyncUserId == p.id &&
+            _lastNotifMaster == p.isNotificationsEnabled &&
+            _lastNotifTerritory == p.notifTerritoryAttack &&
+            _lastNotifSatellite == p.notifSatelliteComplete &&
+            _lastNotifNotice == p.notifSystemNotice;
+        if (!sameNotifState) {
+          _notificationController.syncFromProfile(p);
+          _lastNotifSyncUserId = p.id;
+          _lastNotifMaster = p.isNotificationsEnabled;
+          _lastNotifTerritory = p.notifTerritoryAttack;
+          _lastNotifSatellite = p.notifSatelliteComplete;
+          _lastNotifNotice = p.notifSystemNotice;
         }
       }
 
@@ -597,6 +613,11 @@ class GameProvider extends ChangeNotifier with WidgetsBindingObserver {
       _tileSelection.resetScanState();
       _satelliteController.cancelCapture();
       _captureController.cancelCapture();
+      _lastNotifSyncUserId = null;
+      _lastNotifMaster = null;
+      _lastNotifTerritory = null;
+      _lastNotifSatellite = null;
+      _lastNotifNotice = null;
     }
     notifyListeners();
   }

@@ -386,6 +386,7 @@ class SatelliteCaptureController {
           'send-push',
           body: {
             'topic': 'user_$myId',
+            'user_id': myId,
             'title': GameStrings.notifSatelliteCompleteTitle,
             'body': GameStrings.satelliteCaptureSuccess,
             'data_payload': {

@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
+import 'package:geolocator/geolocator.dart';
 import 'package:provider/provider.dart';
 import '../../core/constants/app_routes.dart';
 import '../../services/preferences_service.dart';
@@ -11,6 +12,8 @@ import '../../providers/game_provider.dart';
 import '../../providers/auth_provider.dart';
 import '../../providers/location_provider.dart';
 import '../../providers/achievement_provider.dart';
+import '../../providers/game_tile_provider.dart';
+import '../../models/tile_attribute_model.dart';
 import '../../models/achievement_model.dart';
 import '../widgets/achievement_toast.dart';
 import '../../services/geo_service.dart';
@@ -45,6 +48,57 @@ class _GameScreenState extends State<GameScreen> {
   StreamSubscription<Achievement>? _achievementSubscription;
   bool _showOnboarding = false;
 
+  /// 첫 위치 수신 대기 타임아웃 여부 (15초 초과 시 재시도 UI 표시)
+  bool _locationTimedOut = false;
+  Timer? _locationWaitTimer;
+
+  /// 위치 대기 타이머 시작 (수신 즉시 해제, 15초 초과 시 재시도 안내)
+  void _startLocationWaitTimer() {
+    _locationWaitTimer?.cancel();
+    _locationTimedOut = false;
+    _locationWaitTimer = Timer(const Duration(seconds: 15), () {
+      if (!mounted) return;
+      final loc = _locationProvider ?? context.read<LocationProvider>();
+      if (loc.currentLocation == null) {
+        setState(() {
+          _locationTimedOut = true;
+        });
+      }
+    });
+  }
+
+  /// 위치 재시도: 권한 재확인 후 추적 재시작
+  Future<void> _retryLocation() async {
+    final geo = context.read<GeoService>();
+    _startLocationWaitTimer();
+    if (mounted) setState(() {});
+    try {
+      final ok = await geo.checkPermissions();
+      if (ok) {
+        await geo.startTracking();
+      } else {
+        // 권한 흐름이 설정 화면으로 넘어간 경우 복귀 후 상태 반영
+        if (mounted) {
+          setState(() {
+            _locationTimedOut = true;
+          });
+        }
+      }
+    } catch (e) {
+      debugPrint('⚠️ 위치 재시도 실패: $e');
+    }
+  }
+
+  /// 위치 설정 화면 열기 (GPS 꺼짐이면 위치 설정, 그 외엔 앱 설정)
+  Future<void> _openLocationSetup() async {
+    final enabled = await Geolocator.isLocationServiceEnabled();
+    if (enabled) {
+      await Geolocator.openAppSettings();
+    } else {
+      await Geolocator.openLocationSettings();
+    }
+  }
+
   @override
   void initState() {
     super.initState();
@@ -59,12 +113,25 @@ class _GameScreenState extends State<GameScreen> {
         });
       }
 
+      _startLocationWaitTimer();
       geo.checkPermissions().then((ok) async {
         if (ok) {
           await geo.startTracking();
+        } else {
+          // 권한 미획득 시 타임아웃 UI를 즉시 노출하여 대기 고착 방지
+          if (mounted) {
+            setState(() {
+              _locationTimedOut = true;
+            });
+          }
         }
       }).catchError((e) {
         debugPrint('⚠️ 위치 권한 확인 실패: $e');
+        if (mounted) {
+          setState(() {
+            _locationTimedOut = true;
+          });
+        }
       });
     });
   }
@@ -188,6 +255,18 @@ class _GameScreenState extends State<GameScreen> {
       return;
     }
 
+    // 첫 위치 수신 시 대기 타임아웃 해제
+    if (_locationProvider!.currentLocation != null && _locationTimedOut) {
+      _locationWaitTimer?.cancel();
+      if (mounted) {
+        setState(() {
+          _locationTimedOut = false;
+        });
+      } else {
+        _locationTimedOut = false;
+      }
+    }
+
     final currentTiles = Map<String, HexTile>.from(_gameProvider!.capturedTiles);
     final profile = _authProvider!.profile;
     final userId = _authProvider!.user?.id;
@@ -200,6 +279,13 @@ class _GameScreenState extends State<GameScreen> {
         return tile;
       });
     }
+
+    // [신규] 어드민이 정의한 타일 타입과 영역 내 속성을 함께 전달하여
+    // 정적 지형(랜드마크 / 차단 구역) 색상이 점령 색상보다 우선 적용되도록 한다.
+    final tileProvider = Provider.of<GameTileProvider>(context, listen: false);
+    final adminTileTypes = Map<int, TileType>.from(tileProvider.tileTypes);
+    final adminTileAttributes =
+        Map<String, TileAttribute>.from(tileProvider.tileAttributes);
 
     _flameGame!.updateCapturedTiles(
       capturedTiles: currentTiles,
@@ -224,11 +310,14 @@ class _GameScreenState extends State<GameScreen> {
       showFootprints: _gameProvider!.isFootprintMode,
       footprints: _gameProvider!.footprints,
       selectedFootprintTileId: _gameProvider!.selectedFootprintTileId,
+      tileTypes: adminTileTypes.isEmpty ? null : adminTileTypes,
+      tileAttributes: adminTileAttributes.isEmpty ? null : adminTileAttributes,
     );
   }
 
   @override
   void dispose() {
+    _locationWaitTimer?.cancel();
     _gameProvider?.removeListener(_onStateChanged);
     _authProvider?.removeListener(_onStateChanged);
     _locationProvider?.removeListener(_onStateChanged);
@@ -324,17 +413,23 @@ class _GameScreenState extends State<GameScreen> {
           ),
 
           // GPS 위치 미획득 로딩 오버레이
-          // 첫 위치 수신 전까지 "로딩중" 원형 인디케이터를 화면 중앙에 표시
+          // 첫 위치 수신 전까지 표시, 15초 초과 시 재시도/설정 버튼 노출
           Selector<LocationProvider, bool>(
             selector: (_, loc) => loc.currentLocation == null,
             builder: (context, waitingForLocation, child) {
               return AnimatedSwitcher(
                 duration: const Duration(milliseconds: 400),
                 child: waitingForLocation
-                    ? LoadingOverlay(
-                        key: const ValueKey('gps-waiting'),
-                        message: GameStrings.searchingSignal,
-                      )
+                    ? (_locationTimedOut
+                        ? _LocationRetryOverlay(
+                            key: const ValueKey('gps-retry'),
+                            onRetry: _retryLocation,
+                            onOpenSettings: _openLocationSetup,
+                          )
+                        : LoadingOverlay(
+                            key: const ValueKey('gps-waiting'),
+                            message: GameStrings.searchingSignal,
+                          ))
                     : const SizedBox.shrink(key: ValueKey('gps-ready')),
               );
             },
@@ -360,6 +455,92 @@ class _GameScreenState extends State<GameScreen> {
             },
           ),
         ],
+      ),
+    );
+  }
+}
+
+/// 첫 위치 수신 지연 시 노출되는 재시도 오버레이
+class _LocationRetryOverlay extends StatelessWidget {
+  final Future<void> Function() onRetry;
+  final Future<void> Function() onOpenSettings;
+
+  const _LocationRetryOverlay({
+    super.key,
+    required this.onRetry,
+    required this.onOpenSettings,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      color: Colors.black.withValues(alpha: 0.55),
+      alignment: Alignment.center,
+      child: Container(
+        margin: const EdgeInsets.symmetric(horizontal: 32),
+        padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 28),
+        decoration: BoxDecoration(
+          color: GameColors.tacticalBlack,
+          borderRadius: BorderRadius.circular(20),
+          border: Border.all(
+            color: GameColors.accentNeon.withValues(alpha: 0.4),
+          ),
+        ),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            SizedBox(
+              width: 28,
+              height: 28,
+              child: CircularProgressIndicator(
+                strokeWidth: 2.5,
+                color: GameColors.accentNeon,
+              ),
+            ),
+            const SizedBox(height: 16),
+            Text(
+              GameStrings.searchingSignal,
+              textAlign: TextAlign.center,
+              style: const TextStyle(
+                color: Colors.white,
+                fontSize: 14,
+                fontWeight: FontWeight.w700,
+              ),
+            ),
+            const SizedBox(height: 20),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                ElevatedButton(
+                  onPressed: onRetry,
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: GameColors.accentNeon,
+                    foregroundColor: GameColors.tacticalBlack,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(14),
+                    ),
+                  ),
+                  child: const Text(
+                    '다시 시도',
+                    style: TextStyle(fontWeight: FontWeight.w900),
+                  ),
+                ),
+                const SizedBox(width: 12),
+                OutlinedButton(
+                  onPressed: onOpenSettings,
+                  style: OutlinedButton.styleFrom(
+                    foregroundColor: Colors.white,
+                    side: const BorderSide(color: Colors.white54),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(14),
+                    ),
+                  ),
+                  child: const Text('설정 열기'),
+                ),
+              ],
+            ),
+          ],
+        ),
       ),
     );
   }

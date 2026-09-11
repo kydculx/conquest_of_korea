@@ -6,6 +6,85 @@ const serviceAccountJson = Deno.env.get("FIREBASE_SERVICE_ACCOUNT_JSON");
 const supabaseUrl = Deno.env.get("SUPABASE_URL");
 const supabaseServiceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
 
+// [차단 정책] true면 프로필 조회 실패 시에도 발송하지 않음(fail-closed).
+// false면 조회 실패 시 발송 진행(fail-open, 기존 동작).
+const FAIL_CLOSED_ON_DB_ERROR = true;
+
+type GateResult = { allowed: boolean; reason: string };
+
+async function checkUserGate(
+  supabaseUrl: string,
+  supabaseServiceKey: string,
+  userId: string,
+  dataPayload: Record<string, unknown> | undefined,
+): Promise<GateResult> {
+  try {
+    const supabase = createClient(supabaseUrl, supabaseServiceKey);
+    const { data: profile, error } = await supabase
+      .from("profiles")
+      .select("is_notifications_enabled, notif_territory_attack, notif_satellite_complete, notif_system_notice")
+      .eq("id", userId)
+      .maybeSingle();
+
+    if (error || !profile) {
+      console.error(`DB profile lookup failed (user: ${userId}):`, error?.message ?? "not found");
+      return FAIL_CLOSED_ON_DB_ERROR
+        ? { allowed: false, reason: "db_unavailable" }
+        : { allowed: true, reason: "db_unavailable_passthrough" };
+    }
+
+    if (profile.is_notifications_enabled !== true) {
+      console.log(`Push blocked: master disabled (user: ${userId})`);
+      return { allowed: false, reason: "master_disabled" };
+    }
+
+    const notificationType = dataPayload?.type as string | undefined;
+    if (notificationType === "territory_attack" && profile.notif_territory_attack !== true) {
+      return { allowed: false, reason: "territory_attack_disabled" };
+    }
+    if (notificationType === "satellite_complete" && profile.notif_satellite_complete !== true) {
+      return { allowed: false, reason: "satellite_complete_disabled" };
+    }
+    if (notificationType === "system_notice" && profile.notif_system_notice !== true) {
+      return { allowed: false, reason: "system_notice_disabled" };
+    }
+    return { allowed: true, reason: "ok" };
+  } catch (dbErr) {
+    console.error("Push gate DB exception:", (dbErr as Error).message);
+    return FAIL_CLOSED_ON_DB_ERROR
+      ? { allowed: false, reason: "db_unavailable" }
+      : { allowed: true, reason: "db_unavailable_passthrough" };
+  }
+}
+
+async function serverUnsubscribeFromTopic(
+  accessToken: string,
+  fcmToken: string,
+  topic: string,
+): Promise<void> {
+  try {
+    const res = await fetch(
+      `https://iid.googleapis.com/iid/v1/batchRemove`,
+      {
+        method: "POST",
+        headers: {
+          "Authorization": `Bearer ${accessToken}`,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          to: `/topics/${topic}`,
+          registration_tokens: [fcmToken],
+        }),
+      },
+    );
+    if (!res.ok) {
+      console.error("Server-side topic unsubscribe failed:", await res.text());
+    }
+  } catch (e) {
+    console.error("Server-side topic unsubscribe exception:", (e as Error).message);
+  }
+}
+
 Deno.serve(async (req: Request) => {
   // CORS 프리플라이트 요청 처리 (Flutter 웹/클라이언트 호출 대응)
   if (req.method === "OPTIONS") {
@@ -24,85 +103,46 @@ Deno.serve(async (req: Request) => {
     }
 
     const serviceAccount = JSON.parse(serviceAccountJson);
-    const { fcm_token, topic, title, body, data_payload } = await req.json();
+    const { fcm_token, topic, title, body, data_payload, user_id } = await req.json();
 
     if (!fcm_token && !topic) {
       throw new Error("fcm_token 또는 topic 파라미터 중 하나는 필수입니다.");
     }
 
-    // 1대1 개인 알림(토픽 'user_userId') DB 수준 차단 필터링 개시
-    if (topic && topic.startsWith("user_")) {
-      const userId = topic.replace("user_", "");
-      if (supabaseUrl && supabaseServiceKey && userId) {
-        try {
-          const supabase = createClient(supabaseUrl, supabaseServiceKey);
-          const { data: profile, error } = await supabase
-            .from("profiles")
-            .select("is_notifications_enabled, notif_territory_attack, notif_satellite_complete, notif_system_notice")
-            .eq("id", userId)
-            .maybeSingle();
+    const resolvedUserId: string | null =
+      (typeof user_id === "string" && user_id.length > 0)
+        ? user_id
+        : (topic && topic.startsWith("user_") ? topic.replace("user_", "") : null);
 
-          if (error) {
-            console.error(`⚠️ DB 프로필 조회 실패 (user: ${userId}):`, error.message);
-          } else if (profile) {
-            // 마스터 알림 스위치 꺼짐 여부 (명시적 true가 아니면 차단)
-            if (profile.is_notifications_enabled !== true) {
-              console.log(`🔔 [알림 마스터 차단] 플레이어(${userId})의 마스터 알림 비활성화로 푸시 취소`);
-              return new Response(JSON.stringify({ success: true, filtered: true, reason: "master_disabled" }), {
-                headers: {
-                  "Content-Type": "application/json",
-                  "Access-Control-Allow-Origin": "*",
-                },
-              });
-            }
-
-            // 개별 알림 타입 쿼리
-            const notificationType = data_payload?.type || (data_payload && data_payload.type);
-            if (notificationType) {
-              let shouldFilter = false;
-              let filterReason = "";
-
-              if (notificationType === "territory_attack" && profile.notif_territory_attack !== true) {
-                shouldFilter = true;
-                filterReason = "territory_attack_disabled";
-              } else if (notificationType === "satellite_complete" && profile.notif_satellite_complete !== true) {
-                shouldFilter = true;
-                filterReason = "satellite_complete_disabled";
-              } else if (notificationType === "system_notice" && profile.notif_system_notice !== true) {
-                shouldFilter = true;
-                filterReason = "system_notice_disabled";
-              }
-
-              if (shouldFilter) {
-                console.log(`🔔 [알림 세부 차단] 플레이어(${userId})의 '${notificationType}' 알림 비활성화로 푸시 취소 (${filterReason})`);
-                return new Response(JSON.stringify({ success: true, filtered: true, reason: filterReason }), {
-                  headers: {
-                    "Content-Type": "application/json",
-                    "Access-Control-Allow-Origin": "*",
-                  },
-                });
-              }
-            }
-          }
-        } catch (dbErr) {
-          console.error("⚠️ 알림 필터링 DB 쿼리 중 예외 발생:", (dbErr as Error).message);
-        }
-      }
-    }
-
-    // 1. google-auth-library를 사용해 Firebase Admin용 JWT 클라이언트 생성 (Deno & Node 호환)
     const jwtClient = new JWT({
       email: serviceAccount.client_email,
       key: serviceAccount.private_key,
-      scopes: ["https://www.googleapis.com/auth/firebase.messaging"],
+      scopes: [
+        "https://www.googleapis.com/auth/firebase.messaging",
+        "https://www.googleapis.com/auth/firebase",
+      ],
     });
 
-    // 2. Google OAuth Access Token 발급 요청
     const tokenResponse = await jwtClient.authorize();
     const access_token = tokenResponse.access_token;
 
     if (!access_token) {
       throw new Error("Google OAuth 토큰 획득에 실패했습니다.");
+    }
+
+    if (resolvedUserId && supabaseUrl && supabaseServiceKey) {
+      const gate = await checkUserGate(supabaseUrl, supabaseServiceKey, resolvedUserId, data_payload);
+      if (!gate.allowed) {
+        if (fcm_token && topic) {
+          await serverUnsubscribeFromTopic(access_token, fcm_token, topic);
+        }
+        return new Response(JSON.stringify({ success: true, filtered: true, reason: gate.reason }), {
+          headers: {
+            "Content-Type": "application/json",
+            "Access-Control-Allow-Origin": "*",
+          },
+        });
+      }
     }
 
     // 3. FCM v1 API 호출로 푸시 전송

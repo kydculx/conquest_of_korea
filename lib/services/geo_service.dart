@@ -51,49 +51,26 @@ class GeoService {
 
   /// 시스템 GPS 기능 활성화 상태 및 앱의 위치 정보 접근 권한을 확인하고 필요한 경우 권한을 요청합니다.
   ///
-  /// 시스템 권한 다이얼로그와 설정 화면 유도는 각각 1회만 수행합니다.
-  /// (거절/미설정 상태가 계속돼도 매 실행마다 팝업이 반복되지 않도록)
+  /// 매 호출마다 실제 상태를 확인하고 요청합니다. (1회 가드 없음:
+  /// GameScreen 재시도 버튼이 항상 동작해야 무한 대기가 발생하지 않음)
   Future<bool> checkPermissions() async {
     bool serviceEnabled;
     LocationPermission permission;
 
     serviceEnabled = await Geolocator.isLocationServiceEnabled();
     if (!serviceEnabled) {
-      // GPS 꺼짐 안내는 1회만, 이후엔 조용히 false 반환
-      final guided = await PreferencesService.isLocationSettingsGuided();
-      if (!guided) {
-        await PreferencesService.setLocationSettingsGuided();
-        await Geolocator.openLocationSettings();
-      }
+      await Geolocator.openLocationSettings();
       return false;
     }
 
     permission = await Geolocator.checkPermission();
     if (permission == LocationPermission.denied) {
-      // 시스템 권한 다이얼로그는 1회만 요청
-      final asked = await PreferencesService.isLocationPermissionAsked();
-      if (!asked) {
-        await PreferencesService.setLocationPermissionAsked();
-        permission = await Geolocator.requestPermission();
-        if (permission == LocationPermission.denied) return false;
-      } else {
-        // 이미 거절한 이력이 있으면 다이얼로그 대신 설정 화면으로 유도(1회)
-        final guided = await PreferencesService.isLocationSettingsGuided();
-        if (!guided) {
-          await PreferencesService.setLocationSettingsGuided();
-          await Geolocator.openAppSettings();
-        }
-        return false;
-      }
+      permission = await Geolocator.requestPermission();
+      if (permission == LocationPermission.denied) return false;
     }
 
     if (permission == LocationPermission.deniedForever) {
-      // 재요청이 불가능한 상태: 설정 화면으로 유도(1회)
-      final guided = await PreferencesService.isLocationSettingsGuided();
-      if (!guided) {
-        await PreferencesService.setLocationSettingsGuided();
-        await Geolocator.openAppSettings();
-      }
+      await Geolocator.openAppSettings();
       return false;
     }
 
@@ -135,12 +112,16 @@ class GeoService {
       locationSettings = AndroidSettings(
         accuracy: selectedAccuracy,
         distanceFilter: GameConfig.gpsDistanceFilterMeters,
-        forceLocationManager: true, // 구글 서비스를 거치지 않고 하드웨어 직접 제어
+        // FusedLocationProvider 사용: 실내/도심에서 네트워크 보정으로 첫 fix를 빠르게 수신
+        forceLocationManager: false,
         intervalDuration: const Duration(seconds: GameConfig.gpsUpdateIntervalSeconds),
         foregroundNotificationConfig: ForegroundNotificationConfig(
           notificationText: GameStrings.gpsServiceNotificationText,
           notificationTitle: GameStrings.gpsServiceNotificationTitle,
-          notificationIcon: const AndroidResource(name: 'launcher_icon'),
+          notificationIcon: const AndroidResource(
+            name: 'launcher_icon',
+            defType: 'mipmap',
+          ),
           enableWakeLock: true,
         ),
       );
@@ -149,6 +130,20 @@ class GeoService {
         accuracy: selectedAccuracy,
         distanceFilter: GameConfig.gpsDistanceFilterMeters,
       );
+    }
+
+    // 중복 시작 시 기존 스트림을 먼저 정리 (구독 누수 방지)
+    await _positionStreamSubscription?.cancel();
+    _positionStreamSubscription = null;
+
+    try {
+      // 0단계: 마지막으로 알려진 위치를 즉시 전파하여 대기 화면을 먼저 해제
+      final lastKnown = await Geolocator.getLastKnownPosition();
+      if (lastKnown != null && !_locationController.isClosed) {
+        _locationController.add(lastKnown);
+      }
+    } catch (e) {
+      debugPrint('마지막 위치 조회 실패 (무시하고 계속): $e');
     }
 
     try {

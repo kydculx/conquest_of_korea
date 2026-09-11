@@ -106,7 +106,8 @@ class AuthProvider extends ChangeNotifier {
           debugPrint('⚠️ 세션 ID DB 업데이트 실패: $e');
         });
         _notificationService.setCurrentUserId(user.id);
-        _notificationService.subscribeToTopic('user_${user.id}');
+        // [개선] 개인 토픽 구독은 _loadProfile에서 알림 설정과 함께 일괄 처리하므로
+        // 부팅 직후 인증 이벤트 분기에서는 호출하지 않는다 (중복 FCM 왕복 방지).
       } else if (event == AuthChangeEvent.signedOut) {
         _profileSubscription?.cancel();
         _profileSubscription = null;
@@ -213,13 +214,9 @@ class AuthProvider extends ChangeNotifier {
     try {
       _profile = await _authService.getUserProfile(userId);
 
-      // 프로필 로드 시 알림 설정 상태에 맞춰 개인 토픽 동기화
+      // 프로필 로드 시 알림 토픽 동기화는 setAuthProvider → syncFromProfile
+      // → _updateFcmSubscriptions 단일 경로로 통합하여 FCM 왕복 폭주 차단.
       _notificationService.setCurrentUserId(userId);
-      if (_profile?.isNotificationsEnabled ?? true) {
-        _notificationService.subscribeToTopic('user_$userId');
-      } else {
-        _notificationService.unsubscribeFromTopic('user_$userId');
-      }
       AnalyticsService.setUserId(userId);
 
       // 만약 프로필이 없다면 (가입 시 권한 문제로 저장이 안 된 경우 등)
