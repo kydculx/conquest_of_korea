@@ -1,4 +1,5 @@
 import React from 'react';
+import { Footprints, PersonStanding, Mountain, Bike, Dog, Plane, HeartPulse } from 'lucide-react';
 
 const PLAY_URL = '#pre-register';
 const APPLE_URL = 'https://apps.apple.com/kr/app/%EC%B0%9C-%EB%8C%80%EB%AA%A8%ED%97%98/id6769717240';
@@ -97,6 +98,10 @@ export default function PromoPage() {
 .pp-mode .no{font-weight:900;color:var(--sun);font-size:.85rem;letter-spacing:.1em}
 .pp-mode h3{margin:10px 0 8px;font-size:1.08rem}
 .pp-mode p{margin:0;color:var(--muted);font-size:.92rem;line-height:1.65}
+.pp-activity{display:flex;gap:14px;align-items:center}
+.pp-activity svg{flex:none;color:var(--sun)}
+.pp-activity h3{margin:0 0 4px;font-size:1rem}
+.pp-activity p{font-size:.88rem}
 .pp-perks{display:grid;grid-template-columns:repeat(2,1fr);gap:14px}
 .pp-perk{display:flex;gap:14px;background:var(--card);border:1px solid rgba(255,255,255,.09);border-radius:18px;padding:22px 20px}
 .pp-perk .e{font-size:1.7rem}
@@ -192,13 +197,23 @@ export default function PromoPage() {
           <h2>이런 활동에 어울립니다</h2>
           <p className="pp-sec-sub">평소 즐기는 야외 활동 그대로.</p>
           <div className="pp-modes">
-            <div className="pp-mode"><div className="no">RUN</div><h3>달리기</h3><p>러닝 코스마다 영역이 늘어납니다.</p></div>
-            <div className="pp-mode"><div className="no">WALK</div><h3>산책</h3><p>동네 한 바퀴가 기록으로 남습니다.</p></div>
-            <div className="pp-mode"><div className="no">HIKE</div><h3>등산</h3><p>오른 봉우리마다 내 영역으로.</p></div>
-            <div className="pp-mode"><div className="no">RIDE</div><h3>자전거</h3><p>라이딩 경로가 길게 이어집니다.</p></div>
-            <div className="pp-mode"><div className="no">DOG</div><h3>반려견 산책</h3><p>매일 같은 코스도 날짜마다 새 기록.</p></div>
-            <div className="pp-mode"><div className="no">TRIP</div><h3>여행</h3><p>처음 가는 도시 전체가 내 영역으로.</p></div>
-            <div className="pp-mode"><div className="no">HEALTH</div><h3>건강 걷기</h3><p>만보 목표와 영역 확장을 한 번에.</p></div>
+            {[
+              { icon: Footprints, no: 'RUN', title: '달리기', desc: '러닝 코스마다 영역이 늘어납니다.' },
+              { icon: PersonStanding, no: 'WALK', title: '산책', desc: '동네 한 바퀴가 기록으로 남습니다.' },
+              { icon: Mountain, no: 'HIKE', title: '등산', desc: '오른 봉우리마다 내 영역으로.' },
+              { icon: Bike, no: 'RIDE', title: '자전거', desc: '라이딩 경로가 길게 이어집니다.' },
+              { icon: Dog, no: 'DOG', title: '반려견 산책', desc: '매일 같은 코스도 날짜마다 새 기록.' },
+              { icon: Plane, no: 'TRIP', title: '여행', desc: '처음 가는 도시 전체가 내 영역으로.' },
+              { icon: HeartPulse, no: 'HEALTH', title: '건강 걷기', desc: '만보 목표와 영역 확장을 한 번에.' },
+            ].map((a) => (
+              <div className="pp-mode pp-activity" key={a.no}>
+                <a.icon size={34} strokeWidth={2.2} />
+                <div>
+                  <h3>{a.title}</h3>
+                  <p>{a.desc}</p>
+                </div>
+              </div>
+            ))}
           </div>
         </section>
 
