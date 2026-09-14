@@ -8,6 +8,7 @@ import MapEditorTab from './components/MapEditorTab';
 import TileAttributeEditorTab from './components/TileAttributeEditorTab';
 import UserTilesTab from './components/UserTilesTab';
 import LandingPage from './components/LandingPage';
+import PromoPage from './components/PromoPage';
 import TermsPage from './components/TermsPage';
 import PrivacyPage from './components/PrivacyPage';
 import LoginPage from './components/LoginPage';
@@ -280,6 +281,7 @@ export default function App() {
     <Routes>
       {/* 1. 메인 홈페이지 게임 소개 랜딩페이지 */}
       <Route path="/" element={<LandingPage />} />
+      <Route path="/promo" element={<PromoPage />} />
       <Route path="/terms" element={<TermsPage />} />
       <Route path="/privacy" element={<PrivacyPage />} />
 
