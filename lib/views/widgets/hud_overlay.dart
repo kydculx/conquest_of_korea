@@ -45,7 +45,7 @@ class HudOverlay extends StatelessWidget {
       children: [
         const SizedBox.expand(),
 
-        // [상단 좌측] 골드 정보 바 및 그 아래로 UTC 리셋 남은 시간 카운터 세로 정렬 배치
+        // [상단 좌측] 골드 정보 바, UTC 리셋 남은 시간 카운터, 걸음수 캡슐 세로 정렬 배치
         Positioned(
           top: topOffset + 3.0,
           left: 20.0,

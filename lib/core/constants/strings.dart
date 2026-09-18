@@ -256,6 +256,17 @@ class GameStrings {
   /// 푸시 알림 수신 설정 안내 문구
   static String get pushNotificationsSub => 'pushNotificationsSub'.tr();
 
+  /// 알림 권한 필요 안내 팝업 제목
+  static String get notificationPermissionRequiredTitle =>
+      'notificationPermissionRequiredTitle'.tr();
+
+  /// 알림 권한 필요 안내 팝업 내용
+  static String get notificationPermissionRequiredBody =>
+      'notificationPermissionRequiredBody'.tr();
+
+  /// 시스템 설정 이동 버튼 라벨
+  static String get openSettings => 'openSettings'.tr();
+
   /// 보안 정책 문서 확인 버튼 라벨
   static String get securityPolicy => 'securityPolicy'.tr();
 
@@ -1327,6 +1338,9 @@ class GameStrings {
   static String get myAchievementSub => 'myAchievementSub'.tr();
   static String stepsCount(int count) =>
       'stepsCount'.tr(namedArgs: {'count': count.toString()});
+
+  /// 건강 앱 연동하기 버튼 라벨
+  static String get linkHealthApp => 'linkHealthApp'.tr();
 
   /// 에러 다이얼로그 타이틀
   static String get errorTitle => 'errorTitle'.tr();

@@ -83,6 +83,9 @@
   "changeTacticalColorSub": "영토 테마 색상을 변경하십시오.",
   "pushNotifications": "푸시 알림 수신",
   "pushNotificationsSub": "영토 상태 변화에 관한 알림을 수신합니다.",
+  "notificationPermissionRequiredTitle": "알림 권한 필요",
+  "notificationPermissionRequiredBody": "알림을 받으시려면 기기 설정에서 알림 권한을 켜주세요.",
+  "openSettings": "설정으로 이동",
   "securityPolicy": "서비스 이용 약관 및 정책",
   "securityPolicySub": "이용 약관 및 개인정보 처리방침",
   "termsOfService": "서비스 이용약관",
@@ -535,5 +538,6 @@
   "photoDetailTitle": "사진 상세",
   "cannotOpenMailApp": "메일 앱을 열 수 없습니다. {email}로 직접 문의해주세요.",
   "languageChineseSimplified": "중국어 간체 (Simplified Chinese)",
-  "languageChineseTraditional": "중국어 번체 (Traditional Chinese)"
+  "languageChineseTraditional": "중국어 번체 (Traditional Chinese)",
+  "linkHealthApp": "걸음수 연결"
 }

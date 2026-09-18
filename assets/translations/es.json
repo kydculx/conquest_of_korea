@@ -83,6 +83,9 @@
   "changeTacticalColorSub": "Cambia el color de tu territorio",
   "pushNotifications": "Notificaciones Push",
   "pushNotificationsSub": "Recibe alertas de captura y estado de territorio",
+  "notificationPermissionRequiredTitle": "Permiso de notificaciones necesario",
+  "notificationPermissionRequiredBody": "Activa las notificaciones en los ajustes del dispositivo para recibir avisos.",
+  "openSettings": "Ir a Ajustes",
   "securityPolicy": "Términos y Políticas",
   "securityPolicySub": "Términos de servicio y política de privacidad",
   "termsOfService": "Términos de Servicio",
@@ -535,5 +538,6 @@
   "photoCommentLabel": "Comentario de foto",
   "photoDetailTitle": "Detalle de foto",
   "languageChineseSimplified": "Chino Simplificado (Chinese Simplified)",
-  "languageChineseTraditional": "Chino Tradicional (Chinese Traditional)"
+  "languageChineseTraditional": "Chino Tradicional (Chinese Traditional)",
+  "linkHealthApp": "Conectar pasos"
 }

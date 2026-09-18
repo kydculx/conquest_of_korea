@@ -5,6 +5,7 @@ import 'package:easy_localization/easy_localization.dart';
 import '../../core/constants/colors.dart';
 import '../../core/constants/strings.dart';
 import '../../providers/game_provider.dart';
+import '../../services/health_service.dart';
 
 /// [상단] '솜사탕 올인원' 정보 캡슐 바 (오직 순수 GP 보유량만 극극 미니멀 노출)
 class CozyHeaderBar extends StatelessWidget {
@@ -15,8 +16,10 @@ class CozyHeaderBar extends StatelessWidget {
     return Selector<GameProvider, double>(
       selector: (_, provider) => provider.currentGold,
       builder: (context, gold, child) {
-        return Container(
-          height: 38,
+        return GestureDetector(
+          onTapUp: (_) => debugPrint('🧪 gold capsule tapped'),
+          child: Container(
+            height: 38,
           padding: const EdgeInsets.only(
             left: 10,
             right: 16,
@@ -62,7 +65,8 @@ class CozyHeaderBar extends StatelessWidget {
                   letterSpacing: 0.4,
                 ),
               ),
-            ],
+              ],
+            ),
           ),
         );
       },
@@ -122,75 +126,115 @@ class UtcTimerHeaderBar extends StatelessWidget {
                   fontSize: 12.0,
                   fontWeight: FontWeight.bold,
                   letterSpacing: 0.4,
-                  ),
                 ),
-              ],
-            ),
-          );
-        },
-      );
-    }
+              ),
+            ],
+          ),
+        );
+      },
+    );
   }
+}
 
   /// [상단] 오늘의 실시간 걸음수를 표시하는 캡슐 바 (에메랄드 그린 테마)
+  /// 미연동 시 버튼 형태로 연동 안내 표시, 탭하면 시스템 설정으로 이동
+  /// (복귀 시 거부 확정 해제 + 재확인 자동 수행)
   class StepsHeaderBar extends StatelessWidget {
     const StepsHeaderBar({super.key});
 
+    Widget _capsule(BuildContext context, String text, bool denied) {
+      return Container(
+        height: 38,
+        padding: const EdgeInsets.only(
+          left: 10,
+          right: 14,
+          top: 2,
+          bottom: 2,
+        ),
+        decoration: ShapeDecoration(
+          color: GameColors.backgroundMedium.withValues(alpha: 0.92),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(20),
+            side: BorderSide(
+              color: Palette.neonGreen.withValues(alpha: 0.25), // 에메랄드 그린 보더
+              width: 1.2,
+            ),
+          ),
+          shadows: [
+            BoxShadow(
+              color: Colors.black.withValues(alpha: 0.08),
+              blurRadius: 8,
+              offset: const Offset(0, 3),
+            ),
+          ],
+        ),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.center,
+          children: [
+            const Icon(
+              Icons.directions_run_rounded,
+              color: Palette.neonGreen,
+              size: 18.0,
+            ),
+            const SizedBox(width: 6),
+            Text(
+              text,
+              style: GoogleFonts.fredoka(
+                color: GameColors.textPrimary,
+                fontSize: 12.0,
+                fontWeight: FontWeight.bold,
+                letterSpacing: 0.4,
+              ),
+            ),
+            if (denied) ...[
+              const SizedBox(width: 4),
+              const Icon(
+                Icons.arrow_forward_ios_rounded,
+                color: Palette.neonGreen,
+                size: 12.0,
+              ),
+            ],
+          ],
+        ),
+      );
+    }
+
+    Future<void> _onLinkTap(BuildContext context) async {
+      try {
+        final opened = await HealthService.instance.openHealthSettings();
+        if (!context.mounted) return;
+        if (!opened) {
+          // 설정 화면 열기 실패 시 직접 권한 요청으로 폴백
+          await context.read<GameProvider>().retryStepPermissions();
+        }
+      } catch (e) {
+        debugPrint('⚠️ steps link tap error: $e');
+        if (context.mounted) {
+          await context.read<GameProvider>().retryStepPermissions();
+        }
+      }
+    }
+
     @override
     Widget build(BuildContext context) {
-      return Selector<GameProvider, String>(
-        selector: (context, provider) {
-          // context.locale을 명시적으로 호출하여 언어 변경 시 Selector가 다시 평가되도록 함
-          final _ = context.locale;
-          return GameStrings.stepsCount(provider.todaySteps);
-        },
-        builder: (context, stepsText, _) {
-          return Container(
-            height: 38,
-            padding: const EdgeInsets.only(
-              left: 10,
-              right: 14,
-              top: 2,
-              bottom: 2,
-            ),
-            decoration: ShapeDecoration(
-              color: GameColors.backgroundMedium.withValues(alpha: 0.92),
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(20),
-                side: BorderSide(
-                  color: Palette.neonGreen.withValues(alpha: 0.25), // 에메랄드 그린 보더
-                  width: 1.2,
-                ),
-              ),
-              shadows: [
-                BoxShadow(
-                  color: Colors.black.withValues(alpha: 0.08),
-                  blurRadius: 8,
-                  offset: const Offset(0, 3),
-                ),
-              ],
-            ),
-            child: Row(
-              mainAxisSize: MainAxisSize.min,
-              crossAxisAlignment: CrossAxisAlignment.center,
-              children: [
-                const Icon(
-                  Icons.directions_run_rounded,
-                  color: Palette.neonGreen,
-                  size: 18.0,
-                ),
-                const SizedBox(width: 6),
-                Text(
-                  stepsText,
-                  style: GoogleFonts.fredoka(
-                    color: GameColors.textPrimary,
-                    fontSize: 12.0,
-                    fontWeight: FontWeight.bold,
-                    letterSpacing: 0.4,
-                  ),
-                ),
-              ],
-            ),
+      return Selector<GameProvider, bool>(
+        selector: (_, provider) => provider.isStepDenied,
+        builder: (context, denied, _) {
+          if (!denied) {
+            return Selector<GameProvider, String>(
+              selector: (context, provider) {
+                // context.locale을 명시적으로 호출하여 언어 변경 시 Selector가 다시 평가되도록 함
+                final _ = context.locale;
+                return GameStrings.stepsCount(provider.todaySteps);
+              },
+              builder: (context, text, _) => _capsule(context, text, false),
+            );
+          }
+          return GestureDetector(
+            behavior: HitTestBehavior.opaque,
+            onTap: () => _onLinkTap(context),
+            child: _capsule(context, GameStrings.linkHealthApp, true),
           );
         },
       );

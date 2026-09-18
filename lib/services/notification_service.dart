@@ -2,8 +2,10 @@ import 'dart:async';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter/foundation.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:app_badge_plus/app_badge_plus.dart';
+import 'package:url_launcher/url_launcher.dart';
 import '../core/constants/strings.dart';
 import 'preferences_service.dart';
 
@@ -105,24 +107,7 @@ class NotificationService {
             return;
           }
 
-          // 개별 알림 항목별 수신 동의 여부 필터링
           final String? type = message.data['type'] as String?;
-          if (type == 'territory_attack' &&
-              !await PreferencesService.isNotifTerritoryAttackEnabled()) {
-            debugPrint('🔔 [알림 차단] 영토 변경 알림이 비활성화 상태이므로 노출 스킵.');
-            return;
-          }
-          if (type == 'satellite_complete' &&
-              !await PreferencesService.isNotifSatelliteCompleteEnabled()) {
-            debugPrint('🔔 [알림 차단] 위성 점령 완료 알림이 비활성화 상태이므로 노출 스킵.');
-            return;
-          }
-          if (type == 'system_notice' &&
-              !await PreferencesService.isNotifSystemNoticeEnabled()) {
-            debugPrint('🔔 [알림 차단] 시스템 공지 알림이 비활성화 상태이므로 노출 스킵.');
-            return;
-          }
-
           RemoteNotification? notification = message.notification;
           if (notification != null && !kIsWeb) {
             // 포그라운드 상태에서는 OS 단말기 시스템 상단 알림 배너를 띄우지 않고, 인게임 알림 UI 팝업으로 라우팅
@@ -258,6 +243,80 @@ class NotificationService {
     } catch (e) {
       debugPrint('⚠️ 배지 초기화 실패: $e');
     }
+  }
+
+  static const MethodChannel _systemNotificationChannel =
+      MethodChannel('com.watercherry.conquest_mobile/notification');
+
+  /// OS 시스템 레벨의 알림 권한 허용 여부를 조회합니다.
+  Future<bool> checkSystemNotificationPermission() async {
+    if (kIsWeb) return true;
+
+    try {
+      if (defaultTargetPlatform == TargetPlatform.android) {
+        final bool? enabled = await _systemNotificationChannel
+            .invokeMethod<bool>('areNotificationsEnabled');
+        return enabled ?? true;
+      } else if (defaultTargetPlatform == TargetPlatform.iOS) {
+        final fcm = _fcm ?? FirebaseMessaging.instance;
+        final settings = await fcm.getNotificationSettings();
+        return settings.authorizationStatus == AuthorizationStatus.authorized ||
+            settings.authorizationStatus == AuthorizationStatus.provisional;
+      }
+    } catch (e) {
+      debugPrint('⚠️ OS 알림 권한 확인 실패: $e');
+    }
+    return true;
+  }
+
+  /// OS 시스템 알림 권한을 사용자에게 요청합니다.
+  Future<bool> requestSystemNotificationPermission() async {
+    if (kIsWeb) return true;
+
+    try {
+      if (defaultTargetPlatform == TargetPlatform.android) {
+        final granted = await _localNotifications
+            .resolvePlatformSpecificImplementation<
+              AndroidFlutterLocalNotificationsPlugin
+            >()
+            ?.requestNotificationsPermission();
+        return granted ?? await checkSystemNotificationPermission();
+      } else if (defaultTargetPlatform == TargetPlatform.iOS) {
+        final fcm = _fcm ?? FirebaseMessaging.instance;
+        final settings = await fcm.requestPermission(
+          alert: true,
+          badge: true,
+          sound: true,
+        );
+        return settings.authorizationStatus == AuthorizationStatus.authorized ||
+            settings.authorizationStatus == AuthorizationStatus.provisional;
+      }
+    } catch (e) {
+      debugPrint('⚠️ OS 알림 권한 요청 실패: $e');
+    }
+    return false;
+  }
+
+  /// 스마트폰의 OS 앱 알림 설정 화면으로 이동합니다.
+  Future<bool> openSystemNotificationSettings() async {
+    if (kIsWeb) return false;
+
+    try {
+      if (defaultTargetPlatform == TargetPlatform.android) {
+        final bool? opened = await _systemNotificationChannel
+            .invokeMethod<bool>('openNotificationSettings');
+        if (opened == true) return true;
+      }
+
+      // iOS 및 Android 폴백: app-settings: 스킴 시도
+      final Uri appSettingsUri = Uri.parse('app-settings:');
+      if (await canLaunchUrl(appSettingsUri)) {
+        return await launchUrl(appSettingsUri);
+      }
+    } catch (e) {
+      debugPrint('⚠️ OS 알림 설정 화면 이동 실패: $e');
+    }
+    return false;
   }
 }
 

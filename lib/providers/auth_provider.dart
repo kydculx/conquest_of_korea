@@ -389,6 +389,25 @@ class AuthProvider extends ChangeNotifier {
     }
   }
 
+  /// 푸시 알림 수신 동의 상태 단일 업데이트
+  Future<void> updateNotificationEnabled(bool isEnabled) async {
+    final currentProfile = _profile;
+    if (currentProfile == null) return;
+
+    _setLoading(true);
+    try {
+      final updatedProfile = currentProfile.copyWith(
+        isNotificationsEnabled: isEnabled,
+        lastSessionId: _localSessionId,
+      );
+      await _authService.updateProfile(updatedProfile);
+      _profile = updatedProfile;
+      notifyListeners();
+    } finally {
+      _setLoading(false);
+    }
+  }
+
   /// 4대 알림 수신 동의 상태 일괄 업데이트
   Future<void> updateGranularNotifications({
     required bool isMasterEnabled,

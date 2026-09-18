@@ -188,11 +188,6 @@ class GameProvider extends ChangeNotifier with WidgetsBindingObserver {
   // --- Public Getters (Notification — NotificationController 위임) ---
   bool get isNotificationEnabled =>
       _notificationController.isNotificationEnabled;
-  bool get isNotifTerritoryAttack =>
-      _notificationController.isNotifTerritoryAttack;
-  bool get isNotifSatelliteComplete =>
-      _notificationController.isNotifSatelliteComplete;
-  bool get isNotifSystemNotice => _notificationController.isNotifSystemNotice;
 
   // --- Public Getters (Map — MapViewController 위임) ---
   bool get isMapRotationMode => _mapView.isMapRotationMode;
@@ -395,45 +390,20 @@ class GameProvider extends ChangeNotifier with WidgetsBindingObserver {
     _notificationController = NotificationController(
       onStateChanged: notifyListeners,
       getUserId: () => _userId,
-      onSyncToRemote: ({
-        required bool isMasterEnabled,
-        required bool territoryAttack,
-        required bool satelliteComplete,
-        required bool systemNotice,
-      }) async {
+      onSyncToRemote: ({required bool isMasterEnabled}) async {
         if (_isAuthenticated) {
           try {
-            await _authProvider!.updateGranularNotifications(
-              isMasterEnabled: isMasterEnabled,
-              territoryAttack: territoryAttack,
-              satelliteComplete: satelliteComplete,
-              systemNotice: systemNotice,
-            );
+            await _authProvider!.updateNotificationEnabled(isMasterEnabled);
           } catch (e) {
-            debugPrint('⚠️ 원격 DB 프로필 알림 일괄 동기화 실패: $e');
+            debugPrint('⚠️ 원격 DB 프로필 알림 동기화 실패: $e');
           }
         }
       },
     );
     NotificationService().onForegroundMessageReceived = (title, body, type) {
-      // 본인이 직접 수행한 위성 점령은 로컬 화면에서 이미 성공 배너가 표시되었으므로 중복 방지
-      if (type == 'satellite_complete') {
-        debugPrint('🔔 [포그라운드 FCM 중복 차단] satellite_complete 알림은 로컬 화면에 이미 표시되어 배너 생성을 무시합니다.');
-        return;
-      }
-
-      final alertType = switch (type) {
-        'territory_attack' => AlertType.error,
-        'system_notice' => AlertType.info,
-        _ => AlertType.info,
-      };
-
       final message = title.isNotEmpty ? '[$title] $body' : body;
-      _alertManager.add(message, alertType);
-
-      if (type == 'territory_attack') {
-        AudioService().playNotification();
-      }
+      _alertManager.add(message, AlertType.info);
+      AudioService().playNotification();
     };
 
     // 틸 프로바이더 침공 감지 시 알림/금/반격 처리
@@ -562,12 +532,8 @@ class GameProvider extends ChangeNotifier with WidgetsBindingObserver {
   }
 
   /// [setAuthProvider]가 같은 사용자/같은 알림 설정으로 중복 호출될 때를 막는 가드.
-  /// ProxyProvider 갱신이 부팅 직후 여러 번 발화되어 FCM 토픽 동기화가 폭주하는 것을 차단한다.
   String? _lastNotifSyncUserId;
   bool? _lastNotifMaster;
-  bool? _lastNotifTerritory;
-  bool? _lastNotifSatellite;
-  bool? _lastNotifNotice;
 
   void setAuthProvider(AuthProvider auth) {
     final oldProfile = _profile;
@@ -586,17 +552,11 @@ class GameProvider extends ChangeNotifier with WidgetsBindingObserver {
         // 알림 설정 동기화: 동일 사용자/동일 설정이면 FCM 토픽 재호출 생략
         final p = auth.profile!;
         final sameNotifState = _lastNotifSyncUserId == p.id &&
-            _lastNotifMaster == p.isNotificationsEnabled &&
-            _lastNotifTerritory == p.notifTerritoryAttack &&
-            _lastNotifSatellite == p.notifSatelliteComplete &&
-            _lastNotifNotice == p.notifSystemNotice;
+            _lastNotifMaster == p.isNotificationsEnabled;
         if (!sameNotifState) {
           _notificationController.syncFromProfile(p);
           _lastNotifSyncUserId = p.id;
           _lastNotifMaster = p.isNotificationsEnabled;
-          _lastNotifTerritory = p.notifTerritoryAttack;
-          _lastNotifSatellite = p.notifSatelliteComplete;
-          _lastNotifNotice = p.notifSystemNotice;
         }
       }
 
@@ -615,9 +575,6 @@ class GameProvider extends ChangeNotifier with WidgetsBindingObserver {
       _captureController.cancelCapture();
       _lastNotifSyncUserId = null;
       _lastNotifMaster = null;
-      _lastNotifTerritory = null;
-      _lastNotifSatellite = null;
-      _lastNotifNotice = null;
     }
     notifyListeners();
   }
@@ -660,13 +617,31 @@ class GameProvider extends ChangeNotifier with WidgetsBindingObserver {
   Future<void> updateStepsState() async {
     try {
       final steps = await HealthService.instance.getTodaySteps();
-      if (_todaySteps != steps) {
+      final denied = HealthService.instance.isDenied;
+      if (_todaySteps != steps || _isStepDenied != denied) {
         _todaySteps = steps;
+        _isStepDenied = denied;
         notifyListeners();
       }
     } catch (e) {
       debugPrint('⚠️ 걸음수 데이터 업데이트 중 에러: $e');
     }
+  }
+
+  /// 건강 앱 연동 거부 상태 (걸음수 캡슐 안내 표시용)
+  bool _isStepDenied = false;
+  bool get isStepDenied => _isStepDenied;
+
+  /// 건강 앱 연동 명시 재요청 (사용자 탭 시 1회만 호출)
+  Future<void> retryStepPermissions() async {
+    await HealthService.instance.requestStepPermissions();
+    await updateStepsState();
+  }
+
+  /// 시스템 설정에서 연동하고 돌아온 경우 거부 확정 해제 후 재확인
+  Future<void> refreshStepPermissions() async {
+    HealthService.instance.resetDenial();
+    await updateStepsState();
   }
 
   // --- 백그라운드 폴링 ---
@@ -1036,17 +1011,14 @@ class GameProvider extends ChangeNotifier with WidgetsBindingObserver {
   }
 
   // --- Notification (NotificationController 위임) ---
-  Future<void> toggleNotifications() =>
+  Future<bool> toggleNotifications() =>
       _notificationController.toggleNotifications();
 
-  Future<void> toggleNotifTerritoryAttack() =>
-      _notificationController.toggleNotifTerritoryAttack();
+  Future<bool> checkAndSyncSystemNotificationPermission() =>
+      _notificationController.checkAndSyncSystemPermission();
 
-  Future<void> toggleNotifSatelliteComplete() =>
-      _notificationController.toggleNotifSatelliteComplete();
-
-  Future<void> toggleNotifSystemNotice() =>
-      _notificationController.toggleNotifSystemNotice();
+  Future<bool> openNotificationSettings() =>
+      _notificationController.openSystemNotificationSettings();
 
   // --- Satellite Scan / Footprint Selection (TileSelectionController 위임) ---
   void toggleScanMode() => _tileSelection.toggleScanMode();
@@ -1185,6 +1157,8 @@ class GameProvider extends ChangeNotifier with WidgetsBindingObserver {
         _tileProvider.refreshTilesFromServer(); // 복귀 시 전체 점령 타일 1회 동기화
       }
       // 앱이 다시 포그라운드로 올 때 걸음수 즉시 갱신
+      // (설정 화면에서 연동하고 복귀한 경우 거부 확정 해제 후 재확인)
+      HealthService.instance.resetDenial();
       updateStepsState();
     } else if (state == AppLifecycleState.paused ||
         state == AppLifecycleState.inactive) {

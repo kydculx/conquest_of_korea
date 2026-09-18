@@ -12,7 +12,6 @@ import '../widgets/profile_widgets.dart';
 import '../widgets/profile/account_dialogs.dart';
 import '../widgets/profile/contact_support.dart';
 import '../widgets/profile/gps_accuracy_dialog.dart';
-import '../widgets/profile/notification_sub_settings.dart';
 import '../widgets/profile/nickname_change_dialog.dart';
 import '../widgets/profile/profile_header_card.dart';
 import '../widgets/profile/rebase_flow.dart';
@@ -24,8 +23,38 @@ import 'policy_webview_screen.dart';
 ///
 /// 섹션 위젯과 다이얼로그는 `views/widgets/profile/` 하위 모듈로 분리되어 있으며,
 /// 이 클래스는 전체 구성(Composition)만 담당합니다.
-class ProfileScreen extends StatelessWidget {
+class ProfileScreen extends StatefulWidget {
   const ProfileScreen({super.key});
+
+  @override
+  State<ProfileScreen> createState() => _ProfileScreenState();
+}
+
+class _ProfileScreenState extends State<ProfileScreen>
+    with WidgetsBindingObserver {
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addObserver(this);
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) {
+        context.read<GameProvider>().checkAndSyncSystemNotificationPermission();
+      }
+    });
+  }
+
+  @override
+  void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
+    super.dispose();
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state == AppLifecycleState.resumed && mounted) {
+      context.read<GameProvider>().checkAndSyncSystemNotificationPermission();
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -69,14 +98,10 @@ class ProfileScreen extends StatelessWidget {
                     subtitle: GameStrings.pushNotificationsSub,
                     trailing: Switch(
                       value: game.isNotificationEnabled,
-                      onChanged: (val) => game.toggleNotifications(),
+                      onChanged: (_) => game.openNotificationSettings(),
                       activeThumbColor: GameColors.accentNeon,
                     ),
-                  ),
-                  AnimatedSize(
-                    duration: const Duration(milliseconds: 250),
-                    curve: Curves.easeInOut,
-                    child: NotificationSubSettings(game: game),
+                    onTap: game.openNotificationSettings,
                   ),
                   const ProfileMenuDivider(),
                   ProfileMenuItem(

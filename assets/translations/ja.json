@@ -83,6 +83,9 @@
   "changeTacticalColorSub": "領土のテーマカラーを変更します。",
   "pushNotifications": "プッシュ通知の受信",
   "pushNotificationsSub": "領土の状態変化に関する通知を受信します。",
+  "notificationPermissionRequiredTitle": "通知権限が必要です",
+  "notificationPermissionRequiredBody": "通知を受け取るには、端末の設定で通知を許可してください。",
+  "openSettings": "設定を開く",
   "securityPolicy": "利用規約とプライバシーポリシー",
   "securityPolicySub": "利用規約とプライバシーポリシーの説明",
   "termsOfService": "利用規約",
@@ -535,5 +538,6 @@
   "photoCommentLabel": "写真のコメント",
   "photoDetailTitle": "写真の詳細",
   "languageChineseSimplified": "中国語（簡体字）",
-  "languageChineseTraditional": "中国語（繁体字）"
+  "languageChineseTraditional": "中国語（繁体字）",
+  "linkHealthApp": "歩数連携"
 }

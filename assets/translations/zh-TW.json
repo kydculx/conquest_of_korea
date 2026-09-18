@@ -83,6 +83,9 @@
   "changeTacticalColorSub": "更改領土的主題顏色",
   "pushNotifications": "接收推送通知",
   "pushNotificationsSub": "接收領土狀態變化的通知",
+  "notificationPermissionRequiredTitle": "需要通知權限",
+  "notificationPermissionRequiredBody": "若要接收通知，請在裝置設定中開啟通知權限。",
+  "openSettings": "前往設定",
   "securityPolicy": "服務條款與隱私政策",
   "securityPolicySub": "服務條款與隱私政策說明",
   "termsOfService": "服務條款",
@@ -535,5 +538,6 @@
   "photoCommentLabel": "照片備註",
   "photoDetailTitle": "照片詳情",
   "languageChineseSimplified": "簡體中文 (Simplified Chinese)",
-  "languageChineseTraditional": "繁體中文 (Traditional Chinese)"
+  "languageChineseTraditional": "繁體中文 (Traditional Chinese)",
+  "linkHealthApp": "連接步數"
 }

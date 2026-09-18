@@ -83,6 +83,9 @@
   "changeTacticalColorSub": "Change the color of your land",
   "pushNotifications": "Push Notifications",
   "pushNotificationsSub": "Receive capture & territory status alerts",
+  "notificationPermissionRequiredTitle": "Notification Permission Required",
+  "notificationPermissionRequiredBody": "Please enable notifications in device settings to receive alerts.",
+  "openSettings": "Go to Settings",
   "securityPolicy": "Security Policy",
   "securityPolicySub": "Data protection and terms of service",
   "termsOfService": "Terms of Service",
@@ -535,5 +538,6 @@
   "photoCommentLabel": "Photo Comment",
   "photoDetailTitle": "Photo Detail",
   "languageChineseSimplified": "Chinese Simplified (중국어 간체)",
-  "languageChineseTraditional": "Chinese Traditional (중국어 번체)"
+  "languageChineseTraditional": "Chinese Traditional (중국어 번체)",
+  "linkHealthApp": "Connect Steps"
 }

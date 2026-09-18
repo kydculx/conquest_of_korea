@@ -385,13 +385,16 @@ class _GameScreenState extends State<GameScreen> {
 
           // 알림 레이어 (알림 리스트 변동 시에만 국한 리빌드)
           Positioned(
-            top: topOffset + 90.0,
+            top: topOffset + 132.0,
             left: 20,
             right: 20,
             child: Selector<GameProvider, List<GameAlert>>(
               selector: (_, provider) => provider.alerts,
               builder: (context, alerts, child) {
-                return TacticalAlertList(alerts: alerts);
+                if (alerts.isEmpty) return const SizedBox.shrink();
+                return IgnorePointer(
+                  child: TacticalAlertList(alerts: alerts),
+                );
               },
             ),
           ),
