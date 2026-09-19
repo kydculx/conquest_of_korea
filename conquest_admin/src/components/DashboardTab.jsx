@@ -74,6 +74,8 @@ export default function DashboardTab() {
   const darkTileLayer = useRef(null);
   const satelliteTileLayer = useRef(null);
   const [isSatellite, setIsSatellite] = useState(false);
+  const [mapReady, setMapReady] = useState(false);
+  const initialFitDone = useRef(false);
 
   const handleGoToMyLocation = () => {
     if (!mapInstance.current) return;
@@ -113,18 +115,36 @@ export default function DashboardTab() {
   // 데이터 통합 로딩 함수
   const loadData = async () => {
     try {
-      const [tilesData, usersData, photosData] = await Promise.all([
+      const fetchAllPhotos = async () => {
+        const PAGE_SIZE = 1000;
+        let allRows = [];
+        let from = 0;
+        for (let guard = 0; guard < 10; guard++) {
+          const { data, error } = await supabase
+            .from('tile_photos')
+            .select('*')
+            .order('created_at', { ascending: false })
+            .range(from, from + PAGE_SIZE - 1);
+          if (error) throw error;
+          const rows = data || [];
+          allRows = allRows.concat(rows);
+          if (rows.length < PAGE_SIZE) break;
+          from += PAGE_SIZE;
+        }
+        return allRows;
+      };
+      const [tilesData, usersData, photosRows] = await Promise.all([
         fetchTiles(),
         fetchUsers(),
-        supabase.from('tile_photos').select('*').order('created_at', { ascending: false })
+        fetchAllPhotos(),
       ]);
       setTiles(tilesData);
       setUsers(usersData);
-      setPhotos(photosData.data || []);
+      setPhotos(photosRows || []);
 
       const counts = {};
-      if (photosData.data) {
-        photosData.data.forEach(p => {
+      if (photosRows) {
+        photosRows.forEach(p => {
           const tid = p.tile_id;
           counts[tid] = (counts[tid] || 0) + 1;
         });
@@ -192,6 +212,7 @@ export default function DashboardTab() {
 
     polygonsGroup.current = L.layerGroup().addTo(map);
     mapInstance.current = map;
+    setMapReady(true);
 
     // 리액트 마운트 시 컨테이너 크기 왜곡 현상을 방지하기 위해 맵 레이아웃 갱신 강제 기동
     setTimeout(() => {
@@ -221,32 +242,50 @@ export default function DashboardTab() {
 
   // 2. 점령지 데이터 수신 시 헥사곤 폴리곤 실시간 렌더링
   useEffect(() => {
-    if (!mapInstance.current || !polygonsGroup.current) return;
+    if (!mapReady || !mapInstance.current || !polygonsGroup.current) return;
 
     polygonsGroup.current.clearLayers();
 
     if (tiles.length === 0) return;
 
-    let centerSet = false;
+    const bounds = [];
+    let renderedCount = 0;
 
     tiles.forEach(tile => {
-      const corners = getHexCorners(tile.q, tile.r);
+      let q = Number(tile.q);
+      let r = Number(tile.r);
+      if (Number.isNaN(q) || Number.isNaN(r)) {
+        const parts = String(tile.id || '').split('_');
+        if (parts.length >= 3) {
+          q = parseInt(parts[parts.length - 2], 10);
+          r = parseInt(parts[parts.length - 1], 10);
+        }
+        if (Number.isNaN(q) || Number.isNaN(r)) return;
+      }
+      let corners;
+      try {
+        corners = getHexCorners(q, r);
+      } catch {
+        return;
+      }
+      if (!corners || corners.length !== 6) return;
       const user = users.find(u => u.id === tile.user_id);
-      const ownerName = user ? user.nickname : '미등록 사용자';
-      const color = '#00e5ff';
-      const tileId = `hex_${tile.q}_${tile.r}`;
+      const ownerName = user ? (user.nickname || '미등록 사용자') : '미등록 사용자';
+      const rawColor = tile.color_hex || user?.color_hex || '#00e5ff';
+      const color = /^#[0-9a-fA-F]{6}$/.test(rawColor) ? rawColor : '#00e5ff';
+      const tileId = tile.id || `hex_${q}_${r}`;
       const isHQ = hqParam === tileId;
 
       const polygon = L.polygon(corners, {
         color: color,
-        weight: isHQ ? 4 : 1.5,
+        weight: isHQ ? 4 : 2,
+        opacity: 0.95,
         fillColor: color,
-        fillOpacity: isHQ ? 0.5 : 0.2,
-        dashArray: isHQ ? null : '2, 2'
+        fillOpacity: isHQ ? 0.55 : 0.45,
       });
 
       const count = photoCounts[tileId] || 0;
-      const galleryText = count > 0 
+      const galleryText = count > 0
         ? `<button onclick="window.openAdminGallery('${tileId}')" style="background: #3b82f6; color: white; border: none; padding: 2px 6px; border-radius: 4px; font-size: 0.7rem; cursor: pointer; font-weight: bold; margin-top: 2px;">사진 ${count}장 보기</button>`
         : '<span style="color: var(--text-secondary);">없음</span>';
 
@@ -257,34 +296,63 @@ export default function DashboardTab() {
       const popupContent = `
         <div style="font-family: monospace; color: var(--text-primary); line-height: 1.4; font-size: 0.8rem;">
           <strong style="color: ${color}">[사용자]</strong> ${ownerName}<br/>
-          <strong>[점령]</strong> ${tile.capture_count}회 중첩<br/>
+          <strong>[타일]</strong> ${tileId}<br/>
+          <strong>[점령]</strong> ${tile.capture_count ?? 1}회 중첩<br/>
           <strong>[점령날짜]</strong> ${capturedAt}<br/>
           <strong>[갤러리]</strong> ${galleryText}<br/>
-          <strong>[좌표]</strong> Q:${tile.q}, R:${tile.r}
+          <strong>[좌표]</strong> Q:${q}, R:${r}
         </div>
       `;
 
-      // 클릭 시 단일 팝업 연동 (마우스 오버레이 툴팁 없음)
       polygon.bindPopup(popupContent, {
         minWidth: 130
       });
 
       polygonsGroup.current.addLayer(polygon);
-
-      // 카메라 맞춤: 본진 이동(hq) 요청이 있으면 해당 타일 우선, 없으면 첫 타일 (최초 1회만)
-      if (!centerSet) {
-        const hqTile = hqParam
-          ? tiles.find(t => `hex_${t.q}_${t.r}` === hqParam)
-          : null;
-        if (hqTile) {
-          mapInstance.current.setView(hexToLatLng(hqTile.q, hqTile.r), 15);
-        } else {
-          mapInstance.current.setView(hexToLatLng(tile.q, tile.r), 14);
-        }
-        centerSet = true;
+      renderedCount += 1;
+      try {
+        bounds.push(hexToLatLng(q, r));
+      } catch {
+        // bounds 계산 실패는 무시
       }
     });
-  }, [tiles, users, photoCounts, hqParam]);
+
+    if (renderedCount === 0) return;
+
+    if (hqParam) {
+      const hqTile = tiles.find(t => t.id === hqParam || `hex_${t.q}_${t.r}` === hqParam);
+      if (hqTile) {
+        const hqQ = Number(hqTile.q);
+        const hqR = Number(hqTile.r);
+        if (!Number.isNaN(hqQ) && !Number.isNaN(hqR)) {
+          mapInstance.current.setView(hexToLatLng(hqQ, hqR), 15);
+          return;
+        }
+      }
+      const parts = hqParam.split('_');
+      if (parts.length >= 3) {
+        const q = parseInt(parts[parts.length - 2], 10);
+        const r = parseInt(parts[parts.length - 1], 10);
+        if (!Number.isNaN(q) && !Number.isNaN(r)) {
+          mapInstance.current.setView(hexToLatLng(q, r), 15);
+          return;
+        }
+      }
+    }
+
+    if (!initialFitDone.current && bounds.length > 0) {
+      initialFitDone.current = true;
+      try {
+        if (bounds.length === 1) {
+          mapInstance.current.setView(bounds[0], 14);
+        } else {
+          mapInstance.current.fitBounds(L.latLngBounds(bounds), { padding: [40, 40] });
+        }
+      } catch {
+        mapInstance.current.setView(bounds[0], 14);
+      }
+    }
+  }, [tiles, users, photoCounts, hqParam, mapReady]);
 
   // 2-1. 본진 이동(hq) 파라미터 시 지도 포커스 + 하이라이트 마커 표시
   useEffect(() => {
@@ -296,9 +364,9 @@ export default function DashboardTab() {
     if (!mapInstance.current || !hqParam) return;
 
     const parts = hqParam.split('_');
-    if (parts.length !== 3) return;
-    const q = parseInt(parts[1], 10);
-    const r = parseInt(parts[2], 10);
+    if (parts.length < 3) return;
+    const q = parseInt(parts[parts.length - 2], 10);
+    const r = parseInt(parts[parts.length - 1], 10);
     if (Number.isNaN(q) || Number.isNaN(r)) return;
 
     const center = hexToLatLng(q, r);
@@ -311,7 +379,7 @@ export default function DashboardTab() {
       iconAnchor: [9, 9]
     });
     hqMarker.current = L.marker(center, { icon: hqIcon }).addTo(mapInstance.current);
-  }, [hqParam]);
+  }, [hqParam, mapReady]);
 
   if (error) {
     return <div style={{ color: 'var(--accent-red)', padding: '2rem' }}>{error}</div>;
@@ -326,10 +394,15 @@ export default function DashboardTab() {
 
         {/* Leaflet 실시간 점령 지도 */}
         <div className="tactical-card map-card">
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '0.5rem' }}>
             <h3 style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', fontSize: '1.1rem', color: 'var(--text-primary)' }}>
               <Radio size={18} style={{ color: 'var(--accent-cyan)' }} />
               맵 모니터
+              {!loading && (
+                <span style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', fontWeight: 400 }}>
+                  {tiles.length.toLocaleString()}개 타일 표시 중
+                </span>
+              )}
             </h3>
             <span style={{ fontSize: '0.75rem', color: 'var(--accent-cyan)', background: 'rgba(59, 130, 246, 0.05)', padding: '0.2rem 0.5rem', borderRadius: '4px', border: '1px solid rgba(59, 130, 246, 0.15)' }}>
               REALTIME DATA FEED
@@ -360,6 +433,17 @@ export default function DashboardTab() {
                 zIndex: 10, borderRadius: '8px'
               }}>
                 <div className="tactical-spinner" style={{ margin: 0 }} />
+              </div>
+            )}
+            {!loading && tiles.length === 0 && !error && (
+              <div style={{
+                position: 'absolute', top: 0, left: 0, width: '100%', height: '100%',
+                display: 'flex', alignItems: 'center', justifyContent: 'center',
+                zIndex: 5, pointerEvents: 'none'
+              }}>
+                <span style={{ fontSize: '0.85rem', color: 'var(--text-muted)' }}>
+                  표시할 점령 타일이 없습니다
+                </span>
               </div>
             )}
           </div>

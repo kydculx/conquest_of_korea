@@ -53,12 +53,22 @@ export async function fetchDashboardStats() {
  * 2. 사용자(User) 관리 API
  */
 export async function fetchUsers() {
-  const { data, error } = await supabase
-    .from('profiles')
-    .select('*')
-    .order('created_at', { ascending: false });
-  if (error) throw error;
-  return data || [];
+  const PAGE_SIZE = 1000;
+  let allRows = [];
+  let from = 0;
+  for (let guard = 0; guard < 20; guard++) {
+    const { data, error } = await supabase
+      .from('profiles')
+      .select('*')
+      .order('created_at', { ascending: false })
+      .range(from, from + PAGE_SIZE - 1);
+    if (error) throw error;
+    const rows = data || [];
+    allRows = allRows.concat(rows);
+    if (rows.length < PAGE_SIZE) break;
+    from += PAGE_SIZE;
+  }
+  return allRows;
 }
 
 export async function updateUserGold(userId, goldAmount) {
@@ -94,22 +104,43 @@ export async function deleteUser(userId) {
  * 3. 영토(Tile) 및 점령 현황 제어 API
  */
 export async function fetchTiles() {
-  const { data, error } = await supabase
-    .from('captured_tiles')
-    .select('*')
-    .order('captured_at', { ascending: false });
-  if (error) throw error;
-  return data || [];
+  // PostgREST 기본 1000행 제한 우회: range 페이지네이션으로 전체 수집
+  const PAGE_SIZE = 1000;
+  let allRows = [];
+  let from = 0;
+  for (let guard = 0; guard < 20; guard++) {
+    const { data, error } = await supabase
+      .from('captured_tiles')
+      .select('*')
+      .order('captured_at', { ascending: false })
+      .range(from, from + PAGE_SIZE - 1);
+    if (error) throw error;
+    const rows = data || [];
+    allRows = allRows.concat(rows);
+    if (rows.length < PAGE_SIZE) break;
+    from += PAGE_SIZE;
+  }
+  return allRows;
 }
 
 export async function fetchUserCapturedTiles(userId) {
-  const { data, error } = await supabase
-    .from('captured_tiles')
-    .select('*')
-    .eq('user_id', userId)
-    .order('captured_at', { ascending: false });
-  if (error) throw error;
-  return data || [];
+  const PAGE_SIZE = 1000;
+  let allRows = [];
+  let from = 0;
+  for (let guard = 0; guard < 20; guard++) {
+    const { data, error } = await supabase
+      .from('captured_tiles')
+      .select('*')
+      .eq('user_id', userId)
+      .order('captured_at', { ascending: false })
+      .range(from, from + PAGE_SIZE - 1);
+    if (error) throw error;
+    const rows = data || [];
+    allRows = allRows.concat(rows);
+    if (rows.length < PAGE_SIZE) break;
+    from += PAGE_SIZE;
+  }
+  return allRows;
 }
 
 export async function neutralizeTile(tileId) {
