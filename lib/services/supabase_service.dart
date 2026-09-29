@@ -452,15 +452,27 @@ class SupabaseService {
   }
 
   /// 특정 사용자의 모든 발자취 기록을 조회합니다.
+  /// PostgREST 기본 1000행 제한 우회를 위해 range 페이지네이션으로 전체 수집합니다.
   Future<List<FootprintTile>> fetchUserFootprints(String userId) async {
     try {
-      final response = await _client
-          .from('user_footprints')
-          .select('*')
-          .eq('user_id', userId);
-      return (response as List)
-          .map((e) => FootprintTile.fromJson(_toMap(e)))
-          .toList();
+      const pageSize = 1000;
+      final all = <FootprintTile>[];
+      var from = 0;
+      for (var guard = 0; guard < 20; guard++) {
+        final response = await _client
+            .from('user_footprints')
+            .select('*')
+            .eq('user_id', userId)
+            .order('recorded_at', ascending: false)
+            .range(from, from + pageSize - 1);
+        final rows = (response as List)
+            .map((e) => FootprintTile.fromJson(_toMap(e)))
+            .toList();
+        all.addAll(rows);
+        if (rows.length < pageSize) break;
+        from += pageSize;
+      }
+      return all;
     } catch (e) {
       debugPrint('❌ 발자취 목록 조회 실패: $e');
       return [];
