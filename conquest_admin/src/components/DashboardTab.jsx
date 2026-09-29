@@ -1,6 +1,6 @@
 import React, { useEffect, useState, useRef } from 'react';
-import { useSearchParams } from 'react-router-dom';
-import { fetchTiles, fetchUsers } from '../api';
+import { useSearchParams, useNavigate } from 'react-router-dom';
+import { fetchTiles, fetchUsers, fetchUserFootprints } from '../api';
 import { supabase } from '../supabase';
 import { Radio, Compass, Layers } from 'lucide-react';
 import L from 'leaflet';
@@ -43,7 +43,10 @@ function getHexCorners(q, r) {
 export default function DashboardTab() {
 
   const [searchParams] = useSearchParams();
+  const navigate = useNavigate();
   const hqParam = searchParams.get('hq');
+  const footprintsUserId = searchParams.get('footprints');
+  const footprintNickname = searchParams.get('nickname') || '';
 
   const [tiles, setTiles] = useState([]);
   const [users, setUsers] = useState([]);
@@ -51,6 +54,11 @@ export default function DashboardTab() {
   const [photoCounts, setPhotoCounts] = useState({});
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+
+  const [footprintTiles, setFootprintTiles] = useState([]);
+  const [footprintLoadedId, setFootprintLoadedId] = useState(null);
+  const [footprintError, setFootprintError] = useState(null);
+  const footprintLoading = !!footprintsUserId && footprintLoadedId !== footprintsUserId;
 
   const [selectedTileId, setSelectedTileId] = useState(null);
   const [isGalleryOpen, setIsGalleryOpen] = useState(false);
@@ -185,6 +193,42 @@ export default function DashboardTab() {
     };
   }, []);
 
+  // 1-3. 발자취 조회
+  useEffect(() => {
+    if (!footprintsUserId) return;
+    let active = true;
+    const applyRows = (rows) => {
+      if (!active) return;
+      setFootprintTiles(rows || []);
+      setFootprintError(null);
+      setFootprintLoadedId(footprintsUserId);
+    };
+    const failLoad = (err) => {
+      console.error(err);
+      if (!active) return;
+      setFootprintTiles([]);
+      setFootprintError('발자취를 불러오지 못했습니다. 관리자 조회 권한(RLS)을 확인해 주세요.');
+      setFootprintLoadedId(footprintsUserId);
+    };
+    fetchUserFootprints(footprintsUserId).then(applyRows).catch(failLoad);
+
+    const fpChannel = supabase
+      .channel(`footprints-${footprintsUserId}`)
+      .on(
+        'postgres_changes',
+        { event: '*', schema: 'public', table: 'user_footprints', filter: `user_id=eq.${footprintsUserId}` },
+        () => {
+          fetchUserFootprints(footprintsUserId).then(applyRows).catch(failLoad);
+        }
+      )
+      .subscribe();
+
+    return () => {
+      active = false;
+      supabase.removeChannel(fpChannel);
+    };
+  }, [footprintsUserId]);
+
   // 1. Leaflet 맵 초기화
   useEffect(() => {
     if (!mapRef.current) return;
@@ -246,12 +290,22 @@ export default function DashboardTab() {
 
     polygonsGroup.current.clearLayers();
 
-    if (tiles.length === 0) return;
+    const footprintMode = !!footprintsUserId;
+    const sourceTiles = footprintMode
+      ? footprintTiles.map(f => ({
+          id: f.tile_id,
+          user_id: footprintsUserId,
+          color_hex: '#00FFCC',
+          recorded_at: f.recorded_at,
+        }))
+      : tiles;
+
+    if (sourceTiles.length === 0) return;
 
     const bounds = [];
     let renderedCount = 0;
 
-    tiles.forEach(tile => {
+    sourceTiles.forEach(tile => {
       let q = Number(tile.q);
       let r = Number(tile.r);
       if (Number.isNaN(q) || Number.isNaN(r)) {
@@ -270,7 +324,7 @@ export default function DashboardTab() {
       }
       if (!corners || corners.length !== 6) return;
       const user = users.find(u => u.id === tile.user_id);
-      const ownerName = user ? (user.nickname || '미등록 사용자') : '미등록 사용자';
+      const ownerName = footprintNickname || (user ? (user.nickname || '미등록 사용자') : '미등록 사용자');
       const rawColor = tile.color_hex || user?.color_hex || '#00e5ff';
       const color = /^#[0-9a-fA-F]{6}$/.test(rawColor) ? rawColor : '#00e5ff';
       const tileId = tile.id || `hex_${q}_${r}`;
@@ -289,16 +343,18 @@ export default function DashboardTab() {
         ? `<button onclick="window.openAdminGallery('${tileId}')" style="background: #3b82f6; color: white; border: none; padding: 2px 6px; border-radius: 4px; font-size: 0.7rem; cursor: pointer; font-weight: bold; margin-top: 2px;">사진 ${count}장 보기</button>`
         : '<span style="color: var(--text-secondary);">없음</span>';
 
-      const capturedAt = tile.captured_at
-        ? new Date(tile.captured_at).toLocaleString('ko-KR')
+      const capturedAt = (footprintMode ? tile.recorded_at : tile.captured_at)
+        ? new Date(footprintMode ? tile.recorded_at : tile.captured_at).toLocaleString('ko-KR')
         : '-';
 
       const popupContent = `
         <div style="font-family: monospace; color: var(--text-primary); line-height: 1.4; font-size: 0.8rem;">
           <strong style="color: ${color}">[사용자]</strong> ${ownerName}<br/>
           <strong>[타일]</strong> ${tileId}<br/>
-          <strong>[점령]</strong> ${tile.capture_count ?? 1}회 중첩<br/>
-          <strong>[점령날짜]</strong> ${capturedAt}<br/>
+          ${footprintMode
+            ? `<strong>[발자취]</strong> ${capturedAt}<br/>`
+            : `<strong>[점령]</strong> ${tile.capture_count ?? 1}회 중첩<br/>
+          <strong>[점령날짜]</strong> ${capturedAt}<br/>`}
           <strong>[갤러리]</strong> ${galleryText}<br/>
           <strong>[좌표]</strong> Q:${q}, R:${r}
         </div>
@@ -318,6 +374,19 @@ export default function DashboardTab() {
     });
 
     if (renderedCount === 0) return;
+
+    if (footprintMode) {
+      try {
+        if (bounds.length === 1) {
+          mapInstance.current.setView(bounds[0], 14);
+        } else if (bounds.length > 1) {
+          mapInstance.current.fitBounds(L.latLngBounds(bounds), { padding: [40, 40] });
+        }
+      } catch {
+        // bounds 계산 실패는 무시
+      }
+      return;
+    }
 
     if (hqParam) {
       const hqTile = tiles.find(t => t.id === hqParam || `hex_${t.q}_${t.r}` === hqParam);
@@ -352,7 +421,7 @@ export default function DashboardTab() {
         mapInstance.current.setView(bounds[0], 14);
       }
     }
-  }, [tiles, users, photoCounts, hqParam, mapReady]);
+  }, [tiles, users, photoCounts, hqParam, mapReady, footprintTiles, footprintsUserId, footprintNickname]);
 
   // 2-1. 본진 이동(hq) 파라미터 시 지도 포커스 + 하이라이트 마커 표시
   useEffect(() => {
@@ -361,7 +430,7 @@ export default function DashboardTab() {
       hqMarker.current = null;
     }
 
-    if (!mapInstance.current || !hqParam) return;
+    if (!mapInstance.current || !hqParam || footprintsUserId) return;
 
     const parts = hqParam.split('_');
     if (parts.length < 3) return;
@@ -379,7 +448,7 @@ export default function DashboardTab() {
       iconAnchor: [9, 9]
     });
     hqMarker.current = L.marker(center, { icon: hqIcon }).addTo(mapInstance.current);
-  }, [hqParam, mapReady]);
+  }, [hqParam, mapReady, footprintsUserId]);
 
   if (error) {
     return <div style={{ color: 'var(--accent-red)', padding: '2rem' }}>{error}</div>;
@@ -392,15 +461,43 @@ export default function DashboardTab() {
       {/* 상황판 맵 모니터 그리드 */}
       <div style={{ display: 'grid', gridTemplateColumns: '1fr', gap: '1.5rem' }}>
 
+        {footprintsUserId && (
+          <div className="tactical-card" style={{ display: 'flex', alignItems: 'center', gap: '0.8rem', flexWrap: 'wrap', borderColor: 'rgba(0, 255, 204, 0.35)' }}>
+            <span style={{ width: '12px', height: '12px', borderRadius: '3px', backgroundColor: '#00FFCC', display: 'inline-block' }} />
+            <span style={{ fontWeight: 'bold', color: 'var(--text-primary)' }}>
+              {footprintNickname ? `${footprintNickname}님의 발자취만 표시 중` : '선택한 사용자의 발자취만 표시 중'}
+            </span>
+            {!footprintLoading && !footprintError && (
+              <span style={{ fontSize: '0.8rem', color: 'var(--text-secondary)' }}>
+                총 {footprintTiles.length.toLocaleString()}개
+              </span>
+            )}
+            {footprintLoading && (
+              <span style={{ fontSize: '0.8rem', color: 'var(--text-secondary)' }}>불러오는 중...</span>
+            )}
+            {footprintError && (
+              <span style={{ fontSize: '0.8rem', color: 'var(--accent-red)' }}>{footprintError}</span>
+            )}
+            <button className="tactical-btn" onClick={() => navigate('/admin/dashboard')} style={{ marginLeft: 'auto' }}>
+              전체 보기로 돌아가기
+            </button>
+          </div>
+        )}
+
         {/* Leaflet 실시간 점령 지도 */}
         <div className="tactical-card map-card">
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '0.5rem' }}>
             <h3 style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', fontSize: '1.1rem', color: 'var(--text-primary)' }}>
               <Radio size={18} style={{ color: 'var(--accent-cyan)' }} />
               맵 모니터
-              {!loading && (
+              {!loading && !footprintsUserId && (
                 <span style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', fontWeight: 400 }}>
                   {tiles.length.toLocaleString()}개 타일 표시 중
+                </span>
+              )}
+              {footprintsUserId && !footprintLoading && !footprintError && (
+                <span style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', fontWeight: 400 }}>
+                  {footprintTiles.length.toLocaleString()}개 발자취 표시 중
                 </span>
               )}
             </h3>
@@ -435,7 +532,7 @@ export default function DashboardTab() {
                 <div className="tactical-spinner" style={{ margin: 0 }} />
               </div>
             )}
-            {!loading && tiles.length === 0 && !error && (
+            {!loading && tiles.length === 0 && !error && !footprintsUserId && (
               <div style={{
                 position: 'absolute', top: 0, left: 0, width: '100%', height: '100%',
                 display: 'flex', alignItems: 'center', justifyContent: 'center',
@@ -443,6 +540,17 @@ export default function DashboardTab() {
               }}>
                 <span style={{ fontSize: '0.85rem', color: 'var(--text-muted)' }}>
                   표시할 점령 타일이 없습니다
+                </span>
+              </div>
+            )}
+            {footprintsUserId && !footprintLoading && footprintTiles.length === 0 && !footprintError && (
+              <div style={{
+                position: 'absolute', top: 0, left: 0, width: '100%', height: '100%',
+                display: 'flex', alignItems: 'center', justifyContent: 'center',
+                zIndex: 5, pointerEvents: 'none'
+              }}>
+                <span style={{ fontSize: '0.85rem', color: 'var(--text-muted)' }}>
+                  해당 사용자의 발자취가 없습니다
                 </span>
               </div>
             )}

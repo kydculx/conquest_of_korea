@@ -143,6 +143,26 @@ export async function fetchUserCapturedTiles(userId) {
   return allRows;
 }
 
+export async function fetchUserFootprints(userId) {
+  const PAGE_SIZE = 1000;
+  let allRows = [];
+  let from = 0;
+  for (let guard = 0; guard < 20; guard++) {
+    const { data, error } = await supabase
+      .from('user_footprints')
+      .select('id, user_id, tile_id, recorded_at')
+      .eq('user_id', userId)
+      .order('recorded_at', { ascending: false })
+      .range(from, from + PAGE_SIZE - 1);
+    if (error) throw error;
+    const rows = data || [];
+    allRows = allRows.concat(rows);
+    if (rows.length < PAGE_SIZE) break;
+    from += PAGE_SIZE;
+  }
+  return allRows;
+}
+
 export async function neutralizeTile(tileId) {
   const { error } = await supabase
     .from('captured_tiles')
