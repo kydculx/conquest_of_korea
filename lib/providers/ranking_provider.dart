@@ -80,11 +80,14 @@ class RankingProvider extends ChangeNotifier {
         } else if (_currentType == RankingType.totalMovedTiles) {
           myValue = profile.totalMovedTilesCount.toDouble();
         }
-        myRankingFuture = _supabase.fetchMyRanking(
-          userId,
-          _currentType,
-          myValue,
-        );
+        // 기록값이 0 이하이면 순위를 부여하지 않음 (번호 미표시)
+        if (myValue > 0) {
+          myRankingFuture = _supabase.fetchMyRanking(
+            userId,
+            _currentType,
+            myValue,
+          );
+        }
       }
 
       // 3. 두 쿼리를 병렬 수행하여 대기 지연 최소화

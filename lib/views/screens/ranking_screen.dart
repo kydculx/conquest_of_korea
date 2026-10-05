@@ -331,13 +331,17 @@ class _RankingListView extends StatelessWidget {
         final profile = list[index];
         final isMe = profile.id == currentUserId;
 
-        // 공동 순위(Standard Competition Ranking) 계산
-        int rank = 1;
+        // 기록값이 0 이하이면 순위를 부여하지 않음 (번호 미표시)
         final myVal = _getValueForProfile(ranking.currentType, profile);
-        for (int i = 0; i < index; i++) {
-          final otherVal = _getValueForProfile(ranking.currentType, list[i]);
-          if (otherVal > myVal) {
-            rank++;
+        int rank = 0;
+        if (myVal > 0) {
+          // 공동 순위(Standard Competition Ranking) 계산
+          rank = 1;
+          for (int i = 0; i < index; i++) {
+            final otherVal = _getValueForProfile(ranking.currentType, list[i]);
+            if (otherVal > myVal) {
+              rank++;
+            }
           }
         }
 
@@ -367,6 +371,8 @@ class _RankingListTile extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    // 기록값이 0 이하이면 순위 번호를 부여하지 않음
+    final bool isUnranked = rank <= 0;
     // 1위, 2위, 3위 특별 미래지향적 메달 그라데이션 테마
     List<Color>? medalGradient;
     Color rankTextColor = Colors.white;
@@ -442,7 +448,7 @@ class _RankingListTile extends StatelessWidget {
                           ),
                           child: Center(
                             child: Text(
-                              '$rank',
+                              isUnranked ? '-' : '$rank',
                               style: GoogleFonts.quicksand(
                                 color: rankTextColor,
                                 fontSize: 13.0,
@@ -464,7 +470,7 @@ class _RankingListTile extends StatelessWidget {
                           ),
                           child: Center(
                             child: Text(
-                              '$rank',
+                              isUnranked ? '-' : '$rank',
                               style: GoogleFonts.quicksand(
                                 color: GameColors.textSecondary,
                                 fontSize: 12.5,

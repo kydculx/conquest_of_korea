@@ -169,6 +169,7 @@ class SupabaseService {
   }
 
   /// 특정 플레이어의 현재 랭킹 순위 숫자를 연산하여 반환합니다. (1부터 시작)
+  /// 기록값이 0 이하이면 순위를 부여하지 않고 0을 반환합니다.
   Future<int> fetchMyRanking(
     String userId,
     String rankType,
@@ -180,6 +181,11 @@ class SupabaseService {
               rankType == 'total_moved_tiles_count')
           ? (myValue as num).toInt()
           : myValue;
+
+      // 기록값이 0 이하이면 순위 번호 미부여
+      if ((queryVal as num) <= 0) {
+        return 0;
+      }
 
       final response = await _client
           .from('profiles')
