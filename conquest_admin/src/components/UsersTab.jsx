@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { fetchUsers, updateUserGold, updateUserMainBase, deleteUser, fetchUserAchievements } from '../api';
-import { Search, Edit2, RotateCcw, AlertTriangle, ShieldCheck, X, Trophy, Lock, Award, MapPin, Map, Footprints } from 'lucide-react';
+import { Search, Edit2, RotateCcw, ShieldCheck, X, Trophy, Lock } from 'lucide-react';
 import Pagination from './Pagination';
 
 const PAGE_SIZE = 20;
@@ -140,6 +140,12 @@ export default function UsersTab() {
     }
   };
 
+  const formatJoinedAt = (iso) => {
+    const d = new Date(iso);
+    const p = (n) => String(n).padStart(2, '0');
+    return `${String(d.getFullYear()).slice(2)}.${p(d.getMonth() + 1)}.${p(d.getDate())}-${p(d.getHours())}:${p(d.getMinutes())}`;
+  };
+
   const filteredUsers = users.filter(user =>
     user.nickname.toLowerCase().includes(searchTerm.toLowerCase()) ||
     user.id.toLowerCase().includes(searchTerm.toLowerCase())
@@ -204,14 +210,8 @@ export default function UsersTab() {
                       <div style={{ fontWeight: 600, fontSize: '0.88rem' }}>{user.nickname}</div>
                     </div>
                   </td>
-                  <td>
-                    {new Date(user.created_at).toLocaleString('ko-KR', {
-                      year: 'numeric',
-                      month: '2-digit',
-                      day: '2-digit',
-                      hour: '2-digit',
-                      minute: '2-digit'
-                    })}
+                  <td style={{ fontFamily: 'var(--font-mono)', fontSize: '0.8rem', whiteSpace: 'nowrap' }}>
+                    {formatJoinedAt(user.created_at)}
                   </td>
                   <td>
                     {editingBaseId === user.id ? (
@@ -235,7 +235,7 @@ export default function UsersTab() {
                       <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
                         {user.main_base_tile_id ? (
                           <span className="kv-value mono" style={{ color: '#8fb6ff' }}>
-                            {user.main_base_tile_id}
+                            {user.main_base_tile_id.replace(/^hex_/, '')}
                           </span>
                         ) : (
                           <span style={{ color: 'var(--text-muted)', fontSize: '0.82rem' }}>설정되지 않음</span>
@@ -252,30 +252,29 @@ export default function UsersTab() {
                   </td>
                   <td>
                     <span className="table-numeric" style={{ color: 'var(--text-primary)' }}>{user.captured_tiles_count}</span>
-                    <span className="table-unit">구역</span>
                   </td>
                   <td>
                     <div className="row-actions">
                       <button className="tactical-btn sm" onClick={() => handleGoToMainBase(user)}>
-                        <MapPin size={13} /> 본진 이동
+                        본진
                       </button>
                       <button className="tactical-btn sm" onClick={() => handleGoToUserTiles(user)}>
-                        <Map size={13} /> 점령목록
+                        점령
                       </button>
                       <button className="tactical-btn sm" onClick={() => handleGoToFootprints(user)}>
-                        <Footprints size={13} /> 발자취
+                        발자취
                       </button>
                       <button className="tactical-btn sm" onClick={() => handleViewDetails(user)}>
-                        <Award size={13} /> 업적 상세
+                        업적
                       </button>
                       <button className="tactical-btn sm" onClick={() => handleEditGold(user)}>
-                        <Edit2 size={13} /> 골드 수정
+                        골드
                       </button>
                       <button
                         className="tactical-btn sm danger"
                         onClick={() => handleDeleteUser(user)}
                       >
-                        <AlertTriangle size={13} /> 계정 삭제
+                        계정삭제
                       </button>
                     </div>
                   </td>
