@@ -24,13 +24,33 @@ import {
   X,
   Map,
   Layers,
-  LogOut
+  LogOut,
+  Sun,
+  Moon
 } from 'lucide-react';
+
+const THEME_KEY = 'conquest-admin-theme';
 
 function AdminLayout({ user, onLogout }) {
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
+  const [theme, setTheme] = useState(() => {
+    try {
+      return localStorage.getItem(THEME_KEY) || 'dark';
+    } catch {
+      return 'dark';
+    }
+  });
   const location = useLocation();
   const navigate = useNavigate();
+
+  useEffect(() => {
+    document.documentElement.dataset.theme = theme;
+    try {
+      localStorage.setItem(THEME_KEY, theme);
+    } catch {
+      return;
+    }
+  }, [theme]);
 
   const menuItems = [
     { id: 'dashboard', label: '대시보드', icon: Cpu, path: '/admin/dashboard' },
@@ -41,13 +61,23 @@ function AdminLayout({ user, onLogout }) {
     { id: 'map-editor', label: '패턴 에디터', icon: Map, path: '/admin/map-editor' },
   ];
 
-  const getPageTitle = () => {
+  const pageMeta = {
+    dashboard: { title: '대시보드', desc: '실시간 현황을 한눈에 확인합니다' },
+    ranking: { title: '사용자 랭킹', desc: '점령과 이동 기록 기준 순위입니다' },
+    users: { title: '사용자 관리', desc: '가입자 정보와 재화를 관리합니다' },
+    notifications: { title: '푸시 알림', desc: '전체 또는 개별 알림을 발송합니다' },
+    'tile-editor': { title: '타일 속성 에디터', desc: '타일 속성을 직접 편집합니다' },
+    'map-editor': { title: '패턴 에디터', desc: '지도 위에 패턴을 그립니다' },
+  };
+
+  const getPageMeta = () => {
     const currentPath = location.pathname;
     const item = menuItems.find(m => currentPath.startsWith(m.path));
-    if (item) return item.label;
-    if (currentPath === '/admin') return '대시보드';
-    return 'ADMIN CONSOLE';
+    if (item && pageMeta[item.id]) return pageMeta[item.id];
+    if (currentPath === '/admin') return pageMeta.dashboard;
+    return { title: '관리 콘솔', desc: '서비스 운영을 위한 도구 모음입니다' };
   };
+  const meta = getPageMeta();
 
   return (
     <div className="app-container">
@@ -58,30 +88,29 @@ function AdminLayout({ user, onLogout }) {
 
       {/* 1. 사이드바 내비게이션 */}
       <aside className={`sidebar ${isSidebarOpen ? 'open' : ''}`}>
-        {/* 로고 및 모바일 닫기 버튼 */}
-        <div style={{ display: 'flex', alignItems: 'center', justifyBetween: 'space-between', paddingBottom: '1rem', borderBottom: '1px solid var(--border-color)' }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '0.8rem' }}>
-            <Terminal size={24} style={{ color: 'var(--accent-cyan)' }} />
-            <div>
-              <h1 style={{ fontSize: '1.1rem', fontWeight: 800, fontFamily: 'var(--font-display)', letterSpacing: '0.05em' }}>
-                찜! 모험
-              </h1>
-              <span style={{ fontSize: '0.65rem', color: 'var(--text-muted)', fontWeight: 'bold', fontFamily: 'monospace' }}>
-                관리자 시스템 v1.0
-              </span>
+        <div className="admin-brand">
+          <div className="admin-brand-mark">
+            <Terminal size={20} />
+          </div>
+          <div style={{ flex: 1, minWidth: 0 }}>
+            <h1 className="admin-brand-name">
+              찜! 모험
+            </h1>
+            <div className="admin-brand-sub">
+              관리 콘솔 v1.0
             </div>
           </div>
-          <button 
-            className="mobile-only" 
+          <button
+            className="mobile-only"
             onClick={() => setIsSidebarOpen(false)}
             style={{ background: 'none', border: 'none', color: 'var(--text-secondary)', cursor: 'pointer', display: 'flex', alignItems: 'center' }}
+            aria-label="메뉴 닫기"
           >
             <X size={20} />
           </button>
         </div>
 
-        {/* 내비게이션 메뉴 */}
-        <nav style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem', flex: 1, marginTop: '1rem' }}>
+        <nav className="sidebar-nav">
           {menuItems.map(item => {
             const Icon = item.icon;
             const isActive = location.pathname === item.path || (item.id === 'dashboard' && location.pathname === '/admin');
@@ -90,69 +119,30 @@ function AdminLayout({ user, onLogout }) {
                 key={item.id}
                 onClick={() => {
                   navigate(item.path);
-                  setIsSidebarOpen(false); // 이동 후 사이드바 자동으로 닫기
+                  setIsSidebarOpen(false);
                 }}
-                style={{
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: '1rem',
-                  width: '100%',
-                  padding: '0.8rem 1rem',
-                  background: isActive ? 'rgba(59, 130, 246, 0.08)' : 'transparent',
-                  border: 'none',
-                  borderLeft: isActive ? '3px solid var(--accent-cyan)' : '3px solid transparent',
-                  borderRadius: '0 8px 8px 0',
-                  color: isActive ? 'var(--accent-cyan)' : 'var(--text-secondary)',
-                  fontFamily: 'var(--font-display)',
-                  fontWeight: 600,
-                  fontSize: '0.9rem',
-                  cursor: 'pointer',
-                  textAlign: 'left',
-                  transition: 'all 0.2s ease',
-                }}
+                className={`nav-item ${isActive ? 'active' : ''}`}
               >
-                <Icon size={18} style={{ color: isActive ? 'var(--accent-cyan)' : 'var(--text-muted)' }} />
+                <Icon size={18} />
                 {item.label}
               </button>
             );
           })}
         </nav>
 
-        {/* 푸터 - 사용자 정보 및 로그아웃 */}
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '0.8rem', padding: '0.8rem', background: 'var(--bg-primary)', borderRadius: '8px', border: '1px solid var(--border-color)' }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem' }}>
-            <ShieldAlert size={16} style={{ color: 'var(--accent-gold)' }} />
-            <span style={{ fontSize: '0.7rem', color: 'var(--text-secondary)', fontFamily: 'monospace', textOverflow: 'ellipsis', overflow: 'hidden', whiteSpace: 'nowrap', flex: 1 }} title={user?.email}>
-              {user?.email || '보안 접속 상태'}
+        <div className="sidebar-footer">
+          <div className="sidebar-user">
+            <ShieldAlert size={15} style={{ color: 'var(--accent-gold)', flexShrink: 0 }} />
+            <span className="sidebar-user-email" title={user?.email}>
+              {user?.email || '로그인 상태'}
             </span>
           </div>
-          <button 
+          <button
             onClick={onLogout}
-            style={{
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              gap: '0.5rem',
-              width: '100%',
-              padding: '0.5rem',
-              background: 'rgba(239, 68, 68, 0.08)',
-              border: '1px solid rgba(239, 68, 68, 0.15)',
-              borderRadius: '6px',
-              color: '#f87171',
-              fontSize: '0.75rem',
-              fontWeight: 600,
-              cursor: 'pointer',
-              transition: 'all 0.2s ease'
-            }}
-            onMouseEnter={(e) => {
-              e.currentTarget.style.background = 'rgba(239, 68, 68, 0.15)';
-            }}
-            onMouseLeave={(e) => {
-              e.currentTarget.style.background = 'rgba(239, 68, 68, 0.08)';
-            }}
+            className="logout-btn"
           >
-            <LogOut size={12} />
-            <span>보안 세션 로그아웃</span>
+            <LogOut size={13} />
+            <span>로그아웃</span>
           </button>
         </div>
       </aside>
@@ -160,25 +150,35 @@ function AdminLayout({ user, onLogout }) {
       {/* 2. 메인 콘텐츠 */}
       <main className="main-content">
         <header className="page-header">
-          <div style={{ display: 'flex', alignItems: 'center', gap: '0.8rem' }}>
-            <button 
-              className="menu-toggle-btn" 
+          <div style={{ display: 'flex', alignItems: 'center', gap: '0.8rem', minWidth: 0 }}>
+            <button
+              className="menu-toggle-btn"
               onClick={() => setIsSidebarOpen(true)}
               style={{ display: 'flex', alignItems: 'center', justifyContent: 'center' }}
+              aria-label="메뉴 열기"
             >
               <Menu size={20} />
             </button>
-            <div>
-              <h2 className="page-title">{getPageTitle()}</h2>
-              <p style={{ fontSize: '0.8rem', color: 'var(--text-muted)', marginTop: '0.2rem', fontFamily: 'monospace' }}>
-                시스템 제어 게이트웨이
+            <div style={{ minWidth: 0 }}>
+              <h2 className="page-title">{meta.title}</h2>
+              <p className="page-subtitle">
+                {meta.desc}
               </p>
             </div>
           </div>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '0.8rem' }} className="desktop-only">
-            <span style={{ width: '8px', height: '8px', borderRadius: '50%', backgroundColor: 'var(--accent-cyan)', display: 'inline-block' }} />
-            <span style={{ fontSize: '0.75rem', fontFamily: 'monospace', color: 'var(--text-secondary)' }}>
-              시스템 상태: 정상
+          <div className="header-right">
+            <button
+              type="button"
+              className="theme-toggle"
+              onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')}
+              aria-label={theme === 'dark' ? '라이트 모드로 전환' : '다크 모드로 전환'}
+              title={theme === 'dark' ? '라이트 모드로 전환' : '다크 모드로 전환'}
+            >
+              {theme === 'dark' ? <Sun size={16} /> : <Moon size={16} />}
+            </button>
+            <span className="status-pill">
+              <span className="status-dot" />
+              정상 운영 중
             </span>
           </div>
         </header>
