@@ -2,12 +2,16 @@ import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { fetchUsers, updateUserGold, updateUserMainBase, deleteUser, fetchUserAchievements } from '../api';
 import { Search, Edit2, RotateCcw, AlertTriangle, ShieldCheck, X, Trophy, Lock, Award, MapPin, Map, Footprints } from 'lucide-react';
+import Pagination from './Pagination';
+
+const PAGE_SIZE = 20;
 
 export default function UsersTab() {
   const [users, setUsers] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [searchTerm, setSearchTerm] = useState('');
+  const [page, setPage] = useState(1);
   const navigate = useNavigate();
   
   // 편집(골드 조정) 모달 제어용 상태
@@ -136,31 +140,32 @@ export default function UsersTab() {
     }
   };
 
-  // 검색 필터링
-  const filteredUsers = users.filter(user => 
+  const filteredUsers = users.filter(user =>
     user.nickname.toLowerCase().includes(searchTerm.toLowerCase()) ||
     user.id.toLowerCase().includes(searchTerm.toLowerCase())
   );
+  const totalPages = Math.max(1, Math.ceil(filteredUsers.length / PAGE_SIZE));
+  const safePage = Math.min(page, totalPages);
+  const pagedUsers = filteredUsers.slice((safePage - 1) * PAGE_SIZE, safePage * PAGE_SIZE);
 
   if (loading && users.length === 0) {
     return <div className="tactical-spinner" />;
   }
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
-      
-      {/* 상단 툴 바 */}
+    <div className="section-stack">
+
       <div className="tab-controls-header">
         <div className="tab-search-group" style={{ width: '100%', justifyContent: 'space-between' }}>
           <div className="tab-search-input-wrapper">
-            <Search size={18} style={{ position: 'absolute', left: '12px', top: '50%', transform: 'translateY(-50%)', color: 'var(--text-muted)' }} />
-            <input 
+            <Search size={16} className="search-icon" />
+            <input
               type="text"
               className="tactical-input"
               style={{ paddingLeft: '2.5rem' }}
               placeholder="사용자명 검색..."
               value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
+              onChange={(e) => { setSearchTerm(e.target.value); setPage(1); }}
             />
           </div>
           <button className="tactical-btn" onClick={loadUsers}>
@@ -171,7 +176,6 @@ export default function UsersTab() {
 
       {error && <div style={{ color: 'var(--accent-red)' }}>{error}</div>}
 
-      {/* 사용자 목록 테이블 */}
       <div className="tactical-table-container">
         <table className="tactical-table">
           <thead>
@@ -187,19 +191,17 @@ export default function UsersTab() {
           <tbody>
             {filteredUsers.length === 0 ? (
               <tr>
-                <td colSpan="6" style={{ textAlign: 'center', color: 'var(--text-muted)', padding: '2rem' }}>
+                <td colSpan="6" className="empty-state">
                   조건에 일치하는 사용자가 존재하지 않습니다.
                 </td>
               </tr>
             ) : (
-              filteredUsers.map(user => (
+              pagedUsers.map(user => (
                 <tr key={user.id}>
                   <td>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.8rem' }}>
-                      <div style={{ width: '12px', height: '12px', borderRadius: '50%', backgroundColor: user.color_hex || 'var(--accent-cyan)' }} />
-                      <div>
-                        <div style={{ fontWeight: 'bold' }}>{user.nickname}</div>
-                      </div>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem', minWidth: 0 }}>
+                      <div style={{ width: '10px', height: '10px', borderRadius: '50%', backgroundColor: user.color_hex || 'var(--accent-cyan)', flexShrink: 0 }} />
+                      <div style={{ fontWeight: 600, fontSize: '0.88rem' }}>{user.nickname}</div>
                     </div>
                   </td>
                   <td>
@@ -217,61 +219,63 @@ export default function UsersTab() {
                         <input
                           type="text"
                           className="tactical-input"
-                          style={{ width: '150px', fontFamily: 'monospace' }}
+                          style={{ width: '150px', fontFamily: 'var(--font-mono)', fontSize: '0.78rem' }}
                           value={baseInput}
                           onChange={(e) => setBaseInput(e.target.value)}
                           placeholder="hex_q_r"
                         />
-                        <button className="tactical-btn" onClick={() => handleSaveBase(user)} disabled={submitting}>
+                        <button className="tactical-btn sm" onClick={() => handleSaveBase(user)} disabled={submitting}>
                           저장
                         </button>
-                        <button className="tactical-btn danger" onClick={() => setEditingBaseId(null)}>
+                        <button className="tactical-btn sm danger" onClick={() => setEditingBaseId(null)}>
                           취소
                         </button>
                       </div>
                     ) : (
                       <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
                         {user.main_base_tile_id ? (
-                          <span style={{ color: 'var(--accent-cyan)', fontFamily: 'monospace' }}>
+                          <span className="kv-value mono" style={{ color: '#8fb6ff' }}>
                             {user.main_base_tile_id}
                           </span>
                         ) : (
-                          <span style={{ color: 'var(--text-muted)' }}>설정되지 않음</span>
+                          <span style={{ color: 'var(--text-muted)', fontSize: '0.82rem' }}>설정되지 않음</span>
                         )}
-                        <button className="tactical-btn" onClick={() => handleEditBase(user)} title="본진 기지 수정">
-                          <Edit2 size={14} />
+                        <button className="tactical-btn sm" onClick={() => handleEditBase(user)} title="본진 기지 수정">
+                          <Edit2 size={13} />
                         </button>
                       </div>
                     )}
                   </td>
-                  <td style={{ fontWeight: 'bold', color: 'var(--accent-cyan)' }}>
-                    {Math.round(user.gold * 10) / 10} G
-                  </td>
-                  <td style={{ fontWeight: 'bold' }}>
-                    {user.captured_tiles_count} 구역
+                  <td>
+                    <span className="table-numeric">{Math.round(user.gold * 10) / 10}</span>
+                    <span className="table-unit">G</span>
                   </td>
                   <td>
-                    <div style={{ display: 'flex', gap: '0.5rem', justifyContent: 'center' }}>
-                      <button className="tactical-btn" onClick={() => handleGoToMainBase(user)}>
-                        <MapPin size={14} /> 본진 이동
+                    <span className="table-numeric" style={{ color: 'var(--text-primary)' }}>{user.captured_tiles_count}</span>
+                    <span className="table-unit">구역</span>
+                  </td>
+                  <td>
+                    <div className="row-actions">
+                      <button className="tactical-btn sm" onClick={() => handleGoToMainBase(user)}>
+                        <MapPin size={13} /> 본진 이동
                       </button>
-                      <button className="tactical-btn" onClick={() => handleGoToUserTiles(user)}>
-                        <Map size={14} /> 점령목록
+                      <button className="tactical-btn sm" onClick={() => handleGoToUserTiles(user)}>
+                        <Map size={13} /> 점령목록
                       </button>
-                      <button className="tactical-btn" onClick={() => handleGoToFootprints(user)}>
-                        <Footprints size={14} /> 발자취
+                      <button className="tactical-btn sm" onClick={() => handleGoToFootprints(user)}>
+                        <Footprints size={13} /> 발자취
                       </button>
-                      <button className="tactical-btn" onClick={() => handleViewDetails(user)}>
-                        <Award size={14} /> 업적 상세
+                      <button className="tactical-btn sm" onClick={() => handleViewDetails(user)}>
+                        <Award size={13} /> 업적 상세
                       </button>
-                      <button className="tactical-btn" onClick={() => handleEditGold(user)}>
-                        <Edit2 size={14} /> 골드 수정
+                      <button className="tactical-btn sm" onClick={() => handleEditGold(user)}>
+                        <Edit2 size={13} /> 골드 수정
                       </button>
-                      <button 
-                        className="tactical-btn danger" 
+                      <button
+                        className="tactical-btn sm danger"
                         onClick={() => handleDeleteUser(user)}
                       >
-                        <AlertTriangle size={14} /> 계정 삭제
+                        <AlertTriangle size={13} /> 계정 삭제
                       </button>
                     </div>
                   </td>
@@ -280,36 +284,39 @@ export default function UsersTab() {
             )}
           </tbody>
         </table>
+        <Pagination
+          page={safePage}
+          totalPages={totalPages}
+          totalCount={filteredUsers.length}
+          pageSize={PAGE_SIZE}
+          onChange={setPage}
+        />
       </div>
 
-      {/* 골드 수정 모달 */}
       {editingUser && (
-        <div style={{
-          position: 'fixed', top: 0, left: 0, width: '100%', height: '100%',
-          background: 'rgba(0,0,0,0.7)', backdropFilter: 'blur(4px)',
-          display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000
-        }}>
-          <div className="tactical-card" style={{ width: '100%', maxWidth: '400px', margin: '0 1rem', display: 'flex', flexDirection: 'column', gap: '1.5rem', position: 'relative' }}>
-            <button 
-              style={{ position: 'absolute', top: '16px', right: '16px', background: 'none', border: 'none', color: 'var(--text-secondary)', cursor: 'pointer' }}
+        <div className="modal-overlay">
+          <div className="tactical-card modal-card">
+            <button
+              className="modal-close"
               onClick={() => setEditingUser(null)}
+              aria-label="닫기"
             >
-              <X size={20} />
+              <X size={18} />
             </button>
-            <h3 style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', fontSize: '1.2rem', color: 'var(--accent-cyan)' }}>
-              <ShieldCheck size={20} />
-              사용자 재화 조정 통제
+            <h3 className="modal-title">
+              <ShieldCheck size={19} />
+              사용자 재화 조정
             </h3>
             <div style={{ display: 'flex', flexDirection: 'column', gap: '0.8rem' }}>
               <div>
-                <span style={{ color: 'var(--text-secondary)', fontSize: '0.8rem' }}>사용자 닉네임</span>
-                <div style={{ fontWeight: 'bold', marginTop: '0.2rem' }}>{editingUser.nickname}</div>
+                <span className="field-label">사용자 닉네임</span>
+                <div style={{ fontWeight: 700 }}>{editingUser.nickname}</div>
               </div>
               <div>
-                <label style={{ color: 'var(--text-secondary)', fontSize: '0.8rem', display: 'block', marginBottom: '0.4rem' }}>
+                <label className="field-label">
                    골드 수량 설정 (Gold)
                 </label>
-                <input 
+                <input
                   type="number"
                   className="tactical-input"
                   value={goldInput}
@@ -318,7 +325,7 @@ export default function UsersTab() {
                 />
               </div>
             </div>
-            <div style={{ display: 'flex', gap: '0.8rem', justifyContent: 'flex-end', marginTop: '0.5rem' }}>
+            <div style={{ display: 'flex', gap: '0.6rem', justifyContent: 'flex-end' }}>
               <button className="tactical-btn danger" onClick={() => setEditingUser(null)}>
                 취소
               </button>
@@ -330,115 +337,95 @@ export default function UsersTab() {
         </div>
       )}
 
-      {/* 사용자 상세 정보 & 업적 배지 모달 */}
       {selectedUser && (
-        <div style={{
-          position: 'fixed', top: 0, left: 0, width: '100%', height: '100%',
-          background: 'rgba(0,0,0,0.7)', backdropFilter: 'blur(4px)',
-          display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000
-        }}>
-          <div className="tactical-card" style={{ width: '100%', maxWidth: '650px', maxHeight: '85vh', overflowY: 'auto', margin: '1rem', display: 'flex', flexDirection: 'column', gap: '1.2rem', position: 'relative' }}>
-            <button 
-              style={{ position: 'absolute', top: '16px', right: '16px', background: 'none', border: 'none', color: 'var(--text-secondary)', cursor: 'pointer' }}
+        <div className="modal-overlay">
+          <div className="tactical-card modal-card wide">
+            <button
+              className="modal-close"
               onClick={() => setSelectedUser(null)}
+              aria-label="닫기"
             >
-              <X size={20} />
+              <X size={18} />
             </button>
-            <h3 style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', fontSize: '1.2rem', color: 'var(--accent-cyan)' }}>
-              <Trophy size={20} />
+            <h3 className="modal-title">
+              <Trophy size={19} />
               플레이어 업적 프로필
             </h3>
-            
-            {/* 플레이어 기본 정보 요약 */}
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '0.8rem', background: 'rgba(255,255,255,0.03)', padding: '1rem', borderRadius: '8px', border: '1px solid rgba(255,255,255,0.05)' }}>
+
+            <div className="kv-grid">
               <div>
-                <span style={{ color: 'var(--text-secondary)', fontSize: '0.75rem' }}>플레이어명 (닉네임)</span>
-                <div style={{ fontWeight: 'bold', fontSize: '1rem', display: 'flex', alignItems: 'center', gap: '0.5rem', marginTop: '0.2rem' }}>
+                <span className="kv-label">플레이어명 (닉네임)</span>
+                <div className="kv-value" style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
                   <div style={{ width: '10px', height: '10px', borderRadius: '50%', backgroundColor: selectedUser.color_hex || 'var(--accent-cyan)' }} />
                   {selectedUser.nickname}
                 </div>
               </div>
               <div>
-                <span style={{ color: 'var(--text-secondary)', fontSize: '0.75rem' }}>플레이어 ID (고유키)</span>
-                <div style={{ fontFamily: 'monospace', fontSize: '0.8rem', marginTop: '0.2rem', wordBreak: 'break-all' }}>{selectedUser.id}</div>
+                <span className="kv-label">플레이어 ID (고유키)</span>
+                <div className="kv-value mono">{selectedUser.id}</div>
               </div>
               <div>
-                <span style={{ color: 'var(--text-secondary)', fontSize: '0.75rem' }}>점령 구역</span>
-                <div style={{ fontWeight: 'bold', color: 'var(--text-primary)', marginTop: '0.2rem' }}>{selectedUser.captured_tiles_count} 구역</div>
+                <span className="kv-label">점령 구역</span>
+                <div className="kv-value">{selectedUser.captured_tiles_count} 구역</div>
               </div>
               <div>
-                <span style={{ color: 'var(--text-secondary)', fontSize: '0.75rem' }}>보유 골드</span>
-                <div style={{ fontWeight: 'bold', color: 'var(--accent-cyan)', marginTop: '0.2rem' }}>{Math.round(selectedUser.gold * 10) / 10} G</div>
+                <span className="kv-label">보유 골드</span>
+                <div className="kv-value" style={{ color: '#8fb6ff' }}>{Math.round(selectedUser.gold * 10) / 10} G</div>
               </div>
             </div>
 
-            {/* 업적 현황 통계 */}
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-              <span style={{ fontWeight: 'bold', fontSize: '0.9rem' }}>업적 달성률</span>
-              <span style={{ fontWeight: 'bold', color: 'var(--accent-cyan)', fontSize: '0.9rem' }}>
+              <span style={{ fontWeight: 700, fontSize: '0.87rem' }}>업적 달성률</span>
+              <span className="table-numeric" style={{ fontSize: '0.87rem' }}>
                 {userAchievements.length} / {MASTER_ACHIEVEMENTS.length} 해금 ({Math.round((userAchievements.length / MASTER_ACHIEVEMENTS.length) * 100)}%)
               </span>
             </div>
-            
-            <div style={{ width: '100%', height: '8px', background: 'rgba(255,255,255,0.05)', borderRadius: '4px', overflow: 'hidden' }}>
-              <div style={{ 
-                width: `${(userAchievements.length / MASTER_ACHIEVEMENTS.length) * 100}%`, 
-                height: '100%', 
-                background: 'linear-gradient(90deg, var(--accent-cyan), #00FF99)',
-                transition: 'width 0.4s ease'
-              }} />
+
+            <div className="progress-track">
+              <div
+                className="progress-fill"
+                style={{ width: `${(userAchievements.length / MASTER_ACHIEVEMENTS.length) * 100}%` }}
+              />
             </div>
 
-            {/* 업적 그리드 */}
             {loadingAchievements ? (
               <div style={{ display: 'flex', justifyContent: 'center', padding: '2rem' }}>
                 <div className="tactical-spinner" />
               </div>
             ) : (
-              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(130px, 1fr))', gap: '0.8rem', maxHeight: '350px', overflowY: 'auto', paddingRight: '0.3rem' }}>
+              <div className="ach-grid">
                 {MASTER_ACHIEVEMENTS.map(ach => {
                   const unlockRecord = userAchievements.find(ua => ua.achievement_id === ach.id);
                   const isUnlocked = !!unlockRecord;
-                  
-                  // 티어별 테마 색상 설정
-                  let tierColor = '#CD7F32'; // Bronze
-                  if (ach.tier === 2) tierColor = '#C0C0C0'; // Silver
-                  if (ach.tier === 3) tierColor = '#FFD700'; // Gold
-                  if (ach.tier === 4) tierColor = '#00FFCC'; // Platinum Neon
-                  
+
+                  let tierColor = '#b45309';
+                  if (ach.tier === 2) tierColor = '#64748b';
+                  if (ach.tier === 3) tierColor = '#ca8a04';
+                  if (ach.tier === 4) tierColor = '#0d9488';
+
                   return (
-                    <div 
-                      key={ach.id} 
-                      style={{
-                        background: isUnlocked ? 'rgba(15, 22, 38, 0.9)' : 'rgba(255,255,255,0.02)',
-                        border: `1.5px solid ${isUnlocked ? tierColor : 'rgba(255,255,255,0.05)'}`,
-                        borderRadius: '12px',
-                        padding: '0.8rem',
-                        display: 'flex',
-                        flexDirection: 'column',
-                        gap: '0.3rem',
-                        opacity: isUnlocked ? 1.0 : 0.4,
-                        position: 'relative',
-                        boxShadow: isUnlocked ? `0 0 8px ${tierColor}33` : 'none'
-                      }}
+                    <div
+                      key={ach.id}
+                      className={`ach-card ${isUnlocked ? 'unlocked' : ''}`}
+                      style={isUnlocked ? { borderColor: `${tierColor}66` } : undefined}
                       title={`${ach.title} (Tier ${ach.tier}) - ${ach.desc}`}
                     >
                       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                        <span style={{ fontSize: '0.65rem', fontWeight: 'bold', color: tierColor }}>T{ach.tier}</span>
+                        <span className="ach-tier" style={{ color: tierColor }}>T{ach.tier}</span>
                         {isUnlocked ? (
-                          <Trophy size={14} style={{ color: tierColor }} />
+                          <Trophy size={13} style={{ color: tierColor }} />
                         ) : (
-                          <Lock size={12} style={{ color: 'rgba(255,255,255,0.3)' }} />
+                          <Lock size={12} style={{ color: 'var(--text-muted)' }} />
                         )}
                       </div>
-                      <div style={{ fontWeight: 'bold', fontSize: '0.8rem', color: isUnlocked ? 'white' : 'var(--text-muted)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', marginTop: '0.2rem' }}>
+                      <div className="ach-title" style={{ color: isUnlocked ? 'var(--text-primary)' : 'var(--text-muted)' }}>
                         {ach.title}
                       </div>
-                      <div style={{ fontSize: '0.65rem', color: 'var(--text-secondary)', display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden', height: '22px' }}>
+                      <div className="ach-desc">
                         {ach.desc}
                       </div>
                       {isUnlocked && unlockRecord?.unlocked_at && (
-                        <div style={{ fontSize: '0.55rem', color: 'rgba(255,255,255,0.3)', textAlign: 'right', marginTop: '0.2rem' }}>
+                        <div style={{ fontSize: '0.62rem', color: 'var(--text-muted)', textAlign: 'right' }}>
                           {new Date(unlockRecord.unlocked_at).toLocaleDateString('ko-KR', {
                             month: '2-digit',
                             day: '2-digit'
@@ -450,8 +437,8 @@ export default function UsersTab() {
                 })}
               </div>
             )}
-            
-            <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: '0.5rem' }}>
+
+            <div style={{ display: 'flex', justifyContent: 'flex-end' }}>
               <button className="tactical-btn" onClick={() => setSelectedUser(null)}>
                 닫기
               </button>

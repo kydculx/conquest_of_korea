@@ -2,6 +2,9 @@ import React, { useState, useEffect } from 'react';
 import { useSearchParams, useNavigate } from 'react-router-dom';
 import { ArrowLeft, MapPin } from 'lucide-react';
 import { fetchUserCapturedTiles } from '../api';
+import Pagination from './Pagination';
+
+const PAGE_SIZE = 20;
 
 export default function UserTilesTab() {
   const [searchParams] = useSearchParams();
@@ -12,6 +15,7 @@ export default function UserTilesTab() {
   const [tiles, setTiles] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [page, setPage] = useState(1);
 
   useEffect(() => {
     if (!userId) {
@@ -36,29 +40,32 @@ export default function UserTilesTab() {
     return () => { active = false; };
   }, [userId, navigate]);
 
-  return (
-    <div className="tactical-card" style={{ width: '100%', maxWidth: '900px', margin: '1rem auto', display: 'flex', flexDirection: 'column', gap: '1rem' }}>
-      <div style={{ display: 'flex', alignItems: 'center', gap: '0.8rem' }}>
-        <button className="tactical-btn" onClick={() => navigate('/admin/users')}>
-          <ArrowLeft size={14} /> 사용자 목록
-        </button>
-        <h2 style={{ margin: 0, fontSize: '1.1rem', color: 'var(--text-primary)' }}>
-          점령 목록{nickname ? ` - ${nickname}` : ''}
-        </h2>
-      </div>
+  const totalPages = Math.max(1, Math.ceil(tiles.length / PAGE_SIZE));
+  const safePage = Math.min(page, totalPages);
+  const pagedTiles = tiles.slice((safePage - 1) * PAGE_SIZE, safePage * PAGE_SIZE);
 
-      <div style={{ color: 'var(--text-secondary)', fontSize: '0.85rem' }}>
-        총 {tiles.length}개 타일
+  return (
+    <div className="tactical-card section-stack" style={{ width: '100%', maxWidth: '900px', margin: '0 auto' }}>
+      <div className="card-head">
+        <div style={{ display: 'flex', alignItems: 'center', gap: '0.7rem', minWidth: 0 }}>
+          <button className="tactical-btn sm" onClick={() => navigate('/admin/users')}>
+            <ArrowLeft size={14} /> 사용자 목록
+          </button>
+          <h2 className="card-title" style={{ margin: 0 }}>
+            점령 목록{nickname ? ` - ${nickname}` : ''}
+          </h2>
+        </div>
+        <span className="card-sub">총 {tiles.length.toLocaleString()}개 타일</span>
       </div>
 
       {loading && <div className="tactical-spinner" />}
-      {error && <div style={{ color: 'var(--danger, #ff5c5c)' }}>{error}</div>}
+      {error && <div style={{ color: 'var(--accent-red)' }}>{error}</div>}
       {!loading && !error && tiles.length === 0 && (
-        <div style={{ color: 'var(--text-muted)' }}>점령한 타일이 없습니다.</div>
+        <div className="empty-state">점령한 타일이 없습니다.</div>
       )}
 
       {!loading && !error && tiles.length > 0 && (
-        <div className="tactical-table-container">
+        <div className="tactical-table-container" style={{ marginTop: 0 }}>
           <table className="tactical-table">
             <thead>
               <tr>
@@ -66,40 +73,48 @@ export default function UserTilesTab() {
                 <th>좌표 (q, r)</th>
                 <th>색상</th>
                 <th>상태</th>
-                <th>점령 횟수</th>
+                <th style={{ textAlign: 'right' }}>점령 횟수</th>
                 <th>점령 시각</th>
-                <th>맵 보기</th>
+                <th style={{ textAlign: 'center' }}>맵 보기</th>
               </tr>
             </thead>
             <tbody>
-              {tiles.map((t) => (
+              {pagedTiles.map((t) => (
                 <tr key={t.id}>
-                  <td style={{ fontFamily: 'monospace' }}>{t.id}</td>
-                  <td style={{ fontFamily: 'monospace' }}>{t.q}, {t.r}</td>
+                  <td className="kv-value mono">{t.id}</td>
+                  <td className="kv-value mono">{t.q}, {t.r}</td>
                   <td>
                     <span
                       style={{
                         display: 'inline-block',
                         width: '14px',
                         height: '14px',
-                        borderRadius: '3px',
+                        borderRadius: '4px',
                         backgroundColor: t.color_hex || 'transparent',
-                        border: '1px solid var(--text-muted)',
+                        border: '1px solid var(--border-hover)',
+                        verticalAlign: 'middle',
                       }}
                     />
                   </td>
-                  <td>{t.capture_status || 'captured'}</td>
-                  <td>{t.capture_count ?? 1}</td>
-                  <td>{t.captured_at ? new Date(t.captured_at).toLocaleString('ko-KR') : '-'}</td>
-                  <td>
-                    <button className="tactical-btn" onClick={() => navigate(`/admin/dashboard?hq=${t.id}`)}>
-                      <MapPin size={14} /> 맵에서 보기
+                  <td style={{ fontSize: '0.82rem', color: 'var(--text-secondary)' }}>{t.capture_status || 'captured'}</td>
+                  <td style={{ textAlign: 'right' }}><span className="table-numeric" style={{ color: 'var(--text-primary)' }}>{t.capture_count ?? 1}</span></td>
+                  <td style={{ fontSize: '0.82rem', color: 'var(--text-secondary)', whiteSpace: 'nowrap' }}>{t.captured_at ? new Date(t.captured_at).toLocaleString('ko-KR') : '-'}</td>
+                  <td style={{ textAlign: 'center' }}>
+                    <button className="tactical-btn sm" onClick={() => navigate(`/admin/dashboard?hq=${t.id}`)}>
+                      <MapPin size={13} /> 맵에서 보기
                     </button>
                   </td>
                 </tr>
               ))}
             </tbody>
           </table>
+          <Pagination
+            page={safePage}
+            totalPages={totalPages}
+            totalCount={tiles.length}
+            pageSize={PAGE_SIZE}
+            onChange={setPage}
+          />
         </div>
       )}
     </div>
