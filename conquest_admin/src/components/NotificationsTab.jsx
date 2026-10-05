@@ -81,12 +81,13 @@ export default function NotificationsTab() {
   };
 
   return (
-    <div className="notifications-form-container">
-      
-      <div className="tactical-card" style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
-        <h3 style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', fontSize: '1.2rem', color: 'var(--accent-cyan)' }}>
-          <Bell size={20} />
-          긴급 공지 발송 제어 (FCM)
+    <div className="section-stack">
+
+      <div className="tactical-card" style={{ display: 'flex', flexDirection: 'column', gap: '1.2rem' }}>
+        <h3 className="card-title">
+          <Bell size={19} />
+          공지 발송
+          <span className="card-sub">푸시 알림</span>
         </h3>
 
         <form onSubmit={handleSend} style={{ display: 'flex', flexDirection: 'column', gap: '1.2rem' }}>
@@ -190,7 +191,7 @@ export default function NotificationsTab() {
             <input 
               type="text" 
               className="tactical-input"
-              placeholder="예: ⚠️ [작전 상황 전파] 본진 방어 보강 권고"
+              placeholder="예: 점검 안내, 이벤트 시작 알림 등 제목 입력"
               value={title}
               onChange={(e) => setTitle(e.target.value)}
             />
@@ -222,7 +223,7 @@ export default function NotificationsTab() {
           {/* 전송 버튼 */}
           <div className="notifications-submit-wrapper">
             <button type="submit" className="tactical-btn" disabled={sending}>
-              <Send size={16} /> {sending ? '공지 발송 중...' : '긴급 공지 발송'}
+              <Send size={16} /> {sending ? '발송 중...' : '공지 발송'}
             </button>
           </div>
         </form>

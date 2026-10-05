@@ -456,13 +456,12 @@ export default function DashboardTab() {
 
   // 데이터 로드 완료 전 가드 정의
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
+    <div className="section-stack">
 
-      {/* 상황판 맵 모니터 그리드 */}
-      <div style={{ display: 'grid', gridTemplateColumns: '1fr', gap: '1.5rem' }}>
+      <div style={{ display: 'grid', gridTemplateColumns: '1fr', gap: '1.2rem' }}>
 
         {footprintsUserId && (
-          <div className="tactical-card" style={{ display: 'flex', alignItems: 'center', gap: '0.8rem', flexWrap: 'wrap', borderColor: 'rgba(0, 255, 204, 0.35)' }}>
+          <div className="tactical-card banner-info">
             <span style={{ width: '12px', height: '12px', borderRadius: '3px', backgroundColor: '#00FFCC', display: 'inline-block' }} />
             <span style={{ fontWeight: 'bold', color: 'var(--text-primary)' }}>
               {footprintNickname ? `${footprintNickname}님의 발자취만 표시 중` : '선택한 사용자의 발자취만 표시 중'}
@@ -486,23 +485,24 @@ export default function DashboardTab() {
 
         {/* Leaflet 실시간 점령 지도 */}
         <div className="tactical-card map-card">
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '0.5rem' }}>
-            <h3 style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', fontSize: '1.1rem', color: 'var(--text-primary)' }}>
-              <Radio size={18} style={{ color: 'var(--accent-cyan)' }} />
+          <div className="card-head">
+            <h3 className="card-title">
+              <Radio size={17} />
               맵 모니터
               {!loading && !footprintsUserId && (
-                <span style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', fontWeight: 400 }}>
+                <span className="card-sub">
                   {tiles.length.toLocaleString()}개 타일 표시 중
                 </span>
               )}
               {footprintsUserId && !footprintLoading && !footprintError && (
-                <span style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', fontWeight: 400 }}>
+                <span className="card-sub">
                   {footprintTiles.length.toLocaleString()}개 발자취 표시 중
                 </span>
               )}
             </h3>
-            <span style={{ fontSize: '0.75rem', color: 'var(--accent-cyan)', background: 'rgba(59, 130, 246, 0.05)', padding: '0.2rem 0.5rem', borderRadius: '4px', border: '1px solid rgba(59, 130, 246, 0.15)' }}>
-              REALTIME DATA FEED
+            <span className="status-pill">
+              <span className="status-dot" />
+              실시간 연동 중
             </span>
           </div>
           <div className="map-wrapper">

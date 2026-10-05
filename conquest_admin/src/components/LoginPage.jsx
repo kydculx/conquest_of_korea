@@ -84,7 +84,7 @@ export default function LoginPage({ onLoginSuccess }) {
             <Terminal size={28} style={{ color: 'var(--accent-cyan)' }} />
           </div>
           <h1 className="login-title">찜! 모험</h1>
-          <p className="login-subtitle">ADMIN SYSTEM GATEWAY</p>
+          <p className="login-subtitle">관리 콘솔</p>
         </div>
 
         {error && (
@@ -137,22 +137,25 @@ export default function LoginPage({ onLoginSuccess }) {
             {loading ? (
               <span className="spinner" />
             ) : (
-              <span>보안 원격 로그인</span>
+              <span>로그인</span>
             )}
           </button>
         </form>
 
         <div className="login-footer">
-          <span>인증되지 않은 IP 또는 권한이 없는 계정의 접속 시도는 보안 통제 및 로깅 대상이 됩니다.</span>
+          <span>관리자 계정으로 로그인해 주세요. 권한이 없는 계정은 접근할 수 없습니다.</span>
         </div>
       </div>
 
       <style dangerouslySetInnerHTML={{
         __html: `
         .login-root {
-          background-color: #04060d;
-          color: #f1f5f9;
-          font-family: 'Plus Jakarta Sans', sans-serif;
+          background-color: #060b16;
+          background-image:
+            radial-gradient(700px 420px at 85% -10%, rgba(59, 130, 246, 0.1), transparent 60%),
+            radial-gradient(600px 380px at -10% 100%, rgba(59, 130, 246, 0.06), transparent 55%);
+          color: #eef2f7;
+          font-family: 'Pretendard Variable', 'Plus Jakarta Sans', sans-serif;
           min-height: 100vh;
           display: flex;
           align-items: center;
@@ -177,14 +180,14 @@ export default function LoginPage({ onLoginSuccess }) {
         .orb-purple {
           width: 450px;
           height: 450px;
-          background: #8b5cf6;
+          background: #3b82f6;
           top: -100px;
           left: -100px;
         }
         .orb-cyan {
           width: 500px;
           height: 500px;
-          background: #06b6d4;
+          background: #0ea5e9;
           bottom: -150px;
           right: -100px;
         }
@@ -229,9 +232,7 @@ export default function LoginPage({ onLoginSuccess }) {
           font-size: 1.8rem;
           font-weight: 800;
           letter-spacing: 0.02em;
-          background: linear-gradient(135deg, #60a5fa, #a78bfa);
-          WebkitBackgroundClip: text;
-          WebkitTextFillColor: transparent;
+          color: #eef2f7;
           margin: 0;
         }
         .login-subtitle {
@@ -321,8 +322,8 @@ export default function LoginPage({ onLoginSuccess }) {
 
         .login-submit-btn {
           margin-top: 1rem;
-          background: linear-gradient(135deg, #3b82f6, #8b5cf6);
-          border: none;
+          background: #2563eb;
+          border: 1px solid rgba(255,255,255,0.08);
           color: #ffffff;
           padding: 0.9rem;
           border-radius: 12px;

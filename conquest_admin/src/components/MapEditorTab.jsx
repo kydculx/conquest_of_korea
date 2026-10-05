@@ -432,12 +432,12 @@ export default function MapEditorTab() {
     <div className="editor-layout">
       
       {/* 1. 에디터 제어 및 설정 사이드 패널 */}
-      <div style={{ display: 'flex', flexDirection: 'column', gap: '1.2rem' }}>
+      <div className="section-stack">
         
         {/* 파일 관리 및 공통 설정 카드 */}
         <div className="tactical-card" style={{ padding: '1.2rem' }}>
-          <h3 style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', fontSize: '1.0rem', color: 'var(--text-primary)', marginBottom: '1.0rem' }}>
-            <MapIcon size={16} style={{ color: 'var(--accent-cyan)' }} />
+          <h3 className="card-title" style={{ marginBottom: '1rem' }}>
+            <MapIcon size={16} />
             맵 에디터 데이터
           </h3>
 
@@ -450,26 +450,23 @@ export default function MapEditorTab() {
               style={{ display: 'none' }} 
             />
 
-            <button 
-              onClick={() => fileInputRef.current && fileInputRef.current.click()} 
-              className="tactical-btn active"
-              style={{ width: '100%', justifyContent: 'center', padding: '0.5rem 1rem', fontSize: '0.85rem' }}
+            <button
+              onClick={() => fileInputRef.current && fileInputRef.current.click()}
+              className="tactical-btn active btn-block sm"
             >
               <Upload size={14} /> 디자인 불러오기
             </button>
 
-            <button 
-              onClick={handleExportJSON} 
-              className="tactical-btn"
-              style={{ width: '100%', justifyContent: 'center', padding: '0.5rem 1rem', fontSize: '0.85rem' }}
+            <button
+              onClick={handleExportJSON}
+              className="tactical-btn btn-block sm"
             >
               <Download size={14} /> 디자인 저장하기
             </button>
 
-            <button 
-              onClick={handleClearAll} 
-              className="tactical-btn danger"
-              style={{ width: '100%', justifyContent: 'center', padding: '0.5rem 1rem', fontSize: '0.85rem' }}
+            <button
+              onClick={handleClearAll}
+              className="tactical-btn danger btn-block sm"
             >
               <RotateCcw size={14} /> 전체 초기화
             </button>
