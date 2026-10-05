@@ -2,7 +2,7 @@ import React, { useEffect, useState, useRef } from 'react';
 import { useSearchParams, useNavigate } from 'react-router-dom';
 import { fetchTiles, fetchUsers, fetchUserFootprints } from '../api';
 import { supabase } from '../supabase';
-import { Radio, Compass, Layers } from 'lucide-react';
+import { Radio, Compass, Layers, Users, Map as MapIcon, Zap, Camera } from 'lucide-react';
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css'; // Leaflet 기본 레이아웃 스타일 직접 로드
 
@@ -454,6 +454,20 @@ export default function DashboardTab() {
     return <div style={{ color: 'var(--accent-red)', padding: '2rem' }}>{error}</div>;
   }
 
+  const todayStart = new Date();
+  todayStart.setHours(0, 0, 0, 0);
+  const todayCaptureCount = tiles.filter((t) => {
+    if (!t.captured_at) return false;
+    return new Date(t.captured_at) >= todayStart;
+  }).length;
+
+  const kpiCards = [
+    { label: '가입 사용자', value: users.length, sub: '누적 가입', tone: 'tone-blue', Icon: Users },
+    { label: '누적 점령 타일', value: tiles.length, sub: '지도에 표시 중', tone: 'tone-green', Icon: MapIcon },
+    { label: '오늘 점령', value: todayCaptureCount, sub: '자정 이후 집계', tone: 'tone-amber', Icon: Zap },
+    { label: '현장 사진', value: photos.length, sub: '등록됨', tone: 'tone-rose', Icon: Camera },
+  ];
+
   // 데이터 로드 완료 전 가드 정의
   return (
     <div className="section-stack">
@@ -482,6 +496,21 @@ export default function DashboardTab() {
             </button>
           </div>
         )}
+
+        <div className="stat-grid">
+          {kpiCards.map((s) => (
+            <div key={s.label} className="stat-card">
+              <div className={`stat-icon ${s.tone}`}>
+                <s.Icon size={18} />
+              </div>
+              <div style={{ minWidth: 0 }}>
+                <div className="stat-label">{s.label}</div>
+                <div className="stat-value">{s.value.toLocaleString()}</div>
+                <div className="stat-sub">{s.sub}</div>
+              </div>
+            </div>
+          ))}
+        </div>
 
         {/* Leaflet 실시간 점령 지도 */}
         <div className="tactical-card map-card">

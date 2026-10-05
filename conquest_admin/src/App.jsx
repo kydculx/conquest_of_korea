@@ -14,7 +14,6 @@ import PrivacyPage from './components/PrivacyPage';
 import LoginPage from './components/LoginPage';
 import { supabase } from './supabase';
 import {
-  ShieldAlert,
   Users,
   Bell,
   Terminal,
@@ -26,13 +25,24 @@ import {
   Layers,
   LogOut,
   Sun,
-  Moon
+  Moon,
+  ChevronsLeft,
+  ChevronsRight,
+  ChevronRight
 } from 'lucide-react';
 
 const THEME_KEY = 'conquest-admin-theme';
+const SIDEBAR_KEY = 'conquest-admin-sidebar';
 
 function AdminLayout({ user, onLogout }) {
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
+  const [isCollapsed, setIsCollapsed] = useState(() => {
+    try {
+      return localStorage.getItem(SIDEBAR_KEY) === 'collapsed';
+    } catch {
+      return false;
+    }
+  });
   const [theme, setTheme] = useState(() => {
     try {
       return localStorage.getItem(THEME_KEY) || 'dark';
@@ -44,6 +54,14 @@ function AdminLayout({ user, onLogout }) {
   const navigate = useNavigate();
 
   useEffect(() => {
+    try {
+      localStorage.setItem(SIDEBAR_KEY, isCollapsed ? 'collapsed' : 'expanded');
+    } catch {
+      return;
+    }
+  }, [isCollapsed]);
+
+  useEffect(() => {
     document.documentElement.dataset.theme = theme;
     try {
       localStorage.setItem(THEME_KEY, theme);
@@ -52,14 +70,35 @@ function AdminLayout({ user, onLogout }) {
     }
   }, [theme]);
 
-  const menuItems = [
-    { id: 'dashboard', label: '대시보드', icon: Cpu, path: '/admin/dashboard' },
-    { id: 'ranking', label: '사용자 랭킹', icon: Trophy, path: '/admin/ranking' },
-    { id: 'users', label: '사용자 관리', icon: Users, path: '/admin/users' },
-    { id: 'notifications', label: '푸시 알림', icon: Bell, path: '/admin/notifications' },
-    { id: 'tile-editor', label: '타일 속성 에디터', icon: Layers, path: '/admin/tile-editor' },
-    { id: 'map-editor', label: '패턴 에디터', icon: Map, path: '/admin/map-editor' },
+  const navGroups = [
+    {
+      label: '모니터링',
+      items: [
+        { id: 'dashboard', label: '대시보드', icon: Cpu, path: '/admin/dashboard' },
+      ],
+    },
+    {
+      label: '사용자',
+      items: [
+        { id: 'users', label: '사용자 관리', icon: Users, path: '/admin/users' },
+        { id: 'ranking', label: '사용자 랭킹', icon: Trophy, path: '/admin/ranking' },
+      ],
+    },
+    {
+      label: '운영',
+      items: [
+        { id: 'notifications', label: '푸시 알림', icon: Bell, path: '/admin/notifications' },
+      ],
+    },
+    {
+      label: '지도 도구',
+      items: [
+        { id: 'tile-editor', label: '타일 속성 에디터', icon: Layers, path: '/admin/tile-editor' },
+        { id: 'map-editor', label: '패턴 에디터', icon: Map, path: '/admin/map-editor' },
+      ],
+    },
   ];
+  const allNavItems = navGroups.flatMap((g) => g.items);
 
   const pageMeta = {
     dashboard: { title: '대시보드', desc: '실시간 현황을 한눈에 확인합니다' },
@@ -72,27 +111,26 @@ function AdminLayout({ user, onLogout }) {
 
   const getPageMeta = () => {
     const currentPath = location.pathname;
-    const item = menuItems.find(m => currentPath.startsWith(m.path));
+    const item = allNavItems.find(m => currentPath.startsWith(m.path));
     if (item && pageMeta[item.id]) return pageMeta[item.id];
     if (currentPath === '/admin') return pageMeta.dashboard;
     return { title: '관리 콘솔', desc: '서비스 운영을 위한 도구 모음입니다' };
   };
   const meta = getPageMeta();
+  const userInitial = ((user?.email || '관')[0] || '관').toUpperCase();
 
   return (
-    <div className="app-container">
-      {/* 모바일 화면에서 사이드바가 열렸을 때 뒷배경 오버레이 클릭 시 닫기 */}
+    <div className={`app-container ${isCollapsed ? 'sidebar-collapsed' : ''}`}>
       {isSidebarOpen && (
         <div className="sidebar-backdrop" onClick={() => setIsSidebarOpen(false)} />
       )}
 
-      {/* 1. 사이드바 내비게이션 */}
       <aside className={`sidebar ${isSidebarOpen ? 'open' : ''}`}>
         <div className="admin-brand">
           <div className="admin-brand-mark">
             <Terminal size={20} />
           </div>
-          <div style={{ flex: 1, minWidth: 0 }}>
+          <div className="admin-brand-text">
             <h1 className="admin-brand-name">
               찜! 모험
             </h1>
@@ -111,35 +149,45 @@ function AdminLayout({ user, onLogout }) {
         </div>
 
         <nav className="sidebar-nav">
-          {menuItems.map(item => {
-            const Icon = item.icon;
-            const isActive = location.pathname === item.path || (item.id === 'dashboard' && location.pathname === '/admin');
-            return (
-              <button
-                key={item.id}
-                onClick={() => {
-                  navigate(item.path);
-                  setIsSidebarOpen(false);
-                }}
-                className={`nav-item ${isActive ? 'active' : ''}`}
-              >
-                <Icon size={18} />
-                {item.label}
-              </button>
-            );
-          })}
+          {navGroups.map((group) => (
+            <div key={group.label} className="nav-group">
+              <div className="nav-group-label">{group.label}</div>
+              {group.items.map((item) => {
+                const Icon = item.icon;
+                const isActive = location.pathname === item.path || (item.id === 'dashboard' && location.pathname === '/admin');
+                return (
+                  <button
+                    key={item.id}
+                    onClick={() => {
+                      navigate(item.path);
+                      setIsSidebarOpen(false);
+                    }}
+                    className={`nav-item ${isActive ? 'active' : ''}`}
+                    title={item.label}
+                  >
+                    <Icon size={18} />
+                    <span className="nav-label">{item.label}</span>
+                  </button>
+                );
+              })}
+            </div>
+          ))}
         </nav>
 
         <div className="sidebar-footer">
           <div className="sidebar-user">
-            <ShieldAlert size={15} style={{ color: 'var(--accent-gold)', flexShrink: 0 }} />
-            <span className="sidebar-user-email" title={user?.email}>
-              {user?.email || '로그인 상태'}
-            </span>
+            <div className="user-chip" title={user?.email}>{userInitial}</div>
+            <div className="sidebar-user-meta">
+              <div className="sidebar-user-name">관리자</div>
+              <span className="sidebar-user-email" title={user?.email}>
+                {user?.email || '로그인 상태'}
+              </span>
+            </div>
           </div>
           <button
             onClick={onLogout}
             className="logout-btn"
+            title="로그아웃"
           >
             <LogOut size={13} />
             <span>로그아웃</span>
@@ -147,24 +195,30 @@ function AdminLayout({ user, onLogout }) {
         </div>
       </aside>
 
-      {/* 2. 메인 콘텐츠 */}
       <main className="main-content">
-        <header className="page-header">
-          <div style={{ display: 'flex', alignItems: 'center', gap: '0.8rem', minWidth: 0 }}>
+        <div className="topbar">
+          <div className="topbar-left">
             <button
               className="menu-toggle-btn"
               onClick={() => setIsSidebarOpen(true)}
-              style={{ display: 'flex', alignItems: 'center', justifyContent: 'center' }}
               aria-label="메뉴 열기"
             >
-              <Menu size={20} />
+              <Menu size={18} />
             </button>
-            <div style={{ minWidth: 0 }}>
-              <h2 className="page-title">{meta.title}</h2>
-              <p className="page-subtitle">
-                {meta.desc}
-              </p>
-            </div>
+            <button
+              type="button"
+              className="collapse-btn"
+              onClick={() => setIsCollapsed(!isCollapsed)}
+              aria-label={isCollapsed ? '사이드바 펼치기' : '사이드바 접기'}
+              title={isCollapsed ? '사이드바 펼치기' : '사이드바 접기'}
+            >
+              {isCollapsed ? <ChevronsRight size={16} /> : <ChevronsLeft size={16} />}
+            </button>
+            <nav className="breadcrumb" aria-label="현재 위치">
+              관리 콘솔
+              <ChevronRight size={13} />
+              <strong>{meta.title}</strong>
+            </nav>
           </div>
           <div className="header-right">
             <button
@@ -180,8 +234,14 @@ function AdminLayout({ user, onLogout }) {
               <span className="status-dot" />
               정상 운영 중
             </span>
+            <div className="user-chip" title={user?.email}>{userInitial}</div>
           </div>
-        </header>
+        </div>
+
+        <div className="content-head">
+          <h1 className="content-title">{meta.title}</h1>
+          <p className="content-desc">{meta.desc}</p>
+        </div>
 
         {/* 탭 페이지 마운트 */}
         <section style={{ position: 'relative', zIndex: 1 }}>
