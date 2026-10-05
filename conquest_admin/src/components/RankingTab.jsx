@@ -54,6 +54,12 @@ export default function RankingTab() {
     return { className: 'plain', label: `${index + 1}` };
   };
 
+  const getSortValue = (agent) => {
+    if (sortBy === 'daily_moved_tiles_count') return agent.daily_moved_tiles_count || 0;
+    if (sortBy === 'total_moved_tiles_count') return agent.total_moved_tiles_count || 0;
+    return agent.captured_tiles_count || 0;
+  };
+
   return (
     <div className="section-stack">
       {/* 랭킹 컨트롤 패널 */}
@@ -129,14 +135,19 @@ export default function RankingTab() {
               ) : (
                 pagedAgents.map((agent, idx) => {
                   const index = rankOffset + idx;
+                  const isRanked = getSortValue(agent) > 0;
                   const rank = getRankBadge(index);
-                  const isTop3 = index < 3;
+                  const isTop3 = isRanked && index < 3;
                   return (
                     <tr
                       key={agent.id}
                     >
                       <td style={{ textAlign: 'center', width: '90px' }}>
-                        {isTop3 ? (
+                        {!isRanked ? (
+                          <span className="rank-badge plain">
+                            -
+                          </span>
+                        ) : isTop3 ? (
                           <span className={`rank-badge ${rank.className}`}>
                             <Award size={13} />
                             {rank.label}
