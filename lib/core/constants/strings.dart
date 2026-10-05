@@ -1006,6 +1006,21 @@ class GameStrings {
   /// 사진 상세 화면 타이틀
   static String get photoDetailTitle => 'photoDetailTitle'.tr();
 
+  /// 사진 메뉴 타이틀
+  static String get photoMenuTitle => 'photoMenuTitle'.tr();
+
+  /// 사진 촬영 액션
+  static String get photoShootAction => 'photoShootAction'.tr();
+
+  /// 근처 갤러리 액션
+  static String get nearbyGalleryAction => 'nearbyGalleryAction'.tr();
+
+  /// 근처 갤러리 타이틀
+  static String get nearbyGalleryTitle => 'nearbyGalleryTitle'.tr();
+
+  /// 근처 갤러리 비어 있음
+  static String get nearbyGalleryEmpty => 'nearbyGalleryEmpty'.tr();
+
   /// 표시 언어 선택 타이틀
   static String get selectLanguage => 'selectLanguage'.tr();
 

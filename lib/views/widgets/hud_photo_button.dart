@@ -9,6 +9,7 @@ import '../../providers/game_provider.dart';
 import '../../providers/achievement_provider.dart';
 import '../../services/hex_service.dart';
 import '../../services/photo_service.dart';
+import '../screens/nearby_gallery_screen.dart';
 import 'tactical_press_button.dart';
 import 'tactical_dialog.dart';
 
@@ -47,9 +48,115 @@ class TilePhotoActionButton extends StatelessWidget {
         final hex = HexService.latLngToHex(currentLocation);
         final tileId = HexService.tileId(hex['q']!, hex['r']!);
 
+        if (!context.mounted) return;
+
+        // 사진 촬영 / 근처 갤러리 선택 메뉴
+        final String? choice = await showModalBottomSheet<String>(
+          context: context,
+          backgroundColor: GameColors.backgroundMedium,
+          shape: const RoundedRectangleBorder(
+            borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+          ),
+          builder: (sheetContext) {
+            return SafeArea(
+              child: Container(
+                padding: const EdgeInsets.fromLTRB(20, 12, 20, 24),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    Center(
+                      child: Container(
+                        width: 40,
+                        height: 4,
+                        margin: const EdgeInsets.only(bottom: 16),
+                        decoration: BoxDecoration(
+                          color: Colors.white24,
+                          borderRadius: BorderRadius.circular(2),
+                        ),
+                      ),
+                    ),
+                    Text(
+                      GameStrings.photoMenuTitle,
+                      style: const TextStyle(
+                        color: Colors.white,
+                        fontSize: 16,
+                        fontWeight: FontWeight.bold,
+                      ),
+                      textAlign: TextAlign.center,
+                    ),
+                    const SizedBox(height: 12),
+                    ListTile(
+                      leading: const Icon(
+                        Icons.photo_camera_rounded,
+                        color: Palette.footprintMint,
+                      ),
+                      title: Text(
+                        GameStrings.photoShootAction,
+                        style: const TextStyle(
+                          color: Colors.white,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                      onTap: () => Navigator.pop(sheetContext, 'shoot'),
+                    ),
+                    ListTile(
+                      leading: const Icon(
+                        Icons.photo_library_rounded,
+                        color: Palette.footprintMint,
+                      ),
+                      title: Text(
+                        GameStrings.nearbyGalleryAction,
+                        style: const TextStyle(
+                          color: Colors.white,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                      onTap: () => Navigator.pop(sheetContext, 'gallery'),
+                    ),
+                  ],
+                ),
+              ),
+            );
+          },
+        );
+
+        if (!context.mounted) return;
+
+        if (choice == 'gallery') {
+          Navigator.push(
+            context,
+            MaterialPageRoute(
+              builder: (context) => NearbyGalleryScreen(
+                currentLocation: currentLocation,
+              ),
+            ),
+          );
+          return;
+        }
+
+        if (choice != 'shoot') return; // 메뉴 닫힘
+
         final game = context.read<GameProvider>();
         final currentUserId = auth.user?.id;
 
+        await _runCameraFlow(context, game, tileId, currentUserId);
+      },
+      child: Icon(
+        Icons.photo_camera_rounded,
+        color: GameColors.tacticalWhite,
+        size: iconSize,
+      ),
+    );
+  }
+
+  /// 기존 사진 촬영 파이프라인 (중복 촬영 가드 → 카메라 → 코멘트 → 업로드)
+  Future<void> _runCameraFlow(
+    BuildContext context,
+    GameProvider game,
+    String tileId,
+    String? currentUserId,
+  ) async {
         // 1. 이미 등록한 사진이 있는지 Supabase에서 목록 비동기 대조
         final photos = await game.loadPhotosForTile(tileId);
         final bool alreadyUploaded = photos.any((p) => p['user_id'] == currentUserId);
@@ -162,13 +269,6 @@ class TilePhotoActionButton extends StatelessWidget {
             ),
           );
         }
-      },
-      child: Icon(
-        Icons.photo_camera_rounded,
-        color: GameColors.tacticalWhite,
-        size: iconSize,
-      ),
-    );
   }
 
   void _showErrorDialog(BuildContext context, String message) {

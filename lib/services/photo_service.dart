@@ -196,6 +196,27 @@ class PhotoService {
     }
   }
 
+  /// 전체 타일 사진 목록을 최신순으로 페이지 단위로 읽어옵니다.
+  /// [from]부터 [to]까지의 구간을 조회하며, 빈 목록 반환 시 마지막 페이지입니다.
+  Future<List<Map<String, dynamic>>> fetchRecentPhotos({
+    required int from,
+    required int to,
+  }) async {
+    try {
+      final List<Map<String, dynamic>> data = await _client
+          .from('tile_photos')
+          .select('id, tile_id, user_id, user_nickname, photo_url, comment, created_at')
+          .order('created_at', ascending: false)
+          .order('id')
+          .range(from, to);
+
+      return data;
+    } catch (e) {
+      debugPrint('❌ 최근 사진 페이지 조회 실패 ($from~$to): $e');
+      return [];
+    }
+  }
+
   /// Supabase Storage 및 DB 테이블('tile_photos') 모두에서 지정된 사진 데이터를 영구 삭제합니다.
   Future<bool> deleteTilePhoto({
     required String photoId,
