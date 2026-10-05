@@ -1,6 +1,9 @@
 import React, { useEffect, useState } from 'react';
 import { supabase } from '../supabase';
-import { Trophy, Coins, Compass, RotateCcw, Search, Award } from 'lucide-react';
+import { Trophy, Compass, RotateCcw, Search, Award } from 'lucide-react';
+import Pagination from './Pagination';
+
+const PAGE_SIZE = 20;
 
 export default function RankingTab() {
   const [agents, setAgents] = useState([]);
@@ -8,6 +11,7 @@ export default function RankingTab() {
   const [error, setError] = useState(null);
   const [sortBy, setSortBy] = useState('captured_tiles_count'); // captured_tiles_count, gold
   const [searchTerm, setSearchTerm] = useState('');
+  const [page, setPage] = useState(1);
 
   const loadRankings = async () => {
     try {
@@ -34,39 +38,42 @@ export default function RankingTab() {
     loadRankings();
   }, [sortBy]);
 
-  // 검색어 필터링
   const filteredAgents = agents.filter(agent =>
     (agent.nickname && agent.nickname.toLowerCase().includes(searchTerm.toLowerCase())) ||
     (agent.id && agent.id.toLowerCase().includes(searchTerm.toLowerCase()))
   );
+  const totalPages = Math.max(1, Math.ceil(filteredAgents.length / PAGE_SIZE));
+  const safePage = Math.min(page, totalPages);
+  const pagedAgents = filteredAgents.slice((safePage - 1) * PAGE_SIZE, safePage * PAGE_SIZE);
+  const rankOffset = (safePage - 1) * PAGE_SIZE;
 
   const getRankBadge = (index) => {
-    if (index === 0) return { color: '#eab308', label: '1ST' };
-    if (index === 1) return { color: '#64748b', label: '2ND' };
-    if (index === 2) return { color: '#b45309', label: '3RD' };
-    return { color: 'var(--text-secondary)', label: `${index + 1}` };
+    if (index === 0) return { className: 'gold', label: '1위' };
+    if (index === 1) return { className: 'silver', label: '2위' };
+    if (index === 2) return { className: 'bronze', label: '3위' };
+    return { className: 'plain', label: `${index + 1}` };
   };
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
+    <div className="section-stack">
       {/* 랭킹 컨트롤 패널 */}
       <div className="tab-controls-header">
         {/* 정렬 필터 버튼 그룹 */}
         <div className="tab-filter-group">
-          <button 
-            onClick={() => setSortBy('captured_tiles_count')}
+          <button
+            onClick={() => { setSortBy('captured_tiles_count'); setPage(1); }}
             className={`tactical-btn ${sortBy === 'captured_tiles_count' ? 'active' : ''}`}
           >
             <Trophy size={16} /> 점령 영토 순
           </button>
-          <button 
-            onClick={() => setSortBy('daily_moved_tiles_count')}
+          <button
+            onClick={() => { setSortBy('daily_moved_tiles_count'); setPage(1); }}
             className={`tactical-btn ${sortBy === 'daily_moved_tiles_count' ? 'active' : ''}`}
           >
             <Compass size={16} /> 일일 이동 순
           </button>
-          <button 
-            onClick={() => setSortBy('total_moved_tiles_count')}
+          <button
+            onClick={() => { setSortBy('total_moved_tiles_count'); setPage(1); }}
             className={`tactical-btn ${sortBy === 'total_moved_tiles_count' ? 'active' : ''}`}
           >
             <Award size={16} /> 누적 이동 순
@@ -76,14 +83,14 @@ export default function RankingTab() {
         {/* 검색 및 새로고침 */}
         <div className="tab-search-group">
           <div className="tab-search-input-wrapper">
-            <Search size={16} style={{ position: 'absolute', left: '12px', top: '50%', transform: 'translateY(-50%)', color: 'var(--text-muted)' }} />
-            <input 
+            <Search size={16} className="search-icon" />
+            <input
               type="text"
               className="tactical-input"
               style={{ paddingLeft: '2.5rem' }}
               placeholder="사용자 검색..."
               value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
+              onChange={(e) => { setSearchTerm(e.target.value); setPage(1); }}
             />
           </div>
           <button className="tactical-btn" onClick={loadRankings} disabled={loading}>
@@ -115,83 +122,67 @@ export default function RankingTab() {
             <tbody>
               {filteredAgents.length === 0 ? (
                 <tr>
-                  <td colSpan="3" style={{ textAlign: 'center', color: 'var(--text-muted)', padding: '3rem' }}>
+                  <td colSpan="3" className="empty-state">
                     등록된 사용자 정보가 없거나 검색 결과가 존재하지 않습니다.
                   </td>
                 </tr>
               ) : (
-                filteredAgents.map((agent, index) => {
+                pagedAgents.map((agent, idx) => {
+                  const index = rankOffset + idx;
                   const rank = getRankBadge(index);
                   const isTop3 = index < 3;
                   return (
-                    <tr 
+                    <tr
                       key={agent.id}
-                      style={{
-                        background: isTop3 ? 'rgba(255, 255, 255, 0.01)' : 'transparent',
-                        transition: 'background 0.2s ease'
-                      }}
                     >
-                      <td style={{ textAlign: 'center' }}>
+                      <td style={{ textAlign: 'center', width: '90px' }}>
                         {isTop3 ? (
-                          <div style={{
-                            display: 'inline-flex',
-                            alignItems: 'center',
-                            justifyContent: 'center',
-                            gap: '4px',
-                            fontWeight: '800',
-                            color: rank.color,
-                            fontFamily: 'var(--font-display)'
-                          }}>
-                            <Award size={16} />
+                          <span className={`rank-badge ${rank.className}`}>
+                            <Award size={13} />
                             {rank.label}
-                          </div>
+                          </span>
                         ) : (
-                          <span style={{ fontFamily: 'monospace', fontWeight: 600, color: 'var(--text-muted)' }}>
+                          <span className="rank-badge plain">
                             {rank.label}
                           </span>
                         )}
                       </td>
                       <td>
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '0.8rem' }}>
-                          <div 
-                            style={{ 
-                              width: '12px', 
-                              height: '12px', 
-                              borderRadius: '50%', 
-                              backgroundColor: agent.color_hex || 'var(--accent-cyan)'
-                            }} 
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '0.7rem', minWidth: 0 }}>
+                          <div
+                            style={{
+                              width: '10px',
+                              height: '10px',
+                              borderRadius: '50%',
+                              backgroundColor: agent.color_hex || 'var(--accent-cyan)',
+                              flexShrink: 0
+                            }}
                           />
-                          <div style={{ minWidth: 0, flex: 1 }}>
-                            <div style={{ 
-                              fontWeight: 'bold',
-                              textOverflow: 'ellipsis',
-                              overflow: 'hidden',
-                              whiteSpace: 'nowrap'
-                            }}>
-                              {agent.nickname || '미등록 사용자'}
-                            </div>
+                          <div style={{
+                            fontWeight: 600,
+                            fontSize: '0.88rem',
+                            textOverflow: 'ellipsis',
+                            overflow: 'hidden',
+                            whiteSpace: 'nowrap'
+                          }}>
+                            {agent.nickname || '미등록 사용자'}
                           </div>
                         </div>
                       </td>
-                      <td style={{ 
-                        textAlign: 'right', 
-                        fontWeight: 'bold', 
-                        color: 'var(--accent-cyan)',
-                        fontSize: '1.05rem'
+                      <td style={{
+                        textAlign: 'right',
+                        whiteSpace: 'nowrap'
                       }}>
-                        {sortBy === 'captured_tiles_count' ? (
-                          <>
-                            {agent.captured_tiles_count || 0} <span style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', fontWeight: 'normal' }}>구역</span>
-                          </>
-                        ) : sortBy === 'daily_moved_tiles_count' ? (
-                          <>
-                            {agent.daily_moved_tiles_count || 0} <span style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', fontWeight: 'normal' }}>타일</span>
-                          </>
-                        ) : (
-                          <>
-                            {agent.total_moved_tiles_count || 0} <span style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', fontWeight: 'normal' }}>타일</span>
-                          </>
-                        )}
+                        <span className="table-numeric">
+                          {sortBy === 'captured_tiles_count'
+                            ? (agent.captured_tiles_count || 0)
+                            : sortBy === 'daily_moved_tiles_count'
+                              ? (agent.daily_moved_tiles_count || 0)
+                              : (agent.total_moved_tiles_count || 0)}
+                        </span>
+                        <span className="table-unit">
+                          {sortBy === 'captured_tiles_count' ? '구역' : '타일'}
+                        </span>
                       </td>
                     </tr>
                   );
@@ -200,6 +191,15 @@ export default function RankingTab() {
             </tbody>
           </table>
         )}
+          {!loading && (
+            <Pagination
+              page={safePage}
+              totalPages={totalPages}
+              totalCount={filteredAgents.length}
+              pageSize={PAGE_SIZE}
+              onChange={setPage}
+            />
+          )}
       </div>
     </div>
   );
