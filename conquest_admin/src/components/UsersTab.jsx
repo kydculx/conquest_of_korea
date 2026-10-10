@@ -328,7 +328,7 @@ export default function UsersTab() {
               <button className="tactical-btn danger" onClick={() => setEditingUser(null)}>
                 취소
               </button>
-              <button className="tactical-btn" onClick={handleSaveGold} disabled={submitting}>
+              <button className="tactical-btn primary" onClick={handleSaveGold} disabled={submitting}>
                 {submitting ? '저장 중...' : '적용 완료'}
               </button>
             </div>

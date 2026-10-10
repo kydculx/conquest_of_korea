@@ -6,7 +6,7 @@ import Pagination from './Pagination';
 const PAGE_SIZE = 20;
 
 export default function RankingTab() {
-  const [agents, setAgents] = useState([]);
+  const [players, setPlayers] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [sortBy, setSortBy] = useState('captured_tiles_count'); // captured_tiles_count, gold
@@ -25,7 +25,7 @@ export default function RankingTab() {
         .order(sortBy, { ascending: false });
 
       if (err) throw err;
-      setAgents(data || []);
+      setPlayers(data || []);
     } catch (err) {
       console.error(err);
       setError('사용자 랭킹 데이터를 로드하는 중 에러가 발생했습니다.');
@@ -38,13 +38,13 @@ export default function RankingTab() {
     loadRankings();
   }, [sortBy]);
 
-  const filteredAgents = agents.filter(agent =>
+  const filteredPlayers = players.filter(agent =>
     (agent.nickname && agent.nickname.toLowerCase().includes(searchTerm.toLowerCase())) ||
     (agent.id && agent.id.toLowerCase().includes(searchTerm.toLowerCase()))
   );
-  const totalPages = Math.max(1, Math.ceil(filteredAgents.length / PAGE_SIZE));
+  const totalPages = Math.max(1, Math.ceil(filteredPlayers.length / PAGE_SIZE));
   const safePage = Math.min(page, totalPages);
-  const pagedAgents = filteredAgents.slice((safePage - 1) * PAGE_SIZE, safePage * PAGE_SIZE);
+  const pagedPlayers = filteredPlayers.slice((safePage - 1) * PAGE_SIZE, safePage * PAGE_SIZE);
   const rankOffset = (safePage - 1) * PAGE_SIZE;
 
   const getRankBadge = (index) => {
@@ -126,14 +126,14 @@ export default function RankingTab() {
               </tr>
             </thead>
             <tbody>
-              {filteredAgents.length === 0 ? (
+              {filteredPlayers.length === 0 ? (
                 <tr>
                   <td colSpan="3" className="empty-state">
                     등록된 사용자 정보가 없거나 검색 결과가 존재하지 않습니다.
                   </td>
                 </tr>
               ) : (
-                pagedAgents.map((agent, idx) => {
+                pagedPlayers.map((agent, idx) => {
                   const index = rankOffset + idx;
                   const isRanked = getSortValue(agent) > 0;
                   const rank = getRankBadge(index);
@@ -206,7 +206,7 @@ export default function RankingTab() {
             <Pagination
               page={safePage}
               totalPages={totalPages}
-              totalCount={filteredAgents.length}
+              totalCount={filteredPlayers.length}
               pageSize={PAGE_SIZE}
               onChange={setPage}
             />

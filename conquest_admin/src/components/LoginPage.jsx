@@ -58,7 +58,9 @@ export default function LoginPage({ onLoginSuccess }) {
       }
 
       // 로그인 성공 콜백 및 페이지 이동
-      onLoginSuccess(user);
+      if (onLoginSuccess) {
+        onLoginSuccess(user);
+      }
       navigate('/admin/dashboard');
 
     } catch (err) {
@@ -71,41 +73,39 @@ export default function LoginPage({ onLoginSuccess }) {
 
   return (
     <div className="login-root">
-      {/* 구글 폰트 로드 */}
-      <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;600;800&family=Plus+Jakarta+Sans:wght@400;600;700&display=swap" rel="stylesheet" />
-
-      {/* 네온 글로우 오라 */}
-      <div className="login-bg-orb orb-purple" />
+      {/* 백그라운드 앰비언트 오라 */}
+      <div className="login-bg-orb orb-indigo" />
       <div className="login-bg-orb orb-cyan" />
 
       <div className="login-card">
         <div className="login-header">
           <div className="login-logo">
-            <Terminal size={28} style={{ color: 'var(--accent-cyan)' }} />
+            <Terminal size={24} />
           </div>
           <h1 className="login-title">찜! 모험</h1>
-          <p className="login-subtitle">관리 콘솔</p>
+          <p className="login-subtitle">관리 콘솔 시스템</p>
         </div>
 
         {error && (
           <div className="login-error-box">
-            <ShieldAlert size={16} />
+            <ShieldAlert size={18} style={{ flexShrink: 0 }} />
             <span>{error}</span>
           </div>
         )}
 
         <form onSubmit={handleLogin} className="login-form">
           <div className="input-group">
-            <label className="input-label">관리자 계정 이메일</label>
+            <label className="input-label">이메일 계정</label>
             <div className="input-wrapper">
-              <Mail size={18} className="input-icon" />
+              <Mail size={17} className="input-icon" />
               <input
                 type="email"
                 className="login-input"
-                placeholder="admin@example.com"
+                placeholder="admin@conquest.kr"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 disabled={loading}
+                autoComplete="email"
               />
             </div>
           </div>
@@ -113,49 +113,51 @@ export default function LoginPage({ onLoginSuccess }) {
           <div className="input-group">
             <label className="input-label">비밀번호</label>
             <div className="input-wrapper">
-              <Lock size={18} className="input-icon" />
+              <Lock size={17} className="input-icon" />
               <input
                 type={showPassword ? 'text' : 'password'}
                 className="login-input"
-                placeholder="••••••••"
+                placeholder="••••••••••••"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 disabled={loading}
+                autoComplete="current-password"
               />
               <button
                 type="button"
                 className="password-toggle"
                 onClick={() => setShowPassword(!showPassword)}
                 disabled={loading}
+                aria-label={showPassword ? '비밀번호 숨기기' : '비밀번호 보기'}
               >
-                {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+                {showPassword ? <EyeOff size={16} /> : <Eye size={16} />}
               </button>
             </div>
           </div>
 
           <button type="submit" className="login-submit-btn" disabled={loading}>
             {loading ? (
-              <span className="spinner" />
+              <span className="login-spinner" />
             ) : (
-              <span>로그인</span>
+              <span>관리자 로그인</span>
             )}
           </button>
         </form>
 
         <div className="login-footer">
-          <span>관리자 계정으로 로그인해 주세요. 권한이 없는 계정은 접근할 수 없습니다.</span>
+          <span>인증된 관리자 계정만 접근 가능하며 비인가 접근은 제한됩니다.</span>
         </div>
       </div>
 
       <style dangerouslySetInnerHTML={{
         __html: `
         .login-root {
-          background-color: #060b16;
+          background-color: #070b12;
           background-image:
-            radial-gradient(700px 420px at 85% -10%, rgba(59, 130, 246, 0.1), transparent 60%),
-            radial-gradient(600px 380px at -10% 100%, rgba(59, 130, 246, 0.06), transparent 55%);
-          color: #eef2f7;
-          font-family: 'Pretendard Variable', 'Plus Jakarta Sans', sans-serif;
+            radial-gradient(900px 500px at 80% -10%, rgba(99, 102, 241, 0.12), transparent 60%),
+            radial-gradient(800px 450px at -10% 100%, rgba(56, 189, 248, 0.08), transparent 55%);
+          color: #f8fafc;
+          font-family: 'Pretendard Variable', 'Plus Jakarta Sans', system-ui, sans-serif;
           min-height: 100vh;
           display: flex;
           align-items: center;
@@ -165,48 +167,50 @@ export default function LoginPage({ onLoginSuccess }) {
           padding: 1.5rem;
         }
 
-        .login-title, .login-subtitle, .login-submit-btn {
-          font-family: 'Outfit', sans-serif;
-        }
-
         .login-bg-orb {
           position: absolute;
           border-radius: 50%;
-          filter: blur(120px);
-          opacity: 0.12;
+          filter: blur(140px);
+          opacity: 0.18;
           pointer-events: none;
           z-index: 0;
         }
-        .orb-purple {
-          width: 450px;
-          height: 450px;
-          background: #3b82f6;
-          top: -100px;
-          left: -100px;
-        }
-        .orb-cyan {
+        .orb-indigo {
           width: 500px;
           height: 500px;
-          background: #0ea5e9;
-          bottom: -150px;
-          right: -100px;
+          background: #4f46e5;
+          top: -120px;
+          left: -120px;
+        }
+        .orb-cyan {
+          width: 520px;
+          height: 520px;
+          background: #0284c7;
+          bottom: -160px;
+          right: -120px;
         }
 
         .login-card {
           width: 100%;
-          max-width: 420px;
-          background: rgba(15, 23, 42, 0.45);
-          border: 1px solid rgba(255, 255, 255, 0.04);
-          box-shadow: 0 30px 60px rgba(0, 0, 0, 0.5), 
-                      inset 0 0 12px rgba(255, 255, 255, 0.02);
+          max-width: 410px;
+          background: rgba(15, 23, 42, 0.72);
+          border: 1px solid rgba(255, 255, 255, 0.08);
+          box-shadow: 0 30px 60px -12px rgba(0, 0, 0, 0.65), 
+                      inset 0 1px 0 rgba(255, 255, 255, 0.06);
           border-radius: 24px;
-          padding: 3rem 2.5rem;
-          backdrop-filter: blur(15px);
-          -webkit-backdrop-filter: blur(15px);
+          padding: 2.8rem 2.4rem;
+          backdrop-filter: blur(20px);
+          -webkit-backdrop-filter: blur(20px);
           z-index: 10;
           display: flex;
           flex-direction: column;
-          gap: 2rem;
+          gap: 1.8rem;
+          animation: cardRise 0.4s cubic-bezier(0.16, 1, 0.3, 1) both;
+        }
+
+        @keyframes cardRise {
+          from { opacity: 0; transform: translateY(12px) scale(0.98); }
+          to { opacity: 1; transform: translateY(0) scale(1); }
         }
 
         .login-header {
@@ -214,32 +218,33 @@ export default function LoginPage({ onLoginSuccess }) {
           display: flex;
           flex-direction: column;
           align-items: center;
-          gap: 0.5rem;
+          gap: 0.45rem;
         }
         .login-logo {
-          width: 56px;
-          height: 56px;
-          background: rgba(6, 182, 212, 0.08);
-          border: 1px solid rgba(6, 182, 212, 0.15);
-          border-radius: 16px;
+          width: 52px;
+          height: 52px;
+          background: linear-gradient(135deg, #4f46e5 0%, #3b82f6 50%, #06b6d4 100%);
+          border-radius: 15px;
           display: flex;
           align-items: center;
           justify-content: center;
           margin-bottom: 0.6rem;
-          filter: drop-shadow(0 0 10px rgba(6, 182, 212, 0.3));
+          color: #ffffff;
+          box-shadow: 0 6px 20px rgba(99, 102, 241, 0.4), inset 0 1px 0 rgba(255, 255, 255, 0.35);
         }
         .login-title {
-          font-size: 1.8rem;
+          font-size: 1.75rem;
           font-weight: 800;
-          letter-spacing: 0.02em;
-          color: #eef2f7;
+          letter-spacing: -0.02em;
+          color: #f8fafc;
           margin: 0;
+          font-family: 'Outfit', 'Pretendard Variable', sans-serif;
         }
         .login-subtitle {
-          font-size: 0.75rem;
-          font-weight: 700;
-          color: #475569;
-          letter-spacing: 0.15em;
+          font-size: 0.78rem;
+          font-weight: 600;
+          color: #94a3b8;
+          letter-spacing: 0.04em;
           margin: 0;
         }
 
@@ -250,26 +255,26 @@ export default function LoginPage({ onLoginSuccess }) {
           padding: 0.8rem 1rem;
           display: flex;
           align-items: center;
-          gap: 0.6rem;
+          gap: 0.65rem;
           color: #f87171;
-          font-size: 0.8rem;
-          line-height: 1.4;
+          font-size: 0.82rem;
+          line-height: 1.45;
         }
 
         .login-form {
           display: flex;
           flex-direction: column;
-          gap: 1.2rem;
+          gap: 1.15rem;
         }
         .input-group {
           display: flex;
           flex-direction: column;
-          gap: 0.5rem;
+          gap: 0.45rem;
         }
         .input-label {
-          font-size: 0.75rem;
+          font-size: 0.76rem;
           font-weight: 600;
-          color: #94a3b8;
+          color: #cbd5e1;
           padding-left: 0.2rem;
         }
         .input-wrapper {
@@ -280,69 +285,74 @@ export default function LoginPage({ onLoginSuccess }) {
         .input-icon {
           position: absolute;
           left: 14px;
-          color: #475569;
+          color: #64748b;
           pointer-events: none;
-          transition: color 0.3s ease;
+          transition: color 0.2s ease;
         }
         .login-input {
           width: 100%;
-          background: rgba(6, 9, 19, 0.6);
-          border: 1px solid rgba(255, 255, 255, 0.05);
+          background: rgba(10, 16, 28, 0.6);
+          border: 1px solid rgba(255, 255, 255, 0.08);
           border-radius: 12px;
-          padding: 0.85rem 1rem 0.85rem 2.8rem;
-          color: #f1f5f9;
+          padding: 0.8rem 1rem 0.8rem 2.8rem;
+          color: #f8fafc;
           font-size: 0.9rem;
-          transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+          outline: none;
+          transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
         }
         .login-input:focus {
-          border-color: rgba(6, 182, 212, 0.4);
-          background: rgba(6, 9, 19, 0.8);
-          box-shadow: 0 0 15px rgba(6, 182, 212, 0.15);
-          outline: none;
+          border-color: #6366f1;
+          background: rgba(10, 16, 28, 0.85);
+          box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.22);
         }
-        .login-input:focus + .input-icon {
-          color: #06b6d4;
+        .login-input:focus ~ .input-icon {
+          color: #818cf8;
         }
         .password-toggle {
           position: absolute;
           right: 14px;
           background: none;
           border: none;
-          color: #475569;
+          color: #64748b;
           cursor: pointer;
           padding: 0;
           display: flex;
           align-items: center;
           justify-content: center;
-          transition: color 0.2s ease;
+          transition: color 0.15s ease;
         }
         .password-toggle:hover {
-          color: #94a3b8;
+          color: #cbd5e1;
         }
 
         .login-submit-btn {
-          margin-top: 1rem;
-          background: #2563eb;
-          border: 1px solid rgba(255,255,255,0.08);
+          margin-top: 0.8rem;
+          background: linear-gradient(135deg, #4f46e5 0%, #3b82f6 50%, #06b6d4 100%);
+          border: 1px solid rgba(255, 255, 255, 0.1);
           color: #ffffff;
-          padding: 0.9rem;
+          padding: 0.85rem;
           border-radius: 12px;
           font-weight: 700;
-          font-size: 0.95rem;
+          font-size: 0.92rem;
+          letter-spacing: -0.01em;
           cursor: pointer;
-          transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+          transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
           display: flex;
           align-items: center;
           justify-content: center;
-          box-shadow: 0 4px 20px rgba(59, 130, 246, 0.3);
+          box-shadow: 0 4px 18px rgba(99, 102, 241, 0.35);
         }
-        .login-submit-btn:hover {
+        .login-submit-btn:hover:not(:disabled) {
           transform: translateY(-2px);
-          box-shadow: 0 8px 25px rgba(59, 130, 246, 0.45);
+          box-shadow: 0 8px 24px rgba(99, 102, 241, 0.5);
+          background: linear-gradient(135deg, #4338ca 0%, #2563eb 50%, #0891b2 100%);
+        }
+        .login-submit-btn:active:not(:disabled) {
+          transform: scale(0.98);
         }
         .login-submit-btn:disabled {
           background: #1e293b;
-          color: #475569;
+          color: #64748b;
           cursor: not-allowed;
           box-shadow: none;
           transform: none;
@@ -350,20 +360,18 @@ export default function LoginPage({ onLoginSuccess }) {
 
         .login-footer {
           text-align: center;
-          font-size: 0.7rem;
-          color: #334155;
+          font-size: 0.72rem;
+          color: #64748b;
           line-height: 1.5;
-          padding: 0 0.5rem;
         }
 
-        /* 스피너 */
-        .spinner {
+        .login-spinner {
           width: 20px;
           height: 20px;
-          border: 2px solid rgba(255, 255, 255, 0.1);
+          border: 2px solid rgba(255, 255, 255, 0.2);
           border-top-color: #ffffff;
           border-radius: 50%;
-          animation: spin 0.8s infinite linear;
+          animation: spin 0.8s linear infinite;
         }
         @keyframes spin {
           to { transform: rotate(360deg); }

@@ -18,7 +18,7 @@ import {
   Users,
   Bell,
   Terminal,
-  Cpu,
+  LayoutDashboard,
   Trophy,
   Menu,
   X,
@@ -76,7 +76,7 @@ function AdminLayout({ user, onLogout }) {
     {
       label: '모니터링',
       items: [
-        { id: 'dashboard', label: '대시보드', icon: Cpu, path: '/admin/dashboard' },
+        { id: 'dashboard', label: '대시보드', icon: LayoutDashboard, path: '/admin/dashboard' },
       ],
     },
     {

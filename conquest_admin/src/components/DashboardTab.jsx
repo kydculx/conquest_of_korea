@@ -2,7 +2,7 @@ import React, { useEffect, useState, useRef } from 'react';
 import { useSearchParams, useNavigate } from 'react-router-dom';
 import { fetchTiles, fetchUsers, fetchUserFootprints, fetchUserCapturedTiles } from '../api';
 import { supabase } from '../supabase';
-import { Radio, Compass, Layers, Users, Map as MapIcon, Zap, Camera } from 'lucide-react';
+import { Radio, Compass, Layers, Users, Map as MapIcon, Zap, Camera, X } from 'lucide-react';
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css'; // Leaflet 기본 레이아웃 스타일 직접 로드
 
@@ -673,32 +673,19 @@ export default function DashboardTab() {
 
       {/* 📸 관리자 전용 사진 갤러리 팝업 모달 */}
       {isGalleryOpen && (
-        <div style={{
-          position: 'fixed', top: 0, left: 0, width: '100vw', height: '100vh',
-          background: 'rgba(15, 23, 42, 0.85)', backdropFilter: 'blur(8px)',
-          display: 'flex', alignItems: 'center', justifyContent: 'center',
-          zIndex: 9999, padding: '1.5rem'
-        }}>
-          <div className="tactical-card" style={{
-            width: '100%', maxWidth: '520px', background: 'var(--bg-secondary)',
-            border: '1px solid var(--border-color)', borderRadius: '12px',
-            boxShadow: 'var(--shadow-card)', padding: '1.5rem', position: 'relative',
-            display: 'flex', flexDirection: 'column', gap: '1rem'
-          }}>
-            {/* 헤더 */}
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-              <h3 style={{ fontSize: '1.1rem', color: 'var(--text-primary)', fontFamily: 'var(--font-display)', fontWeight: 'bold' }}>
-                내 주변 현장 사진 갤러리 <span style={{ fontSize: '0.85rem', color: 'var(--accent-cyan)', marginLeft: '0.5rem' }}>({selectedTileId})</span>
-              </h3>
-              <button 
-                onClick={() => setIsGalleryOpen(false)}
-                style={{
-                  background: 'none', border: 'none', color: 'var(--text-secondary)',
-                  fontSize: '1.5rem', cursor: 'pointer', outline: 'none'
-                }}
-              >
-                &times;
-              </button>
+        <div className="modal-overlay" onClick={() => setIsGalleryOpen(false)}>
+          <div className="modal-card wide" onClick={(e) => e.stopPropagation()}>
+            <button
+              className="modal-close"
+              onClick={() => setIsGalleryOpen(false)}
+              aria-label="닫기"
+            >
+              <X size={18} />
+            </button>
+            <div className="modal-title">
+              <Camera size={19} />
+              <span>현장 사진 갤러리</span>
+              <span className="card-sub">({selectedTileId})</span>
             </div>
 
             {/* 사진 리스트 컨테이너 */}

@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { sendFcmNotification, fetchUsers } from '../api';
-import { Send, Bell, Info } from 'lucide-react';
+import { Send, Bell, Info, Smartphone, Users, User } from 'lucide-react';
 
 export default function NotificationsTab() {
   const [title, setTitle] = useState('');
@@ -17,13 +17,13 @@ export default function NotificationsTab() {
     setNotifType(type);
     if (type === 'satellite_complete') {
       setTitle('📡 영토 점령 완료');
-      setBody('플레이어님, 타깃 구역에 대한 영토 점령이 성공적으로 완료되었습니다.');
+      setBody('플레이어님, 지정 구역에 대한 영토 점령이 성공적으로 완료되었습니다.');
     } else if (type === 'territory_attack') {
-      setTitle('⚠️ 영토 피탈 감지');
-      setBody('플레이어님, 소유하고 계신 영토가 적에게 공격받거나 피탈당했습니다. 즉시 상황을 파악하십시오.');
+      setTitle('⚠️ 영토 방어 알림');
+      setBody('플레이어님의 영토가 다른 플레이어에게 점령되었습니다. 지도를 확인해 보세요.');
     } else if (type === 'system_notice') {
       setTitle('📢 시스템 공지사항');
-      setBody('시스템 공지사항이 등록되었습니다. 최신 패치 및 공지 세부 사항을 파악하십시오.');
+      setBody('새로운 공지사항이 등록되었습니다. 최신 패치 및 이벤트 세부 사항을 확인해 보세요.');
     }
   };
 
@@ -43,20 +43,16 @@ export default function NotificationsTab() {
       }
     };
     loadUsers();
-    
-    // 최초 렌더링 시 system_notice 기본값 로드
-    setTitle('📢 시스템 공지사항');
-    setBody('시스템 공지사항이 등록되었습니다. 최신 패치 및 공지 세부 사항을 파악하십시오.');
   }, []);
 
   const handleSend = async (e) => {
     e.preventDefault();
     if (!title.trim() || !body.trim()) {
-      alert('알림 제목과 본문 내용을 모두 입력해 주세요.');
+      alert('알림 제목과 본문을 모두 입력해 주세요.');
       return;
     }
 
-    let topic = 'conquest_system_notice';
+    let topic = 'all';
     if (targetType === 'individual') {
       if (!userUuid.trim()) {
         alert('발송 대상 사용자를 선택해 주세요.');
@@ -82,60 +78,57 @@ export default function NotificationsTab() {
 
   return (
     <div className="section-stack">
+      <div className="tactical-card" style={{ display: 'flex', flexDirection: 'column', gap: '1.4rem' }}>
+        <div className="card-head">
+          <h3 className="card-title">
+            <Bell size={19} />
+            푸시 알림 발송 센터
+            <span className="card-sub">FCM 클라우드 메시징</span>
+          </h3>
+          <span className="status-pill">
+            <span className="status-dot" />
+            발송 대기 중
+          </span>
+        </div>
 
-      <div className="tactical-card" style={{ display: 'flex', flexDirection: 'column', gap: '1.2rem' }}>
-        <h3 className="card-title">
-          <Bell size={19} />
-          공지 발송
-          <span className="card-sub">푸시 알림</span>
-        </h3>
-
-        <form onSubmit={handleSend} style={{ display: 'flex', flexDirection: 'column', gap: '1.2rem' }}>
+        <form onSubmit={handleSend} style={{ display: 'flex', flexDirection: 'column', gap: '1.4rem' }}>
           
-          {/* 발송 타겟 유형 라디오 */}
-          <div className="notifications-radio-group">
-            <label style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', cursor: 'pointer', fontWeight: 'bold', fontSize: '0.9rem' }}>
-              <input 
-                type="radio" 
-                name="target" 
-                checked={targetType === 'all'}
-                onChange={() => setTargetType('all')}
-                style={{ accentColor: 'var(--accent-cyan)' }}
-              />
-              모든 사용자 전역 공지
-            </label>
-            <label style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', cursor: 'pointer', fontWeight: 'bold', fontSize: '0.9rem' }}>
-              <input 
-                type="radio" 
-                name="target" 
-                checked={targetType === 'individual'}
-                onChange={() => setTargetType('individual')}
-                style={{ accentColor: 'var(--accent-cyan)' }}
-              />
-              특정 사용자 개별 공지
-            </label>
+          {/* 발송 대상 모드 선택 토글 */}
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '0.4rem' }}>
+            <label className="field-label">발송 대상 범위</label>
+            <div style={{ display: 'flex', gap: '0.6rem', maxWidth: '420px' }}>
+              <button
+                type="button"
+                onClick={() => setTargetType('all')}
+                className={`tactical-btn ${targetType === 'all' ? 'active' : ''}`}
+                style={{ flex: 1 }}
+              >
+                <Users size={15} /> 전체 플레이어
+              </button>
+              <button
+                type="button"
+                onClick={() => setTargetType('individual')}
+                className={`tactical-btn ${targetType === 'individual' ? 'active' : ''}`}
+                style={{ flex: 1 }}
+              >
+                <User size={15} /> 특정 플레이어 지정
+              </button>
+            </div>
           </div>
 
           {/* 개별 타겟 사용자 선택 드롭다운 */}
           {targetType === 'individual' && (
             <div style={{ display: 'flex', flexDirection: 'column', gap: '0.4rem' }}>
-              <label style={{ color: 'var(--text-secondary)', fontSize: '0.85rem' }}>
-                수신 사용자 선택
-              </label>
+              <label className="field-label">수신 대상 플레이어 선택</label>
               {loadingUsers ? (
-                <div style={{ fontSize: '0.9rem', color: 'var(--text-muted)' }}>사용자 목록을 로드하는 중...</div>
+                <div style={{ fontSize: '0.85rem', color: 'var(--text-muted)' }}>플레이어 목록을 불러오는 중...</div>
               ) : (
                 <select 
                   className="tactical-input"
                   value={userUuid}
                   onChange={(e) => setUserUuid(e.target.value)}
-                  style={{
-                    backgroundColor: 'var(--bg-secondary)',
-                    color: 'var(--text-primary)',
-                    cursor: 'pointer'
-                  }}
                 >
-                  <option value="">-- 사용자를 선택하세요 --</option>
+                  <option value="">-- 플레이어를 선택하세요 --</option>
                   {users.map(user => (
                     <option key={user.id} value={user.id}>
                       {user.nickname || '미등록 사용자'} ({user.id.slice(0, 8)}...)
@@ -147,31 +140,22 @@ export default function NotificationsTab() {
           )}
 
           {/* 알림 타입 및 타일 ID */}
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }} className="tab-controls-header">
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(260px, 1fr))', gap: '1rem' }}>
             <div style={{ display: 'flex', flexDirection: 'column', gap: '0.4rem' }}>
-              <label style={{ color: 'var(--text-secondary)', fontSize: '0.85rem' }}>
-                알림 타입 (Type)
-              </label>
+              <label className="field-label">알림 카테고리 (Type)</label>
               <select 
                 className="tactical-input"
                 value={notifType}
                 onChange={(e) => handleNotifTypeChange(e.target.value)}
-                style={{
-                  backgroundColor: 'var(--bg-secondary)',
-                  color: 'var(--text-primary)',
-                  cursor: 'pointer'
-                }}
               >
-                <option value="system_notice">공지사항 (system_notice)</option>
-                <option value="satellite_complete">영토 점령 (satellite_complete)</option>
-                <option value="territory_attack">영토 피탈 (territory_attack)</option>
+                <option value="system_notice">📢 공지사항 (system_notice)</option>
+                <option value="satellite_complete">📡 영토 점령 (satellite_complete)</option>
+                <option value="territory_attack">⚠️ 영토 방어 알림 (territory_attack)</option>
               </select>
             </div>
 
             <div style={{ display: 'flex', flexDirection: 'column', gap: '0.4rem' }}>
-              <label style={{ color: 'var(--text-secondary)', fontSize: '0.85rem' }}>
-                임의 타일 ID (Tile ID)
-              </label>
+              <label className="field-label">연동 타일 ID (선택 사항)</label>
               <input 
                 type="text" 
                 className="tactical-input"
@@ -185,13 +169,11 @@ export default function NotificationsTab() {
 
           {/* 제목 */}
           <div style={{ display: 'flex', flexDirection: 'column', gap: '0.4rem' }}>
-            <label style={{ color: 'var(--text-secondary)', fontSize: '0.85rem' }}>
-              알림 제목 (Title)
-            </label>
+            <label className="field-label">알림 제목 (Title)</label>
             <input 
               type="text" 
               className="tactical-input"
-              placeholder="예: 점검 안내, 이벤트 시작 알림 등 제목 입력"
+              placeholder="예: [안내] 봄맞이 신규 이벤트 안내"
               value={title}
               onChange={(e) => setTitle(e.target.value)}
             />
@@ -199,31 +181,75 @@ export default function NotificationsTab() {
 
           {/* 본문 */}
           <div style={{ display: 'flex', flexDirection: 'column', gap: '0.4rem' }}>
-            <label style={{ color: 'var(--text-secondary)', fontSize: '0.85rem' }}>
-              알림 본문 내용 (Body)
-            </label>
+            <label className="field-label">알림 상세 내용 (Body)</label>
             <textarea 
               className="tactical-input"
-              style={{ minHeight: '120px', resize: 'vertical' }}
-              placeholder="사용자들에게 전파할 내용을 입력해 주세요. 포그라운드 상태의 인게임 앱에 3초간 실시간 페이드 알림 배너로 표출됩니다."
+              style={{ minHeight: '110px', resize: 'vertical' }}
+              placeholder="플레이어들에게 발송할 메시지를 입력해 주세요."
               value={body}
               onChange={(e) => setBody(e.target.value)}
             />
           </div>
 
-          {/* 알림 메시지 도움말 */}
-          <div style={{ display: 'flex', gap: '0.4rem', alignItems: 'flex-start', color: 'var(--text-secondary)', fontSize: '0.75rem', padding: '0.8rem', background: 'rgba(0, 229, 255, 0.03)', borderRadius: '6px', border: '1px solid rgba(0, 229, 255, 0.1)' }}>
-            <Info size={16} style={{ color: 'var(--accent-cyan)', flexShrink: 0, marginTop: '1px' }} />
-            <p>
-              이 공지 메시지는 Firebase Cloud Messaging 서비스를 경유하여 사용자의 기기에 직접 노출됩니다. 
-              수신자 기기의 앱 알림 설정 및 OS 설정 권한 상태에 따라 푸시 수신 여부가 결정됩니다.
+          {/* 실시간 미리보기 카드 */}
+          {(title || body) && (
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '0.4rem' }}>
+              <label className="field-label" style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
+                <Smartphone size={14} /> 기기 수신 미리보기 (Preview)
+              </label>
+              <div style={{
+                background: 'rgba(15, 23, 42, 0.65)',
+                border: '1px solid rgba(255, 255, 255, 0.08)',
+                borderRadius: '14px',
+                padding: '1rem 1.2rem',
+                display: 'flex',
+                gap: '0.8rem',
+                alignItems: 'flex-start',
+                backdropFilter: 'blur(10px)',
+                maxWidth: '460px'
+              }}>
+                <div style={{
+                  width: '36px', height: '36px', borderRadius: '10px',
+                  background: 'var(--accent-gradient)',
+                  display: 'flex', alignItems: 'center', justifyContent: 'center',
+                  color: '#fff', flexShrink: 0
+                }}>
+                  <Bell size={18} />
+                </div>
+                <div style={{ minWidth: 0, flex: 1 }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                    <span style={{ fontSize: '0.72rem', fontWeight: 700, color: 'var(--text-muted)' }}>찜! 모험</span>
+                    <span style={{ fontSize: '0.68rem', color: 'var(--text-muted)' }}>지금</span>
+                  </div>
+                  <div style={{ fontWeight: 700, fontSize: '0.88rem', color: 'var(--text-primary)', marginTop: '0.15rem' }}>
+                    {title || '알림 제목'}
+                  </div>
+                  <div style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', marginTop: '0.2rem', lineHeight: 1.4 }}>
+                    {body || '알림 본문 내용이 여기에 표시됩니다.'}
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* 도움말 가이드 */}
+          <div style={{
+            display: 'flex', gap: '0.6rem', alignItems: 'flex-start',
+            color: 'var(--text-secondary)', fontSize: '0.76rem',
+            padding: '0.85rem 1rem', background: 'rgba(56, 189, 248, 0.04)',
+            borderRadius: '10px', border: '1px solid rgba(56, 189, 248, 0.12)'
+          }}>
+            <Info size={16} style={{ color: 'var(--accent-cyan)', flexShrink: 0, marginTop: '2px' }} />
+            <p style={{ margin: 0, lineHeight: 1.5 }}>
+              본 메시지는 Firebase Cloud Messaging(FCM)을 통해 대상 기기에 실시간 전달됩니다.
+              앱이 포그라운드 상태일 경우 인게임 상단 배너로 즉시 표출됩니다.
             </p>
           </div>
 
-          {/* 전송 버튼 */}
+          {/* 발송 버튼 */}
           <div className="notifications-submit-wrapper">
-            <button type="submit" className="tactical-btn" disabled={sending}>
-              <Send size={16} /> {sending ? '발송 중...' : '공지 발송'}
+            <button type="submit" className="tactical-btn primary" disabled={sending} style={{ minWidth: '140px' }}>
+              <Send size={15} /> {sending ? '발송 중...' : '알림 발송'}
             </button>
           </div>
         </form>
