@@ -371,7 +371,7 @@ class _TilePhotoDetailScreenState extends State<TilePhotoDetailScreen> {
     try {
       if (rawDate.isNotEmpty) {
         final dt = DateTime.parse(rawDate).toLocal();
-        dateString = '${dt.year}.${dt.month.toString().padLeft(2, '0')}.${dt.day.toString().padLeft(2, '0')} ${dt.hour.toString().padLeft(2, '0')}:${dt.minute.toString().padLeft(2, '0')}';
+        dateString = '${dt.year}.${dt.month.toString().padLeft(2, '0')}.${dt.day.toString().padLeft(2, '0')}';
       }
     } catch (_) {}
 

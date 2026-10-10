@@ -21,10 +21,13 @@ class NearbyGalleryScreen extends StatefulWidget {
 class _NearbyGalleryScreenState extends State<NearbyGalleryScreen> {
   static const int _pageSize = 60;
   static const int _maxPages = 30;
+  static const int _maxTileDistance = 100;
 
   final PhotoService _photoService = PhotoService();
   final ScrollController _scrollController = ScrollController();
-  final Map<String, double> _distanceCache = {};
+  final Map<String, int> _distanceCache = {};
+  int? _baseQ;
+  int? _baseR;
 
   List<Map<String, dynamic>> _photos = [];
   int _loadedPages = 0;
@@ -35,6 +38,9 @@ class _NearbyGalleryScreenState extends State<NearbyGalleryScreen> {
   @override
   void initState() {
     super.initState();
+    final baseHex = HexService.latLngToHex(widget.currentLocation);
+    _baseQ = baseHex['q'];
+    _baseR = baseHex['r'];
     _scrollController.addListener(_onScroll);
     _loadFirst();
   }
@@ -53,19 +59,20 @@ class _NearbyGalleryScreenState extends State<NearbyGalleryScreen> {
     }
   }
 
-  double _distanceOf(Map<String, dynamic> photo) {
+  int _tileDistanceOf(Map<String, dynamic> photo) {
     final tileId = (photo['tile_id'] as String?) ?? '';
     final cached = _distanceCache[tileId];
     if (cached != null) return cached;
 
-    double distance = double.infinity;
+    int distance = 1 << 30;
     final parsed = HexService.parseTileId(tileId);
-    if (parsed != null) {
-      final center = HexService.hexToLatLng(
+    if (parsed != null && _baseQ != null && _baseR != null) {
+      distance = HexService.hexDistance(
+        _baseQ!,
+        _baseR!,
         parsed['q'] as int,
         parsed['r'] as int,
       );
-      distance = HexService.calculateDistance(widget.currentLocation, center);
     }
     _distanceCache[tileId] = distance;
     return distance;
@@ -73,12 +80,15 @@ class _NearbyGalleryScreenState extends State<NearbyGalleryScreen> {
 
   void _sortByProximity() {
     _photos.sort((a, b) {
-      final da = _distanceOf(a);
-      final db = _distanceOf(b);
+      final da = _tileDistanceOf(a);
+      final db = _tileDistanceOf(b);
       if (da != db) return da.compareTo(db);
       return ((b['created_at'] as String?) ?? '')
           .compareTo((a['created_at'] as String?) ?? '');
     });
+    _photos = _photos
+        .where((photo) => _tileDistanceOf(photo) <= _maxTileDistance)
+        .toList();
   }
 
   Future<void> _loadFirst() async {
@@ -123,12 +133,20 @@ class _NearbyGalleryScreenState extends State<NearbyGalleryScreen> {
       }
       _isLoadingMore = false;
     });
+
+    // 최근 사진이 모두 100타일 밖이면 다음 페이지를 이어서 탐색
+    if (mounted &&
+        _photos.isEmpty &&
+        _hasMore &&
+        _loadedPages < _maxPages &&
+        rows.length == _pageSize) {
+      await _loadMore();
+    }
   }
 
-  String _formatDistance(double meters) {
-    if (!meters.isFinite) return '';
-    if (meters < 1000) return '${meters.round()}m';
-    return '${(meters / 1000).toStringAsFixed(1)}km';
+  String _formatTileDistance(int tiles) {
+    if (tiles > _maxTileDistance) return '';
+    return GameStrings.tileUnit(tiles);
   }
 
   @override
@@ -172,7 +190,7 @@ class _NearbyGalleryScreenState extends State<NearbyGalleryScreen> {
                       }
                       final photo = _photos[index];
                       final distanceText =
-                          _formatDistance(_distanceOf(photo));
+                          _formatTileDistance(_tileDistanceOf(photo));
                       return GestureDetector(
                         onTap: () {
                           Navigator.push(

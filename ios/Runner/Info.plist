@@ -45,6 +45,7 @@
 		<string>kakaolink</string>
 		<string>kakaoplus</string>
 		<string>mailto</string>
+		<string>x-apple-health</string>
 	</array>
 	<key>LSRequiresIPhoneOS</key>
 	<true/>

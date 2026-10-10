@@ -50,6 +50,40 @@ class PreferencesService {
     await prefs.setBool(_stepPermissionAskedKey, true);
   }
 
+  // --- iOS 걸음수 연동 완료 상태 (health_service) ---
+  // HealthKit은 READ 허용 여부를 앱에 알려주지 않으므로, 시스템 허용 화면을
+  // 1회 이상 정상 표시했는지를 자체 플래그로 기록한다. false인 동안에는
+  // "걸음수 연결" 버튼을 노출한다 (Android 거부 상태와 동일한 흐름).
+
+  static const _iosStepLinkedKey = 'ios_step_linked';
+
+  static Future<bool> isIosStepLinked() async {
+    final prefs = await SharedPreferences.getInstance();
+    return prefs.getBool(_iosStepLinkedKey) ?? false;
+  }
+
+  static Future<void> setIosStepLinked() async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setBool(_iosStepLinkedKey, true);
+  }
+
+  // --- iOS 걸음수 nonzero 수신 이력 (health_service) ---
+  // HealthKit은 거부 여부를 알려주지 않으므로, 연동 완료 + 0걸음 지속 시
+  // 거부로 간주하는 근사 판단에 사용한다. 0보다 큰 걸음을 한 번이라도
+  // 읽으면 true로 기록되어, 이후 아침 0걸음은 정상 표시된다.
+
+  static const _iosStepSeenNonzeroKey = 'ios_step_seen_nonzero';
+
+  static Future<bool> isIosStepSeenNonzero() async {
+    final prefs = await SharedPreferences.getInstance();
+    return prefs.getBool(_iosStepSeenNonzeroKey) ?? false;
+  }
+
+  static Future<void> setIosStepSeenNonzero() async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setBool(_iosStepSeenNonzeroKey, true);
+  }
+
   // --- 알림 설정 (game_provider) ---
 
   static const _notifKey = 'conquest_notifications_enabled';

@@ -1,3 +1,4 @@
+import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:google_fonts/google_fonts.dart';
@@ -6,6 +7,7 @@ import '../../core/constants/colors.dart';
 import '../../core/constants/strings.dart';
 import '../../providers/game_provider.dart';
 import '../../services/health_service.dart';
+import 'tactical_dialog.dart';
 
 /// [상단] '솜사탕 올인원' 정보 캡슐 바 (오직 순수 GP 보유량만 극극 미니멀 노출)
 class CozyHeaderBar extends StatelessWidget {
@@ -216,6 +218,91 @@ class UtcTimerHeaderBar extends StatelessWidget {
       }
     }
 
+    /// 미연결 상태 안내 다이얼로그. 연결되어 있지 않으면 탭할 때마다 항상 먼저
+    /// 보여준다. (iOS 시스템 팝업은 최초 1회만 표시되므로, 이후 안내는 이
+    /// 다이얼로그가 담당한다.) [확인]을 누르면 true를 반환한다.
+    Future<bool> _showStepsRationale(BuildContext context) async {
+      final proceed = await showDialog<bool>(
+        context: context,
+        builder: (context) => TacticalDialog(
+          title: GameStrings.linkHealthApp,
+          icon: Icons.directions_run_rounded,
+          accentColor: Palette.neonGreen,
+          content: Text(
+            GameStrings.onboardingStepsDesc,
+            style: TextStyle(
+              color: GameColors.textSecondary,
+              fontSize: 13,
+            ),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(context, false),
+              child: Text(
+                GameStrings.cancel,
+                style: const TextStyle(fontWeight: FontWeight.bold),
+              ),
+            ),
+            ElevatedButton(
+              onPressed: () => Navigator.pop(context, true),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: Palette.neonGreen,
+                foregroundColor: GameColors.tacticalBlack,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(16),
+                ),
+              ),
+              child: Text(
+                GameStrings.confirm,
+                style: const TextStyle(fontWeight: FontWeight.bold),
+              ),
+            ),
+          ],
+        ),
+      );
+      return proceed ?? false;
+    }
+
+    /// "걸음수 연결" 버튼 탭 처리. 미연결이면 매번 안내 다이얼로그를 먼저
+    /// 보여주고, 확인을 눌렀을 때만 플랫폼별 연동 흐름으로 진행한다.
+    Future<void> _onLinkButtonTap(BuildContext context) async {
+      final proceed = await _showStepsRationale(context);
+      if (!context.mounted || !proceed) return;
+      await _onStepsTap(context);
+    }
+
+    /// 걸음수 캡슐 탭 처리.
+    /// - iOS 최초 미연동: 시스템 허용 화면을 직접 띄운다 (건강 앱 X).
+    /// - 거부 확정 상태: 기존처럼 건강 앱 설정으로 이동.
+    /// - iOS 연동 완료 후: 권한 재요청 후에도 0걸음이면 거부 상태일 가능성이 높아
+    ///   건강 앱 설정으로 안내한다 (READ 허용 여부는 조회 불가).
+    /// - Android 미거부 상태: 반복 팝업 방지를 위해 새로고침만 수행한다.
+    Future<void> _onStepsTap(BuildContext context) async {
+      try {
+        final provider = context.read<GameProvider>();
+        if (Platform.isIOS && !await HealthService.instance.isIosLinked()) {
+          await provider.retryStepPermissions();
+          return;
+        }
+        if (!context.mounted) return;
+        if (provider.isStepDenied) {
+          await _onLinkTap(context);
+          return;
+        }
+        if (!Platform.isIOS) {
+          await provider.updateStepsState();
+          return;
+        }
+        await provider.retryStepPermissions();
+        if (!context.mounted) return;
+        if (provider.todaySteps == 0) {
+          await HealthService.instance.openHealthSettings();
+        }
+      } catch (e) {
+        debugPrint('⚠️ steps capsule tap error: $e');
+      }
+    }
+
     @override
     Widget build(BuildContext context) {
       return Selector<GameProvider, bool>(
@@ -228,12 +315,16 @@ class UtcTimerHeaderBar extends StatelessWidget {
                 final _ = context.locale;
                 return GameStrings.stepsCount(provider.todaySteps);
               },
-              builder: (context, text, _) => _capsule(context, text, false),
+              builder: (context, text, _) => GestureDetector(
+                behavior: HitTestBehavior.opaque,
+                onTap: () => _onStepsTap(context),
+                child: _capsule(context, text, false),
+              ),
             );
           }
           return GestureDetector(
             behavior: HitTestBehavior.opaque,
-            onTap: () => _onLinkTap(context),
+            onTap: () => _onLinkButtonTap(context),
             child: _capsule(context, GameStrings.linkHealthApp, true),
           );
         },

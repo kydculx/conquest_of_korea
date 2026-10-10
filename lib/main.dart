@@ -1,3 +1,4 @@
+import 'dart:io';
 import 'package:flutter/foundation.dart';
 import 'package:conquest_mobile/views/screens/splash_screen.dart';
 import 'package:flutter/material.dart';
@@ -65,14 +66,20 @@ void main() async {
 
   // 위치 권한은 GameScreen 진입 시 1회만 요청 (중복 다이얼로그 방지)
 
-  // 걸음 수(Health Connect/HealthKit) 권한 요청 — 앱 시작 시 1회만
-  // (Health Connect가 없는 기기에서는 Play Store 리다이렉트가 매번 발생할 수 있어 1회 가드 적용)
+  // 걸음 수 권한 요청.
+  // - Android: 앱 시작 시 1회만 자동 요청 (Health Connect가 없는 기기에서는
+  //   Play Store 리다이렉트가 매번 발생할 수 있어 1회 가드 적용).
+  // - iOS: 시작 시 자동 요청 없음. HealthKit이 허용 여부를 알려주지 않으므로
+  //   미연동 시 "걸음수 연결" 버튼을 노출하고, 사용자가 탭할 때 시스템 허용
+  //   화면을 띄운다 (Android 거부 후 버튼 흐름과 동일).
   try {
-    final stepAsked = await PreferencesService.isStepPermissionAsked();
-    if (!stepAsked) {
-      await PreferencesService.setStepPermissionAsked();
-      if (!await HealthService.instance.hasStepPermissions()) {
-        await HealthService.instance.requestStepPermissions();
+    if (!Platform.isIOS) {
+      final stepAsked = await PreferencesService.isStepPermissionAsked();
+      if (!stepAsked) {
+        await PreferencesService.setStepPermissionAsked();
+        if (!await HealthService.instance.hasStepPermissions()) {
+          await HealthService.instance.requestStepPermissions();
+        }
       }
     }
   } catch (e) {
