@@ -179,31 +179,44 @@ export default function GalleryTab() {
 
       {viewerIndex !== null && filtered[viewerIndex] && (
         <div
+          className="gallery-lightbox"
           style={{
             position: 'fixed', top: 0, left: 0, width: '100vw', height: '100vh',
             background: 'rgba(0, 0, 0, 0.88)', display: 'flex', alignItems: 'center',
-            justifyContent: 'center', zIndex: 9999, padding: '1.5rem',
+            justifyContent: 'center', zIndex: 9999,
+            paddingTop: '1.5rem', paddingRight: '1.5rem', paddingBottom: '1.5rem',
           }}
           onClick={() => setViewerIndex(null)}
         >
-          <button
-            className="tactical-btn sm"
-            onClick={(e) => { e.stopPropagation(); setViewerIndex((i) => Math.max(0, i - 1)); }}
-            disabled={viewerIndex <= 0}
-            aria-label="이전 사진"
-            style={{ marginRight: '0.75rem', flexShrink: 0 }}
-          >
-            <ChevronLeft size={18} />
-          </button>
           <div
-            style={{ flex: '1 1 auto', minWidth: 0, maxWidth: '720px', width: '100%', display: 'flex', flexDirection: 'column', gap: '0.6rem' }}
+            style={{ width: '100%', maxWidth: '720px', display: 'flex', flexDirection: 'column', gap: '0.6rem' }}
             onClick={(e) => e.stopPropagation()}
           >
-            <img
-              src={filtered[viewerIndex].photo_url}
-              alt="현장 사진 원본"
-              style={{ width: '100%', maxHeight: '70vh', objectFit: 'contain', borderRadius: '10px', background: 'rgba(255,255,255,0.04)' }}
-            />
+            <div style={{ position: 'relative', width: '100%' }}>
+              <img
+                src={filtered[viewerIndex].photo_url}
+                alt="현장 사진 원본"
+                style={{ width: '100%', maxHeight: '70vh', objectFit: 'contain', borderRadius: '10px', background: 'rgba(255,255,255,0.04)', display: 'block' }}
+              />
+              <button
+                className="tactical-btn sm"
+                onClick={(e) => { e.stopPropagation(); setViewerIndex((i) => Math.max(0, i - 1)); }}
+                disabled={viewerIndex <= 0}
+                aria-label="이전 사진"
+                style={{ position: 'absolute', left: '10px', top: '50%', transform: 'translateY(-50%)', background: 'rgba(0,0,0,0.6)' }}
+              >
+                <ChevronLeft size={18} />
+              </button>
+              <button
+                className="tactical-btn sm"
+                onClick={(e) => { e.stopPropagation(); setViewerIndex((i) => Math.min(filtered.length - 1, i + 1)); }}
+                disabled={viewerIndex >= filtered.length - 1}
+                aria-label="다음 사진"
+                style={{ position: 'absolute', right: '10px', top: '50%', transform: 'translateY(-50%)', background: 'rgba(0,0,0,0.6)' }}
+              >
+                <ChevronRight size={18} />
+              </button>
+            </div>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: '0.8rem', color: 'var(--text-secondary)' }}>
               <span>
                 <strong style={{ color: 'var(--text-primary)' }}>{filtered[viewerIndex].user_nickname || '미등록 사용자'}</strong>
@@ -218,15 +231,6 @@ export default function GalleryTab() {
               </div>
             )}
           </div>
-          <button
-            className="tactical-btn sm"
-            onClick={(e) => { e.stopPropagation(); setViewerIndex((i) => Math.min(filtered.length - 1, i + 1)); }}
-            disabled={viewerIndex >= filtered.length - 1}
-            aria-label="다음 사진"
-            style={{ marginLeft: '0.75rem', flexShrink: 0 }}
-          >
-            <ChevronRight size={18} />
-          </button>
           <button
             className="tactical-btn sm"
             onClick={() => setViewerIndex(null)}

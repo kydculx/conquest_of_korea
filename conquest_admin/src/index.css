@@ -1919,3 +1919,17 @@ h1, h2, h3, h4, h5 {
 
 
 
+
+/* 갤러리 라이트박스: 사이드바 상태에 따라 콘텐츠 영역에만 중앙 정렬 */
+.gallery-lightbox {
+  padding-left: 0;
+}
+@media (min-width: 769px) {
+  .gallery-lightbox {
+    padding-left: 272px;
+    transition: padding-left 0.25s ease;
+  }
+  .app-container.sidebar-collapsed .gallery-lightbox {
+    padding-left: 78px;
+  }
+}
