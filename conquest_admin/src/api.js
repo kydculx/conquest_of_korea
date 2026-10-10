@@ -264,6 +264,57 @@ export async function sendFcmNotification(title, body, targetTopic, notifType = 
 }
 
 /**
+ * 5b. 갤러리(현장 사진) 목록 API
+ */
+export async function fetchAllPhotos() {
+  const PAGE_SIZE = 1000;
+  let allRows = [];
+  let from = 0;
+  for (let guard = 0; guard < 10; guard++) {
+    const { data, error } = await supabase
+      .from('tile_photos')
+      .select('*')
+      .order('created_at', { ascending: false })
+      .range(from, from + PAGE_SIZE - 1);
+    if (error) throw error;
+    const rows = data || [];
+    allRows = allRows.concat(rows);
+    if (rows.length < PAGE_SIZE) break;
+    from += PAGE_SIZE;
+  }
+  return allRows;
+}
+
+/**
+ * 관리자 권한 사진 영구 삭제 (스토리지 물리 파일 + DB 행 정리)
+ * @returns {Promise<void>}
+ */
+export async function deleteTilePhotoByAdmin(photo) {
+  // 1. 스토리지 파일 삭제 시도 (실패해도 DB 삭제는 계속되도록 격리)
+  try {
+    const bucketMarker = 'tile-photos/';
+    const markerIdx = (photo.photo_url || '').indexOf(bucketMarker);
+    if (markerIdx !== -1) {
+      const storagePath = photo.photo_url.substring(markerIdx + bucketMarker.length);
+      await supabase.storage.from('tile-photos').remove([storagePath]);
+    }
+  } catch (storageErr) {
+    console.warn('⚠️ 스토리지 파일 물리 삭제 실패:', storageErr);
+  }
+
+  // 2. RPC를 통한 RLS 우회 삭제 시도
+  const { error: rpcErr } = await supabase.rpc('delete_photo_by_admin', {
+    p_photo_id: photo.id,
+  });
+
+  if (rpcErr) {
+    console.warn('⚠️ RPC 함수가 없어 일반 DELETE 쿼리로 대체합니다:', rpcErr);
+    const { error: delErr } = await supabase.from('tile_photos').delete().eq('id', photo.id);
+    if (delErr) throw delErr;
+  }
+}
+
+/**
  * 6. 사용자 업적(Achievement) 모니터링 API
  */
 export async function fetchUserAchievements(userId) {

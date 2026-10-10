@@ -7,6 +7,7 @@ import NotificationsTab from './components/NotificationsTab';
 import MapEditorTab from './components/MapEditorTab';
 import TileAttributeEditorTab from './components/TileAttributeEditorTab';
 import UserTilesTab from './components/UserTilesTab';
+import GalleryTab from './components/GalleryTab';
 import LandingPage from './components/LandingPage';
 import PromoPage from './components/PromoPage';
 import TermsPage from './components/TermsPage';
@@ -23,6 +24,7 @@ import {
   X,
   Map,
   Layers,
+  Image,
   LogOut,
   Sun,
   Moon,
@@ -88,6 +90,7 @@ function AdminLayout({ user, onLogout }) {
       label: '운영',
       items: [
         { id: 'notifications', label: '푸시 알림', icon: Bell, path: '/admin/notifications' },
+        { id: 'gallery', label: '갤러리', icon: Image, path: '/admin/gallery' },
       ],
     },
     {
@@ -105,6 +108,7 @@ function AdminLayout({ user, onLogout }) {
     ranking: { title: '사용자 랭킹', desc: '점령과 이동 기록 기준 순위입니다' },
     users: { title: '사용자 관리', desc: '가입자 정보와 재화를 관리합니다' },
     notifications: { title: '푸시 알림', desc: '전체 또는 개별 알림을 발송합니다' },
+    gallery: { title: '갤러리', desc: '현장 사진 목록을 확인합니다' },
     'tile-editor': { title: '타일 속성 에디터', desc: '타일 속성을 직접 편집합니다' },
     'map-editor': { title: '패턴 에디터', desc: '지도 위에 패턴을 그립니다' },
   };
@@ -375,6 +379,7 @@ export default function App() {
         <Route path="users" element={<UsersTab />} />
         <Route path="user-tiles" element={<UserTilesTab />} />
         <Route path="notifications" element={<NotificationsTab />} />
+        <Route path="gallery" element={<GalleryTab />} />
         <Route path="tile-editor" element={<TileAttributeEditorTab />} />
         <Route path="map-editor" element={<MapEditorTab />} />
       </Route>
