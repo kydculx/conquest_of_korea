@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Search, RotateCcw, MapPin, Trash2 } from 'lucide-react';
+import { Search, RotateCcw, MapPin, Trash2, ChevronLeft, ChevronRight, X } from 'lucide-react';
 import { fetchAllPhotos, deleteTilePhotoByAdmin } from '../api';
 import Pagination from './Pagination';
 
@@ -21,6 +21,7 @@ export default function GalleryTab() {
   const [searchTerm, setSearchTerm] = useState('');
   const [page, setPage] = useState(1);
   const [deletingId, setDeletingId] = useState(null);
+  const [viewerIndex, setViewerIndex] = useState(null);
 
   const load = async () => {
     setLoading(true);
@@ -124,14 +125,13 @@ export default function GalleryTab() {
               {paged.map((p) => (
                 <tr key={p.id}>
                   <td>
-                    <a href={p.photo_url} target="_blank" rel="noreferrer">
-                      <img
-                        src={p.photo_url}
-                        alt="현장 사진"
-                        loading="lazy"
-                        style={{ width: '64px', height: '64px', objectFit: 'cover', borderRadius: '8px', border: '1px solid var(--border-hover)', display: 'block' }}
-                      />
-                    </a>
+                    <img
+                      src={p.photo_url}
+                      alt="현장 사진"
+                      loading="lazy"
+                      onClick={() => setViewerIndex(filtered.findIndex((f) => f.id === p.id))}
+                      style={{ width: '64px', height: '64px', objectFit: 'cover', borderRadius: '8px', border: '1px solid var(--border-hover)', display: 'block', cursor: 'zoom-in' }}
+                    />
                   </td>
                   <td>
                     <button
@@ -174,6 +174,67 @@ export default function GalleryTab() {
             pageSize={PAGE_SIZE}
             onChange={setPage}
           />
+        </div>
+      )}
+
+      {viewerIndex !== null && filtered[viewerIndex] && (
+        <div
+          style={{
+            position: 'fixed', top: 0, left: 0, width: '100vw', height: '100vh',
+            background: 'rgba(0, 0, 0, 0.88)', display: 'flex', alignItems: 'center',
+            justifyContent: 'center', zIndex: 9999, padding: '1.5rem',
+          }}
+          onClick={() => setViewerIndex(null)}
+        >
+          <button
+            className="tactical-btn sm"
+            onClick={(e) => { e.stopPropagation(); setViewerIndex((i) => Math.max(0, i - 1)); }}
+            disabled={viewerIndex <= 0}
+            aria-label="이전 사진"
+            style={{ marginRight: '0.75rem' }}
+          >
+            <ChevronLeft size={18} />
+          </button>
+          <div
+            style={{ maxWidth: '720px', width: '100%', display: 'flex', flexDirection: 'column', gap: '0.6rem' }}
+            onClick={(e) => e.stopPropagation()}
+          >
+            <img
+              src={filtered[viewerIndex].photo_url}
+              alt="현장 사진 원본"
+              style={{ width: '100%', maxHeight: '70vh', objectFit: 'contain', borderRadius: '10px', background: 'rgba(255,255,255,0.04)' }}
+            />
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: '0.8rem', color: 'var(--text-secondary)' }}>
+              <span>
+                <strong style={{ color: 'var(--text-primary)' }}>{filtered[viewerIndex].user_nickname || '미등록 사용자'}</strong>
+                {' · '}{filtered[viewerIndex].tile_id}
+                {' · '}{formatDateTime(filtered[viewerIndex].created_at)}
+              </span>
+              <span>{viewerIndex + 1} / {filtered.length}</span>
+            </div>
+            {filtered[viewerIndex].comment && (
+              <div style={{ color: '#fff', fontSize: '0.8rem', background: 'rgba(255,255,255,0.06)', padding: '6px 10px', borderRadius: '6px' }}>
+                {filtered[viewerIndex].comment}
+              </div>
+            )}
+          </div>
+          <button
+            className="tactical-btn sm"
+            onClick={(e) => { e.stopPropagation(); setViewerIndex((i) => Math.min(filtered.length - 1, i + 1)); }}
+            disabled={viewerIndex >= filtered.length - 1}
+            aria-label="다음 사진"
+            style={{ marginLeft: '0.75rem' }}
+          >
+            <ChevronRight size={18} />
+          </button>
+          <button
+            className="tactical-btn sm"
+            onClick={() => setViewerIndex(null)}
+            aria-label="닫기"
+            style={{ position: 'absolute', top: '1.2rem', right: '1.2rem' }}
+          >
+            <X size={16} />
+          </button>
         </div>
       )}
     </div>
