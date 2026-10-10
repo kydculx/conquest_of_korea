@@ -109,19 +109,6 @@ class ConquestGame extends FlameGame {
   /// 위성 점령을 개시한 대상 타일 ID 캐시
   String? _satelliteCapturingTileId;
 
-  /// 일반 점령 진행 중 타일 ID 캐시 (스크롤 프레임 가드용)
-  String? _lastCapturingTileId;
-
-  /// 직전 위성 점령 대상 ID (완료 전환 시 임시 컴포넌트 정리용)
-  String? _prevSatelliteCapturingTileId;
-
-  /// 화면 밖으로 판단된 연속 횟수 (Key: 타일 ID)
-  /// 경계 진동으로 1~2프레임 나갔다 들어오는 타일의 즉시 제거를 유예한다.
-  final Map<String, int> _invisibleMisses = {};
-
-  /// 화면 밖 연속 판정 시 실제 제거까지 유예하는 횟수
-  static const int _kRemoveGraceFrames = 2;
-
   /// 투영을 담당하는 내부 맵 컨트롤러 반환
   MapController? get mapController => _mapController;
 
@@ -339,7 +326,6 @@ class ConquestGame extends FlameGame {
         final toRemove = _tileMap.values.toList();
         removeAll(toRemove);
         _tileMap.clear();
-        _invisibleMisses.clear();
       }
     }
     _lastCameraCenter = currentCenter;
@@ -354,7 +340,6 @@ class ConquestGame extends FlameGame {
       final toRemove = _tileMap.values.toList();
       removeAll(toRemove);
       _tileMap.clear();
-      _invisibleMisses.clear();
       _lastLodLevel = currentLod;
     }
 
@@ -514,24 +499,14 @@ class ConquestGame extends FlameGame {
       });
     }
 
-    // 2. 화면 영역 밖으로 벗어났거나 실제 점령 데이터가 없는 기존 컴포넌트 타일들은
-    // 연속 유예 횟수를 채운 뒤 소멸시켜 경계 진동 1~2프레임 깜빡임을 차단
-    // (단, 현재 점령 진행 중인 타일은 예외 수호)
+    // 2. 화면 영역 밖으로 벗어났거나 실제 점령 데이터가 없는 기존 컴포넌트 타일들은 즉시 소멸시켜 CPU/메모리 부하 차단 (단, 현재 점령 진행 중인 타일은 예외 수호)
     final existingIds = _tileMap.keys.toSet();
     for (final id in existingIds) {
       final isStillCapturing = id == capturingTileId ||
           (satelliteCapturingTileId != null && id == satelliteCapturingTileId);
       if (!visibleIds.contains(id) && !isStillCapturing) {
-        final misses = (_invisibleMisses[id] ?? 0) + 1;
-        if (misses > _kRemoveGraceFrames) {
-          final component = _tileMap.remove(id);
-          _invisibleMisses.remove(id);
-          if (component != null) remove(component);
-        } else {
-          _invisibleMisses[id] = misses;
-        }
-      } else {
-        _invisibleMisses.remove(id);
+        final component = _tileMap.remove(id);
+        if (component != null) remove(component);
       }
     }
 
@@ -609,7 +584,6 @@ class ConquestGame extends FlameGame {
   }) {
     _lastCapturedTiles = capturedTiles;
     _lastCapturingColorHex = capturingColorHex;
-    _lastCapturingTileId = capturingTileId;
     _isScanMode = isScanMode;
     _currentUserId = currentUserId;
     _isSatelliteCapturing = isSatelliteCapturing;
@@ -683,21 +657,6 @@ class ConquestGame extends FlameGame {
         tile.updateData(isCapturing: false, progress: 0.0);
       }
     });
-
-    // 위성 점령 종료 전환 시 임시 타일 정리: LOD0에서는 클러스터와 ID가 같아
-    // 같은 컴포넌트로 합쳐지므로 유지하고, LOD>0에서만 남은 임시(기본 ID)를 제거해
-    // 클러스터 버전과의 겹침 깜빡임을 차단한다.
-    final finishedSatelliteId = _prevSatelliteCapturingTileId;
-    if (finishedSatelliteId != null &&
-        finishedSatelliteId != satelliteCapturingTileId) {
-      if (_tileMap.containsKey(finishedSatelliteId) &&
-          !_lastClusteredTiles.containsKey(finishedSatelliteId)) {
-        final finishedComponent = _tileMap.remove(finishedSatelliteId);
-        _invisibleMisses.remove(finishedSatelliteId);
-        if (finishedComponent != null) remove(finishedComponent);
-      }
-    }
-    _prevSatelliteCapturingTileId = satelliteCapturingTileId;
   }
 
   /// 점령이 진행 중인 특정 타일(일반 물리 점령 및 위성 원격 점령 공용)의
@@ -828,24 +787,15 @@ class ConquestGame extends FlameGame {
       }
     }
 
-    // 점령 중인 타일 ID는 컨트롤러 상태 우선으로 확정 (culling 제외 대상).
-    // flying 단계는 컴포넌트 깃발이 false라 역추출만으로는 가드가 떨어지므로,
-    // 저장된 ID를 먼저 쓰고 깃발 스캔은 보조로만 쓴다.
-    String? capturingTileId = _lastCapturingTileId;
+    // 점령 중인 타일 ID를 컴포넌트 상태에서 추출 (culling 제외 대상)
+    String? capturingTileId;
     String? satelliteCapturingId;
-    if (_isSatelliteCapturing && _satelliteCapturingTileId != null) {
-      satelliteCapturingId = _satelliteCapturingTileId;
-    }
-    if (capturingTileId == null) {
-      for (final entry in _tileMap.entries) {
-        if (entry.value.isCapturing) {
-          if (_satelliteCapturingTileId != null &&
-              entry.key == _satelliteCapturingTileId) {
-            satelliteCapturingId ??= entry.key;
-          } else {
-            capturingTileId = entry.key;
-            break;
-          }
+    for (final entry in _tileMap.entries) {
+      if (entry.value.isCapturing) {
+        if (entry.key == _satelliteCapturingTileId) {
+          satelliteCapturingId = entry.key;
+        } else {
+          capturingTileId = entry.key;
         }
       }
     }
