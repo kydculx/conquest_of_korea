@@ -191,12 +191,12 @@ export default function GalleryTab() {
             onClick={(e) => { e.stopPropagation(); setViewerIndex((i) => Math.max(0, i - 1)); }}
             disabled={viewerIndex <= 0}
             aria-label="이전 사진"
-            style={{ marginRight: '0.75rem' }}
+            style={{ marginRight: '0.75rem', flexShrink: 0 }}
           >
             <ChevronLeft size={18} />
           </button>
           <div
-            style={{ maxWidth: '720px', width: '100%', display: 'flex', flexDirection: 'column', gap: '0.6rem' }}
+            style={{ flex: '1 1 auto', minWidth: 0, maxWidth: '720px', width: '100%', display: 'flex', flexDirection: 'column', gap: '0.6rem' }}
             onClick={(e) => e.stopPropagation()}
           >
             <img
@@ -223,7 +223,7 @@ export default function GalleryTab() {
             onClick={(e) => { e.stopPropagation(); setViewerIndex((i) => Math.min(filtered.length - 1, i + 1)); }}
             disabled={viewerIndex >= filtered.length - 1}
             aria-label="다음 사진"
-            style={{ marginLeft: '0.75rem' }}
+            style={{ marginLeft: '0.75rem', flexShrink: 0 }}
           >
             <ChevronRight size={18} />
           </button>
