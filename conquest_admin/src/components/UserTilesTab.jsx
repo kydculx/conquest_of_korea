@@ -56,6 +56,14 @@ export default function UserTilesTab() {
           </h2>
         </div>
         <span className="card-sub">총 {tiles.length.toLocaleString()}개 타일</span>
+        {!loading && !error && tiles.length > 0 && (
+          <button
+            className="tactical-btn sm"
+            onClick={() => navigate(`/admin/dashboard?tiles=${userId}&nickname=${encodeURIComponent(nickname)}`)}
+          >
+            <MapPin size={13} /> 지도에서 전체 보기
+          </button>
+        )}
       </div>
 
       {loading && <div className="tactical-spinner" />}
@@ -100,7 +108,7 @@ export default function UserTilesTab() {
                   <td style={{ textAlign: 'right' }}><span className="table-numeric" style={{ color: 'var(--text-primary)' }}>{t.capture_count ?? 1}</span></td>
                   <td style={{ fontSize: '0.82rem', color: 'var(--text-secondary)', whiteSpace: 'nowrap' }}>{t.captured_at ? new Date(t.captured_at).toLocaleString('ko-KR') : '-'}</td>
                   <td style={{ textAlign: 'center' }}>
-                    <button className="tactical-btn sm" onClick={() => navigate(`/admin/dashboard?hq=${t.id}`)}>
+                    <button className="tactical-btn sm" onClick={() => navigate(`/admin/dashboard?tiles=${userId}&nickname=${encodeURIComponent(nickname)}&hq=${t.id}`)}>
                       <MapPin size={13} /> 맵에서 보기
                     </button>
                   </td>

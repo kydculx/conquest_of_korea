@@ -1,6 +1,6 @@
 import React, { useEffect, useState, useRef } from 'react';
 import { useSearchParams, useNavigate } from 'react-router-dom';
-import { fetchTiles, fetchUsers, fetchUserFootprints } from '../api';
+import { fetchTiles, fetchUsers, fetchUserFootprints, fetchUserCapturedTiles } from '../api';
 import { supabase } from '../supabase';
 import { Radio, Compass, Layers, Users, Map as MapIcon, Zap, Camera } from 'lucide-react';
 import L from 'leaflet';
@@ -47,6 +47,8 @@ export default function DashboardTab() {
   const hqParam = searchParams.get('hq');
   const footprintsUserId = searchParams.get('footprints');
   const footprintNickname = searchParams.get('nickname') || '';
+  const tilesUserId = searchParams.get('tiles');
+  const tilesNickname = (footprintsUserId ? '' : searchParams.get('nickname')) || '';
 
   const [tiles, setTiles] = useState([]);
   const [users, setUsers] = useState([]);
@@ -59,6 +61,11 @@ export default function DashboardTab() {
   const [footprintLoadedId, setFootprintLoadedId] = useState(null);
   const [footprintError, setFootprintError] = useState(null);
   const footprintLoading = !!footprintsUserId && footprintLoadedId !== footprintsUserId;
+
+  const [userTiles, setUserTiles] = useState([]);
+  const [userTilesLoadedId, setUserTilesLoadedId] = useState(null);
+  const [userTilesError, setUserTilesError] = useState(null);
+  const userTilesLoading = !!tilesUserId && userTilesLoadedId !== tilesUserId;
 
   const [selectedTileId, setSelectedTileId] = useState(null);
   const [isGalleryOpen, setIsGalleryOpen] = useState(false);
@@ -229,6 +236,42 @@ export default function DashboardTab() {
     };
   }, [footprintsUserId]);
 
+  // 1-3b. 특정 사용자 점령지 조회 (타 사용자 제외하고 해당 사용자만 표시)
+  useEffect(() => {
+    if (!tilesUserId) return;
+    let active = true;
+    const applyRows = (rows) => {
+      if (!active) return;
+      setUserTiles(rows || []);
+      setUserTilesError(null);
+      setUserTilesLoadedId(tilesUserId);
+    };
+    const failLoad = (err) => {
+      console.error(err);
+      if (!active) return;
+      setUserTiles([]);
+      setUserTilesError('점령지를 불러오지 못했습니다. 관리자 조회 권한(RLS)을 확인해 주세요.');
+      setUserTilesLoadedId(tilesUserId);
+    };
+    fetchUserCapturedTiles(tilesUserId).then(applyRows).catch(failLoad);
+
+    const tilesChannel = supabase
+      .channel(`user-tiles-${tilesUserId}`)
+      .on(
+        'postgres_changes',
+        { event: '*', schema: 'public', table: 'captured_tiles', filter: `user_id=eq.${tilesUserId}` },
+        () => {
+          fetchUserCapturedTiles(tilesUserId).then(applyRows).catch(failLoad);
+        }
+      )
+      .subscribe();
+
+    return () => {
+      active = false;
+      supabase.removeChannel(tilesChannel);
+    };
+  }, [tilesUserId]);
+
   // 1. Leaflet 맵 초기화
   useEffect(() => {
     if (!mapRef.current) return;
@@ -291,6 +334,7 @@ export default function DashboardTab() {
     polygonsGroup.current.clearLayers();
 
     const footprintMode = !!footprintsUserId;
+    const userTilesMode = !!tilesUserId && !footprintsUserId;
     const sourceTiles = footprintMode
       ? footprintTiles.map(f => ({
           id: f.tile_id,
@@ -298,7 +342,9 @@ export default function DashboardTab() {
           color_hex: '#00FFCC',
           recorded_at: f.recorded_at,
         }))
-      : tiles;
+      : userTilesMode
+        ? userTiles
+        : tiles;
 
     if (sourceTiles.length === 0) return;
 
@@ -324,7 +370,7 @@ export default function DashboardTab() {
       }
       if (!corners || corners.length !== 6) return;
       const user = users.find(u => u.id === tile.user_id);
-      const ownerName = footprintNickname || (user ? (user.nickname || '미등록 사용자') : '미등록 사용자');
+      const ownerName = footprintNickname || tilesNickname || (user ? (user.nickname || '미등록 사용자') : '미등록 사용자');
       const rawColor = tile.color_hex || user?.color_hex || '#00e5ff';
       const color = /^#[0-9a-fA-F]{6}$/.test(rawColor) ? rawColor : '#00e5ff';
       const tileId = tile.id || `hex_${q}_${r}`;
@@ -375,7 +421,7 @@ export default function DashboardTab() {
 
     if (renderedCount === 0) return;
 
-    if (footprintMode) {
+    if (footprintMode || userTilesMode) {
       try {
         if (bounds.length === 1) {
           mapInstance.current.setView(bounds[0], 14);
@@ -385,7 +431,7 @@ export default function DashboardTab() {
       } catch {
         // bounds 계산 실패는 무시
       }
-      return;
+      if (footprintMode) return;
     }
 
     if (hqParam) {
@@ -421,7 +467,7 @@ export default function DashboardTab() {
         mapInstance.current.setView(bounds[0], 14);
       }
     }
-  }, [tiles, users, photoCounts, hqParam, mapReady, footprintTiles, footprintsUserId, footprintNickname]);
+  }, [tiles, users, photoCounts, hqParam, mapReady, footprintTiles, footprintsUserId, footprintNickname, userTiles, tilesUserId, tilesNickname]);
 
   // 2-1. 본진 이동(hq) 파라미터 시 지도 포커스 + 하이라이트 마커 표시
   useEffect(() => {
@@ -497,6 +543,29 @@ export default function DashboardTab() {
           </div>
         )}
 
+        {tilesUserId && !footprintsUserId && (
+          <div className="tactical-card banner-info">
+            <span style={{ width: '12px', height: '12px', borderRadius: '3px', backgroundColor: '#00e5ff', display: 'inline-block' }} />
+            <span style={{ fontWeight: 'bold', color: 'var(--text-primary)' }}>
+              {tilesNickname ? `${tilesNickname}님의 점령지만 표시 중` : '선택한 사용자의 점령지만 표시 중'}
+            </span>
+            {!userTilesLoading && !userTilesError && (
+              <span style={{ fontSize: '0.8rem', color: 'var(--text-secondary)' }}>
+                총 {userTiles.length.toLocaleString()}개
+              </span>
+            )}
+            {userTilesLoading && (
+              <span style={{ fontSize: '0.8rem', color: 'var(--text-secondary)' }}>불러오는 중...</span>
+            )}
+            {userTilesError && (
+              <span style={{ fontSize: '0.8rem', color: 'var(--accent-red)' }}>{userTilesError}</span>
+            )}
+            <button className="tactical-btn" onClick={() => navigate('/admin/dashboard')} style={{ marginLeft: 'auto' }}>
+              전체 보기로 돌아가기
+            </button>
+          </div>
+        )}
+
         <div className="stat-grid">
           {kpiCards.map((s) => (
             <div key={s.label} className="stat-card">
@@ -518,7 +587,7 @@ export default function DashboardTab() {
             <h3 className="card-title">
               <Radio size={17} />
               맵 모니터
-              {!loading && !footprintsUserId && (
+              {!loading && !footprintsUserId && !tilesUserId && (
                 <span className="card-sub">
                   {tiles.length.toLocaleString()}개 타일 표시 중
                 </span>
@@ -526,6 +595,11 @@ export default function DashboardTab() {
               {footprintsUserId && !footprintLoading && !footprintError && (
                 <span className="card-sub">
                   {footprintTiles.length.toLocaleString()}개 발자취 표시 중
+                </span>
+              )}
+              {tilesUserId && !footprintsUserId && !userTilesLoading && !userTilesError && (
+                <span className="card-sub">
+                  {userTiles.length.toLocaleString()}개 점령지 표시 중
                 </span>
               )}
             </h3>
@@ -580,6 +654,17 @@ export default function DashboardTab() {
               }}>
                 <span style={{ fontSize: '0.85rem', color: 'var(--text-muted)' }}>
                   해당 사용자의 발자취가 없습니다
+                </span>
+              </div>
+            )}
+            {tilesUserId && !footprintsUserId && !userTilesLoading && userTiles.length === 0 && !userTilesError && (
+              <div style={{
+                position: 'absolute', top: 0, left: 0, width: '100%', height: '100%',
+                display: 'flex', alignItems: 'center', justifyContent: 'center',
+                zIndex: 5, pointerEvents: 'none'
+              }}>
+                <span style={{ fontSize: '0.85rem', color: 'var(--text-muted)' }}>
+                  해당 사용자의 점령 타일이 없습니다
                 </span>
               </div>
             )}
