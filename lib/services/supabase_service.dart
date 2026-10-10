@@ -48,21 +48,34 @@ class SupabaseService {
 
 
   /// 특정 사각형 영역 범위(minQ ~ maxQ, minR ~ maxR) 내의 점령 타일 목록을 비동기 조회하여 반환합니다.
+  ///
+  /// PostgREST 기본 1000행 제한에 걸리면 응답에서 빠진 타일이 로컬 삭제 대상으로
+  /// 오인돼 깜빡임이 생기므로, 짧은 페이지가 나올 때까지 range로 전부 수집합니다.
   Future<List<HexTile>> fetchCapturedTilesInArea(
       int minQ, int maxQ, int minR, int maxR) async {
     debugPrint('🔍 주변 ($minQ~$maxQ, $minR~$maxR) 타일 데이터 요청 중...');
-    final response = await _client
-        .from('captured_tiles')
-        .select('*')
-        .gte('q', minQ)
-        .lte('q', maxQ)
-        .gte('r', minR)
-        .lte('r', maxR);
-    final tiles = (response as List)
-        .map((e) => HexTile.fromJson(e as Map<String, dynamic>))
-        .toList();
-    debugPrint('📦 ${tiles.length}개 주변 타일 수신 완료');
-    return tiles;
+    const int pageSize = 1000;
+    final List<HexTile> all = [];
+    int from = 0;
+    while (true) {
+      final response = await _client
+          .from('captured_tiles')
+          .select('*')
+          .gte('q', minQ)
+          .lte('q', maxQ)
+          .gte('r', minR)
+          .lte('r', maxR)
+          .order('id', ascending: true)
+          .range(from, from + pageSize - 1);
+      final page = (response as List)
+          .map((e) => HexTile.fromJson(e as Map<String, dynamic>))
+          .toList();
+      all.addAll(page);
+      if (page.length < pageSize) break;
+      from += pageSize;
+    }
+    debugPrint('📦 ${all.length}개 주변 타일 수신 완료');
+    return all;
   }
 
   Future<bool> captureTile(HexTile tile) async {
@@ -92,45 +105,40 @@ class SupabaseService {
   }
 
   /// 지정한 타일 ID의 최신 소유 상황을 서버 데이터베이스로부터 확인하여 타일 소유 상태 [TileStatus]로 반환합니다.
+  ///
+  /// 네트워크 오류 등은 예외로 전파한다. 호출부가 실패를 '빈 땅'으로 오인해
+  /// 로컬 타일을 삭제하는 일을 막기 위해서다 (없음 판단은 null 응답 때만).
   Future<TileStatus> checkTileStatusFromServer(
     String tileId,
     String currentUserId,
   ) async {
-    try {
-      final response = await _client
-          .from('captured_tiles')
-          .select('user_id')
-          .eq('id', tileId)
-          .maybeSingle();
+    final response = await _client
+        .from('captured_tiles')
+        .select('user_id')
+        .eq('id', tileId)
+        .maybeSingle();
 
-      if (response == null) return TileStatus.empty;
+    if (response == null) return TileStatus.empty;
 
-      final data = _toMap(response);
-      final String? ownerId = data['user_id'];
-      if (ownerId == currentUserId) return TileStatus.mine;
+    final data = _toMap(response);
+    final String? ownerId = data['user_id'];
+    if (ownerId == currentUserId) return TileStatus.mine;
 
-      return TileStatus.enemy;
-    } catch (e) {
-      debugPrint('❌ 타일 상태 서버 조회 실패: $e');
-      return TileStatus.empty; // 오류 시 기본값
-    }
+    return TileStatus.enemy;
   }
 
   /// 특정 타일 ID에 대한 상세 점령 정보를 단일 레코드로 조회하여 반환합니다. 점령되지 않은 중립 타일일 시 null을 반환합니다.
+  ///
+  /// 네트워크 오류 등은 예외로 전파한다. null은 서버에 행이 없을 때만 반환한다.
   Future<HexTile?> fetchTile(String tileId) async {
-    try {
-      final response = await _client
-          .from('captured_tiles')
-          .select('*')
-          .eq('id', tileId)
-          .maybeSingle();
+    final response = await _client
+        .from('captured_tiles')
+        .select('*')
+        .eq('id', tileId)
+        .maybeSingle();
 
-      if (response == null) return null;
-      return HexTile.fromJson(_toMap(response));
-    } catch (e) {
-      debugPrint('❌ 단일 타일 서버 조회 실패: $e');
-      return null;
-    }
+    if (response == null) return null;
+    return HexTile.fromJson(_toMap(response));
   }
 
   /// 서버의 글로벌 시스템 설정 테이블에서 골드 획득 배율(`gold_rate`) 설정을 가져옵니다.

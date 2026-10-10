@@ -59,6 +59,9 @@ class GameTileProvider extends ChangeNotifier {
   /// 마지막으로 2km REST 조회를 수행한 시각
   DateTime? _lastAreaFetchTime;
 
+  /// 영역 조회 요청 일련번호. 늦게 도착한 옛 응답의 머지(삭제 포함)를 버리는 데 쓴다.
+  int _areaRequestSeq = 0;
+
   /// 위치 변경 감지 시 서버 부하 방지용 3초 딜레이 타이머의 마지막 체크 시각
   DateTime? _lastServerCheckTime;
 
@@ -429,6 +432,8 @@ class GameTileProvider extends ChangeNotifier {
 
     _lastCheckedAreaTileId = currentId;
     _lastAreaFetchTime = now;
+    _areaRequestSeq++;
+    final int requestSeq = _areaRequestSeq;
 
     try {
       // 5km 기준 Hex 반경 오프셋 계산 (tileSize 100m 기준 5km는 50개 링. 안전 마진 추가하여 올림)
@@ -445,6 +450,13 @@ class GameTileProvider extends ChangeNotifier {
         _supabase.fetchCapturedTilesInArea(minQ, maxQ, minR, maxR),
         _supabase.fetchTileAttributesInArea(minQ, maxQ, minR, maxR),
       ]);
+
+      // 출발 뒤에 더 새 조회가 시작됐으면 옛 응답은 버린다 (삭제 포함 머지 생략).
+      if (requestSeq != _areaRequestSeq) {
+        debugPrint('⏭️ [GameTileProvider] 옛 영역 응답 버림: 중심 ($centerQ, $centerR)');
+        return;
+      }
+
       final tiles = results[0] as List<HexTile>;
       final attributes = results[1] as List<TileAttribute>;
 
