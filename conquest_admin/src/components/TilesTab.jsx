@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { fetchTiles, fetchUsers, neutralizeTile, transferTileOwnership, updateTileShield } from '../api';
+import { fetchTiles, fetchUsers, neutralizeTile, transferTileOwnership, updateTileShield, formatTileCoords } from '../api';
 import { Search, RotateCcw, Shield, Trash2, ArrowLeftRight, X, ShieldAlert } from 'lucide-react';
 
 export default function TilesTab() {
@@ -37,7 +37,7 @@ export default function TilesTab() {
   }, []);
 
   const handleNeutralize = async (tileId) => {
-    const confirm = window.confirm(`⚠️ 정말로 이 구역(${tileId})의 점령권을 강제 회수하여 중립지대로 만드시겠습니까?`);
+    const confirm = window.confirm(`⚠️ 정말로 이 구역(${formatTileCoords(tileId)})의 점령권을 강제 회수하여 중립지대로 만드시겠습니까?`);
     if (!confirm) return;
 
     try {
@@ -122,8 +122,9 @@ export default function TilesTab() {
   };
 
   // 검색
-  const filteredTiles = tiles.filter(tile => 
+  const filteredTiles = tiles.filter(tile =>
     tile.id.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    formatTileCoords(tile.id).toLowerCase().includes(searchTerm.toLowerCase()) ||
     getUserNickname(tile.user_id).toLowerCase().includes(searchTerm.toLowerCase())
   );
 
@@ -187,7 +188,7 @@ export default function TilesTab() {
                 return (
                   <tr key={tile.id}>
                     <td style={{ fontFamily: 'monospace', fontWeight: 'bold' }}>
-                      {tile.id}
+                      {formatTileCoords(tile.id)}
                     </td>
                     <td style={{ color: 'var(--text-secondary)' }}>
                       Q: {tile.q}, R: {tile.r}

@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Search, RotateCcw, MapPin, Trash2, ChevronLeft, ChevronRight, X, Pencil, Check } from 'lucide-react';
-import { fetchAllPhotos, deleteTilePhotoByAdmin, updatePhotoComment } from '../api';
+import { fetchAllPhotos, deleteTilePhotoByAdmin, updatePhotoComment, formatTileCoords } from '../api';
 import Pagination from './Pagination';
 
 const PAGE_SIZE = 20;
@@ -93,6 +93,7 @@ export default function GalleryTab() {
     ? photos.filter((p) =>
         (p.user_nickname || '').toLowerCase().includes(keyword) ||
         (p.tile_id || '').toLowerCase().includes(keyword) ||
+        formatTileCoords(p.tile_id).toLowerCase().includes(keyword) ||
         (p.comment || '').toLowerCase().includes(keyword)
       )
     : photos;
@@ -163,7 +164,7 @@ export default function GalleryTab() {
                       {p.user_nickname || '미등록 사용자'}
                     </button>
                   </td>
-                  <td className="kv-value mono">{p.tile_id}</td>
+                  <td className="kv-value mono">{formatTileCoords(p.tile_id)}</td>
                   <td style={{ fontSize: '0.82rem', color: 'var(--text-secondary)', maxWidth: '260px' }}>
                     {editingId === p.id ? (
                       <span style={{ display: 'flex', gap: '4px', alignItems: 'center' }}>
@@ -267,7 +268,7 @@ export default function GalleryTab() {
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: '0.8rem', color: 'var(--text-secondary)' }}>
               <span>
                 <strong style={{ color: 'var(--text-primary)' }}>{filtered[viewerIndex].user_nickname || '미등록 사용자'}</strong>
-                {' · '}{filtered[viewerIndex].tile_id}
+                {' · '}{formatTileCoords(filtered[viewerIndex].tile_id)}
                 {' · '}{formatDateTime(filtered[viewerIndex].created_at)}
               </span>
               <span>{viewerIndex + 1} / {filtered.length}</span>

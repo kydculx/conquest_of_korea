@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { fetchUsers, updateUserGold, updateUserMainBase, deleteUser, fetchUserAchievements } from '../api';
+import { fetchUsers, updateUserGold, updateUserMainBase, deleteUser, fetchUserAchievements, formatTileCoords } from '../api';
 import { Search, Edit2, RotateCcw, ShieldCheck, X, Trophy, Lock } from 'lucide-react';
 import Pagination from './Pagination';
 
@@ -235,7 +235,7 @@ export default function UsersTab() {
                       <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
                         {user.main_base_tile_id ? (
                           <span className="kv-value mono" style={{ color: '#8fb6ff' }}>
-                            {user.main_base_tile_id.replace(/^hex_/, '')}
+                            {formatTileCoords(user.main_base_tile_id)}
                           </span>
                         ) : (
                           <span style={{ color: 'var(--text-muted)', fontSize: '0.82rem' }}>설정되지 않음</span>

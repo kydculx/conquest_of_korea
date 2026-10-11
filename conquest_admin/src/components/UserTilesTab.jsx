@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useSearchParams, useNavigate } from 'react-router-dom';
 import { ArrowLeft, MapPin } from 'lucide-react';
-import { fetchUserCapturedTiles } from '../api';
+import { fetchUserCapturedTiles, formatTileCoords } from '../api';
 import Pagination from './Pagination';
 
 const PAGE_SIZE = 20;
@@ -89,7 +89,7 @@ export default function UserTilesTab() {
             <tbody>
               {pagedTiles.map((t) => (
                 <tr key={t.id}>
-                  <td className="kv-value mono">{t.id}</td>
+                  <td className="kv-value mono">{formatTileCoords(t.id)}</td>
                   <td className="kv-value mono">{t.q}, {t.r}</td>
                   <td>
                     <span

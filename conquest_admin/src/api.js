@@ -339,6 +339,16 @@ export async function updatePhotoComment(photoId, comment) {
 }
 
 /**
+ * 타일 ID(hex_q_r, hex_size_q_r, q_r)를 화면 표시용 좌표(q, r)로 변환
+ */
+export function formatTileCoords(id) {
+  if (id === null || id === undefined || id === '') return '-';
+  const parts = String(id).split('_').filter((p) => p !== '' && p !== 'hex');
+  if (parts.length >= 2) return `${parts[parts.length - 2]}, ${parts[parts.length - 1]}`;
+  return String(id);
+}
+
+/**
  * 6. 사용자 업적(Achievement) 모니터링 API
  */
 export async function fetchUserAchievements(userId) {

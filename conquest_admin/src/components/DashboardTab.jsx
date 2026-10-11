@@ -1,6 +1,6 @@
 import React, { useEffect, useState, useRef } from 'react';
 import { useSearchParams, useNavigate } from 'react-router-dom';
-import { fetchTiles, fetchUsers, fetchUserFootprints, fetchUserCapturedTiles } from '../api';
+import { fetchTiles, fetchUsers, fetchUserFootprints, fetchUserCapturedTiles, formatTileCoords } from '../api';
 import { supabase } from '../supabase';
 import { Radio, Compass, Layers, Users, Map as MapIcon, Zap, Camera, X } from 'lucide-react';
 import L from 'leaflet';
@@ -396,7 +396,7 @@ export default function DashboardTab() {
       const popupContent = `
         <div style="font-family: monospace; color: var(--text-primary); line-height: 1.4; font-size: 0.8rem;">
           <strong style="color: ${color}">[사용자]</strong> ${ownerName}<br/>
-          <strong>[타일]</strong> ${tileId}<br/>
+          <strong>[타일]</strong> ${formatTileCoords(tileId)}<br/>
           ${footprintMode
             ? `<strong>[발자취]</strong> ${capturedAt}<br/>`
             : `<strong>[점령]</strong> ${tile.capture_count ?? 1}회 중첩<br/>
@@ -685,7 +685,7 @@ export default function DashboardTab() {
             <div className="modal-title">
               <Camera size={19} />
               <span>현장 사진 갤러리</span>
-              <span className="card-sub">({selectedTileId})</span>
+              <span className="card-sub">({formatTileCoords(selectedTileId)})</span>
             </div>
 
             {/* 사진 리스트 컨테이너 */}
