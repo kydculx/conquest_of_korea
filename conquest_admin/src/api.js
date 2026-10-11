@@ -315,6 +315,17 @@ export async function deleteTilePhotoByAdmin(photo) {
 }
 
 /**
+ * 관리자 권한 사진 코멘트 수정
+ */
+export async function updatePhotoComment(photoId, comment) {
+  const { error } = await supabase
+    .from('tile_photos')
+    .update({ comment: comment || '' })
+    .eq('id', photoId);
+  if (error) throw error;
+}
+
+/**
  * 6. 사용자 업적(Achievement) 모니터링 API
  */
 export async function fetchUserAchievements(userId) {

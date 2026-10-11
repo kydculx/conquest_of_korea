@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Search, RotateCcw, MapPin, Trash2, ChevronLeft, ChevronRight, X } from 'lucide-react';
-import { fetchAllPhotos, deleteTilePhotoByAdmin } from '../api';
+import { Search, RotateCcw, MapPin, Trash2, ChevronLeft, ChevronRight, X, Pencil, Check } from 'lucide-react';
+import { fetchAllPhotos, deleteTilePhotoByAdmin, updatePhotoComment } from '../api';
 import Pagination from './Pagination';
 
 const PAGE_SIZE = 20;
@@ -22,6 +22,9 @@ export default function GalleryTab() {
   const [page, setPage] = useState(1);
   const [deletingId, setDeletingId] = useState(null);
   const [viewerIndex, setViewerIndex] = useState(null);
+  const [editingId, setEditingId] = useState(null);
+  const [draftComment, setDraftComment] = useState('');
+  const [savingComment, setSavingComment] = useState(false);
 
   const load = async () => {
     setLoading(true);
@@ -54,8 +57,25 @@ export default function GalleryTab() {
     return () => { active = false; };
   }, []);
 
-  const handleDelete = async (photo) => {
-    if (!window.confirm(`[${photo.user_nickname || ''}] 사진을 영구 삭제하시겠습니까? (스토리지 파일도 함께 정리됩니다.)`)) return;
+  const startEditComment = (photo) => {
+    setEditingId(photo.id);
+    setDraftComment(photo.comment || '');
+  };
+
+  const saveComment = async (photo) => {
+    setSavingComment(true);
+    try {
+      await updatePhotoComment(photo.id, draftComment.trim());
+      setPhotos((prev) => prev.map((p) => (p.id === photo.id ? { ...p, comment: draftComment.trim() } : p)));
+      setEditingId(null);
+    } catch (e) {
+      alert('코멘트 저장 중 오류 발생: ' + (e.message || JSON.stringify(e)));
+    } finally {
+      setSavingComment(false);
+    }
+  };
+
+  const handleDelete = async (photo) => {    if (!window.confirm(`[${photo.user_nickname || ''}] 사진을 영구 삭제하시겠습니까? (스토리지 파일도 함께 정리됩니다.)`)) return;
     setDeletingId(photo.id);
     try {
       await deleteTilePhotoByAdmin(photo);
@@ -144,8 +164,35 @@ export default function GalleryTab() {
                     </button>
                   </td>
                   <td className="kv-value mono">{p.tile_id}</td>
-                  <td style={{ fontSize: '0.82rem', color: 'var(--text-secondary)', maxWidth: '220px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }} title={p.comment || ''}>
-                    {p.comment || '-'}
+                  <td style={{ fontSize: '0.82rem', color: 'var(--text-secondary)', maxWidth: '260px' }}>
+                    {editingId === p.id ? (
+                      <span style={{ display: 'flex', gap: '4px', alignItems: 'center' }}>
+                        <input
+                          type="text"
+                          className="tactical-input"
+                          value={draftComment}
+                          autoFocus
+                          onChange={(e) => setDraftComment(e.target.value)}
+                          onKeyDown={(e) => { if (e.key === 'Enter') saveComment(p); if (e.key === 'Escape') setEditingId(null); }}
+                          style={{ flex: 1, minWidth: 0, fontSize: '0.82rem', padding: '4px 8px' }}
+                        />
+                        <button className="tactical-btn sm" disabled={savingComment} onClick={() => saveComment(p)} title="저장">
+                          <Check size={13} />
+                        </button>
+                        <button className="tactical-btn sm" disabled={savingComment} onClick={() => setEditingId(null)} title="취소">
+                          <X size={13} />
+                        </button>
+                      </span>
+                    ) : (
+                      <span style={{ display: 'flex', gap: '6px', alignItems: 'center' }}>
+                        <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }} title={p.comment || ''}>
+                          {p.comment || '-'}
+                        </span>
+                        <button className="tactical-btn sm" onClick={() => startEditComment(p)} title="코멘트 수정">
+                          <Pencil size={13} />
+                        </button>
+                      </span>
+                    )}
                   </td>
                   <td style={{ fontSize: '0.82rem', color: 'var(--text-secondary)', whiteSpace: 'nowrap' }}>{formatDateTime(p.created_at)}</td>
                   <td style={{ textAlign: 'center', whiteSpace: 'nowrap' }}>
