@@ -315,14 +315,27 @@ export async function deleteTilePhotoByAdmin(photo) {
 }
 
 /**
- * 관리자 권한 사진 코멘트 수정
+ * 관리자 권한 사진 코멘트 수정 (RPC 우회 + 직접 수정 폴백)
+ *
+ * RLS 때문에 직접 수정이 조용히 무시될 수 있어 적용 행으로 확인한다.
  */
 export async function updatePhotoComment(photoId, comment) {
-  const { error } = await supabase
+  const { error: rpcErr } = await supabase.rpc('update_photo_comment_by_admin', {
+    p_photo_id: photoId,
+    p_comment: comment || '',
+  });
+  if (!rpcErr) return;
+  console.warn('⚠️ 코멘트 RPC가 없어 직접 수정으로 대체합니다:', rpcErr);
+
+  const { data, error } = await supabase
     .from('tile_photos')
     .update({ comment: comment || '' })
-    .eq('id', photoId);
+    .eq('id', photoId)
+    .select('id');
   if (error) throw error;
+  if (!data || data.length === 0) {
+    throw new Error('코멘트가 저장되지 않았습니다. update_photo_comment_by_admin RPC 적용이 필요합니다.');
+  }
 }
 
 /**
