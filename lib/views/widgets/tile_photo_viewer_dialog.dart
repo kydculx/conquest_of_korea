@@ -555,6 +555,29 @@ class _TilePhotoDetailScreenState extends State<TilePhotoDetailScreen> {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   mainAxisSize: MainAxisSize.min,
                   children: [
+                    if (photo['comment'] != null && (photo['comment'] as String).isNotEmpty) ...[
+                      Container(
+                        width: double.infinity,
+                        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                        decoration: BoxDecoration(
+                          color: Colors.black54,
+                          borderRadius: BorderRadius.circular(8),
+                          border: Border.all(
+                            color: Palette.footprintMint.withValues(alpha: 0.2),
+                            width: 0.8,
+                          ),
+                        ),
+                        child: Text(
+                          photo['comment'] as String,
+                          style: const TextStyle(
+                            color: Colors.white,
+                            fontSize: 13.0,
+                            height: 1.4,
+                          ),
+                        ),
+                      ),
+                      const SizedBox(height: 10),
+                    ],
                     Row(
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
@@ -577,29 +600,6 @@ class _TilePhotoDetailScreenState extends State<TilePhotoDetailScreen> {
                           ),
                       ],
                     ),
-                    if (photo['comment'] != null && (photo['comment'] as String).isNotEmpty) ...[
-                      const SizedBox(height: 10),
-                      Container(
-                        width: double.infinity,
-                        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-                        decoration: BoxDecoration(
-                          color: Colors.black54,
-                          borderRadius: BorderRadius.circular(8),
-                          border: Border.all(
-                            color: Palette.footprintMint.withValues(alpha: 0.2),
-                            width: 0.8,
-                          ),
-                        ),
-                        child: Text(
-                          photo['comment'] as String,
-                          style: const TextStyle(
-                            color: Colors.white,
-                            fontSize: 13.0,
-                            height: 1.4,
-                          ),
-                        ),
-                      ),
-                    ],
                   ],
                 ),
               ),

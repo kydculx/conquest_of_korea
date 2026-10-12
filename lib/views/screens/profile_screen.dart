@@ -39,6 +39,8 @@ class _ProfileScreenState extends State<ProfileScreen>
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (mounted) {
         context.read<GameProvider>().checkAndSyncSystemNotificationPermission();
+        // 내 정보 영토 수(서버 집계)를 최신으로 동기화
+        context.read<AuthProvider>().refreshProfile();
       }
     });
   }
@@ -153,8 +155,13 @@ class _ProfileScreenState extends State<ProfileScreen>
                   subtitle: GameStrings.gpsAccuracySettingsSub,
                   onTap: () => showGpsAccuracyDialog(context, game: game),
                 ),
-                const ProfileMenuDivider(),
+              ]),
 
+              // 앱 정보 섹션
+              const SizedBox(height: 24),
+              _sectionLabel(GameStrings.appInfo),
+              const SizedBox(height: 12),
+              ProfileMenuCard(children: [
                 // 서비스 이용약관
                 ProfileMenuItem(
                   icon: Icons.description_rounded,
@@ -201,6 +208,21 @@ class _ProfileScreenState extends State<ProfileScreen>
                   title: GameStrings.contactSupport,
                   subtitle: GameStrings.contactSupportSub,
                   onTap: () => handleContactSupport(context),
+                ),
+                const ProfileMenuDivider(),
+
+                // 버전
+                ProfileMenuItem(
+                  icon: Icons.info_outline_rounded,
+                  title: GameStrings.appVersion,
+                  trailing: Text(
+                    'v${VersionConfig.version} (${VersionConfig.buildNumber})',
+                    style: TextStyle(
+                      color: GameColors.textMuted,
+                      fontSize: 12,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
                 ),
               ]),
 

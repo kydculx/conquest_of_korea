@@ -1021,6 +1021,18 @@ class GameStrings {
   /// 근처 갤러리 비어 있음
   static String get nearbyGalleryEmpty => 'nearbyGalleryEmpty'.tr();
 
+  /// 근처 갤러리 내 갤러리 탭
+  static String get nearbyGalleryMine => 'nearbyGalleryMine'.tr();
+
+  /// 근처 갤러리 전체 탭
+  static String get nearbyGalleryAll => 'nearbyGalleryAll'.tr();
+
+  /// 앱 정보 메뉴 타이틀
+  static String get appInfo => 'appInfo'.tr();
+
+  /// 앱 버전 메뉴 라벨
+  static String get appVersion => 'appVersion'.tr();
+
   /// 표시 언어 선택 타이틀
   static String get selectLanguage => 'selectLanguage'.tr();
 

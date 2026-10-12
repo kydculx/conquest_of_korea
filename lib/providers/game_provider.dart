@@ -328,6 +328,8 @@ class GameProvider extends ChangeNotifier with WidgetsBindingObserver {
           capturedTiles: capturedTiles,
           newlyCapturedTileId: id,
         );
+        // 서버 집계(랭킹·내 정보 영토 수) 동기화
+        _authProvider?.refreshProfile();
         notifyListeners();
       },
       onStateChanged: notifyListeners,

@@ -24,6 +24,10 @@ class ProfileHeaderCard extends StatelessWidget {
     final profile = auth.profile!;
     final user = auth.user;
     final teamColor = GameColors.myTileColor;
+    // 영토 수는 서버 집계(전국 전체) 기준. 본진만 있고 행이 없으면 최소 1 표시.
+    final hasBase = profile.mainBaseTileId?.isNotEmpty ?? false;
+    final serverCount = profile.capturedTilesCount;
+    final totalCount = (hasBase && serverCount < 1) ? 1 : serverCount;
 
     return Container(
       width: double.infinity,
@@ -109,7 +113,7 @@ class ProfileHeaderCard extends StatelessWidget {
             children: [
               ProfileStatItem(
                 label: GameStrings.capturedTiles,
-                value: '${game.myCapturedCount}${GameStrings.countUnit}',
+                value: '$totalCount${GameStrings.countUnit}',
                 color: GameColors.accentNeon,
               ),
             ],

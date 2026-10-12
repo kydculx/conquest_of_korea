@@ -542,6 +542,10 @@
   "nearbyGalleryAction": "Galeria próxima",
   "nearbyGalleryTitle": "Galeria de fotos próximas",
   "nearbyGalleryEmpty": "Nenhuma foto registrada por perto.",
+  "nearbyGalleryMine": "Minha galeria",
+  "nearbyGalleryAll": "Todas",
+  "appInfo": "Informações do app",
+  "appVersion": "Versão",
   "languageChineseSimplified": "Chinês Simplificado (Chinese Simplified)",
   "languageChineseTraditional": "Chinês Tradicional (Chinese Traditional)",
   "linkHealthApp": "Conectar passos"

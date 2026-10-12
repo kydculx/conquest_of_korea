@@ -542,6 +542,10 @@
   "nearbyGalleryAction": "附近图库",
   "nearbyGalleryTitle": "附近照片图库",
   "nearbyGalleryEmpty": "附近没有已登记的照片。",
+  "nearbyGalleryMine": "我的图库",
+  "nearbyGalleryAll": "全部",
+  "appInfo": "应用信息",
+  "appVersion": "版本",
   "languageChineseSimplified": "简体中文 (Simplified Chinese)",
   "languageChineseTraditional": "繁体中文 (Traditional Chinese)",
   "linkHealthApp": "连接步数"

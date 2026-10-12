@@ -18,12 +18,10 @@ class SplashScreen extends StatefulWidget {
   State<SplashScreen> createState() => _SplashScreenState();
 }
 
-class _SplashScreenState extends State<SplashScreen> {
+class _SplashScreenState extends State<SplashScreen>
+    with WidgetsBindingObserver {
   /// 스플래시 화면 최소 감상 연출 시간(3초) 경과 여부
   bool _minTimeElapsed = false;
-
-  /// 배경화면과 타이틀이 이질감 없이 동시에 부드럽게 연동되어 뜨도록 보장하는 페이드인 투명도 제어 변수
-  double _fadeOpacity = 0.0;
 
   /// 플랫폼 실시간 앱 버전 정보 텍스트
   String _appVersion = '';
@@ -50,15 +48,6 @@ class _SplashScreenState extends State<SplashScreen> {
 
     // 동적 앱 버전 정보 비동기 로딩 가동
     _loadAppVersion();
-
-    // 첫 프레임 렌더링 직후 배경과 타이틀이 정교하게 동시 페이드인 되도록 트리거 활성화
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (mounted) {
-        setState(() {
-          _fadeOpacity = 1.0;
-        });
-      }
-    });
 
     // 3.0초의 아늑하고 신속한 스플래시 최소 대기 시간 설정 (정밀 오타 보정 완료)
     Timer(GameConfig.splashDuration, () {
@@ -123,16 +112,10 @@ class _SplashScreenState extends State<SplashScreen> {
     const Color textWhite = Colors.white;
 
     return Scaffold(
-      backgroundColor: GameColors.tacticalBlack,
-      body: AnimatedOpacity(
-        opacity: _fadeOpacity,
-        duration: const Duration(
-          milliseconds: 550,
-        ), // 0.55초 동안 부드럽게 동시에 짠 하고 페이드인
-        curve: Curves.easeOutCubic,
-        child: Stack(
-          children: [
-            // 1. 아름답고 아늑한 3D Cozy Clay 타이틀 스플래시 배경 이미지 연동
+      backgroundColor: Colors.black,
+      body: Stack(
+        children: [
+            // 1. 타이틀 화면 배경
             Positioned.fill(
               child: Image.asset(
                 GameAssets.splashBg,
@@ -140,10 +123,10 @@ class _SplashScreenState extends State<SplashScreen> {
               ),
             ),
 
-            // 2. 게임 타이틀 및 서브타이틀 드로잉 (원형 로고 및 부유 연출 코드 완전 소거)
+            // 2. 타이틀 화면
             Center(
               child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
+                mainAxisSize: MainAxisSize.min,
                 children: [
                   // 타이틀 명칭
                   Text(
@@ -187,7 +170,7 @@ class _SplashScreenState extends State<SplashScreen> {
               ),
             ),
 
-            // 4. 하단부 실시간 백엔드 위성 연결 로더 및 동기화 상태 바
+            // 3. 하단부 실시간 백엔드 위성 연결 로더 및 동기화 상태 바
             Positioned(
               bottom: 60.0 + bottomPadding,
               left: 20,
@@ -223,7 +206,7 @@ class _SplashScreenState extends State<SplashScreen> {
               ),
             ),
 
-            // 5. 좌측 하단 앱 버전 표시
+            // 4. 좌측 하단 앱 버전 표시
             if (_appVersion.isNotEmpty)
               Positioned(
                 left: 20.0,
@@ -240,7 +223,6 @@ class _SplashScreenState extends State<SplashScreen> {
               ),
           ],
         ),
-      ),
     );
   }
 }

@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:latlong2/latlong.dart';
+import 'package:provider/provider.dart';
 import '../../core/constants/colors.dart';
 import '../../core/constants/strings.dart';
+import '../../providers/auth_provider.dart';
 import '../../services/hex_service.dart';
 import '../../services/photo_service.dart';
 import '../widgets/tactical_app_bar.dart';
@@ -21,15 +23,22 @@ class NearbyGalleryScreen extends StatefulWidget {
 class _NearbyGalleryScreenState extends State<NearbyGalleryScreen> {
   static const int _pageSize = 60;
   static const int _maxPages = 30;
-  static const int _maxTileDistance = 100;
+  static const List<int> _distanceSteps = [100, 200, 300, 400, 500];
 
   final PhotoService _photoService = PhotoService();
   final ScrollController _scrollController = ScrollController();
   final Map<String, int> _distanceCache = {};
   int? _baseQ;
   int? _baseR;
+  String? _userId;
 
+  /// 서버에서 받아온 원본 (필터 전)
+  List<Map<String, dynamic>> _fetched = [];
+
+  /// 화면에 보여주는 목록 (정렬 + 거리 + 탭 필터 적용 후)
   List<Map<String, dynamic>> _photos = [];
+  int _maxTileDistance = 100;
+  bool _mineOnly = false;
   int _loadedPages = 0;
   bool _isLoading = true;
   bool _isLoadingMore = false;
@@ -41,6 +50,7 @@ class _NearbyGalleryScreenState extends State<NearbyGalleryScreen> {
     final baseHex = HexService.latLngToHex(widget.currentLocation);
     _baseQ = baseHex['q'];
     _baseR = baseHex['r'];
+    _userId = Provider.of<AuthProvider>(context, listen: false).user?.id;
     _scrollController.addListener(_onScroll);
     _loadFirst();
   }
@@ -78,16 +88,19 @@ class _NearbyGalleryScreenState extends State<NearbyGalleryScreen> {
     return distance;
   }
 
-  void _sortByProximity() {
-    _photos.sort((a, b) {
+  void _applyFilters() {
+    final list = List<Map<String, dynamic>>.from(_fetched);
+    list.sort((a, b) {
       final da = _tileDistanceOf(a);
       final db = _tileDistanceOf(b);
       if (da != db) return da.compareTo(db);
       return ((b['created_at'] as String?) ?? '')
           .compareTo((a['created_at'] as String?) ?? '');
     });
-    _photos = _photos
-        .where((photo) => _tileDistanceOf(photo) <= _maxTileDistance)
+    _photos = list
+        .where((photo) =>
+            _tileDistanceOf(photo) <= _maxTileDistance &&
+            (!_mineOnly || photo['user_id'] == _userId))
         .toList();
   }
 
@@ -95,6 +108,7 @@ class _NearbyGalleryScreenState extends State<NearbyGalleryScreen> {
     setState(() {
       _isLoading = true;
     });
+    _fetched = [];
     _photos = [];
     _distanceCache.clear();
     _loadedPages = 0;
@@ -126,15 +140,15 @@ class _NearbyGalleryScreenState extends State<NearbyGalleryScreen> {
       if (rows.length < _pageSize) _hasMore = false;
       if (rows.isNotEmpty) {
         _loadedPages++;
-        _photos.addAll(rows);
-        _sortByProximity();
+        _fetched.addAll(rows);
+        _applyFilters();
       } else {
         _hasMore = false;
       }
       _isLoadingMore = false;
     });
 
-    // 최근 사진이 모두 100타일 밖이면 다음 페이지를 이어서 탐색
+    // 받아온 사진이 모두 필터 밖이면 다음 페이지를 이어서 탐색
     if (mounted &&
         _photos.isEmpty &&
         _hasMore &&
@@ -158,46 +172,115 @@ class _NearbyGalleryScreenState extends State<NearbyGalleryScreen> {
         showBackButton: true,
         backgroundColor: GameColors.tacticalBlack,
       ),
-      body: _isLoading
-          ? const Center(child: CircularProgressIndicator())
-          : _photos.isEmpty
-              ? _buildEmptyState()
-              : RefreshIndicator(
-                  onRefresh: _loadFirst,
-                  child: GridView.builder(
-                    controller: _scrollController,
-                    padding: const EdgeInsets.fromLTRB(16, 12, 16, 24),
-                    physics: const AlwaysScrollableScrollPhysics(
-                      parent: BouncingScrollPhysics(),
+      body: Column(
+        children: [
+          Padding(
+            padding: const EdgeInsets.fromLTRB(16, 12, 16, 0),
+            child: SegmentedButton<bool>(
+              segments: [
+                ButtonSegment(
+                  value: false,
+                  label: Text(GameStrings.nearbyGalleryAll),
+                  icon: const Icon(Icons.grid_view_rounded, size: 16),
+                ),
+                ButtonSegment(
+                  value: true,
+                  label: Text(GameStrings.nearbyGalleryMine),
+                  icon: const Icon(Icons.person_rounded, size: 16),
+                ),
+              ],
+              selected: {_mineOnly},
+              showSelectedIcon: false,
+              onSelectionChanged: (selected) {
+                setState(() {
+                  _mineOnly = selected.first;
+                  _applyFilters();
+                });
+              },
+            ),
+          ),
+          Padding(
+            padding: const EdgeInsets.fromLTRB(20, 4, 8, 0),
+            child: Row(
+              children: [
+                const Icon(
+                  Icons.straighten_rounded,
+                  size: 16,
+                  color: Colors.white54,
+                ),
+                Expanded(
+                  child: Slider(
+                    value: _maxTileDistance.toDouble(),
+                    min: _distanceSteps.first.toDouble(),
+                    max: _distanceSteps.last.toDouble(),
+                    divisions: _distanceSteps.length - 1,
+                    label: GameStrings.tileUnit(_maxTileDistance),
+                    onChanged: (value) {
+                      final next = value.round();
+                      if (next == _maxTileDistance) return;
+                      setState(() {
+                        _maxTileDistance = next;
+                        _applyFilters();
+                      });
+                    },
+                  ),
+                ),
+                SizedBox(
+                  width: 72,
+                  child: Text(
+                    GameStrings.tileUnit(_maxTileDistance),
+                    textAlign: TextAlign.center,
+                    style: const TextStyle(
+                      color: Colors.white,
+                      fontSize: 12,
+                      fontWeight: FontWeight.bold,
                     ),
-                    gridDelegate:
-                        const SliverGridDelegateWithFixedCrossAxisCount(
-                      crossAxisCount: 3,
-                      crossAxisSpacing: 8,
-                      mainAxisSpacing: 8,
-                      childAspectRatio: 1.0,
-                    ),
-                    itemCount: _photos.length + (_hasMore ? 1 : 0),
-                    itemBuilder: (context, index) {
-                      if (index >= _photos.length) {
-                        return const Center(
-                          child: SizedBox(
-                            width: 24,
-                            height: 24,
-                            child: CircularProgressIndicator(strokeWidth: 2),
+                  ),
+                ),
+              ],
+            ),
+          ),
+          Expanded(
+            child: _isLoading
+                ? const Center(child: CircularProgressIndicator())
+                : _photos.isEmpty
+                    ? _buildEmptyState()
+                    : RefreshIndicator(
+                        onRefresh: _loadFirst,
+                        child: GridView.builder(
+                          controller: _scrollController,
+                          padding: const EdgeInsets.fromLTRB(16, 12, 16, 24),
+                          physics: const AlwaysScrollableScrollPhysics(
+                            parent: BouncingScrollPhysics(),
                           ),
-                        );
-                      }
-                      final photo = _photos[index];
-                      final distanceText =
-                          _formatTileDistance(_tileDistanceOf(photo));
-                      return GestureDetector(
-                        onTap: () {
-                          Navigator.push(
-                            context,
-                            MaterialPageRoute(
-                              builder: (context) => TilePhotoDetailScreen(
-                                initialPhotos: _photos,
+                          gridDelegate:
+                              const SliverGridDelegateWithFixedCrossAxisCount(
+                            crossAxisCount: 3,
+                            crossAxisSpacing: 8,
+                            mainAxisSpacing: 8,
+                            childAspectRatio: 1.0,
+                          ),
+                          itemCount: _photos.length + (_hasMore ? 1 : 0),
+                          itemBuilder: (context, index) {
+                            if (index >= _photos.length) {
+                              return const Center(
+                                child: SizedBox(
+                                  width: 24,
+                                  height: 24,
+                                  child: CircularProgressIndicator(strokeWidth: 2),
+                                ),
+                              );
+                            }
+                            final photo = _photos[index];
+                            final distanceText =
+                                _formatTileDistance(_tileDistanceOf(photo));
+                            return GestureDetector(
+                              onTap: () {
+                                Navigator.push(
+                                  context,
+                                  MaterialPageRoute(
+                                    builder: (context) => TilePhotoDetailScreen(
+                                      initialPhotos: _photos,
                                 initialIndex: index,
                                 tileId: (photo['tile_id'] as String?) ?? '',
                               ),
@@ -291,10 +374,13 @@ class _NearbyGalleryScreenState extends State<NearbyGalleryScreen> {
                         ),
                       );
                     },
-                  ),
-                ),
-    );
-  }
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+              );
+            }
 
   Widget _buildEmptyState() {
     return Center(

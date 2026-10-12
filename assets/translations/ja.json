@@ -542,6 +542,10 @@
   "nearbyGalleryAction": "近くのギャラリー",
   "nearbyGalleryTitle": "近くの写真ギャラリー",
   "nearbyGalleryEmpty": "近くに登録された写真がありません。",
+  "nearbyGalleryMine": "マイギャラリー",
+  "nearbyGalleryAll": "すべて",
+  "appInfo": "アプリ情報",
+  "appVersion": "バージョン",
   "languageChineseSimplified": "中国語（簡体字）",
   "languageChineseTraditional": "中国語（繁体字）",
   "linkHealthApp": "歩数連携"

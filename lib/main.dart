@@ -207,7 +207,7 @@ class AuthWrapper extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    // 앱 기동 시 스플래시 화면을 먼저 노출하고, 위성 동기화 완료 후 GameScreen으로 이행
+    // 앱 기동 시 타이틀 화면을 먼저 노출하고, 초기화 완료 후 GameScreen으로 이행
     return const SplashScreen();
   }
 }

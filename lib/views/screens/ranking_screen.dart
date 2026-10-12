@@ -29,71 +29,28 @@ class _RankingScreenState extends State<RankingScreen> {
   }
 
   Widget _buildTabSelector(RankingProvider ranking) {
-    return Container(
-      margin: const EdgeInsets.only(left: 16, right: 16, top: 12, bottom: 4),
-      padding: const EdgeInsets.all(4),
-      decoration: BoxDecoration(
-        color: GameColors.backgroundMedium.withValues(alpha: 0.3),
-        borderRadius: BorderRadius.circular(14),
-        border: Border.all(
-          color: Palette.accentCyan.withValues(alpha: 0.15),
-          width: 1.0,
-        ),
-      ),
-      child: Row(
-        children: [
-          _buildTabItem(
-            label: GameStrings.capturedTerritory,
-            type: RankingType.capturedTiles,
-            activeType: ranking.currentType,
-            onTap: () => ranking.loadRankings(type: RankingType.capturedTiles),
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(16, 12, 16, 4),
+      child: SegmentedButton<String>(
+        segments: [
+          ButtonSegment(
+            value: RankingType.capturedTiles,
+            label: Text(GameStrings.capturedTerritory),
           ),
-          _buildTabItem(
-            label: GameStrings.rankingHeaderDailyMovedTiles,
-            type: RankingType.dailyMovedTiles,
-            activeType: ranking.currentType,
-            onTap: () => ranking.loadRankings(type: RankingType.dailyMovedTiles),
+          ButtonSegment(
+            value: RankingType.dailyMovedTiles,
+            label: Text(GameStrings.rankingHeaderDailyMovedTiles),
           ),
-          _buildTabItem(
-            label: GameStrings.rankingHeaderTotalMovedTiles,
-            type: RankingType.totalMovedTiles,
-            activeType: ranking.currentType,
-            onTap: () => ranking.loadRankings(type: RankingType.totalMovedTiles),
+          ButtonSegment(
+            value: RankingType.totalMovedTiles,
+            label: Text(GameStrings.rankingHeaderTotalMovedTiles),
           ),
         ],
-      ),
-    );
-  }
-
-  Widget _buildTabItem({
-    required String label,
-    required String type,
-    required String activeType,
-    required VoidCallback onTap,
-  }) {
-    final isActive = type == activeType;
-    return Expanded(
-      child: GestureDetector(
-        onTap: onTap,
-        child: Container(
-          padding: const EdgeInsets.symmetric(vertical: 10),
-          decoration: BoxDecoration(
-            color: isActive
-                ? Palette.accentCyan.withValues(alpha: 0.15)
-                : Colors.transparent,
-            borderRadius: BorderRadius.circular(10),
-          ),
-          child: Center(
-            child: Text(
-              label,
-              style: TextStyle(
-                color: isActive ? Palette.accentCyan : GameColors.textSecondary,
-                fontSize: 12.0,
-                fontWeight: FontWeight.bold,
-              ),
-            ),
-          ),
-        ),
+        selected: {ranking.currentType},
+        showSelectedIcon: false,
+        onSelectionChanged: (selected) {
+          ranking.loadRankings(type: selected.first);
+        },
       ),
     );
   }
