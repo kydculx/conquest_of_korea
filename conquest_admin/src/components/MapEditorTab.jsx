@@ -2,11 +2,9 @@ import React, { useEffect, useState, useRef } from 'react';
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
 import { supabase } from '../supabase';
-import { 
-  Download, 
-  Upload, 
-  Trash2, 
-  RotateCcw, 
+import {
+  Trash2,
+  RotateCcw,
   X,
   Map as MapIcon
 } from 'lucide-react';
@@ -62,10 +60,6 @@ export default function MapEditorTab() {
   const [selectedCoords, setSelectedCoords] = useState(null);
   const [showCharSelectModal, setShowCharSelectModal] = useState(false);
   const [newPatternName, setNewPatternName] = useState('');
-
-  // 저장 파일명 입력 모달 제어 상태 (React 모달 대체)
-  const [showSaveModal, setShowSaveModal] = useState(false);
-  const [saveFileName, setSaveFileName] = useState('');
 
   // DB 등록 패턴 목록
   const [dbPatterns, setDbPatterns] = useState([]);
@@ -139,7 +133,6 @@ export default function MapEditorTab() {
   const mapInstance = useRef(null);
   const markersGroup = useRef(null);
   const gridTilesGroup = useRef(null);
-  const fileInputRef = useRef(null);
 
   // 현재 포커스된 문자 마커 객체 계산
   const activeLetter = letters.find(item => item.id === selectedLetterId) || null;
@@ -352,229 +345,9 @@ export default function MapEditorTab() {
     }
   };
 
-  // 9. 통합 저장 (Export JSON v1.3 - 선택한 문자 단 1개만 색상 없이 파일로 저장)
-  const handleExportJSON = (e) => {
-    if (e) {
-      e.preventDefault();
-      e.stopPropagation();
-    }
-
-    if (!activeLetter) {
-      alert('저장할 문자 마커를 먼저 지도에서 선택(클릭)해 주세요.');
-      return;
-    }
-
-    setSaveFileName(activeLetter.name || activeLetter.char);
-    setShowSaveModal(true);
-  };
-
-  // 실제 JSON 파일 저장 실행 (React 모달 내 저장 액션)
-  const handleConfirmSave = async () => {
-    if (!activeLetter) return;
-
-    const defaultFileName = activeLetter.name || activeLetter.char;
-    let finalFileName = saveFileName.trim() !== '' ? saveFileName.trim() : defaultFileName;
-
-    // 사용자가 입력란에 확장자(.json)까지 기입한 경우 중복 확장자(A.json.json) 방지를 위해 제거
-    if (finalFileName.toLowerCase().endsWith('.json')) {
-      finalFileName = finalFileName.substring(0, finalFileName.length - 5);
-    }
-
-    // 선택된 1개 마커에 귀속된 타일들의 q, r 좌표 배열만 추출
-    const tilesArray = Object.keys(activeLetter.gridTiles || {}).map(key => {
-      const [q, r] = key.split(',').map(Number);
-      return { q, r };
-    });
-
-    const exportData = {
-      char: activeLetter.char,
-      name: activeLetter.name || activeLetter.char,
-      lat: activeLetter.lat,
-      lng: activeLetter.lng,
-      tiles: tilesArray
-    };
-
-    const dataStr = JSON.stringify(exportData, null, 2);
-
-    // 1. 브라우저가 File System Access API를 지원할 경우 (크롬, 엣지 등): 시스템 저장 다이얼로그로 저장 경로와 이름 직접 지정
-    if (window.showSaveFilePicker) {
-      try {
-        const options = {
-          suggestedName: `${finalFileName}.json`,
-          types: [{
-            description: 'JSON Files',
-            accept: {
-              'application/json': ['.json'],
-            },
-          }],
-        };
-        const handle = await window.showSaveFilePicker(options);
-        const writable = await handle.createWritable();
-        await writable.write(dataStr);
-        await writable.close();
-        
-        setShowSaveModal(false);
-        return; // 파일 저장 창에서 성공적으로 기동되어 프로세스 종료
-      } catch (err) {
-        // 사용자가 취소했거나 저장 다이얼로그를 기각한 경우
-        if (err.name === 'AbortError') {
-          return;
-        }
-        console.warn('showSaveFilePicker API 에러, 일반 다운로드로 전환합니다:', err);
-      }
-    }
-
-    // 2. API 미지원 시 Fallback: Classic 가상 링크 다운로드 방식 (기본 Downloads 폴더행)
-    const blob = new Blob([dataStr], { type: 'application/json' });
-    const url = URL.createObjectURL(blob);
-    
-    const link = document.createElement('a');
-    link.href = url;
-    link.download = `${finalFileName}.json`;
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
-    
-    // 다운로드 창이 열리거나 파일 스트림이 기동되는 시간을 확보하기 위해 메모리 해제를 1초 지연시킵니다.
-    setTimeout(() => {
-      URL.revokeObjectURL(url);
-    }, 1000);
-
-    setShowSaveModal(false);
-  };
-
-  // 10. 통합 불러오기 (Import JSON - 단일 마커 병합 및 레거시 포맷 하위 호환)
-  const handleImportJSON = (e) => {
-    const file = e.target.files[0];
-    if (!file) return;
-
-    const reader = new FileReader();
-    reader.onload = (event) => {
-      try {
-        const parsedData = JSON.parse(event.target.result);
-        
-        // 1. 단일 마커 파일인 경우 (v1.3 표준)
-        if (parsedData && typeof parsedData === 'object' && !Array.isArray(parsedData) && (parsedData.char || parsedData.name)) {
-          const gridTiles = {};
-          if (Array.isArray(parsedData.tiles)) {
-            parsedData.tiles.forEach(t => {
-              gridTiles[`${t.q},${t.r}`] = '#00e5ff';
-            });
-          }
-
-          const importChar = typeof parsedData.char === 'string' ? parsedData.char.toUpperCase() : '';
-          const importName = typeof parsedData.name === 'string' && parsedData.name.trim() !== ''
-            ? parsedData.name.trim()
-            : importChar;
-          const newLetter = {
-            id: `loaded-${importChar || 'custom'}-${Date.now()}`,
-            lat: parsedData.lat,
-            lng: parsedData.lng,
-            char: importChar,
-            name: importName,
-            patternId: importChar && importChar.length === 1 ? importChar : `custom_${Date.now().toString(36)}`,
-            category: importChar && importChar.length === 1
-              ? (/^[0-9]$/.test(importChar) ? 'digit' : 'alphabet')
-              : 'figure',
-            gridTiles: gridTiles
-          };
-
-          // 불러오기 시 기존의 문자 리스트를 완전히 지우고(초기화), 새로 불러온 1개의 마커만 지도에 적재합니다.
-          setLetters([newLetter]);
-
-          setSelectedLetterId(newLetter.id);
-          handleFocusLocation(newLetter.lat, newLetter.lng);
-        }
-        // 2. 레거시 포맷 (배열 형태)
-        else if (Array.isArray(parsedData)) {
-          const isValid = parsedData.every(item => 
-            typeof item.lat === 'number' &&
-            typeof item.lng === 'number' &&
-            typeof item.char === 'string' &&
-            item.char.length === 1
-          );
-
-          if (isValid) {
-            const normalized = parsedData.map((item, idx) => {
-              const itemChar = typeof item.char === 'string' ? item.char.toUpperCase() : '';
-              const itemName = typeof item.name === 'string' && item.name.trim() !== '' ? item.name.trim() : itemChar;
-              const itemCategory = item.category || (itemChar && itemChar.length === 1
-                ? (/^[0-9]$/.test(itemChar) ? 'digit' : 'alphabet')
-                : 'figure');
-              return {
-                id: item.id || `loaded-${idx}-${Date.now()}`,
-                lat: item.lat,
-                lng: item.lng,
-                char: itemChar,
-                name: itemName,
-                patternId: itemChar && itemChar.length === 1 ? itemChar : `custom_${Date.now().toString(36)}_${idx}`,
-                category: itemCategory,
-                gridTiles: {}
-              };
-            });
-            setLetters(normalized);
-            setSelectedLetterId(null);
-            if (normalized.length > 0) {
-              handleFocusLocation(normalized[0].lat, normalized[0].lng);
-            }
-          } else {
-            alert('JSON 데이터 형식이 올바르지 않습니다.');
-          }
-        } 
-        // 3. 레거시 오브젝트 포맷 (전체 letters를 감싸던 형태)
-        else if (parsedData && typeof parsedData === 'object' && parsedData.letters) {
-          let loadedLetters = parsedData.letters || [];
-
-          // v1.1/1.2 호환 변환
-          const normalized = loadedLetters.map((item, idx) => {
-            const gridTiles = {};
-            if (Array.isArray(item.tiles)) {
-              item.tiles.forEach(t => {
-                gridTiles[`${t.q},${t.r}`] = '#00e5ff';
-              });
-            } else if (item.gridTiles && typeof item.gridTiles === 'object') {
-              Object.keys(item.gridTiles).forEach(key => {
-                gridTiles[key] = '#00e5ff';
-              });
-            }
-
-            return {
-              id: item.id || `loaded-${idx}-${Date.now()}`,
-              lat: item.lat,
-              lng: item.lng,
-              char: typeof item.char === 'string' ? item.char.toUpperCase() : '',
-              name: (typeof item.name === 'string' && item.name.trim() !== '')
-                ? item.name.trim()
-                : (typeof item.char === 'string' ? item.char.toUpperCase() : `가져온 패턴 ${idx + 1}`),
-              patternId: (typeof item.char === 'string' && item.char.length === 1)
-                ? item.char.toUpperCase()
-                : `custom_${Date.now().toString(36)}_${idx}`,
-              category: item.category || 'figure',
-              gridTiles
-            };
-          });
-
-          setLetters(normalized);
-          setSelectedLetterId(null);
-
-          if (normalized.length > 0) {
-            handleFocusLocation(normalized[0].lat, normalized[0].lng);
-          }
-        } else {
-          alert('가져오기에 실패했습니다. 지원하지 않는 파일 형식입니다.');
-        }
-      } catch (err) {
-        console.error(err);
-        alert('파일 파싱 중 오류가 발생했습니다.');
-      }
-    };
-    reader.readAsText(file);
-    e.target.value = '';
-  };
-
   return (
     <div className="editor-layout">
-      
+
       {/* 1. 에디터 제어 및 설정 사이드 패널 */}
       <div className="section-stack">
         
@@ -586,27 +359,6 @@ export default function MapEditorTab() {
           </h3>
 
           <div style={{ display: 'flex', flexDirection: 'column', gap: '0.6rem' }}>
-            <input 
-              type="file" 
-              ref={fileInputRef} 
-              onChange={handleImportJSON} 
-              accept=".json" 
-              style={{ display: 'none' }} 
-            />
-
-            <button
-              onClick={() => fileInputRef.current && fileInputRef.current.click()}
-              className="tactical-btn active btn-block sm"
-            >
-              <Upload size={14} /> 디자인 불러오기
-            </button>
-
-            <button
-              onClick={handleExportJSON}
-              className="tactical-btn btn-block sm"
-            >
-              <Download size={14} /> 디자인 저장하기
-            </button>
 
             <button
               onClick={handleClearAll}
@@ -828,65 +580,6 @@ export default function MapEditorTab() {
           </div>
         </div>
       )}
-
-      {/* 5. 파일 저장명 입력 모달 (React 내장 모달로 브라우저 prompt 대체) */}
-      {showSaveModal && (
-        <div className="editor-modal-overlay" onClick={() => setShowSaveModal(false)}>
-          <div className="editor-modal-content" onClick={(e) => e.stopPropagation()}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.2rem' }}>
-              <h3 style={{ fontSize: '1.1rem', color: 'var(--text-primary)', display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
-                <Download size={18} style={{ color: 'var(--accent-cyan)' }} />
-                디자인 저장하기
-              </h3>
-              <button 
-                onClick={() => setShowSaveModal(false)}
-                style={{ background: 'none', border: 'none', color: 'var(--text-muted)', cursor: 'pointer' }}
-              >
-                <X size={20} />
-              </button>
-            </div>
-            
-            <p style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', marginBottom: '1rem' }}>
-              저장할 파일 이름을 입력해 주세요 (확장자 제외).
-            </p>
-
-            <div style={{ marginBottom: '1.5rem' }}>
-              <input 
-                type="text" 
-                className="tactical-input" 
-                value={saveFileName} 
-                onChange={(e) => setSaveFileName(e.target.value)}
-                placeholder="예: A"
-                style={{ fontSize: '0.95rem' }}
-                autoFocus
-                onKeyDown={(e) => {
-                  if (e.key === 'Enter') {
-                    handleConfirmSave();
-                  }
-                }}
-              />
-            </div>
-
-            <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '0.6rem' }}>
-              <button 
-                onClick={() => setShowSaveModal(false)}
-                className="tactical-btn"
-                style={{ padding: '0.5rem 1rem', fontSize: '0.8rem' }}
-              >
-                취소
-              </button>
-              <button 
-                onClick={handleConfirmSave}
-                className="tactical-btn active"
-                style={{ padding: '0.5rem 1rem', fontSize: '0.8rem' }}
-              >
-                저장
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
-
     </div>
   );
 }
