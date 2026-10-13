@@ -67,6 +67,73 @@ export default function MapEditorTab() {
   const [showSaveModal, setShowSaveModal] = useState(false);
   const [saveFileName, setSaveFileName] = useState('');
 
+  // DB 등록 패턴 목록
+  const [dbPatterns, setDbPatterns] = useState([]);
+  const [dbLoading, setDbLoading] = useState(false);
+  const [dbError, setDbError] = useState(null);
+
+  // DB 패턴 목록 조회
+  const loadDbPatterns = async () => {
+    setDbLoading(true);
+    setDbError(null);
+    try {
+      const { data, error } = await supabase
+        .from('map_patterns')
+        .select('id, name, tiles, updated_at')
+        .order('updated_at', { ascending: false });
+      if (error) throw error;
+      setDbPatterns(data || []);
+    } catch (err) {
+      console.error(err);
+      setDbError('DB 패턴 목록을 불러오지 못했습니다. 마이그레이션 적용 여부를 확인해 주세요.');
+      setDbPatterns([]);
+    } finally {
+      setDbLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    loadDbPatterns();
+  }, []);
+
+  // DB 패턴을 에디터 캔버스로 불러오기 (지도 중앙에 배치)
+  const handleLoadDbPattern = (row) => {
+    const gridTiles = {};
+    if (Array.isArray(row.tiles)) {
+      row.tiles.forEach(t => {
+        if (typeof t.q === 'number' && typeof t.r === 'number') {
+          gridTiles[`${t.q},${t.r}`] = '#00e5ff';
+        }
+      });
+    }
+    const center = mapInstance.current ? mapInstance.current.getCenter() : null;
+    const newLetter = {
+      id: `db-${row.id}-${Date.now()}`,
+      lat: center ? center.lat : originLat,
+      lng: center ? center.lng : originLng,
+      char: '',
+      name: row.name || row.id,
+      patternId: row.id,
+      gridTiles
+    };
+    setLetters([newLetter]);
+    setSelectedLetterId(newLetter.id);
+    handleFocusLocation(newLetter.lat, newLetter.lng);
+  };
+
+  // DB 패턴 행 삭제
+  const handleDeleteDbPattern = async (row) => {
+    if (!window.confirm(`DB에서 패턴 '${row.name || row.id}'을(를) 삭제하시겠습니까? 앱에서도 사라집니다.`)) return;
+    try {
+      const { error } = await supabase.from('map_patterns').delete().eq('id', row.id);
+      if (error) throw error;
+      await loadDbPatterns();
+    } catch (err) {
+      console.error(err);
+      alert('DB 삭제 중 오류 발생: ' + (err.message || JSON.stringify(err)));
+    }
+  };
+
 
   const mapRef = useRef(null);
   const mapInstance = useRef(null);
@@ -244,6 +311,7 @@ export default function MapEditorTab() {
         .upsert({ id: patternId, name, tiles: tilesArray, updated_at: new Date().toISOString() });
       if (error) throw error;
       alert(`DB에 저장했습니다. (ID: ${patternId}, ${tilesArray.length}개 타일)`);
+      await loadDbPatterns();
     } catch (err) {
       console.error(err);
       alert('DB 저장 중 오류 발생: ' + (err.message || JSON.stringify(err)));
@@ -584,10 +652,60 @@ export default function MapEditorTab() {
           <h4 style={{ fontSize: '0.85rem', color: 'var(--text-primary)', marginBottom: '0.4rem' }}>💡 사용법 가이드</h4>
           <ul style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', paddingLeft: '1rem', lineHeight: '1.6' }}>
             <li>지도 위의 빈 곳을 <strong>클릭</strong>해 신규 패턴 마커를 생성합니다. (자동 선택됨)</li>
-              <li>마커가 선택되면 마커 주변에 **15x15 헥사 타일 그리드**가 뜹니다.</li>
-              <li>그리드 안을 탭해 색을 칠하면 **해당 패턴에만 타일 맵이 바인딩**됩니다.</li>
-              <li>다른 패턴을 선택하면 해당 패턴만의 개별 타일 맵으로 교체됩니다.</li>
+            <li>마커가 선택되면 마커 주변에 **15x15 헥사 타일 그리드**가 뜹니다.</li>
+            <li>그리드 안을 탭해 색을 칠하면 **해당 패턴에만 타일 맵이 바인딩**됩니다.</li>
+            <li>다른 패턴을 선택하면 해당 패턴만의 개별 타일 맵으로 교체됩니다.</li>
           </ul>
+        </div>
+
+        {/* DB 등록 패턴 목록 카드 */}
+        <div className="tactical-card" style={{ padding: '1.2rem', display: 'flex', flexDirection: 'column', gap: '0.6rem' }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+            <h4 style={{ fontSize: '0.85rem', color: 'var(--text-primary)', margin: 0 }}>
+              🗂️ DB 패턴 목록{dbPatterns.length > 0 ? ` (${dbPatterns.length})` : ''}
+            </h4>
+            <button onClick={loadDbPatterns} className="tactical-btn sm" disabled={dbLoading} title="새로고침">
+              <RotateCcw size={12} /> {dbLoading ? '...' : '새로고침'}
+            </button>
+          </div>
+          {dbError && (
+            <div style={{ fontSize: '0.75rem', color: 'var(--accent-red)' }}>{dbError}</div>
+          )}
+          {!dbError && !dbLoading && dbPatterns.length === 0 && (
+            <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>등록된 패턴이 없습니다.</div>
+          )}
+          {dbPatterns.length > 0 && (
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '0.4rem', maxHeight: '220px', overflowY: 'auto' }}>
+              {dbPatterns.map(row => {
+                const tileCount = Array.isArray(row.tiles) ? row.tiles.length : 0;
+                return (
+                  <div
+                    key={row.id}
+                    style={{
+                      display: 'flex', alignItems: 'center', gap: '0.5rem',
+                      border: '1px solid var(--border-color)', borderRadius: '6px',
+                      padding: '0.45rem 0.6rem',
+                    }}
+                  >
+                    <div style={{ flex: 1, minWidth: 0 }}>
+                      <div style={{ fontSize: '0.8rem', color: 'var(--text-primary)', fontWeight: 'bold', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                        {row.name || row.id}
+                      </div>
+                      <div style={{ fontSize: '0.7rem', color: 'var(--text-muted)' }}>
+                        {tileCount}개 타일
+                      </div>
+                    </div>
+                    <button onClick={() => handleLoadDbPattern(row)} className="tactical-btn sm" title="에디터로 불러오기">
+                      불러오기
+                    </button>
+                    <button onClick={() => handleDeleteDbPattern(row)} className="tactical-btn sm danger" title="DB에서 삭제">
+                      <Trash2 size={12} />
+                    </button>
+                  </div>
+                );
+              })}
+            </div>
+          )}
         </div>
 
 
