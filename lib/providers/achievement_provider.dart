@@ -1,7 +1,5 @@
 import 'dart:async';
-import 'dart:convert';
 import 'package:flutter/foundation.dart';
-import 'package:flutter/services.dart' show rootBundle;
 import 'dart:math' as math;
 import '../models/achievement_model.dart';
 import '../models/tile_model.dart';
@@ -29,16 +27,30 @@ class AchievementProvider extends ChangeNotifier {
   // 패턴별 메타데이터 캐시 (요구 타일 수, 바운딩 박스 편차 등)
   final Map<String, Map<String, dynamic>> _patternMeta = {};
 
-  // 패턴 ID → 표시 이름 registry (미등록분은 ID 그대로 표시)
+  // 패턴 ID → 표시 이름 registry (DB가 원천)
   final Map<String, String> _patternNames = {};
+
+  // 패턴 ID → 분류 (alphabet/digit/figure)
+  final Map<String, String> _patternCategories = {};
   bool _patternRegistryLoaded = false;
 
-  /// 번들 내장 문자 패턴 ID 목록 (DB 미등록 시 파일 폴백용)
-  static const List<String> _builtinPatternIds = [
-    'A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K', 'L', 'M', 'N',
-    'O', 'P', 'Q', 'R', 'S', 'T', 'U', 'V', 'W', 'X', 'Y', 'Z',
-    '0', '1', '2', '3', '4', '5', '6', '7', '8', '9',
-  ];
+  /// 패턴 분류 상수
+  static const String patternCategoryAlphabet = 'alphabet';
+  static const String patternCategoryDigit = 'digit';
+  static const String patternCategoryFigure = 'figure';
+
+  /// ID 규칙으로 분류 추정 (DB 값 없을 때 폴백)
+  static String categoryForId(String id) {
+    if (id.length == 1) {
+      if (id.compareTo('A') >= 0 && id.compareTo('Z') <= 0) {
+        return patternCategoryAlphabet;
+      }
+      if (id.compareTo('0') >= 0 && id.compareTo('9') <= 0) {
+        return patternCategoryDigit;
+      }
+    }
+    return patternCategoryFigure;
+  }
 
   // 이미 업적 해금에 소비 완료된 영토 타일 ID 목록 캐시
   final Set<String> _consumedTileIds = {};
@@ -50,10 +62,7 @@ class AchievementProvider extends ChangeNotifier {
   final StreamController<Achievement> _unlockStreamController =
       StreamController<Achievement>.broadcast();
 
-  /// 패턴 등록부 로드: DB 정의 + 번들 내장 문자(이름 폴백용).
-  ///
-  /// DB 행이 있으면 타일까지 캐싱하고, 번들 문자는 이름만 보장한 뒤
-  /// 타일은 판정 시점에 파일에서 지연 로드한다.
+  /// 패턴 등록부 로드: DB 정의가 원천이다.
   Future<void> loadPatternRegistry() async {
     if (_patternRegistryLoaded) return;
     _patternRegistryLoaded = true;
@@ -64,6 +73,10 @@ class AchievementProvider extends ChangeNotifier {
         if (id == null || id.isEmpty) continue;
         final name = row['name'] as String?;
         _patternNames[id] = (name == null || name.isEmpty) ? id : name;
+        final category = row['category'] as String?;
+        _patternCategories[id] = (category == null || category.isEmpty)
+            ? categoryForId(id)
+            : category;
         final tilesJson = row['tiles'];
         if (tilesJson is List && tilesJson.isNotEmpty) {
           _cachePatternTiles(id, tilesJson);
@@ -71,9 +84,6 @@ class AchievementProvider extends ChangeNotifier {
       }
     } catch (e) {
       debugPrint('⚠️ 패턴 등록부 로드 실패: $e');
-    }
-    for (final id in _builtinPatternIds) {
-      _patternNames.putIfAbsent(id, () => id);
     }
   }
 
@@ -105,23 +115,6 @@ class AchievementProvider extends ChangeNotifier {
     };
   }
 
-  /// 패턴 JSON 에셋 파일을 안전하게 비동기 로드하고 q, r 상대 오프셋 데이터를 수집하여 캐싱합니다.
-  Future<void> _ensurePatternLoaded(String patternId) async {
-    if (_loadedPatterns.containsKey(patternId)) return;
-
-    // 번들 내장 문자만 파일 폴백 (커스텀은 DB 타일이 전부)
-    if (!_builtinPatternIds.contains(patternId)) return;
-
-    try {
-      final String jsonString = await rootBundle.loadString('assets/data/$patternId.json');
-      final Map<String, dynamic> jsonMap = json.decode(jsonString);
-      final List<dynamic> tilesJson = jsonMap['tiles'] as List<dynamic>;
-      _cachePatternTiles(patternId, tilesJson);
-    } catch (e) {
-      debugPrint('⚠️ 패턴 파일 로드 실패 ($patternId.json): $e');
-    }
-  }
-
   /// 완성한 패턴 ID 집합 (`ACH_PATTERN_` 접두 기록 기준)
   Set<String> completedPatternIds() {
     return _unlockedAchievementIds
@@ -133,8 +126,21 @@ class AchievementProvider extends ChangeNotifier {
   /// 완성한 패턴 개수 (개수형 업적 판정용)
   int get completedPatternCount => completedPatternIds().length;
 
+  /// 분류별 완성 개수
+  int completedPatternCountByCategory(String category) {
+    var count = 0;
+    for (final id in completedPatternIds()) {
+      if (patternCategory(id) == category) count++;
+    }
+    return count;
+  }
+
   /// 패턴 표시 이름 (미등록이면 ID 그대로)
   String patternName(String patternId) => _patternNames[patternId] ?? patternId;
+
+  /// 패턴 분류 (미등록이면 ID 규칙으로 추정)
+  String patternCategory(String patternId) =>
+      _patternCategories[patternId] ?? categoryForId(patternId);
 
   /// 등록된 패턴 ID 목록
   Iterable<String> get patternIds => _patternNames.keys;
@@ -284,10 +290,9 @@ class AchievementProvider extends ChangeNotifier {
     return null;
   }
 
-  /// 특정 패턴 ID의 상대 좌표 리스트를 비동기로 불러와 캐싱한 뒤 반환합니다.
+  /// 특정 패턴 ID의 상대 좌표 리스트를 캐시에서 반환합니다.
   Future<List<Map<String, int>>> getPatternCoordinates(String patternId) async {
     await loadPatternRegistry();
-    await _ensurePatternLoaded(patternId);
     return _loadedPatterns[patternId] ?? [];
   }
 
@@ -456,7 +461,6 @@ class AchievementProvider extends ChangeNotifier {
     final completed = completedPatternIds();
     for (final patternId in _patternNames.keys) {
       if (completed.contains(patternId)) continue;
-      await _ensurePatternLoaded(patternId);
       final matched = _checkPatternMatch(
         patternId,
         capturedTiles,
@@ -480,6 +484,17 @@ class AchievementProvider extends ChangeNotifier {
     }
   }
 
+  /// 개수형 패턴 업적 ID에서 분류 추출 (`ACH_PAT` 접두 + 분류 포함 여부로 판정)
+  String _tierCategory(String achievementId) {
+    if (achievementId.contains('_ALPHA_')) return patternCategoryAlphabet;
+    if (achievementId.contains('_DIGIT_')) return patternCategoryDigit;
+    return patternCategoryFigure;
+  }
+
+  /// 개수형 패턴 업적의 현재 진척 개수 (분류별 완성 수)
+  int tierPatternCount(String achievementId) =>
+      completedPatternCountByCategory(_tierCategory(achievementId));
+
   /// 실제 업적 검증 및 해금 API 동기화 플로우를 진행하는 비동기 내부 헬퍼 메서드
   Future<void> _runCheckFlow(
     Map<String, HexTile>? capturedTiles,
@@ -493,6 +508,16 @@ class AchievementProvider extends ChangeNotifier {
         .toList();
 
     if (pending.isEmpty) return;
+
+    // 패턴 완성은 루프 전에 1회만 탐지 (분류별 개수형 판정은 탐지 뒤 카운트로 수행)
+    if (capturedTiles != null &&
+        pending.any((a) => a.category == AchievementCategory.patternMatch)) {
+      await _detectPatternCompletions(
+        capturedTiles,
+        userId,
+        newlyCapturedTileId: newlyCapturedTileId,
+      );
+    }
 
     // 본부 요새화 레벨 1회 한정 연산 (타일 정보가 넘어왔을 때만 연산 가동)
     final hqLevel = capturedTiles != null
@@ -537,14 +562,9 @@ class AchievementProvider extends ChangeNotifier {
           shouldUnlock = profile.photoUploadCount >= ach.threshold;
           break;
         case AchievementCategory.patternMatch:
-          if (capturedTiles != null) {
-            await _detectPatternCompletions(
-              capturedTiles,
-              userId,
-              newlyCapturedTileId: newlyCapturedTileId,
-            );
-            shouldUnlock = completedPatternCount >= ach.threshold;
-          }
+          shouldUnlock =
+              completedPatternCountByCategory(_tierCategory(ach.id)) >=
+                  ach.threshold;
           break;
       }
 

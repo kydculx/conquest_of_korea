@@ -1361,6 +1361,7 @@ class GameStrings {
       'requiredTilesCount'.tr(namedArgs: {'count': count.toString()});
   static String get alphabetPatterns => 'alphabetPatterns'.tr();
   static String get numberPatterns => 'numberPatterns'.tr();
+  static String get figurePatterns => 'figurePatterns'.tr();
   static String get patternCompletedBadge => 'patternCompletedBadge'.tr();
   static String get myAchievementSub => 'myAchievementSub'.tr();
   static String stepsCount(int count) =>

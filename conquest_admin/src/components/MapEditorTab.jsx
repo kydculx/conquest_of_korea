@@ -267,6 +267,7 @@ export default function MapEditorTab() {
       char: '',
       name: name,
       patternId: `custom_${Date.now().toString(36)}`,
+      category: 'figure',
       gridTiles: {} // 빈 15x15 맵으로 초기화
     };
 
@@ -289,6 +290,15 @@ export default function MapEditorTab() {
   // DB 저장용 패턴 ID (문자 파일은 문자 그대로, 신규는 custom_ 발급)
   const patternIdOf = (letter) => letter.patternId || letter.char || '';
 
+  // 분류 판정 (DB값 우선, 없으면 ID 규칙)
+  const categoryOf = (letter) => {
+    if (letter.category) return letter.category;
+    const id = patternIdOf(letter);
+    if (/^[A-Z]$/.test(id)) return 'alphabet';
+    if (/^[0-9]$/.test(id)) return 'digit';
+    return 'figure';
+  };
+
   // DB에 패턴 정의 저장 (upsert)
   const handleSaveToDb = async () => {
     if (!activeLetter) {
@@ -308,7 +318,7 @@ export default function MapEditorTab() {
     try {
       const { error } = await supabase
         .from('map_patterns')
-        .upsert({ id: patternId, name, tiles: tilesArray, updated_at: new Date().toISOString() });
+        .upsert({ id: patternId, name, category: categoryOf(activeLetter), tiles: tilesArray, updated_at: new Date().toISOString() });
       if (error) throw error;
       alert(`DB에 저장했습니다. (ID: ${patternId}, ${tilesArray.length}개 타일)`);
       await loadDbPatterns();
@@ -463,6 +473,9 @@ export default function MapEditorTab() {
             char: importChar,
             name: importName,
             patternId: importChar && importChar.length === 1 ? importChar : `custom_${Date.now().toString(36)}`,
+            category: importChar && importChar.length === 1
+              ? (/^[0-9]$/.test(importChar) ? 'digit' : 'alphabet')
+              : 'figure',
             gridTiles: gridTiles
           };
 
@@ -485,6 +498,9 @@ export default function MapEditorTab() {
             const normalized = parsedData.map((item, idx) => {
               const itemChar = typeof item.char === 'string' ? item.char.toUpperCase() : '';
               const itemName = typeof item.name === 'string' && item.name.trim() !== '' ? item.name.trim() : itemChar;
+              const itemCategory = item.category || (itemChar && itemChar.length === 1
+                ? (/^[0-9]$/.test(itemChar) ? 'digit' : 'alphabet')
+                : 'figure');
               return {
                 id: item.id || `loaded-${idx}-${Date.now()}`,
                 lat: item.lat,
@@ -492,6 +508,7 @@ export default function MapEditorTab() {
                 char: itemChar,
                 name: itemName,
                 patternId: itemChar && itemChar.length === 1 ? itemChar : `custom_${Date.now().toString(36)}_${idx}`,
+                category: itemCategory,
                 gridTiles: {}
               };
             });
@@ -532,6 +549,7 @@ export default function MapEditorTab() {
               patternId: (typeof item.char === 'string' && item.char.length === 1)
                 ? item.char.toUpperCase()
                 : `custom_${Date.now().toString(36)}_${idx}`,
+              category: item.category || 'figure',
               gridTiles
             };
           });
@@ -613,8 +631,27 @@ export default function MapEditorTab() {
                 value={activeLetter.name || ''}
                 onChange={(e) => handleUpdateActiveName(e.target.value)}
                 placeholder="예: 우리동네 하트"
-                style={{ fontSize: '0.85rem' }}
+                style={{ fontSize: '0.85rem', marginBottom: '0.5rem' }}
               />
+              <span style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', display: 'block', marginBottom: '0.4rem' }}>
+                🗂️ 분류
+              </span>
+              <select
+                className="tactical-input"
+                value={categoryOf(activeLetter)}
+                onChange={(e) => {
+                  if (!selectedLetterId) return;
+                  const category = e.target.value;
+                  setLetters(prev => prev.map(item =>
+                    item.id === selectedLetterId ? { ...item, category } : item
+                  ));
+                }}
+                style={{ fontSize: '0.85rem' }}
+              >
+                <option value="alphabet">알파벳</option>
+                <option value="digit">숫자</option>
+                <option value="figure">도형</option>
+              </select>
             </div>
             {/* DB 저장 */}
             <div>
@@ -692,7 +729,7 @@ export default function MapEditorTab() {
                         {row.name || row.id}
                       </div>
                       <div style={{ fontSize: '0.7rem', color: 'var(--text-muted)' }}>
-                        {tileCount}개 타일
+                        {tileCount}개 타일 · {row.category === 'alphabet' ? '알파벳' : row.category === 'digit' ? '숫자' : '도형'}
                       </div>
                     </div>
                     <button onClick={() => handleLoadDbPattern(row)} className="tactical-btn sm" title="에디터로 불러오기">

@@ -507,6 +507,31 @@ class _PatternGuideScreenState extends State<PatternGuideScreen> {
                             ),
                           ),
                           const SizedBox(height: 4),
+                          // 분류 표기
+                          Builder(
+                            builder: (context) {
+                              final category = achProvider
+                                  .patternCategory(entry.key);
+                              final label = category ==
+                                      AchievementProvider
+                                          .patternCategoryAlphabet
+                                  ? GameStrings.alphabetPatterns
+                                  : category ==
+                                          AchievementProvider
+                                              .patternCategoryDigit
+                                      ? GameStrings.numberPatterns
+                                      : GameStrings.figurePatterns;
+                              return Text(
+                                label,
+                                style: GoogleFonts.outfit(
+                                  color: GameColors.textSecondary,
+                                  fontSize: 12,
+                                  fontWeight: FontWeight.w600,
+                                ),
+                              );
+                            },
+                          ),
+                          const SizedBox(height: 4),
                           // 필요 수량 표기
                           Text(
                             GameStrings.requiredTilesCount(tiles.length),

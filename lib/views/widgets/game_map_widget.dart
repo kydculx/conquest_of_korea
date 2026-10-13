@@ -462,9 +462,18 @@ class _GameMapWidgetState extends State<GameMapWidget>
               ),
 
               // [신규] 갤러리 보유 타일 기본 카메라 아이콘 마커 레이어
-              Selector<GameProvider, Set<String>>(
-                selector: (_, provider) => provider.photoTileIds,
-                builder: (context, photoTileIds, child) {
+              Selector<GameProvider, (Set<String>, bool, bool)>(
+                selector: (_, provider) => (
+                  provider.photoTileIds,
+                  provider.isFootprintMode,
+                  provider.showCompletedPatterns
+                ),
+                builder: (context, state, child) {
+                  final photoTileIds = state.$1;
+                  // 발자취·패턴 도감 모드에서는 사진 아이콘 숨김
+                  if (state.$2 || state.$3) {
+                    return const SizedBox.shrink();
+                  }
                   // 카메라 줌 레벨이 일정 수준 이하(너무 멀리 줌아웃 - LOD 2 수준)일 때는 마커 레이어 생략
                   if (_currentZoom < MapConfig.minZoom + 3) {
                     return const SizedBox.shrink();

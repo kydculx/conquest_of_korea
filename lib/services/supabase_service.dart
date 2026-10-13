@@ -127,9 +127,9 @@ class SupabaseService {
     return TileStatus.enemy;
   }
 
-  /// 패턴 도감 정의 목록 조회 (id, name, tiles).
+  /// 패턴 도감 정의 목록 조회 (id, name, category, tiles).
   ///
-  /// 테이블이 아직 없으면 빈 목록을 반환하고, 호출부는 번들 JSON 폴백을 쓴다.
+  /// 테이블이 아직 없으면 빈 목록을 반환하고, 호출부는 빈 등록부로 동작한다.
   Future<List<Map<String, dynamic>>> fetchMapPatterns() async {
     try {
       const int pageSize = 1000;
@@ -138,7 +138,7 @@ class SupabaseService {
       while (true) {
         final response = await _client
             .from('map_patterns')
-            .select('id, name, tiles')
+            .select('id, name, category, tiles')
             .order('id', ascending: true)
             .range(from, from + pageSize - 1);
         final page = (response as List).map(_toMap).toList();

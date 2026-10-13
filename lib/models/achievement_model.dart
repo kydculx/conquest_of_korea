@@ -104,11 +104,22 @@ class Achievement {
     const Achievement(id: 'ACH_PHOTO_T3', titleKey: 'achPhotoT3Title', descriptionKey: 'achPhotoT3Desc', category: AchievementCategory.photoUpload, threshold: 15, tier: 3),
     const Achievement(id: 'ACH_PHOTO_T4', titleKey: 'achPhotoT4Title', descriptionKey: 'achPhotoT4Desc', category: AchievementCategory.photoUpload, threshold: 50, tier: 4),
 
-    // 10. 패턴 완성 개수 (개별 패턴 완성 기록은 ACH_PATTERN_<id> 행으로 유지)
-    const Achievement(id: 'ACH_PAT_T1', titleKey: 'achPatT1Title', descriptionKey: 'achPatT1Desc', category: AchievementCategory.patternMatch, threshold: 1, tier: 1),
-    const Achievement(id: 'ACH_PAT_T2', titleKey: 'achPatT2Title', descriptionKey: 'achPatT2Desc', category: AchievementCategory.patternMatch, threshold: 3, tier: 2),
-    const Achievement(id: 'ACH_PAT_T3', titleKey: 'achPatT3Title', descriptionKey: 'achPatT3Desc', category: AchievementCategory.patternMatch, threshold: 5, tier: 3),
-    const Achievement(id: 'ACH_PAT_T4', titleKey: 'achPatT4Title', descriptionKey: 'achPatT4Desc', category: AchievementCategory.patternMatch, threshold: 10, tier: 4),
+    // 10. 패턴 완성 개수 (분류별, 개별 패턴 완성 기록은 ACH_PATTERN_<id> 행으로 유지)
+    // 알파벳
+    const Achievement(id: 'ACH_PAT_ALPHA_T1', titleKey: 'achPatAlphaT1Title', descriptionKey: 'achPatAlphaT1Desc', category: AchievementCategory.patternMatch, threshold: 1, tier: 1),
+    const Achievement(id: 'ACH_PAT_ALPHA_T2', titleKey: 'achPatAlphaT2Title', descriptionKey: 'achPatAlphaT2Desc', category: AchievementCategory.patternMatch, threshold: 5, tier: 2),
+    const Achievement(id: 'ACH_PAT_ALPHA_T3', titleKey: 'achPatAlphaT3Title', descriptionKey: 'achPatAlphaT3Desc', category: AchievementCategory.patternMatch, threshold: 10, tier: 3),
+    const Achievement(id: 'ACH_PAT_ALPHA_T4', titleKey: 'achPatAlphaT4Title', descriptionKey: 'achPatAlphaT4Desc', category: AchievementCategory.patternMatch, threshold: 20, tier: 4),
+    // 숫자
+    const Achievement(id: 'ACH_PAT_DIGIT_T1', titleKey: 'achPatDigitT1Title', descriptionKey: 'achPatDigitT1Desc', category: AchievementCategory.patternMatch, threshold: 1, tier: 1),
+    const Achievement(id: 'ACH_PAT_DIGIT_T2', titleKey: 'achPatDigitT2Title', descriptionKey: 'achPatDigitT2Desc', category: AchievementCategory.patternMatch, threshold: 3, tier: 2),
+    const Achievement(id: 'ACH_PAT_DIGIT_T3', titleKey: 'achPatDigitT3Title', descriptionKey: 'achPatDigitT3Desc', category: AchievementCategory.patternMatch, threshold: 5, tier: 3),
+    const Achievement(id: 'ACH_PAT_DIGIT_T4', titleKey: 'achPatDigitT4Title', descriptionKey: 'achPatDigitT4Desc', category: AchievementCategory.patternMatch, threshold: 10, tier: 4),
+    // 도형
+    const Achievement(id: 'ACH_PAT_FIGURE_T1', titleKey: 'achPatFigureT1Title', descriptionKey: 'achPatFigureT1Desc', category: AchievementCategory.patternMatch, threshold: 1, tier: 1),
+    const Achievement(id: 'ACH_PAT_FIGURE_T2', titleKey: 'achPatFigureT2Title', descriptionKey: 'achPatFigureT2Desc', category: AchievementCategory.patternMatch, threshold: 3, tier: 2),
+    const Achievement(id: 'ACH_PAT_FIGURE_T3', titleKey: 'achPatFigureT3Title', descriptionKey: 'achPatFigureT3Desc', category: AchievementCategory.patternMatch, threshold: 5, tier: 3),
+    const Achievement(id: 'ACH_PAT_FIGURE_T4', titleKey: 'achPatFigureT4Title', descriptionKey: 'achPatFigureT4Desc', category: AchievementCategory.patternMatch, threshold: 10, tier: 4),
   ];
 }
 

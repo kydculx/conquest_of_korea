@@ -282,7 +282,7 @@ class _AchievementScreenState extends State<AchievementScreen> {
 
   /// 업적 카드 위젯 (업적제목, 업적설명, 진척도 3가지 정보만 렌더링)
   Widget _buildAchievementCard(Achievement ach, bool isUnlocked, dynamic profile) {
-    final currentVal = _getCurrentValueForCategory(ach.category, profile);
+    final currentVal = _getCurrentValueForCategory(ach, profile);
     final ratio = ach.threshold > 0 ? (currentVal / ach.threshold).clamp(0.0, 1.0) : 0.0;
 
     return Container(
@@ -366,8 +366,9 @@ class _AchievementScreenState extends State<AchievementScreen> {
   }
 
   /// 카테고리별 유저 프로필 수치 게터
-  double _getCurrentValueForCategory(AchievementCategory cat, dynamic profile) {
+  double _getCurrentValueForCategory(Achievement ach, dynamic profile) {
     if (profile == null) return 0.0;
+    final cat = ach.category;
     switch (cat) {
       case AchievementCategory.capturedTiles:
         return (profile.capturedTilesCount as num).toDouble();
@@ -398,7 +399,7 @@ class _AchievementScreenState extends State<AchievementScreen> {
         return achProvider.userUniquePhotoTilesCount.toDouble();
       case AchievementCategory.patternMatch:
         final achProvider = Provider.of<AchievementProvider>(context, listen: false);
-        return achProvider.completedPatternCount.toDouble();
+        return achProvider.tierPatternCount(ach.id).toDouble();
     }
   }
 }

@@ -114,7 +114,6 @@ class CompletedPatternList extends StatelessWidget {
                     height: 48,
                     constraints: const BoxConstraints(
                       minWidth: 48,
-                      maxWidth: 160,
                     ),
                     padding: const EdgeInsets.symmetric(horizontal: 14),
                     decoration: ShapeDecoration(
@@ -138,7 +137,6 @@ class CompletedPatternList extends StatelessWidget {
                       child: Text(
                         item.name,
                         maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
                         style: GoogleFonts.fredoka(
                           color: Palette.brightBlue,
                           fontSize: 14,

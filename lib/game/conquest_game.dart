@@ -528,7 +528,9 @@ class ConquestGame extends FlameGame {
       final String? targetTileColorHex = _resolveTileColorHex(tileData);
       final String? targetAdminBorderColorHex = resolveAdminBorderColorHex(id);
 
-      final hasCoin = !_showFootprints && _coins.any((c) => c.tileId == id && !c.isCollected);
+      final hasCoin = !_showFootprints &&
+          !_showCompletedPatterns &&
+          _coins.any((c) => c.tileId == id && !c.isCollected);
 
       if (_tileMap.containsKey(id)) {
         _tileMap[id]!.position = Vector2(screenOffset.dx, screenOffset.dy);
