@@ -110,11 +110,13 @@ class Achievement {
     const Achievement(id: 'ACH_PAT_ALPHA_T2', titleKey: 'achPatAlphaT2Title', descriptionKey: 'achPatAlphaT2Desc', category: AchievementCategory.patternMatch, threshold: 5, tier: 2),
     const Achievement(id: 'ACH_PAT_ALPHA_T3', titleKey: 'achPatAlphaT3Title', descriptionKey: 'achPatAlphaT3Desc', category: AchievementCategory.patternMatch, threshold: 10, tier: 3),
     const Achievement(id: 'ACH_PAT_ALPHA_T4', titleKey: 'achPatAlphaT4Title', descriptionKey: 'achPatAlphaT4Desc', category: AchievementCategory.patternMatch, threshold: 20, tier: 4),
+    const Achievement(id: 'ACH_PAT_ALPHA_GOD', titleKey: 'achPatAlphaGodTitle', descriptionKey: 'achPatAlphaGodDesc', category: AchievementCategory.patternMatch, threshold: 26, tier: 5),
     // 숫자
     const Achievement(id: 'ACH_PAT_DIGIT_T1', titleKey: 'achPatDigitT1Title', descriptionKey: 'achPatDigitT1Desc', category: AchievementCategory.patternMatch, threshold: 1, tier: 1),
     const Achievement(id: 'ACH_PAT_DIGIT_T2', titleKey: 'achPatDigitT2Title', descriptionKey: 'achPatDigitT2Desc', category: AchievementCategory.patternMatch, threshold: 3, tier: 2),
     const Achievement(id: 'ACH_PAT_DIGIT_T3', titleKey: 'achPatDigitT3Title', descriptionKey: 'achPatDigitT3Desc', category: AchievementCategory.patternMatch, threshold: 5, tier: 3),
-    const Achievement(id: 'ACH_PAT_DIGIT_T4', titleKey: 'achPatDigitT4Title', descriptionKey: 'achPatDigitT4Desc', category: AchievementCategory.patternMatch, threshold: 10, tier: 4),
+    const Achievement(id: 'ACH_PAT_DIGIT_T4', titleKey: 'achPatDigitT4Title', descriptionKey: 'achPatDigitT4Desc', category: AchievementCategory.patternMatch, threshold: 8, tier: 4),
+    const Achievement(id: 'ACH_PAT_DIGIT_GOD', titleKey: 'achPatDigitGodTitle', descriptionKey: 'achPatDigitGodDesc', category: AchievementCategory.patternMatch, threshold: 10, tier: 5),
     // 도형
     const Achievement(id: 'ACH_PAT_FIGURE_T1', titleKey: 'achPatFigureT1Title', descriptionKey: 'achPatFigureT1Desc', category: AchievementCategory.patternMatch, threshold: 1, tier: 1),
     const Achievement(id: 'ACH_PAT_FIGURE_T2', titleKey: 'achPatFigureT2Title', descriptionKey: 'achPatFigureT2Desc', category: AchievementCategory.patternMatch, threshold: 3, tier: 2),
