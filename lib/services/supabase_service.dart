@@ -127,6 +127,32 @@ class SupabaseService {
     return TileStatus.enemy;
   }
 
+  /// 패턴 도감 정의 목록 조회 (id, name, tiles).
+  ///
+  /// 테이블이 아직 없으면 빈 목록을 반환하고, 호출부는 번들 JSON 폴백을 쓴다.
+  Future<List<Map<String, dynamic>>> fetchMapPatterns() async {
+    try {
+      const int pageSize = 1000;
+      final List<Map<String, dynamic>> all = [];
+      int from = 0;
+      while (true) {
+        final response = await _client
+            .from('map_patterns')
+            .select('id, name, tiles')
+            .order('id', ascending: true)
+            .range(from, from + pageSize - 1);
+        final page = (response as List).map(_toMap).toList();
+        all.addAll(page);
+        if (page.length < pageSize) break;
+        from += pageSize;
+      }
+      return all;
+    } catch (e) {
+      debugPrint('⚠️ 패턴 정의 목록 조회 실패: $e');
+      return [];
+    }
+  }
+
   /// 특정 타일 ID에 대한 상세 점령 정보를 단일 레코드로 조회하여 반환합니다. 점령되지 않은 중립 타일일 시 null을 반환합니다.
   ///
   /// 네트워크 오류 등은 예외로 전파한다. null은 서버에 행이 없을 때만 반환한다.

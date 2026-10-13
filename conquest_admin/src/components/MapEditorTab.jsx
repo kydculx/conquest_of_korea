@@ -1,6 +1,7 @@
 import React, { useEffect, useState, useRef } from 'react';
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
+import { supabase } from '../supabase';
 import { 
   Download, 
   Upload, 
@@ -14,7 +15,6 @@ import {
 const originLat = 37.5665;
 const originLng = 126.9780;
 const hexSize = 100.0; // 100m 정밀 타일 규격
-const characters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789'.split('');
 
 // 브러시 컬러 (기본 시안색 고정)
 const brushColor = '#00e5ff';
@@ -58,9 +58,10 @@ export default function MapEditorTab() {
   // 현재 포커스(선택)된 문자 마커 ID
   const [selectedLetterId, setSelectedLetterId] = useState(null);
   
-  // 신규 문자 등록을 위한 임시 좌표 및 모달 제어 상태
+  // 신규 패턴 등록을 위한 임시 좌표 및 모달 제어 상태
   const [selectedCoords, setSelectedCoords] = useState(null);
   const [showCharSelectModal, setShowCharSelectModal] = useState(false);
+  const [newPatternName, setNewPatternName] = useState('');
 
   // 저장 파일명 입력 모달 제어 상태 (React 모달 대체)
   const [showSaveModal, setShowSaveModal] = useState(false);
@@ -97,7 +98,7 @@ export default function MapEditorTab() {
 
     // 지도를 클릭했을 때 처리
     map.on('click', (e) => {
-      // 맵 배경 클릭 시 문자 추가 팝업을 연다.
+      // 맵 배경 클릭 시 패턴 추가 팝업을 연다.
       const { lat, lng } = e.latlng;
       setSelectedCoords([lat, lng]);
       setShowCharSelectModal(true);
@@ -182,16 +183,23 @@ export default function MapEditorTab() {
     }
   }, [selectedLetterId, letters, brushColor, activeLetter]);
 
-  // 4. 새 문자 선택 완료 및 생성 (자동 포커스 적용)
-  const handleSelectChar = (char) => {
+  // 4. 새 패턴 이름 입력 완료 및 생성 (자동 포커스 적용)
+  const handleCreateDrawing = () => {
     if (!selectedCoords) return;
+    const name = newPatternName.trim();
+    if (!name) {
+      alert('패턴 이름을 입력해 주세요.');
+      return;
+    }
 
     const newLetterId = Date.now().toString() + Math.random().toString(36).substr(2, 5);
     const newLetter = {
       id: newLetterId,
       lat: selectedCoords[0],
       lng: selectedCoords[1],
-      char: char.toUpperCase(),
+      char: '',
+      name: name,
+      patternId: `custom_${Date.now().toString(36)}`,
       gridTiles: {} // 빈 15x15 맵으로 초기화
     };
 
@@ -199,22 +207,53 @@ export default function MapEditorTab() {
     setSelectedLetterId(newLetterId); // 배치 후 즉시 포커스
     setShowCharSelectModal(false);
     setSelectedCoords(null);
+    setNewPatternName('');
   };
 
-  // 5. 포커스된 마커의 문자 변경
-  const handleUpdateActiveChar = (char) => {
+  // 5. 포커스된 패턴의 이름 변경
+  const handleUpdateActiveName = (name) => {
     if (!selectedLetterId) return;
 
-    setLetters(prev => prev.map(item => 
-      item.id === selectedLetterId ? { ...item, char: char.toUpperCase() } : item
+    setLetters(prev => prev.map(item =>
+      item.id === selectedLetterId ? { ...item, name } : item
     ));
   };
 
+  // DB 저장용 패턴 ID (문자 파일은 문자 그대로, 신규는 custom_ 발급)
+  const patternIdOf = (letter) => letter.patternId || letter.char || '';
+
+  // DB에 패턴 정의 저장 (upsert)
+  const handleSaveToDb = async () => {
+    if (!activeLetter) {
+      alert('저장할 패턴 마커를 먼저 지도에서 선택(클릭)해 주세요.');
+      return;
+    }
+    const patternId = patternIdOf(activeLetter);
+    const name = (activeLetter.name || activeLetter.char || '').trim();
+    if (!patternId || !name) {
+      alert('패턴 이름을 입력해 주세요.');
+      return;
+    }
+    const tilesArray = Object.keys(activeLetter.gridTiles || {}).map(key => {
+      const [q, r] = key.split(',').map(Number);
+      return { q, r };
+    });
+    try {
+      const { error } = await supabase
+        .from('map_patterns')
+        .upsert({ id: patternId, name, tiles: tilesArray, updated_at: new Date().toISOString() });
+      if (error) throw error;
+      alert(`DB에 저장했습니다. (ID: ${patternId}, ${tilesArray.length}개 타일)`);
+    } catch (err) {
+      console.error(err);
+      alert('DB 저장 중 오류 발생: ' + (err.message || JSON.stringify(err)));
+    }
+  };
   // 6. 포커스된 마커 삭제
   const handleDeleteActiveMarker = () => {
     if (!selectedLetterId) return;
 
-    if (window.confirm('이 문자 마커 및 이 문자에 칠해진 타일 맵을 삭제하시겠습니까?')) {
+    if (window.confirm(`이 패턴 마커(${(activeLetter.name || activeLetter.char) || '이름 없음'}) 및 칠해진 타일 맵을 삭제하시겠습니까?`)) {
       setLetters(prev => prev.filter(item => item.id !== selectedLetterId));
       setSelectedLetterId(null);
     }
@@ -247,7 +286,7 @@ export default function MapEditorTab() {
       return;
     }
 
-    setSaveFileName(activeLetter.char);
+    setSaveFileName(activeLetter.name || activeLetter.char);
     setShowSaveModal(true);
   };
 
@@ -255,7 +294,7 @@ export default function MapEditorTab() {
   const handleConfirmSave = async () => {
     if (!activeLetter) return;
 
-    const defaultFileName = activeLetter.char;
+    const defaultFileName = activeLetter.name || activeLetter.char;
     let finalFileName = saveFileName.trim() !== '' ? saveFileName.trim() : defaultFileName;
 
     // 사용자가 입력란에 확장자(.json)까지 기입한 경우 중복 확장자(A.json.json) 방지를 위해 제거
@@ -271,6 +310,7 @@ export default function MapEditorTab() {
 
     const exportData = {
       char: activeLetter.char,
+      name: activeLetter.name || activeLetter.char,
       lat: activeLetter.lat,
       lng: activeLetter.lng,
       tiles: tilesArray
@@ -336,7 +376,7 @@ export default function MapEditorTab() {
         const parsedData = JSON.parse(event.target.result);
         
         // 1. 단일 마커 파일인 경우 (v1.3 표준)
-        if (parsedData && typeof parsedData === 'object' && !Array.isArray(parsedData) && parsedData.char) {
+        if (parsedData && typeof parsedData === 'object' && !Array.isArray(parsedData) && (parsedData.char || parsedData.name)) {
           const gridTiles = {};
           if (Array.isArray(parsedData.tiles)) {
             parsedData.tiles.forEach(t => {
@@ -344,11 +384,17 @@ export default function MapEditorTab() {
             });
           }
 
+          const importChar = typeof parsedData.char === 'string' ? parsedData.char.toUpperCase() : '';
+          const importName = typeof parsedData.name === 'string' && parsedData.name.trim() !== ''
+            ? parsedData.name.trim()
+            : importChar;
           const newLetter = {
-            id: `loaded-${parsedData.char}-${Date.now()}`,
+            id: `loaded-${importChar || 'custom'}-${Date.now()}`,
             lat: parsedData.lat,
             lng: parsedData.lng,
-            char: parsedData.char.toUpperCase(),
+            char: importChar,
+            name: importName,
+            patternId: importChar && importChar.length === 1 ? importChar : `custom_${Date.now().toString(36)}`,
             gridTiles: gridTiles
           };
 
@@ -368,13 +414,19 @@ export default function MapEditorTab() {
           );
 
           if (isValid) {
-            const normalized = parsedData.map((item, idx) => ({
-              id: item.id || `loaded-${idx}-${Date.now()}`,
-              lat: item.lat,
-              lng: item.lng,
-              char: item.char.toUpperCase(),
-              gridTiles: {}
-            }));
+            const normalized = parsedData.map((item, idx) => {
+              const itemChar = typeof item.char === 'string' ? item.char.toUpperCase() : '';
+              const itemName = typeof item.name === 'string' && item.name.trim() !== '' ? item.name.trim() : itemChar;
+              return {
+                id: item.id || `loaded-${idx}-${Date.now()}`,
+                lat: item.lat,
+                lng: item.lng,
+                char: itemChar,
+                name: itemName,
+                patternId: itemChar && itemChar.length === 1 ? itemChar : `custom_${Date.now().toString(36)}_${idx}`,
+                gridTiles: {}
+              };
+            });
             setLetters(normalized);
             setSelectedLetterId(null);
             if (normalized.length > 0) {
@@ -405,7 +457,13 @@ export default function MapEditorTab() {
               id: item.id || `loaded-${idx}-${Date.now()}`,
               lat: item.lat,
               lng: item.lng,
-              char: item.char.toUpperCase(),
+              char: typeof item.char === 'string' ? item.char.toUpperCase() : '',
+              name: (typeof item.name === 'string' && item.name.trim() !== '')
+                ? item.name.trim()
+                : (typeof item.char === 'string' ? item.char.toUpperCase() : `가져온 패턴 ${idx + 1}`),
+              patternId: (typeof item.char === 'string' && item.char.length === 1)
+                ? item.char.toUpperCase()
+                : `custom_${Date.now().toString(36)}_${idx}`,
               gridTiles
             };
           });
@@ -473,26 +531,32 @@ export default function MapEditorTab() {
           </div>
         </div>
 
-        {/* 선택된 문자 및 개별 15x15 타일 페인팅 카드 */}
+        {/* 선택된 패턴 이름 및 개별 15x15 타일 페인팅 카드 */}
         {activeLetter && (
           <div className="tactical-card" style={{ padding: '1.2rem', display: 'flex', flexDirection: 'column', gap: '0.8rem' }}>
-            {/* 문자 변경 툴 */}
+            {/* 패턴 이름 변경 툴 */}
             <div>
               <span style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', display: 'block', marginBottom: '0.4rem' }}>
-                🔤 문자 변경 ({activeLetter.char})
+                ✏️ 패턴 이름
               </span>
-              <div className="editor-char-grid" style={{ maxHeight: '120px', overflowY: 'auto', border: '1px solid var(--border-color)', borderRadius: '6px', padding: '0.3rem' }}>
-                {characters.map(char => (
-                  <button
-                    key={char}
-                    onClick={() => handleUpdateActiveChar(char)}
-                    className={`editor-char-btn ${activeLetter.char === char ? 'active' : ''}`}
-                    style={{ height: '30px', fontSize: '0.85rem' }}
-                  >
-                    {char}
-                  </button>
-                ))}
-              </div>
+              <input
+                type="text"
+                className="tactical-input"
+                value={activeLetter.name || ''}
+                onChange={(e) => handleUpdateActiveName(e.target.value)}
+                placeholder="예: 우리동네 하트"
+                style={{ fontSize: '0.85rem' }}
+              />
+            </div>
+            {/* DB 저장 */}
+            <div>
+              <button
+                onClick={handleSaveToDb}
+                className="tactical-btn active"
+                style={{ width: '100%', justifyContent: 'center', padding: '0.5rem', fontSize: '0.8rem' }}
+              >
+                DB에 저장하기
+              </button>
             </div>
             {/* 마커 조작 도구 */}
             <div style={{ display: 'flex', gap: '0.4rem', marginTop: '0.4rem' }}>
@@ -519,10 +583,10 @@ export default function MapEditorTab() {
         <div className="tactical-card" style={{ padding: '1.2rem' }}>
           <h4 style={{ fontSize: '0.85rem', color: 'var(--text-primary)', marginBottom: '0.4rem' }}>💡 사용법 가이드</h4>
           <ul style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', paddingLeft: '1rem', lineHeight: '1.6' }}>
-            <li>지도 위의 빈 곳을 <strong>클릭</strong>해 신규 문자 마커를 생성합니다. (자동 선택됨)</li>
-            <li>마커가 선택되면 마커 주변에 **15x15 헥사 타일 그리드**가 뜹니다.</li>
-            <li>그리드 안을 탭해 색을 칠하면 **해당 문자에만 타일 맵이 바인딩**됩니다.</li>
-            <li>다른 문자를 선택하면 해당 문자만의 개별 타일 맵으로 교체됩니다.</li>
+            <li>지도 위의 빈 곳을 <strong>클릭</strong>해 신규 패턴 마커를 생성합니다. (자동 선택됨)</li>
+              <li>마커가 선택되면 마커 주변에 **15x15 헥사 타일 그리드**가 뜹니다.</li>
+              <li>그리드 안을 탭해 색을 칠하면 **해당 패턴에만 타일 맵이 바인딩**됩니다.</li>
+              <li>다른 패턴을 선택하면 해당 패턴만의 개별 타일 맵으로 교체됩니다.</li>
           </ul>
         </div>
 
@@ -555,40 +619,56 @@ export default function MapEditorTab() {
               pointerEvents: 'none'
             }}>
               <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>편집 중:</span>
-              <div className="focus-char-badge" style={{ margin: 0 }}>{activeLetter.char}</div>
+              <div className="focus-char-badge" style={{ margin: 0 }}>{activeLetter.name || activeLetter.char || '이름 없음'}</div>
             </div>
           )}
         </div>
       </div>
 
-      {/* 3. 문자 선택 모달 (신규 등록) */}
+      {/* 3. 패턴 생성 모달 (신규 등록) */}
       {showCharSelectModal && (
-        <div className="editor-modal-overlay" onClick={() => { setShowCharSelectModal(false); setSelectedCoords(null); }}>
+        <div className="editor-modal-overlay" onClick={() => { setShowCharSelectModal(false); setSelectedCoords(null); setNewPatternName(''); }}>
           <div className="editor-modal-content" onClick={(e) => e.stopPropagation()}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
-              <h3 style={{ fontSize: '1.1rem', color: 'var(--text-primary)' }}>문자 생성</h3>
-              <button 
-                onClick={() => { setShowCharSelectModal(false); setSelectedCoords(null); }}
+              <h3 style={{ fontSize: '1.1rem', color: 'var(--text-primary)' }}>패턴 생성</h3>
+              <button
+                onClick={() => { setShowCharSelectModal(false); setSelectedCoords(null); setNewPatternName(''); }}
                 style={{ background: 'none', border: 'none', color: 'var(--text-muted)', cursor: 'pointer' }}
               >
                 <X size={20} />
               </button>
             </div>
-            
-            <p style={{ fontSize: '0.8rem', color: 'var(--text-secondary)' }}>
-              이 위치에 배치하고 타일을 개별적으로 칠할 문자(A~Z, 0~9)를 골라주세요.
+
+            <p style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', marginBottom: '0.8rem' }}>
+              이 위치에 배치할 패턴의 이름을 입력해 주세요. 타일은 생성 후 개별적으로 칠합니다.
             </p>
 
-            <div className="editor-char-grid">
-              {characters.map(char => (
-                <button
-                  key={char}
-                  onClick={() => handleSelectChar(char)}
-                  className="editor-char-btn"
-                >
-                  {char}
-                </button>
-              ))}
+            <input
+              type="text"
+              className="tactical-input"
+              value={newPatternName}
+              onChange={(e) => setNewPatternName(e.target.value)}
+              placeholder="예: 우리동네 하트"
+              autoFocus
+              onKeyDown={(e) => { if (e.key === 'Enter') handleCreateDrawing(); }}
+              style={{ fontSize: '0.95rem', marginBottom: '1rem' }}
+            />
+
+            <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '0.6rem' }}>
+              <button
+                onClick={() => { setShowCharSelectModal(false); setSelectedCoords(null); setNewPatternName(''); }}
+                className="tactical-btn"
+                style={{ padding: '0.5rem 1rem', fontSize: '0.8rem' }}
+              >
+                취소
+              </button>
+              <button
+                onClick={handleCreateDrawing}
+                className="tactical-btn active"
+                style={{ padding: '0.5rem 1rem', fontSize: '0.8rem' }}
+              >
+                생성
+              </button>
             </div>
           </div>
         </div>

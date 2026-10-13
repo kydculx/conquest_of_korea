@@ -23,11 +23,22 @@ class AchievementProvider extends ChangeNotifier {
   bool _isChecking = false; // 연타 점령 시 비동기 경합(Race Condition)을 가드하는 락 플래그
   bool _hasPendingCheck = false; // 진행 중인 판정이 있을 때 후속 판정 요청을 임시 기록하는 플래그
 
-  // 패턴별 상대 좌표 목록 캐시 (key: 'A', value: [ {q: 0, r: 0}, ... ])
+  // 패턴별 상대 좌표 목록 캐시 (key: 패턴 ID, value: [ {q: 0, r: 0}, ... ])
   final Map<String, List<Map<String, int>>> _loadedPatterns = {};
 
   // 패턴별 메타데이터 캐시 (요구 타일 수, 바운딩 박스 편차 등)
   final Map<String, Map<String, dynamic>> _patternMeta = {};
+
+  // 패턴 ID → 표시 이름 registry (미등록분은 ID 그대로 표시)
+  final Map<String, String> _patternNames = {};
+  bool _patternRegistryLoaded = false;
+
+  /// 번들 내장 문자 패턴 ID 목록 (DB 미등록 시 파일 폴백용)
+  static const List<String> _builtinPatternIds = [
+    'A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K', 'L', 'M', 'N',
+    'O', 'P', 'Q', 'R', 'S', 'T', 'U', 'V', 'W', 'X', 'Y', 'Z',
+    '0', '1', '2', '3', '4', '5', '6', '7', '8', '9',
+  ];
 
   // 이미 업적 해금에 소비 완료된 영토 타일 ID 목록 캐시
   final Set<String> _consumedTileIds = {};
@@ -39,42 +50,94 @@ class AchievementProvider extends ChangeNotifier {
   final StreamController<Achievement> _unlockStreamController =
       StreamController<Achievement>.broadcast();
 
-  /// 패턴 JSON 에셋 파일을 안전하게 비동기 로드하고 q, r 상대 오프셋 데이터를 수집하여 캐싱합니다.
-  Future<void> _ensurePatternLoaded(String char) async {
-    if (_loadedPatterns.containsKey(char)) return;
-
+  /// 패턴 등록부 로드: DB 정의 + 번들 내장 문자(이름 폴백용).
+  ///
+  /// DB 행이 있으면 타일까지 캐싱하고, 번들 문자는 이름만 보장한 뒤
+  /// 타일은 판정 시점에 파일에서 지연 로드한다.
+  Future<void> loadPatternRegistry() async {
+    if (_patternRegistryLoaded) return;
+    _patternRegistryLoaded = true;
     try {
-      final String jsonString = await rootBundle.loadString('assets/data/$char.json');
-      final Map<String, dynamic> jsonMap = json.decode(jsonString);
-      final List<dynamic> tilesJson = jsonMap['tiles'] as List<dynamic>;
-
-      final List<Map<String, int>> tiles = [];
-      int minQ = 999999;
-      int maxQ = -999999;
-      int minR = 999999;
-      int maxR = -999999;
-
-      for (final tile in tilesJson) {
-        final int q = tile['q'] as int;
-        final int r = tile['r'] as int;
-        tiles.add({'q': q, 'r': r});
-
-        if (q < minQ) minQ = q;
-        if (q > maxQ) maxQ = q;
-        if (r < minR) minR = r;
-        if (r > maxR) maxR = r;
+      final rows = await _supabase.fetchMapPatterns();
+      for (final row in rows) {
+        final id = row['id'] as String?;
+        if (id == null || id.isEmpty) continue;
+        final name = row['name'] as String?;
+        _patternNames[id] = (name == null || name.isEmpty) ? id : name;
+        final tilesJson = row['tiles'];
+        if (tilesJson is List && tilesJson.isNotEmpty) {
+          _cachePatternTiles(id, tilesJson);
+        }
       }
-
-      _loadedPatterns[char] = tiles;
-      _patternMeta[char] = {
-        'tileCount': tiles.length,
-        'widthQ': maxQ - minQ,
-        'widthR': maxR - minR,
-      };
     } catch (e) {
-      debugPrint('⚠️ 패턴 파일 로드 실패 ($char.json): $e');
+      debugPrint('⚠️ 패턴 등록부 로드 실패: $e');
+    }
+    for (final id in _builtinPatternIds) {
+      _patternNames.putIfAbsent(id, () => id);
     }
   }
+
+  /// 타일 좌표 목록을 패턴 캐시에 적재하고 메타데이터를 갱신한다.
+  void _cachePatternTiles(String patternId, List<dynamic> tilesJson) {
+    final List<Map<String, int>> tiles = [];
+    int minQ = 999999;
+    int maxQ = -999999;
+    int minR = 999999;
+    int maxR = -999999;
+
+    for (final tile in tilesJson) {
+      final tileMap = tile as Map;
+      final int q = tileMap['q'] as int;
+      final int r = tileMap['r'] as int;
+      tiles.add({'q': q, 'r': r});
+
+      if (q < minQ) minQ = q;
+      if (q > maxQ) maxQ = q;
+      if (r < minR) minR = r;
+      if (r > maxR) maxR = r;
+    }
+
+    _loadedPatterns[patternId] = tiles;
+    _patternMeta[patternId] = {
+      'tileCount': tiles.length,
+      'widthQ': maxQ - minQ,
+      'widthR': maxR - minR,
+    };
+  }
+
+  /// 패턴 JSON 에셋 파일을 안전하게 비동기 로드하고 q, r 상대 오프셋 데이터를 수집하여 캐싱합니다.
+  Future<void> _ensurePatternLoaded(String patternId) async {
+    if (_loadedPatterns.containsKey(patternId)) return;
+
+    // 번들 내장 문자만 파일 폴백 (커스텀은 DB 타일이 전부)
+    if (!_builtinPatternIds.contains(patternId)) return;
+
+    try {
+      final String jsonString = await rootBundle.loadString('assets/data/$patternId.json');
+      final Map<String, dynamic> jsonMap = json.decode(jsonString);
+      final List<dynamic> tilesJson = jsonMap['tiles'] as List<dynamic>;
+      _cachePatternTiles(patternId, tilesJson);
+    } catch (e) {
+      debugPrint('⚠️ 패턴 파일 로드 실패 ($patternId.json): $e');
+    }
+  }
+
+  /// 완성한 패턴 ID 집합 (`ACH_PATTERN_` 접두 기록 기준)
+  Set<String> completedPatternIds() {
+    return _unlockedAchievementIds
+        .where((id) => id.startsWith('ACH_PATTERN_'))
+        .map((id) => id.replaceFirst('ACH_PATTERN_', ''))
+        .toSet();
+  }
+
+  /// 완성한 패턴 개수 (개수형 업적 판정용)
+  int get completedPatternCount => completedPatternIds().length;
+
+  /// 패턴 표시 이름 (미등록이면 ID 그대로)
+  String patternName(String patternId) => _patternNames[patternId] ?? patternId;
+
+  /// 등록된 패턴 ID 목록
+  Iterable<String> get patternIds => _patternNames.keys;
 
   /// 특정 타일(startTileId)을 출발점으로 삼아 인접한 현재 플레이어 소유의 영토 타일들을 BFS로 수집하여 단일 클러스터 셋을 반환합니다.
   Set<String> _extractCluster(
@@ -221,10 +284,11 @@ class AchievementProvider extends ChangeNotifier {
     return null;
   }
 
-  /// 특정 알파벳 패턴의 상대 좌표 리스트를 비동기로 불러와 캐싱한 뒤 반환합니다.
-  Future<List<Map<String, int>>> getPatternCoordinates(String char) async {
-    await _ensurePatternLoaded(char);
-    return _loadedPatterns[char] ?? [];
+  /// 특정 패턴 ID의 상대 좌표 리스트를 비동기로 불러와 캐싱한 뒤 반환합니다.
+  Future<List<Map<String, int>>> getPatternCoordinates(String patternId) async {
+    await loadPatternRegistry();
+    await _ensurePatternLoaded(patternId);
+    return _loadedPatterns[patternId] ?? [];
   }
 
   Stream<Achievement> get onAchievementUnlocked => _unlockStreamController.stream;
@@ -284,6 +348,8 @@ class AchievementProvider extends ChangeNotifier {
       final achTiles = await _supabase.fetchAchievementTiles(userId);
       _achievementTiles.clear();
       _achievementTiles.addAll(achTiles);
+
+      await loadPatternRegistry();
 
       if (_authProvider != null && _authProvider!.profile != null) {
         _userUniquePhotoTilesCount = _authProvider!.profile!.photoUploadCount;
@@ -377,6 +443,43 @@ class AchievementProvider extends ChangeNotifier {
     }
   }
 
+  /// 미완성 등록 패턴을 전부 판정하고, 새로 완성된 것은 완성 기록으로 저장한다.
+  ///
+  /// 완성 기록은 기존과 같은 `ACH_PATTERN_` 접두 행 + 소비 타일로 유지하여
+  /// 도감 버튼·이동·소비 규칙이 그대로 동작한다. 개수형 업적은 행 개수로 판정한다.
+  Future<void> _detectPatternCompletions(
+    Map<String, HexTile> capturedTiles,
+    String userId, {
+    String? newlyCapturedTileId,
+  }) async {
+    await loadPatternRegistry();
+    final completed = completedPatternIds();
+    for (final patternId in _patternNames.keys) {
+      if (completed.contains(patternId)) continue;
+      await _ensurePatternLoaded(patternId);
+      final matched = _checkPatternMatch(
+        patternId,
+        capturedTiles,
+        userId,
+        newlyCapturedTileId: newlyCapturedTileId,
+      );
+      if (matched == null) continue;
+      final recordId = 'ACH_PATTERN_$patternId';
+      final success = await _supabase.unlockAchievement(
+        userId,
+        recordId,
+        consumedTileIds: matched,
+      );
+      if (success) {
+        _unlockedAchievementIds.add(recordId);
+        _consumedTileIds.addAll(matched);
+        _achievementTiles[recordId] = matched;
+        completed.add(patternId);
+        notifyListeners();
+      }
+    }
+  }
+
   /// 실제 업적 검증 및 해금 API 동기화 플로우를 진행하는 비동기 내부 헬퍼 메서드
   Future<void> _runCheckFlow(
     Map<String, HexTile>? capturedTiles,
@@ -398,7 +501,6 @@ class AchievementProvider extends ChangeNotifier {
 
     for (final ach in pending) {
       bool shouldUnlock = false;
-      List<String>? currentMatchedIds;
 
       switch (ach.category) {
         case AchievementCategory.capturedTiles:
@@ -436,32 +538,24 @@ class AchievementProvider extends ChangeNotifier {
           break;
         case AchievementCategory.patternMatch:
           if (capturedTiles != null) {
-            final String char = ach.id.replaceFirst('ACH_PATTERN_', '');
-            await _ensurePatternLoaded(char);
-            currentMatchedIds = _checkPatternMatch(
-              char,
+            await _detectPatternCompletions(
               capturedTiles,
               userId,
               newlyCapturedTileId: newlyCapturedTileId,
             );
-            shouldUnlock = currentMatchedIds != null;
+            shouldUnlock = completedPatternCount >= ach.threshold;
           }
           break;
       }
 
       if (shouldUnlock) {
-        // 백엔드 데이터 동기화 시도 (소비된 타일 목록 포함)
+        // 백엔드 데이터 동기화 시도
         final success = await _supabase.unlockAchievement(
           userId,
           ach.id,
-          consumedTileIds: currentMatchedIds,
         );
         if (success) {
           _unlockedAchievementIds.add(ach.id);
-          if (currentMatchedIds != null) {
-            _consumedTileIds.addAll(currentMatchedIds);
-            _achievementTiles[ach.id] = currentMatchedIds;
-          }
           _unlockStreamController.add(ach); // 해금 완료 이벤트 중계
           notifyListeners();
         }

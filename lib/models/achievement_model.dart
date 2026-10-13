@@ -34,19 +34,11 @@ class Achievement {
 
   /// 다국어 템플릿 치환이 적용된 업적 명칭 반환
   String getLocalizedTitle() {
-    if (category == AchievementCategory.patternMatch) {
-      final char = id.replaceFirst('ACH_PATTERN_', '');
-      return 'achPatternTitle'.tr(namedArgs: {'char': char});
-    }
     return titleKey.tr();
   }
 
   /// 다국어 템플릿 치환이 적용된 업적 설명 반환
   String getLocalizedDescription() {
-    if (category == AchievementCategory.patternMatch) {
-      final char = id.replaceFirst('ACH_PATTERN_', '');
-      return 'achPatternDesc'.tr(namedArgs: {'char': char});
-    }
     return descriptionKey.tr();
   }
 
@@ -112,25 +104,12 @@ class Achievement {
     const Achievement(id: 'ACH_PHOTO_T3', titleKey: 'achPhotoT3Title', descriptionKey: 'achPhotoT3Desc', category: AchievementCategory.photoUpload, threshold: 15, tier: 3),
     const Achievement(id: 'ACH_PHOTO_T4', titleKey: 'achPhotoT4Title', descriptionKey: 'achPhotoT4Desc', category: AchievementCategory.photoUpload, threshold: 50, tier: 4),
 
-    // 10. 특정 모양 패턴 점령 (A부터 M까지 동적 추가)
-    ..._buildPatternAchievements(),
+    // 10. 패턴 완성 개수 (개별 패턴 완성 기록은 ACH_PATTERN_<id> 행으로 유지)
+    const Achievement(id: 'ACH_PAT_T1', titleKey: 'achPatT1Title', descriptionKey: 'achPatT1Desc', category: AchievementCategory.patternMatch, threshold: 1, tier: 1),
+    const Achievement(id: 'ACH_PAT_T2', titleKey: 'achPatT2Title', descriptionKey: 'achPatT2Desc', category: AchievementCategory.patternMatch, threshold: 3, tier: 2),
+    const Achievement(id: 'ACH_PAT_T3', titleKey: 'achPatT3Title', descriptionKey: 'achPatT3Desc', category: AchievementCategory.patternMatch, threshold: 5, tier: 3),
+    const Achievement(id: 'ACH_PAT_T4', titleKey: 'achPatT4Title', descriptionKey: 'achPatT4Desc', category: AchievementCategory.patternMatch, threshold: 10, tier: 4),
   ];
-
-  static List<Achievement> _buildPatternAchievements() {
-    const chars = [
-      'A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K', 'L', 'M', 'N',
-      'O', 'P', 'Q', 'R', 'S', 'T', 'U', 'V', 'W', 'X', 'Y', 'Z',
-      '0', '1', '2', '3', '4', '5', '6', '7', '8', '9'
-    ];
-    return chars.map((char) => Achievement(
-      id: 'ACH_PATTERN_$char',
-      titleKey: 'achPatternTitle',
-      descriptionKey: 'achPatternDesc',
-      category: AchievementCategory.patternMatch,
-      threshold: 1,
-      tier: 3,
-    )).toList();
-  }
 }
 
 /// 플레이어가 획득하여 해금 완료된 개별 업적 상태 정보를 담는 데이터 모델 클래스

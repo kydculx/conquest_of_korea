@@ -397,7 +397,8 @@ class _AchievementScreenState extends State<AchievementScreen> {
         final achProvider = Provider.of<AchievementProvider>(context, listen: false);
         return achProvider.userUniquePhotoTilesCount.toDouble();
       case AchievementCategory.patternMatch:
-        return 0.0;
+        final achProvider = Provider.of<AchievementProvider>(context, listen: false);
+        return achProvider.completedPatternCount.toDouble();
     }
   }
 }

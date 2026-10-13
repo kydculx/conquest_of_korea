@@ -39,25 +39,23 @@ class CompletedPatternList extends StatelessWidget {
   Widget build(BuildContext context) {
     return Consumer2<AchievementProvider, GameProvider>(
       builder: (context, achievementProvider, gameProvider, _) {
-        final unlockedIds = achievementProvider.unlockedAchievementIds;
-        final achTiles = achievementProvider.achievementTiles;
-
-        // 완성 패턴 업적만 필터링 (ID가 ACH_PATTERN_으로 시작하는 항목)
-        final completedPatterns = unlockedIds
-            .where((id) => id.startsWith('ACH_PATTERN_'))
-            .map((id) {
-              final char = id.replaceFirst('ACH_PATTERN_', '');
-              final tiles = achTiles[id] ?? [];
-              final center = _calculateCenter(tiles);
-              return _PatternItem(
-                id: id,
-                char: char,
-                tiles: tiles,
-                center: center,
-              );
-            })
-            .where((item) => item.tiles.isNotEmpty)
-            .toList();
+        // 완성 패턴 ID별 이름·타일 목록 (단어 칩 표시용)
+        final completedIds = achievementProvider.completedPatternIds().toList();
+        final completedPatterns = <_PatternItem>[];
+        for (final patternId in completedIds) {
+          final tiles =
+              achievementProvider.achievementTiles['ACH_PATTERN_$patternId'] ??
+                  [];
+          if (tiles.isEmpty) continue;
+          completedPatterns.add(
+            _PatternItem(
+              id: 'ACH_PATTERN_$patternId',
+              name: achievementProvider.patternName(patternId),
+              tiles: tiles,
+              center: _calculateCenter(tiles),
+            ),
+          );
+        }
 
         if (completedPatterns.isEmpty) {
           // 완성된 패턴이 하나도 없는 경우: 가이드 문구 노출
@@ -108,13 +106,17 @@ class CompletedPatternList extends StatelessWidget {
                     gameProvider.requestMapMove(item.center);
                     // 이동 완료 배너 노출
                     gameProvider.addAlert(
-                      GameStrings.patternAreaMoved(item.char),
+                      GameStrings.patternAreaMoved(item.name),
                       AlertType.info,
                     );
                   },
                   child: Container(
-                    width: 48,
                     height: 48,
+                    constraints: const BoxConstraints(
+                      minWidth: 48,
+                      maxWidth: 160,
+                    ),
+                    padding: const EdgeInsets.symmetric(horizontal: 14),
                     decoration: ShapeDecoration(
                       color: Palette.brightBlue.withValues(alpha: 0.15),
                       shape: RoundedRectangleBorder(
@@ -134,10 +136,12 @@ class CompletedPatternList extends StatelessWidget {
                     ),
                     child: Center(
                       child: Text(
-                        item.char,
+                        item.name,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
                         style: GoogleFonts.fredoka(
                           color: Palette.brightBlue,
-                          fontSize: 20,
+                          fontSize: 14,
                           fontWeight: FontWeight.bold,
                         ),
                       ),
@@ -155,13 +159,13 @@ class CompletedPatternList extends StatelessWidget {
 
 class _PatternItem {
   final String id;
-  final String char;
+  final String name;
   final List<String> tiles;
   final LatLng center;
 
   _PatternItem({
     required this.id,
-    required this.char,
+    required this.name,
     required this.tiles,
     required this.center,
   });

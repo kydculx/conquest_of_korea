@@ -131,58 +131,14 @@ class PatternGuideScreen extends StatefulWidget {
 }
 
 class _PatternGuideScreenState extends State<PatternGuideScreen> {
-  // 알파벳 패턴 지원 문자 리스트 (A ~ Z)
-  final List<String> _letters = [
-    'A',
-    'B',
-    'C',
-    'D',
-    'E',
-    'F',
-    'G',
-    'H',
-    'I',
-    'J',
-    'K',
-    'L',
-    'M',
-    'N',
-    'O',
-    'P',
-    'Q',
-    'R',
-    'S',
-    'T',
-    'U',
-    'V',
-    'W',
-    'X',
-    'Y',
-    'Z',
-  ];
+  // 등록 패턴 목록 (id → 이름). DB + 번들 내장 문자.
+  List<MapEntry<String, String>> _entries = [];
 
-  // 숫자 패턴 지원 문자 리스트 (0 ~ 9)
-  final List<String> _numbers = [
-    '0',
-    '1',
-    '2',
-    '3',
-    '4',
-    '5',
-    '6',
-    '7',
-    '8',
-    '9',
-  ];
+  // 칩 가시성 보장용 키 목록
+  final List<GlobalKey> _chipKeys = [];
 
-  // 현재 선택된 탭 (0: 알파벳, 1: 숫자)
-  int _currentTab = 0;
-
-  // 현재 선택된 탭 내 문자 인덱스
+  // 현재 선택된 패턴 인덱스
   int _selectedIndex = 0;
-
-  // 활성 탭에 따른 문자 리스트 게터
-  List<String> get _currentList => _currentTab == 0 ? _letters : _numbers;
 
   // 캐러셀 슬라이더용 컨트롤러
   final CarouselSliderController _carouselController =
@@ -215,19 +171,35 @@ class _PatternGuideScreenState extends State<PatternGuideScreen> {
     );
     try {
       Future.microtask(() async {
+        await achProvider.loadPatternRegistry();
+        // 내장 문자 먼저, 커스텀은 이름순
+        final ids = achProvider.patternIds.toList()
+          ..sort((a, b) {
+            final aBuiltin = a.length == 1;
+            final bBuiltin = b.length == 1;
+            if (aBuiltin != bBuiltin) return aBuiltin ? -1 : 1;
+            return a.compareTo(b);
+          });
+        final entries =
+            ids.map((id) => MapEntry(id, achProvider.patternName(id))).toList();
+
         final Map<String, List<Map<String, int>>> tempMap = {};
-        final allChars = [..._letters, ..._numbers];
 
         // 패턴 리스트 동시 병렬 비동기 조회
         await Future.wait(
-          allChars.map((char) async {
-            final tiles = await achProvider.getPatternCoordinates(char);
-            tempMap[char] = tiles;
+          entries.map((entry) async {
+            final tiles = await achProvider.getPatternCoordinates(entry.key);
+            tempMap[entry.key] = tiles;
           }),
         );
 
         if (mounted) {
           setState(() {
+            _entries = entries;
+            _chipKeys
+              ..clear()
+              ..addAll(List.generate(entries.length, (_) => GlobalKey()));
+            _selectedIndex = 0;
             _patternTilesMap = tempMap;
             _isLoading = false;
           });
@@ -252,18 +224,12 @@ class _PatternGuideScreenState extends State<PatternGuideScreen> {
   /// 활성화된 칩이 화면 안에 완전히 정렬되도록 스크롤링 위치 자동 보정
   void _scrollToSelectedChip(int index) {
     if (!mounted) return;
-    if (!_chipScrollController.hasClients) return;
-
-    // 개별 칩 너비(46) + 좌우 여백 마진 합(12) = 58
-    final double offset =
-        (index * 58.0) - (MediaQuery.of(context).size.width / 2) + 29.0;
-    final double clampedOffset = offset.clamp(
-      0.0,
-      _chipScrollController.position.maxScrollExtent,
-    );
-
-    _chipScrollController.animateTo(
-      clampedOffset,
+    if (index < 0 || index >= _chipKeys.length) return;
+    final ctx = _chipKeys[index].currentContext;
+    if (ctx == null) return;
+    Scrollable.ensureVisible(
+      ctx,
+      alignment: 0.5,
       duration: const Duration(milliseconds: 250),
       curve: Curves.easeInOut,
     );
@@ -316,44 +282,34 @@ class _PatternGuideScreenState extends State<PatternGuideScreen> {
                 ),
               ),
 
-              // 2. 카테고리 전환 탭 (알파벳 / 숫자)
-              Padding(
-                padding: const EdgeInsets.symmetric(vertical: 8),
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    _buildTabButton(0, GameStrings.alphabetPatterns),
-                    const SizedBox(width: 16),
-                    _buildTabButton(1, GameStrings.numberPatterns),
-                  ],
-                ),
-              ),
-
-              // 3. 가로 스크롤 형태의 칩 리스트뷰 (현재 리스트 기준)
+              // 2. 가로 스크롤 형태의 칩 리스트뷰 (등록 패턴 기준)
               Container(
                 height: 54,
                 margin: const EdgeInsets.symmetric(vertical: 4),
                 child: ListView.builder(
-                  key: ValueKey('chip_list_$_currentTab'),
+                  key: const ValueKey('chip_list'),
                   controller: _chipScrollController,
                   scrollDirection: Axis.horizontal,
                   padding: const EdgeInsets.symmetric(horizontal: 16),
-                  itemCount: _currentList.length,
+                  itemCount: _entries.length,
                   itemBuilder: (context, index) {
-                    final char = _currentList[index];
+                    final entry = _entries[index];
+                    final name = entry.value;
                     final isSelected = index == _selectedIndex;
                     final isCompleted = achProvider.unlockedAchievementIds
-                        .contains('ACH_PATTERN_$char');
+                        .contains('ACH_PATTERN_${entry.key}');
 
                     Widget chipContent = Text(
-                      char,
+                      name,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
                       style: GoogleFonts.outfit(
                         color: isSelected
                             ? GameColors.accentNeon
                             : (isCompleted
                                   ? Palette.footprintMint
                                   : GameColors.textSecondary),
-                        fontSize: 18,
+                        fontSize: name.length == 1 ? 18 : 13,
                         fontWeight: FontWeight.bold,
                       ),
                     );
@@ -389,9 +345,11 @@ class _PatternGuideScreenState extends State<PatternGuideScreen> {
                         _scrollToSelectedChip(index);
                       },
                       child: AnimatedContainer(
+                        key: _chipKeys[index],
                         duration: const Duration(milliseconds: 250),
                         curve: Curves.easeInOut,
-                        width: 46,
+                        constraints: const BoxConstraints(minWidth: 46),
+                        padding: const EdgeInsets.symmetric(horizontal: 12),
                         alignment: Alignment.center,
                         margin: const EdgeInsets.symmetric(
                           horizontal: 6,
@@ -435,12 +393,12 @@ class _PatternGuideScreenState extends State<PatternGuideScreen> {
 
               const SizedBox(height: 8),
 
-              // 4. 메인 캐러셀 슬라이더 영역 (현재 리스트 기준)
+              // 3. 메인 캐러셀 슬라이더 영역 (등록 패턴 기준)
               Expanded(
                 child: CarouselSlider.builder(
-                  key: ValueKey('carousel_$_currentTab'),
+                  key: const ValueKey('carousel_patterns'),
                   carouselController: _carouselController,
-                  itemCount: _currentList.length,
+                  itemCount: _entries.length,
                   options: CarouselOptions(
                     height: double.infinity,
                     viewportFraction: 0.82,
@@ -456,10 +414,10 @@ class _PatternGuideScreenState extends State<PatternGuideScreen> {
                     },
                   ),
                   itemBuilder: (context, index, realIndex) {
-                    final char = _currentList[index];
-                    final tiles = _patternTilesMap[char] ?? [];
+                    final entry = _entries[index];
+                    final tiles = _patternTilesMap[entry.key] ?? [];
                     final isCompleted = achProvider.unlockedAchievementIds
-                        .contains('ACH_PATTERN_$char');
+                        .contains('ACH_PATTERN_${entry.key}');
 
                     return Container(
                       margin: const EdgeInsets.symmetric(
@@ -539,6 +497,16 @@ class _PatternGuideScreenState extends State<PatternGuideScreen> {
                             ),
                           ),
                           const SizedBox(height: 12),
+                          // 패턴 이름 표기
+                          Text(
+                            entry.value,
+                            style: GoogleFonts.outfit(
+                              color: Colors.white,
+                              fontSize: 18,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                          const SizedBox(height: 4),
                           // 필요 수량 표기
                           Text(
                             GameStrings.requiredTilesCount(tiles.length),
@@ -557,57 +525,6 @@ class _PatternGuideScreenState extends State<PatternGuideScreen> {
 
               const SizedBox(height: 24),
             ],
-          ),
-        ),
-      ),
-    );
-  }
-
-  // 탭바 버튼 생성 헬퍼
-  Widget _buildTabButton(int index, String label) {
-    final isSelected = _currentTab == index;
-    return GestureDetector(
-      onTap: () {
-        if (_currentTab != index) {
-          setState(() {
-            _currentTab = index;
-            _selectedIndex = 0;
-          });
-          _carouselController.jumpToPage(0);
-          _scrollToSelectedChip(0);
-        }
-      },
-      child: AnimatedContainer(
-        duration: const Duration(milliseconds: 200),
-        curve: Curves.easeInOut,
-        padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 10),
-        decoration: BoxDecoration(
-          color: isSelected
-              ? GameColors.accentNeon.withValues(alpha: 0.15)
-              : GameColors.backgroundMedium.withValues(alpha: 0.2),
-          borderRadius: BorderRadius.circular(20),
-          border: Border.all(
-            color: isSelected ? GameColors.accentNeon : GameColors.borderLight,
-            width: 1.5,
-          ),
-          boxShadow: isSelected
-              ? [
-                  BoxShadow(
-                    color: GameColors.accentNeon.withValues(alpha: 0.15),
-                    blurRadius: 8,
-                    spreadRadius: 1,
-                  ),
-                ]
-              : null,
-        ),
-        child: Text(
-          label,
-          style: GoogleFonts.outfit(
-            color: isSelected
-                ? GameColors.accentNeon
-                : GameColors.textSecondary,
-            fontSize: 14,
-            fontWeight: FontWeight.bold,
           ),
         ),
       ),
