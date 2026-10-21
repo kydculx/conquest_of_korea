@@ -30,3 +30,6 @@
 # 구글 플레이 코어 / Deferred Components 미사용에 따른 RNR 누락 경고 무시
 -dontwarn com.google.android.play.core.**
 
+# shared_preferences_android 2.5.x JNI 브리지 (package:jni가 기술자로 직접 조회)
+-keep class kotlin.** { *; }
+
