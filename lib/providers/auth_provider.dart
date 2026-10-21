@@ -6,6 +6,7 @@ import '../core/constants/game_config.dart';
 import '../services/auth_service.dart';
 import '../services/notification_service.dart';
 import '../services/analytics_service.dart';
+import '../services/widget_service.dart';
 import '../models/user_profile.dart';
 
 /// 사용자 인증 상태와 프로필 데이터의 수명 주기를 관리하고 UI 레이어에 이벤트를 전파하는 인증 프로바이더 클래스
@@ -213,6 +214,14 @@ class AuthProvider extends ChangeNotifier {
     _setLoading(true);
     try {
       _profile = await _authService.getUserProfile(userId);
+
+      final profile = _profile;
+      if (profile != null) {
+        WidgetService.update(
+          territory: profile.capturedTilesCount,
+          dailyMoved: profile.dailyMovedTilesCount,
+        );
+      }
 
       // 프로필 로드 시 알림 토픽 동기화는 setAuthProvider → syncFromProfile
       // → _updateFcmSubscriptions 단일 경로로 통합하여 FCM 왕복 폭주 차단.

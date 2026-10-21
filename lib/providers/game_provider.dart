@@ -7,6 +7,7 @@ import '../controllers/notification_controller.dart';
 import '../services/preferences_service.dart';
 import '../services/geo_service.dart';
 import '../services/photo_service.dart';
+import '../services/widget_service.dart';
 import '../controllers/satellite_capture_controller.dart';
 import '../models/alert_model.dart';
 import '../models/map_mode.dart';
@@ -620,6 +621,7 @@ class GameProvider extends ChangeNotifier with WidgetsBindingObserver {
     try {
       final steps = await HealthService.instance.getTodaySteps();
       final denied = HealthService.instance.isDenied;
+      WidgetService.update(steps: steps);
       if (_todaySteps != steps || _isStepDenied != denied) {
         _todaySteps = steps;
         _isStepDenied = denied;
