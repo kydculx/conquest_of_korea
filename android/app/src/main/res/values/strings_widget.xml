@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="widget_title">Dibs! Adventure</string>
+    <string name="widget_my_territory">My territory</string>
+    <string name="widget_territory">Territory</string>
+    <string name="widget_daily_moved">Today\'s move</string>
+    <string name="widget_daily_moved_short">Moves</string>
+    <string name="widget_steps">Steps</string>
+</resources>

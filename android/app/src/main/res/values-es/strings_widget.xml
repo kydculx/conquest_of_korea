@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="widget_title">¡Me lo pido! Aventura</string>
+    <string name="widget_my_territory">Mi territorio</string>
+    <string name="widget_territory">Territorio</string>
+    <string name="widget_daily_moved">Movimiento de hoy</string>
+    <string name="widget_daily_moved_short">Movimientos</string>
+    <string name="widget_steps">Pasos</string>
+</resources>

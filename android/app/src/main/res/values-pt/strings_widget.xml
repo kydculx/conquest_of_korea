@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="widget_title">Primeiro! Aventura</string>
+    <string name="widget_my_territory">Meu território</string>
+    <string name="widget_territory">Território</string>
+    <string name="widget_daily_moved">Movimento de hoje</string>
+    <string name="widget_daily_moved_short">Movimentos</string>
+    <string name="widget_steps">Passos</string>
+</resources>

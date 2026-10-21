@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="widget_title">Prem\'s ! Aventure</string>
+    <string name="widget_my_territory">Mon territoire</string>
+    <string name="widget_territory">Territoire</string>
+    <string name="widget_daily_moved">Déplacements du jour</string>
+    <string name="widget_daily_moved_short">Déplacements</string>
+    <string name="widget_steps">Pas</string>
+</resources>

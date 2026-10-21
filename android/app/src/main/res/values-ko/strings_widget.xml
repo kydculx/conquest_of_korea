@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="widget_title">찜! 모험</string>
+    <string name="widget_my_territory">내 영토</string>
+    <string name="widget_territory">영토</string>
+    <string name="widget_daily_moved">오늘 이동</string>
+    <string name="widget_daily_moved_short">이동</string>
+    <string name="widget_steps">걸음</string>
+</resources>
