@@ -100,20 +100,25 @@ class AuthService {
 
       final webClientId = AppConfig.googleWebClientId;
 
-      final GoogleSignIn googleSignIn = GoogleSignIn(
+      final signIn = GoogleSignIn.instance;
+      await signIn.initialize(
         clientId: Platform.isIOS ? AppConfig.googleIosClientId : null,
         serverClientId: webClientId,
       );
 
-      final googleUser = await googleSignIn.signIn();
-      if (googleUser == null) {
-        debugPrint('⚠️ Google Sign In cancelled by user');
-        return;
+      late final GoogleSignInAccount googleUser;
+      try {
+        googleUser = await signIn.authenticate();
+      } on GoogleSignInException catch (e) {
+        if (e.code == GoogleSignInExceptionCode.canceled) {
+          debugPrint('⚠️ Google Sign In cancelled by user');
+          return;
+        }
+        rethrow;
       }
 
-      final googleAuth = await googleUser.authentication;
+      final googleAuth = googleUser.authentication;
       final idToken = googleAuth.idToken;
-      final accessToken = googleAuth.accessToken;
 
       if (idToken == null) throw GameStrings.idTokenFetchFailed;
 
@@ -122,7 +127,6 @@ class AuthService {
       await _client.auth.signInWithIdToken(
         provider: OAuthProvider.google,
         idToken: idToken,
-        accessToken: accessToken,
       );
 
       debugPrint('✅ Supabase Native Google Login Success');
