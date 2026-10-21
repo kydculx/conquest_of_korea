@@ -42,6 +42,10 @@ post_install do |installer|
     target.build_configurations.each do |config|
       config.build_settings['DEBUG_INFORMATION_FORMAT'] = 'dwarf-with-dsym'
       config.build_settings['IPHONEOS_DEPLOYMENT_TARGET'] = '15.0'
+      # wakelock_plus umbrella header가 framework 모듈 검증을 통과하도록 허용
+      if target.name == 'wakelock_plus'
+        config.build_settings['CLANG_ALLOW_NON_MODULAR_INCLUDES_IN_FRAMEWORK_MODULES'] = 'YES'
+      end
     end
   end
   installer.pods_project.build_configurations.each do |config|
