@@ -12,6 +12,9 @@ class UserProfile {
   /// 플레이어의 소속 팀 식별자
   final String teamId;
 
+  /// 푸시 알림 수신 언어 코드 (ko, en, zh, zh_TW, ja, es, fr, de, pt)
+  final String language;
+
   /// 계정 생성 일시
   final DateTime createdAt;
 
@@ -90,6 +93,7 @@ class UserProfile {
     required this.nickname,
     required this.colorHex,
     required this.teamId,
+    this.language = 'ko',
     required this.createdAt,
     this.mainBaseTileId,
     this.totalDistance = 0.0,
@@ -138,6 +142,7 @@ class UserProfile {
       nickname: json['nickname'] as String,
       colorHex: json['color_hex'] as String,
       teamId: json['team_id'] as String? ?? 'none',
+      language: json['language'] as String? ?? 'ko',
       createdAt: DateTime.parse(json['created_at'] as String),
       mainBaseTileId: json['main_base_tile_id'] as String?,
       totalDistance: (json['total_distance'] as num?)?.toDouble() ?? 0.0,
@@ -183,6 +188,7 @@ class UserProfile {
       'color_hex': colorHex,
       // 'team_id': teamId, // DB에 컬럼이 추가될 때까지 주석 처리
       'created_at': createdAt.toIso8601String(),
+      'language': language,
       'main_base_tile_id': mainBaseTileId,
       'gold': gold,
       'captured_tiles_count': capturedTilesCount,
@@ -214,6 +220,7 @@ class UserProfile {
       'nickname': nickname,
       'color_hex': colorHex,
       'created_at': createdAt.toIso8601String(),
+      'language': language,
       'main_base_tile_id': mainBaseTileId,
       'gold': gold,
       'terms_agreed_at': termsAgreedAt?.toIso8601String(),
@@ -235,6 +242,7 @@ class UserProfile {
       'nickname': nickname,
       'color_hex': colorHex,
       'created_at': createdAt.toIso8601String(),
+      'language': language,
       'main_base_tile_id': mainBaseTileId,
       'terms_agreed_at': termsAgreedAt?.toIso8601String(),
       'privacy_agreed_at': privacyAgreedAt?.toIso8601String(),
@@ -253,6 +261,7 @@ class UserProfile {
     String? nickname,
     String? colorHex,
     String? teamId,
+    String? language,
     DateTime? createdAt,
     String? mainBaseTileId,
     double? totalDistance,
@@ -283,6 +292,7 @@ class UserProfile {
       nickname: nickname ?? this.nickname,
       colorHex: colorHex ?? this.colorHex,
       teamId: teamId ?? this.teamId,
+      language: language ?? this.language,
       createdAt: createdAt ?? this.createdAt,
       mainBaseTileId: mainBaseTileId ?? this.mainBaseTileId,
       totalDistance: totalDistance ?? this.totalDistance,

@@ -177,6 +177,7 @@ class AuthProvider extends ChangeNotifier {
               if (diff > 0.05 ||
                   updatedProfile.colorHex != _profile!.colorHex ||
                   updatedProfile.mainBaseTileId != _profile!.mainBaseTileId ||
+                  updatedProfile.language != _profile!.language ||
                   updatedProfile.isNotificationsEnabled != _profile!.isNotificationsEnabled ||
                   updatedProfile.notifTerritoryAttack != _profile!.notifTerritoryAttack ||
                   updatedProfile.notifSatelliteComplete != _profile!.notifSatelliteComplete ||
@@ -395,6 +396,25 @@ class AuthProvider extends ChangeNotifier {
       notifyListeners();
     } finally {
       _setLoading(false);
+    }
+  }
+
+  /// 앱 표시 언어를 원격 프로필에 동기화합니다.
+  Future<void> updateLanguage(String languageCode) async {
+    final currentProfile = _profile;
+    if (currentProfile == null || currentProfile.language == languageCode) {
+      return;
+    }
+
+    try {
+      await _authService.client
+          .from('profiles')
+          .update({'language': languageCode})
+          .eq('id', currentProfile.id);
+      _profile = currentProfile.copyWith(language: languageCode);
+      notifyListeners();
+    } catch (e) {
+      debugPrint('⚠️ 언어 설정 동기화 실패: $e');
     }
   }
 

@@ -387,6 +387,7 @@ class SatelliteCaptureController {
           body: {
             'topic': 'user_$myId',
             'user_id': myId,
+            'template': 'satellite_complete',
             'title': GameStrings.notifSatelliteCompleteTitle,
             'body': GameStrings.satelliteCaptureSuccess,
             'data_payload': {
