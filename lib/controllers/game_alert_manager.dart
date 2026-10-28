@@ -14,14 +14,20 @@ class GameAlertManager {
   List<GameAlert> get alerts => List.unmodifiable(_alerts);
 
   GameAlertManager({required VoidCallback notifyListeners})
-      : _notifyListeners = notifyListeners;
+    : _notifyListeners = notifyListeners;
 
-  /// 알림을 추가합니다. 동일 문구의 알림이 이미 있으면 무시합니다.
+  /// 알림을 추가합니다. 동일 문구/타일의 알림이 이미 있으면 무시합니다.
   /// 추가 성공 시 true를 반환합니다.
-  bool add(String message, AlertType type) {
-    if (_alerts.any((a) => a.message == message)) return false;
+  bool add(String message, AlertType type, {String? tileId}) {
+    if (_alerts.any((a) => a.message == message && a.tileId == tileId)) {
+      return false;
+    }
 
-    final alert = GameAlert.create(message: message, type: type);
+    final alert = GameAlert.create(
+      message: message,
+      type: type,
+      tileId: tileId,
+    );
     _alerts.insert(0, alert);
     if (_alerts.length > 5) _alerts.removeLast();
     _notifyListeners();
