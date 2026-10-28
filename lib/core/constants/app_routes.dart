@@ -22,4 +22,7 @@ class AppRoutes {
 
   /// 패턴 도감 화면
   static const String patternGuide = '/pattern-guide';
+
+  /// 이동 기록 달력 화면
+  static const String dailyRecords = '/daily-records';
 }
