@@ -26,6 +26,12 @@ const APP_NOTIFICATION_TEMPLATES = {
   },
 };
 
+function normalizeTileId(value) {
+  const trimmed = String(value ?? '').trim();
+  if (!trimmed) return '';
+  return trimmed.startsWith('hex_') ? trimmed : `hex_${trimmed}`;
+}
+
 export default function NotificationsTab() {
   const [targetType, setTargetType] = useState('all'); // 'all' | 'individual'
   const [userUuid, setUserUuid] = useState('');
@@ -136,6 +142,8 @@ export default function NotificationsTab() {
       return;
     }
 
+    const normalizedTileId = normalizeTileId(tileId);
+
     let topic = 'all';
     if (targetType === 'individual') {
       if (!userUuid.trim()) {
@@ -147,8 +155,8 @@ export default function NotificationsTab() {
 
     try {
       setSending(true);
-      await sendFcmNotification('', '', topic, notifType, tileId, notifType);
-      alert(`[FCM 전송 성공]\n대상 토픽: ${topic}\n알림 타입: ${notifType}\n\n수신자 언어로 발송되었습니다.`);
+      await sendFcmNotification('', '', topic, notifType, normalizedTileId, notifType);
+      alert(`[FCM 전송 성공]\n대상 토픽: ${topic}\n알림 타입: ${notifType}\n연동 타일: ${normalizedTileId || '-'}\n\n수신자 언어로 발송되었습니다.`);
       setTileId('');
     } catch (err) {
       console.error(err);
@@ -262,14 +270,17 @@ export default function NotificationsTab() {
 
             <div style={{ display: 'flex', flexDirection: 'column', gap: '0.4rem' }}>
               <label className="field-label">연동 타일 ID (선택 사항)</label>
-              <input 
-                type="text" 
+              <input
+                type="text"
                 className="tactical-input"
-                placeholder="예: hex_46_-123"
+                placeholder="예: 45_-125"
                 value={tileId}
                 onChange={(e) => setTileId(e.target.value)}
                 disabled={notifType === 'system_notice'}
               />
+              <span style={{ fontSize: '0.7rem', color: 'var(--text-muted)' }}>
+                45_-125 형식으로 입력하면 자동으로 타일 ID가 생성됩니다.
+              </span>
             </div>
           </div>
 
