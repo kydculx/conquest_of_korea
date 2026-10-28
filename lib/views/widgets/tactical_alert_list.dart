@@ -7,7 +7,10 @@ import 'alert_widget.dart';
 class TacticalAlertList extends StatefulWidget {
   final List<GameAlert> alerts;
 
-  const TacticalAlertList({super.key, required this.alerts});
+  /// 타일 ID가 포함된 알림을 눌렀을 때 실행할 콜백
+  final void Function(GameAlert alert)? onAlertTap;
+
+  const TacticalAlertList({super.key, required this.alerts, this.onAlertTap});
 
   @override
   State<TacticalAlertList> createState() => _TacticalAlertListState();
@@ -63,20 +66,25 @@ class _TacticalAlertListState extends State<TacticalAlertList> {
     return FadeTransition(
       opacity: animation,
       child: SizeTransition(
-        sizeFactor: CurvedAnimation(
-          parent: animation,
-          curve: Curves.easeInOut,
-        ),
+        sizeFactor: CurvedAnimation(parent: animation, curve: Curves.easeInOut),
         alignment: Alignment.topCenter, // 위에서부터 아래로 부드럽게 열리며 슬라이딩
         child: SlideTransition(
-          position: Tween<Offset>(
-            begin: const Offset(0, -0.2),
-            end: Offset.zero,
-          ).animate(CurvedAnimation(
-            parent: animation,
-            curve: Curves.easeOutQuad,
-          )),
-          child: AlertWidget(alert: alert),
+          position:
+              Tween<Offset>(
+                begin: const Offset(0, -0.2),
+                end: Offset.zero,
+              ).animate(
+                CurvedAnimation(parent: animation, curve: Curves.easeOutQuad),
+              ),
+          child: IgnorePointer(
+            ignoring: alert.tileId == null,
+            child: AlertWidget(
+              alert: alert,
+              onTap: alert.tileId == null || widget.onAlertTap == null
+                  ? null
+                  : () => widget.onAlertTap!(alert),
+            ),
+          ),
         ),
       ),
     );

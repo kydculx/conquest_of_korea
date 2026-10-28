@@ -8,7 +8,10 @@ import '../../core/constants/strings.dart';
 class AlertWidget extends StatelessWidget {
   final GameAlert alert;
 
-  const AlertWidget({super.key, required this.alert});
+  /// 알림을 눌렀을 때 실행할 동작 (없으면 탭 불가)
+  final VoidCallback? onTap;
+
+  const AlertWidget({super.key, required this.alert, this.onTap});
 
   @override
   Widget build(BuildContext context) {
@@ -33,7 +36,7 @@ class AlertWidget extends StatelessWidget {
       AlertType.info => GameStrings.alertInfo,
     };
 
-    return Container(
+    final content = Container(
       margin: const EdgeInsets.only(bottom: 8),
       decoration: ShapeDecoration(
         color: GameColors.backgroundMedium.withValues(alpha: 0.95),
@@ -103,9 +106,22 @@ class AlertWidget extends StatelessWidget {
                 ),
               ),
             ),
+            if (onTap != null)
+              Padding(
+                padding: const EdgeInsets.only(right: 12),
+                child: Icon(Icons.my_location_rounded, color: color, size: 16),
+              ),
           ],
         ),
       ),
+    );
+
+    if (onTap == null) return content;
+
+    return GestureDetector(
+      behavior: HitTestBehavior.opaque,
+      onTap: onTap,
+      child: content,
     );
   }
 }
