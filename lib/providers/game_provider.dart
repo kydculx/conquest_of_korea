@@ -9,8 +9,10 @@ import '../services/geo_service.dart';
 import '../services/photo_service.dart';
 import '../services/widget_service.dart';
 import '../controllers/satellite_capture_controller.dart';
+import '../core/navigation/app_navigator.dart';
 import '../models/alert_model.dart';
 import '../models/map_mode.dart';
+import '../models/tile_focus_request.dart';
 import '../models/tile_model.dart';
 import '../models/user_profile.dart';
 import '../models/user_coin.dart';
@@ -80,7 +82,9 @@ class GameProvider extends ChangeNotifier with WidgetsBindingObserver {
 
   /// 타일 ID별 등록된 사진 데이터 목록 캐시
   final Map<String, List<Map<String, dynamic>>> _tilePhotosCache = {};
-  Map<String, List<Map<String, dynamic>>> get tilePhotosCache => _tilePhotosCache;
+  Map<String, List<Map<String, dynamic>>> get tilePhotosCache =>
+      _tilePhotosCache;
+
   /// 자동 점령 모드 활성화 여부
   bool _isAutoCapture = false;
 
@@ -92,6 +96,21 @@ class GameProvider extends ChangeNotifier with WidgetsBindingObserver {
 
   void requestMapMove(LatLng destination) =>
       _mapView.requestMapMove(destination);
+
+  /// 알림 탭으로 지도에서 보여줄 타일 요청 (지도 위젯이 마운트되면 소비)
+  TileFocusRequest? _pendingTileFocus;
+  TileFocusRequest? get pendingTileFocus => _pendingTileFocus;
+
+  /// 지도 위젯이 포커스 요청을 소비했음을 표시합니다.
+  void consumePendingTileFocus() {
+    _pendingTileFocus = null;
+  }
+
+  /// 알림 탭 처리 후 지도 포커스를 적용하기 전까지 보관하는 타일 ID
+  String? _pendingInvasionTileId;
+
+  /// 프로바이더 해제 이후 비동기 콜백이 실행되는 것을 막는 가드
+  bool _isDisposed = false;
 
   // --- 타일 선택 상태 (위성 스캔 / 발자국) ---
   /// 위성 스캔 대상 및 발자국 조회 타일 선택 상태를 전담 관리하는 컨트롤러
@@ -158,13 +177,11 @@ class GameProvider extends ChangeNotifier with WidgetsBindingObserver {
       _satelliteController.isCapturing;
   String? get selectedScanTileId => _tileSelection.selectedScanTileId;
   LatLng? get selectedScanTileLatLng => _tileSelection.selectedScanTileLatLng;
-  String? get selectedFootprintTileId =>
-      _tileSelection.selectedFootprintTileId;
+  String? get selectedFootprintTileId => _tileSelection.selectedFootprintTileId;
   LatLng? get selectedFootprintTileLatLng =>
       _tileSelection.selectedFootprintTileLatLng;
 
-  SatelliteCapturePhase get satelliteCapturePhase =>
-      _satelliteController.phase;
+  SatelliteCapturePhase get satelliteCapturePhase => _satelliteController.phase;
   String? get satelliteCapturingTileId => _satelliteController.capturingTileId;
   double get satelliteTravelProgress => _satelliteController.travelProgress;
   double get satelliteCaptureProgress => _satelliteController.captureProgress;
@@ -302,21 +319,21 @@ class GameProvider extends ChangeNotifier with WidgetsBindingObserver {
             oldOwnerId != myId) {
           try {
             debugPrint('📡 침탈 푸시 알림 발송 요청 시작 (target: $oldOwnerId)');
-            _supabase.client.functions.invoke(
+            _supabase.client.functions
+                .invoke(
               'send-push',
               body: {
                 'topic': 'user_$oldOwnerId',
                 'user_id': oldOwnerId,
                 'title': GameStrings.notificationInvasionTitle,
                 'body': GameStrings.notificationInvasionBody,
-                'data_payload': {
-                  'type': 'territory_attack',
-                  'tile_id': id,
-                },
+                    'data_payload': {'type': 'territory_attack', 'tile_id': id},
               },
-            ).then((response) {
+                )
+                .then((response) {
               debugPrint('🎯 침탈 푸시 알림 발송 결과: ${response.status}');
-            }).catchError((e) {
+                })
+                .catchError((e) {
               debugPrint('⚠️ 침탈 푸시 알림 발송 중 에러 발생: $e');
             });
           } catch (e) {
@@ -349,7 +366,9 @@ class GameProvider extends ChangeNotifier with WidgetsBindingObserver {
         if (currentUserId != null &&
             _authProvider != null &&
             _authProvider!.profile != null) {
-          _supabase.incrementSatelliteCapture(currentUserId).then((success) {
+          _supabase
+              .incrementSatelliteCapture(currentUserId)
+              .then((success) {
             if (success) {
               final updatedProfile = _authProvider!.profile!.copyWith(
                 satelliteCaptureCount:
@@ -362,7 +381,8 @@ class GameProvider extends ChangeNotifier with WidgetsBindingObserver {
               );
               notifyListeners();
             }
-          }).catchError((e) {
+              })
+              .catchError((e) {
             debugPrint('⚠️ 위성 점령 카운트 DB 증가 실패: $e');
             _achievementProvider?.checkAndUnlock(
               capturedTiles: capturedTiles,
@@ -403,11 +423,16 @@ class GameProvider extends ChangeNotifier with WidgetsBindingObserver {
         }
       },
     );
-    NotificationService().onForegroundMessageReceived = (title, body, type) {
-      final message = title.isNotEmpty ? '[$title] $body' : body;
-      _alertManager.add(message, AlertType.info);
-      AudioService().playNotification();
-    };
+    NotificationService().onForegroundMessageReceived =
+        (title, body, type, tileId) {
+          final message = title.isNotEmpty ? '[$title] $body' : body;
+          final alertType = type == 'territory_attack'
+              ? AlertType.error
+              : AlertType.info;
+          _alertManager.add(message, alertType, tileId: tileId);
+          AudioService().playNotification();
+        };
+    NotificationService().setNotificationOpenedHandler(_onNotificationOpened);
 
     // 틸 프로바이더 침공 감지 시 알림/금/반격 처리
     _tileProvider.onInvasionDetected = _onInvasionDetectedFromTiles;
@@ -443,7 +468,11 @@ class GameProvider extends ChangeNotifier with WidgetsBindingObserver {
 
   /// 현재 밟고 있는 타일에 사진첩 등록을 수행하고 연동 캐시를 리로드합니다.
   /// 성공 시 null을 반환하며, 실패 시 에러 사유 문자열을 반환합니다.
-  Future<String?> uploadPhotoForTile(String tileId, File file, {String? comment}) async {
+  Future<String?> uploadPhotoForTile(
+    String tileId,
+    File file, {
+    String? comment,
+  }) async {
     final auth = _authProvider;
     if (auth == null) {
       const msg = '인증 서비스(authProvider) 연동 실패';
@@ -495,7 +524,11 @@ class GameProvider extends ChangeNotifier with WidgetsBindingObserver {
 
   /// 지정된 타일의 특정 사진첩 데이터를 삭제하고 연동 캐시를 리로드합니다.
   /// 성공 시 null을 반환하며, 실패 시 에러 사유 문자열을 반환합니다.
-  Future<String?> deletePhotoForTile(String tileId, String photoId, String photoUrl) async {
+  Future<String?> deletePhotoForTile(
+    String tileId,
+    String photoId,
+    String photoUrl,
+  ) async {
     try {
       final success = await PhotoService().deleteTilePhoto(
         photoId: photoId,
@@ -554,7 +587,8 @@ class GameProvider extends ChangeNotifier with WidgetsBindingObserver {
 
         // 알림 설정 동기화: 동일 사용자/동일 설정이면 FCM 토픽 재호출 생략
         final p = auth.profile!;
-        final sameNotifState = _lastNotifSyncUserId == p.id &&
+        final sameNotifState =
+            _lastNotifSyncUserId == p.id &&
             _lastNotifMaster == p.isNotificationsEnabled;
         if (!sameNotifState) {
           _notificationController.syncFromProfile(p);
@@ -587,8 +621,7 @@ class GameProvider extends ChangeNotifier with WidgetsBindingObserver {
     try {
       await _mapView.loadFromPrefs();
       _lastTileId = await PreferencesService.getLastVisitedTileId();
-      _secondLastTileId =
-          await PreferencesService.getSecondLastVisitedTileId();
+      _secondLastTileId = await PreferencesService.getSecondLastVisitedTileId();
 
       await _notificationController.loadFromPrefs();
 
@@ -661,6 +694,83 @@ class GameProvider extends ChangeNotifier with WidgetsBindingObserver {
     );
   }
 
+  // --- 알림 탭 → 지도 포커스 ---
+
+  /// 알림 탭 데이터를 해석해 영토 변경 알림이면 해당 타일로 지도를 이동시킵니다.
+  void _onNotificationOpened(Map<String, dynamic> data) {
+    if (data['type'] != 'territory_attack') return;
+
+    final tileId = data['tile_id'];
+    if (tileId is! String || tileId.isEmpty) return;
+
+    _pendingInvasionTileId = tileId;
+    _flushPendingInvasionFocus();
+  }
+
+  /// 대기 중인 영토 변경 알림 포커스를 다음 프레임에 적용합니다.
+  void _flushPendingInvasionFocus() {
+    final tileId = _pendingInvasionTileId;
+    if (tileId == null || _isDisposed) return;
+    _pendingInvasionTileId = null;
+
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (_isDisposed) return;
+
+      // 내 정보/랭킹 등 다른 화면을 보고 있었다면 게임 화면으로 복귀한다.
+      appNavigatorKey.currentState?.popUntil((route) => route.isFirst);
+      focusTile(tileId);
+    });
+  }
+
+  /// 특정 타일을 지도 중앙에 배치하고 지정 시간 동안 깜빡이며 강조합니다.
+  void focusTile(
+    String tileId, {
+    Duration highlightDuration = const Duration(seconds: 2),
+  }) {
+    if (_isDisposed) return;
+
+    final parsed = HexService.parseTileId(tileId);
+    if (parsed == null) return;
+
+    final q = parsed['q'] as int;
+    final r = parsed['r'] as int;
+
+    // GPS 추적/나침반 회전이 카메라를 다시 끌어가지 않도록 잠시 해제한다.
+    _mapView.disableFollowingQuiet();
+    _mapView.disableRotationModeQuiet();
+    _mapView.showNormalModeQuiet();
+    _tileSelection.clearSelectedFootprintQuietly();
+
+    _pendingTileFocus = TileFocusRequest(
+      tileId: tileId,
+      destination: HexService.hexToLatLng(q, r),
+      highlightDuration: highlightDuration,
+    );
+    notifyListeners();
+  }
+
+  /// 지도 포커스 전에 대상 타일 데이터가 로컬 캐시에 있도록 보장합니다.
+  Future<void> ensureTileLoaded(String tileId) async {
+    if (_isDisposed) return;
+
+    final parsed = HexService.parseTileId(tileId);
+    if (parsed == null) return;
+
+    final q = parsed['q'] as int;
+    final r = parsed['r'] as int;
+
+    if (!_tileProvider.isInitialized) {
+      await _tileProvider.initializationFuture;
+    }
+    if (_isDisposed) return;
+
+    await _tileProvider.fetchAndUpdateTile(tileId);
+    if (_isDisposed) return;
+
+    // 주변 타일은 화면에 보이는 범위를 채우기 위해 백그라운드로 함께 갱신한다.
+    unawaited(_tileProvider.updateTilesInArea(q, r, force: true));
+  }
+
   /// 침공 감지 시 알림/반격 처리
   void _onInvasionDetectedFromTiles() {
     NotificationService().showLocalNotification(
@@ -677,8 +787,9 @@ class GameProvider extends ChangeNotifier with WidgetsBindingObserver {
     if (_satelliteController.isCapturing) {
       final captTileId = _satelliteController.capturingTileId;
       if (captTileId != null) {
-        final stillConnected =
-            _satelliteController.checkConnectivity(captTileId);
+        final stillConnected = _satelliteController.checkConnectivity(
+          captTileId,
+        );
         if (!stillConnected) {
           _satelliteController.cancelCapture();
           addAlert(GameStrings.satelliteDisconnectedAlert, AlertType.error);
@@ -764,7 +875,9 @@ class GameProvider extends ChangeNotifier with WidgetsBindingObserver {
         PreferencesService.setLastVisitedTileId(tileId);
         PreferencesService.setSecondLastVisitedTileId(oldLastTileId);
 
-        _supabase.incrementMovedTiles(auth.profile!.id).then((success) {
+        _supabase
+            .incrementMovedTiles(auth.profile!.id)
+            .then((success) {
           if (success) {
             final updatedProfile = auth.profile!.copyWith(
               dailyMovedTilesCount: auth.profile!.dailyMovedTilesCount + 1,
@@ -772,10 +885,12 @@ class GameProvider extends ChangeNotifier with WidgetsBindingObserver {
             );
             auth.updateProfileCache(updatedProfile);
             _achievementProvider?.checkAndUnlock(
-                capturedTiles: capturedTiles);
+                  capturedTiles: capturedTiles,
+                );
             notifyListeners();
           }
-        }).catchError((e) {
+            })
+            .catchError((e) {
           debugPrint('⚠️ 타일 이동 횟수 DB 증가 실패: $e');
         });
       } else {
@@ -792,7 +907,10 @@ class GameProvider extends ChangeNotifier with WidgetsBindingObserver {
   /// 주기 throttling에 따라 현재 위치 타일의 서버 상태를 조회하고 점령 판정을 수행합니다.
   /// 본진(메인 베이스)에 있으면 캡처가 불가하므로 조회를 생략합니다.
   void _pollCurrentTileStatusIfNeeded(
-      LocationProvider loc, AuthProvider auth, String tileId) {
+    LocationProvider loc,
+    AuthProvider auth,
+    String tileId,
+  ) {
     // 본진(메인 베이스)에 있으면 캡처가 불가하므로 매초 서버 상태 조회(1초 폴링)를 생략한다.
     // 조회 결과는 항상 'mine'으로 고정되어, 무의미한 네트워크 왕복만 발생하기 때문이다.
     final myMainBaseId = auth.profile!.mainBaseTileId;
@@ -812,14 +930,14 @@ class GameProvider extends ChangeNotifier with WidgetsBindingObserver {
           .checkCurrentLocationTileStatusFromServer(loc, auth)
           .then((status) {
         _processCaptureDecision(tileId, status);
-      }).catchError((e) {
+          })
+          .catchError((e) {
         debugPrint('⚠️ 위치 기반 타일 상태 서버 조회 실패: $e');
       });
     }
   }
 
-  Future<void> _processCaptureDecision(
-      String tileId, TileStatus status) async {
+  Future<void> _processCaptureDecision(String tileId, TileStatus status) async {
     final loc = _locationProvider;
     final auth = _authProvider;
     if (loc == null ||
@@ -865,13 +983,11 @@ class GameProvider extends ChangeNotifier with WidgetsBindingObserver {
           return;
         }
 
-        final int currentCaptureCount =
-            currentTile?.captureCount ?? 0;
+        final int currentCaptureCount = currentTile?.captureCount ?? 0;
         final int targetCaptureCount = currentCaptureCount + 1;
         final int durationSeconds =
             GameConfig.initialCaptureDurationSeconds * targetCaptureCount;
-        final Duration captureDuration =
-            Duration(seconds: durationSeconds);
+        final Duration captureDuration = Duration(seconds: durationSeconds);
 
         _satelliteController.cancelCapture();
 
@@ -1006,12 +1122,15 @@ class GameProvider extends ChangeNotifier with WidgetsBindingObserver {
 
   void cycleMapStyle() => _mapView.cycleMapStyle();
 
-  Future<void> toggleMapRotationMode() =>
-      _mapView.toggleMapRotationMode();
+  Future<void> toggleMapRotationMode() => _mapView.toggleMapRotationMode();
 
   // --- Alert System (GameAlertManager 위임) ---
-  void addAlert(String message, AlertType type) {
-    _alertManager.add(message, type);
+  void addAlert(String message, AlertType type, {String? tileId}) {
+    _alertManager.add(message, type, tileId: tileId);
+  }
+
+  void removeAlert(String id) {
+    _alertManager.remove(id);
   }
 
   // --- Notification (NotificationController 위임) ---
@@ -1032,8 +1151,7 @@ class GameProvider extends ChangeNotifier with WidgetsBindingObserver {
   void selectFootprintTile(String tileId) =>
       _tileSelection.selectFootprintTile(tileId);
 
-  void clearSelectedFootprint() =>
-      _tileSelection.clearSelectedFootprint();
+  void clearSelectedFootprint() => _tileSelection.clearSelectedFootprint();
 
   // --- Satellite Capture (SatelliteCaptureController 위임) ---
   int getTileDistance(String targetTileId) =>
@@ -1053,8 +1171,7 @@ class GameProvider extends ChangeNotifier with WidgetsBindingObserver {
 
   void cancelSatelliteCapture() => _satelliteController.cancelCapture();
 
-  bool isHQOr1Ring(String tileId) =>
-      _satelliteController.isHQOr1Ring(tileId);
+  bool isHQOr1Ring(String tileId) => _satelliteController.isHQOr1Ring(tileId);
 
   // --- Tile Info Reveal (orchestration: gold + tile reveal) ---
   Future<bool> revealTileInfo(String tileId) async {
@@ -1083,7 +1200,9 @@ class GameProvider extends ChangeNotifier with WidgetsBindingObserver {
           })
           .eq('id', myId)
           .then((_) {
-            _supabase.incrementSatelliteScan(myId).then((success) {
+            _supabase
+                .incrementSatelliteScan(myId)
+                .then((success) {
               if (success &&
                   _authProvider != null &&
                   _authProvider!.profile != null) {
@@ -1093,12 +1212,14 @@ class GameProvider extends ChangeNotifier with WidgetsBindingObserver {
                 );
                 _authProvider!.updateProfileCache(updatedProfile);
                 _achievementProvider?.checkAndUnlock(
-                    capturedTiles: capturedTiles);
+                      capturedTiles: capturedTiles,
+                    );
                 notifyListeners();
               } else {
                 _authProvider?.refreshProfile();
               }
-            }).catchError((err) {
+                })
+                .catchError((err) {
               debugPrint('⚠️ 위성 조회 카운트 DB 증가 실패: $err');
               _authProvider?.refreshProfile();
             });
@@ -1133,11 +1254,14 @@ class GameProvider extends ChangeNotifier with WidgetsBindingObserver {
     notifyListeners();
 
     try {
-      await _supabase.client.from('profiles').update({
+      await _supabase.client
+          .from('profiles')
+          .update({
         'main_base_tile_id': tileId,
         'gold': _goldManager.currentGold,
         'last_gold_updated_at': nowUtc.toIso8601String(),
-      }).eq('id', myId);
+          })
+          .eq('id', myId);
 
       // 본진 이동 횟수(RPC) 증가
       await _supabase.incrementMainBaseMove(myId);
@@ -1174,6 +1298,9 @@ class GameProvider extends ChangeNotifier with WidgetsBindingObserver {
 
   @override
   void dispose() {
+    _isDisposed = true;
+    NotificationService().setNotificationOpenedHandler(null);
+    NotificationService().onForegroundMessageReceived = null;
     WidgetsBinding.instance.removeObserver(this);
     _goldManager.dispose();
     _stepsTimer?.cancel();

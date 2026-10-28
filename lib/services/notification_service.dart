@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:convert';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter/foundation.dart';
@@ -11,7 +12,10 @@ import 'preferences_service.dart';
 
 /// 포그라운드 FCM 메시지 수신 시 인게임 알림 UI로 라우팅 처리하기 위한 커스텀 콜백 핸들러 타입
 typedef ForegroundMessageCallback =
-    void Function(String title, String body, String type);
+    void Function(String title, String body, String type, String? tileId);
+
+/// 알림 탭(백그라운드/종료 상태 포함) 시 FCM 데이터 페이로드를 전달하기 위한 콜백 타입
+typedef NotificationOpenedCallback = void Function(Map<String, dynamic> data);
 
 /// Firebase Cloud Messaging(FCM) 및 로컬 푸시 알림(FlutterLocalNotifications)을 총괄하여 처리하는 알림 관리 서비스 클래스
 class NotificationService {
@@ -24,6 +28,15 @@ class NotificationService {
 
   /// 포그라운드 알림 수신 시 인게임 UI 연동을 위한 외부 콜백 홀더
   ForegroundMessageCallback? onForegroundMessageReceived;
+
+  /// 알림 탭 시 게임 화면 이동 처리를 위한 외부 콜백 홀더
+  NotificationOpenedCallback? _onNotificationOpened;
+
+  /// 콜백 등록 전에 알림 탭으로 전달된 데이터를 보관하는 대기 버퍼
+  Map<String, dynamic>? _pendingOpenedData;
+
+  /// 동일 알림이 초기 메시지와 스트림 양쪽으로 중복 전달되는 것을 막기 위한 ID 캐시
+  final Set<String> _handledOpenedMessageIds = {};
 
   FirebaseMessaging? _fcm;
   final FlutterLocalNotificationsPlugin _localNotifications =
@@ -96,7 +109,7 @@ class NotificationService {
       await _localNotifications.initialize(
         settings: initSettings,
         onDidReceiveNotificationResponse: (details) {
-          // 알림 클릭 시 로직
+          _handleLocalNotificationPayload(details.payload);
         },
       );
 
@@ -108,6 +121,9 @@ class NotificationService {
           }
 
           final String? type = message.data['type'] as String?;
+          final String? tileId = message.data['tile_id'] is String
+              ? message.data['tile_id'] as String
+              : null;
           RemoteNotification? notification = message.notification;
           if (notification != null && !kIsWeb) {
             // 포그라운드 상태에서는 OS 단말기 시스템 상단 알림 배너를 띄우지 않고, 인게임 알림 UI 팝업으로 라우팅
@@ -115,6 +131,7 @@ class NotificationService {
               notification.title ?? '',
               notification.body ?? '',
               type ?? 'system_notice',
+              tileId,
             );
           }
         } catch (e) {
@@ -124,7 +141,19 @@ class NotificationService {
 
       FirebaseMessaging.onMessageOpenedApp.listen((RemoteMessage message) {
         debugPrint('백그라운드 알림 클릭됨: ${message.data}');
+        _dispatchOpenedMessage(message);
       }, onError: (e) => debugPrint('⚠️ FCM onMessageOpenedApp 스트림 에러: $e'));
+
+      // 앱이 종료된 상태에서 알림을 눌러 실행된 경우 최초 메시지를 확인한다.
+      try {
+        final RemoteMessage? initialMessage = await _fcm?.getInitialMessage();
+        if (initialMessage != null) {
+          debugPrint('종료 상태 알림으로 앱 실행됨: ${initialMessage.data}');
+          _dispatchOpenedMessage(initialMessage);
+        }
+      } catch (e) {
+        debugPrint('⚠️ 최초 알림 메시지 확인 실패: $e');
+      }
 
       // FCM 토큰이 갱신되거나 최초 발급되는 시점에 토픽 구독 상태를 알림 설정과 동기화
       _fcm?.onTokenRefresh.listen((token) async {
@@ -157,11 +186,27 @@ class NotificationService {
     }
   }
 
+  /// 알림 탭 처리 핸들러를 등록합니다.
+  ///
+  /// 핸들러 등록 전에 알림 탭 데이터가 도착했다면 보관해 두었다가
+  /// 등록 즉시 한 번 전달합니다.
+  void setNotificationOpenedHandler(NotificationOpenedCallback? handler) {
+    _onNotificationOpened = handler;
+    if (handler == null) return;
+
+    final pending = _pendingOpenedData;
+    if (pending != null) {
+      _pendingOpenedData = null;
+      handler(pending);
+    }
+  }
+
   /// 로컬 푸시 알림을 즉시 화면에 노출시킵니다.
   Future<void> showLocalNotification({
     required int id,
     required String title,
     required String body,
+    String? payload,
   }) async {
     try {
       if (!await PreferencesService.isNotificationEnabled()) {
@@ -176,6 +221,7 @@ class NotificationService {
       id: id,
       title: title,
       body: body,
+      payload: payload,
       notificationDetails: NotificationDetails(
         android: AndroidNotificationDetails(
           _channel.id,
@@ -245,8 +291,9 @@ class NotificationService {
     }
   }
 
-  static const MethodChannel _systemNotificationChannel =
-      MethodChannel('com.watercherry.conquest_mobile/notification');
+  static const MethodChannel _systemNotificationChannel = MethodChannel(
+    'com.watercherry.conquest_mobile/notification',
+  );
 
   /// OS 시스템 레벨의 알림 권한 허용 여부를 조회합니다.
   Future<bool> checkSystemNotificationPermission() async {
@@ -317,6 +364,41 @@ class NotificationService {
       debugPrint('⚠️ OS 알림 설정 화면 이동 실패: $e');
     }
     return false;
+  }
+
+  /// FCM 알림 탭 메시지를 중복 없이 한 번만 처리합니다.
+  void _dispatchOpenedMessage(RemoteMessage message) {
+    final messageId = message.messageId;
+    if (messageId != null && !_handledOpenedMessageIds.add(messageId)) {
+      return;
+    }
+    _dispatchOpenedData(message.data);
+  }
+
+  /// 알림 탭 데이터를 핸들러에 전달하고, 핸들러가 없으면 보관합니다.
+  void _dispatchOpenedData(Map<String, dynamic> data) {
+    if (data.isEmpty) return;
+
+    final handler = _onNotificationOpened;
+    if (handler == null) {
+      _pendingOpenedData = data;
+      return;
+    }
+    handler(data);
+  }
+
+  /// 로컬 알림 응답에 포함된 JSON payload를 해석해 탭 데이터로 전달합니다.
+  void _handleLocalNotificationPayload(String? payload) {
+    if (payload == null || payload.isEmpty) return;
+
+    try {
+      final decoded = jsonDecode(payload);
+      if (decoded is Map) {
+        _dispatchOpenedData(Map<String, dynamic>.from(decoded));
+      }
+    } catch (e) {
+      debugPrint('⚠️ 로컬 알림 payload 파싱 실패: $e');
+    }
   }
 }
 
