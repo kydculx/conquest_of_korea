@@ -95,11 +95,11 @@ class HudOverlay extends StatelessWidget {
           ),
         ),
 
-        // [하단 좌측 - 이동 기록 달력] 카메라 버튼 바로 위에 배치 (42x42)
+        // [상단 우측 - 이동 기록 달력] 내 정보 버튼 바로 아래에 배치 (44x44)
         Positioned(
-          bottom: baseBottomMargin + bottomPadding + 17.0 + (42.0 + 10.0) * 3,
-          left: 20.0,
-          child: const DailyRecordsActionButton(size: 42, iconSize: 20),
+          top: topOffset + 44.0 + 10.0,
+          right: 20.0,
+          child: const DailyRecordsActionButton(size: 44, iconSize: 20),
         ),
 
         // [하단 좌측 - 현재 타일 사진첩 갤러리/카메라 버튼] 본진 버튼 바로 위에 배치 (42x42)

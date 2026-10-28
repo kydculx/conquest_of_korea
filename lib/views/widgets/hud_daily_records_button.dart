@@ -26,8 +26,6 @@ class DailyRecordsActionButton extends StatelessWidget {
       label: GameStrings.dailyRecordTitle,
       child: TacticalPressButton(
         size: size,
-        gradientColors: const [Palette.footprintMint, Palette.tealOk],
-        shadowColor: Palette.footprintMint,
         onTap: () {
           if (!auth.isAuthenticated) {
             Navigator.pushNamed(context, AppRoutes.login);
