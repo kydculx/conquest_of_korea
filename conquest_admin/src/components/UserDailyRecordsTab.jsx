@@ -62,7 +62,6 @@ export default function UserDailyRecordsTab() {
   const [error, setError] = useState(null);
 
   const currentMonth = useMemo(() => monthStart(new Date()), []);
-  const todayKey = useMemo(() => toDateKey(new Date()), []);
   const isCurrentMonth =
     visibleMonth.getUTCFullYear() === currentMonth.getUTCFullYear() &&
     visibleMonth.getUTCMonth() === currentMonth.getUTCMonth();
@@ -242,10 +241,7 @@ export default function UserDailyRecordsTab() {
           </div>
         </div>
 
-        <div style={{ display: 'flex', justifyContent: 'space-between', gap: '1rem', flexWrap: 'wrap' }}>
-          <span style={{ fontSize: '0.76rem', color: 'var(--text-muted)' }}>
-            UTC 기준 · 랭킹의 일일 이동 타일과 동일한 기록입니다.
-          </span>
+        <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '1rem', flexWrap: 'wrap' }}>
           <span style={{ fontSize: '0.76rem', color: 'var(--text-muted)', fontFamily: 'var(--font-mono)' }}>
             사용자 ID: {userId}
           </span>
@@ -333,7 +329,6 @@ export default function UserDailyRecordsTab() {
                     return <div key={`empty-${index}`} />;
                   }
 
-                  const isToday = cell.dateKey === todayKey;
                   const ratio =
                     totals.max > 0 ? cell.count / totals.max : 0;
                   const hasCount = cell.count > 0;
@@ -350,23 +345,17 @@ export default function UserDailyRecordsTab() {
                         flexDirection: 'column',
                         justifyContent: 'space-between',
                         gap: '0.3rem',
-                        background: isToday
-                          ? 'rgba(56, 189, 248, 0.14)'
-                          : hasCount
-                            ? `rgba(56, 189, 248, ${0.04 + ratio * 0.13})`
-                            : 'rgba(255, 255, 255, 0.02)',
-                        border: isToday
-                          ? '1px solid rgba(56, 189, 248, 0.55)'
-                          : '1px solid var(--border-soft)',
+                        background: hasCount
+                          ? `rgba(56, 189, 248, ${0.04 + ratio * 0.13})`
+                          : 'rgba(255, 255, 255, 0.02)',
+                        border: '1px solid var(--border-soft)',
                       }}
                     >
                       <span
                         style={{
                           fontSize: '0.7rem',
-                          fontWeight: isToday ? 800 : 600,
-                          color: isToday
-                            ? 'var(--accent-cyan)'
-                            : 'var(--text-secondary)',
+                          fontWeight: 600,
+                          color: 'var(--text-secondary)',
                         }}
                       >
                         {cell.day}
@@ -395,7 +384,7 @@ export default function UserDailyRecordsTab() {
               <table className="tactical-table">
                 <thead>
                   <tr>
-                    <th>날짜 (UTC)</th>
+                    <th>날짜</th>
                     <th>요일</th>
                     <th style={{ textAlign: 'right' }}>이동 타일</th>
                     <th>비율</th>
@@ -413,28 +402,10 @@ export default function UserDailyRecordsTab() {
                     records.map((row) => {
                       const count = Number(row.moved_tiles_count || 0);
                       const ratio = totals.max > 0 ? (count / totals.max) * 100 : 0;
-                      const isToday = row.stat_date === todayKey;
-
                       return (
                         <tr key={row.stat_date}>
                           <td>
                             <span className="kv-value mono">{row.stat_date}</span>
-                            {isToday && (
-                              <span
-                                style={{
-                                  marginLeft: '0.45rem',
-                                  padding: '0.16rem 0.4rem',
-                                  borderRadius: '999px',
-                                  fontSize: '0.62rem',
-                                  fontWeight: 700,
-                                  color: 'var(--accent-cyan)',
-                                  background: 'rgba(56, 189, 248, 0.12)',
-                                  border: '1px solid rgba(56, 189, 248, 0.3)',
-                                }}
-                              >
-                                오늘
-                              </span>
-                            )}
                           </td>
                           <td style={{ fontSize: '0.8rem', color: 'var(--text-secondary)' }}>
                             {formatWeekday(row.stat_date)}
