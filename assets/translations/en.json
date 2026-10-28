@@ -595,5 +595,8 @@
   "dailyRecordTileUnit": "tiles",
   "dailyRecordRecordedDays": "Days recorded",
   "dailyRecordDailyAverage": "Daily average",
-  "dailyRecordBestDay": "Best day"
+  "dailyRecordBestDay": "Best day",
+  "rankingDailyUtcNote": "Based on UTC",
+  "onboardingCalendarTitle": "Movement Calendar",
+  "onboardingCalendarDesc": "Tap the calendar button below your profile to see how many tiles you moved each day, based on your phone date. Swipe left or right to move between months."
 }

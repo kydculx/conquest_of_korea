@@ -595,5 +595,8 @@
   "dailyRecordTileUnit": "Felder",
   "dailyRecordRecordedDays": "Erfasste Tage",
   "dailyRecordDailyAverage": "Tagesdurchschnitt",
-  "dailyRecordBestDay": "Bester Tag"
+  "dailyRecordBestDay": "Bester Tag",
+  "rankingDailyUtcNote": "UTC-Basis",
+  "onboardingCalendarTitle": "Bewegungskalender",
+  "onboardingCalendarDesc": "Tippe unter deinem Profil auf die Kalender-Schaltfläche, um die täglich bewegten Felder nach dem Datum deines Telefons zu sehen. Wische nach links oder rechts, um den Monat zu wechseln."
 }

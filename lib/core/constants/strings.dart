@@ -388,6 +388,7 @@ class GameStrings {
       'rankingDescDailyMovedTiles'.tr();
   static String get rankingDescTotalMovedTiles =>
       'rankingDescTotalMovedTiles'.tr();
+  static String get rankingDailyUtcNote => 'rankingDailyUtcNote'.tr();
 
   /// 타일 단위 매핑 함수
   static String tileUnit(int count) =>
@@ -1393,6 +1394,8 @@ class GameStrings {
   static String get onboardingStepsDesc => 'onboardingStepsDesc'.tr();
   static String get onboardingProfileTitle => 'onboardingProfileTitle'.tr();
   static String get onboardingProfileDesc => 'onboardingProfileDesc'.tr();
+  static String get onboardingCalendarTitle => 'onboardingCalendarTitle'.tr();
+  static String get onboardingCalendarDesc => 'onboardingCalendarDesc'.tr();
   static String get onboardingPatternTitle => 'onboardingPatternTitle'.tr();
   static String get onboardingPatternDesc => 'onboardingPatternDesc'.tr();
   static String get onboardingMapFollowTitle => 'onboardingMapFollowTitle'.tr();

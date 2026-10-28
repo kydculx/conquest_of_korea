@@ -595,5 +595,8 @@
   "dailyRecordTileUnit": "格",
   "dailyRecordRecordedDays": "记录天数",
   "dailyRecordDailyAverage": "日均",
-  "dailyRecordBestDay": "最高记录"
+  "dailyRecordBestDay": "最高记录",
+  "rankingDailyUtcNote": "UTC 基准",
+  "onboardingCalendarTitle": "移动记录日历",
+  "onboardingCalendarDesc": "点击个人资料下方的日历按钮，可按手机日期查看每天移动的格数。左右滑动可切换月份。"
 }

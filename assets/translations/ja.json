@@ -595,5 +595,8 @@
   "dailyRecordTileUnit": "タイル",
   "dailyRecordRecordedDays": "記録日数",
   "dailyRecordDailyAverage": "1日平均",
-  "dailyRecordBestDay": "最高記録"
+  "dailyRecordBestDay": "最高記録",
+  "rankingDailyUtcNote": "UTC基準",
+  "onboardingCalendarTitle": "移動記録カレンダー",
+  "onboardingCalendarDesc": "プロフィールの下にあるカレンダーボタンを押すと、スマートフォンの日付を基準に、1日に移動したタイル数を月ごとに確認できます。左右にスワイプして前月・翌月へ移動できます。"
 }

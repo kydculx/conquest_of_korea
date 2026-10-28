@@ -595,5 +595,8 @@
   "dailyRecordTileUnit": "타일",
   "dailyRecordRecordedDays": "기록 일수",
   "dailyRecordDailyAverage": "일평균",
-  "dailyRecordBestDay": "최고 기록"
+  "dailyRecordBestDay": "최고 기록",
+  "rankingDailyUtcNote": "UTC 기준",
+  "onboardingCalendarTitle": "이동 기록 달력",
+  "onboardingCalendarDesc": "내 정보 버튼 아래의 달력 버튼을 누르면 휴대폰 날짜 기준으로 하루 동안 이동한 타일 수를 월별로 확인할 수 있습니다. 좌우로 스와이프해 이전 달과 다음 달을 이동할 수 있습니다."
 }

@@ -595,5 +595,8 @@
   "dailyRecordTileUnit": "casas",
   "dailyRecordRecordedDays": "Dias registrados",
   "dailyRecordDailyAverage": "Média diária",
-  "dailyRecordBestDay": "Melhor dia"
+  "dailyRecordBestDay": "Melhor dia",
+  "rankingDailyUtcNote": "Base UTC",
+  "onboardingCalendarTitle": "Calendário de movimentos",
+  "onboardingCalendarDesc": "Toque no botão de calendário abaixo do seu perfil para ver quantas casas você moveu por dia, com base na data do seu celular. Deslize para a esquerda ou direita para mudar de mês."
 }

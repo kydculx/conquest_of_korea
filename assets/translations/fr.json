@@ -595,5 +595,8 @@
   "dailyRecordTileUnit": "cases",
   "dailyRecordRecordedDays": "Jours enregistrés",
   "dailyRecordDailyAverage": "Moyenne quotidienne",
-  "dailyRecordBestDay": "Meilleur jour"
+  "dailyRecordBestDay": "Meilleur jour",
+  "rankingDailyUtcNote": "Référence UTC",
+  "onboardingCalendarTitle": "Calendrier des déplacements",
+  "onboardingCalendarDesc": "Appuyez sur le bouton calendrier sous votre profil pour voir le nombre de cases déplacées chaque jour selon la date de votre téléphone. Balayez à gauche ou à droite pour changer de mois."
 }

@@ -595,5 +595,8 @@
   "dailyRecordTileUnit": "casillas",
   "dailyRecordRecordedDays": "Días registrados",
   "dailyRecordDailyAverage": "Promedio diario",
-  "dailyRecordBestDay": "Mejor día"
+  "dailyRecordBestDay": "Mejor día",
+  "rankingDailyUtcNote": "Base UTC",
+  "onboardingCalendarTitle": "Calendario de movimientos",
+  "onboardingCalendarDesc": "Toca el botón del calendario debajo de tu perfil para ver cuántas casillas te moviste cada día según la fecha de tu teléfono. Desliza a izquierda o derecha para cambiar de mes."
 }

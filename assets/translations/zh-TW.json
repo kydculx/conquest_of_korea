@@ -595,5 +595,8 @@
   "dailyRecordTileUnit": "格",
   "dailyRecordRecordedDays": "記錄天數",
   "dailyRecordDailyAverage": "日均",
-  "dailyRecordBestDay": "最高記錄"
+  "dailyRecordBestDay": "最高記錄",
+  "rankingDailyUtcNote": "UTC 基準",
+  "onboardingCalendarTitle": "移動記錄日曆",
+  "onboardingCalendarDesc": "點擊個人資料下方的日曆按鈕，可依手機日期查看每天移動的格數。左右滑動可切換月份。"
 }
