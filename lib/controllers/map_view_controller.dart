@@ -63,6 +63,26 @@ class MapViewController {
     }
   }
 
+  /// 외부 요청으로 특정 타일을 보여줄 때 GPS 추적이 카메라를 되돌리지 않도록
+  /// 추적 상태만 조용히 해제합니다.
+  void disableFollowingQuiet() {
+    _isFollowingUser = false;
+  }
+
+  /// 외부 요청으로 특정 타일을 보여줄 때 나침반 회전 모드를 조용히 해제합니다.
+  void disableRotationModeQuiet() {
+    if (!_isMapRotationMode) return;
+    _isMapRotationMode = false;
+    PreferencesService.setMapRotationMode(false).catchError((e) {
+      debugPrint('❌ MapRotationMode 저장 실패: $e');
+    });
+  }
+
+  /// 발자취/패턴 모드에서도 강조 타일이 보이도록 일반 모드로 조용히 전환합니다.
+  void showNormalModeQuiet() {
+    _mapMode = MapMode.normal;
+  }
+
   void toggleFollowingUser() {
     _isFollowingUser = !_isFollowingUser;
     _notifyListeners();
@@ -89,16 +109,16 @@ class MapViewController {
   /// 완료 패턴 보기를 토글합니다. 변경 알림 없이 이전 모드를 반환합니다.
   MapMode toggleCompletedPatternsViewQuiet() {
     final oldMode = _mapMode;
-    _mapMode =
-        (_mapMode == MapMode.pattern) ? MapMode.normal : MapMode.pattern;
+    _mapMode = (_mapMode == MapMode.pattern) ? MapMode.normal : MapMode.pattern;
     return oldMode;
   }
 
   /// 발자국 보기를 토글합니다. 변경 알림 없이 이전 모드를 반환합니다.
   MapMode toggleFootprintModeQuiet() {
     final oldMode = _mapMode;
-    _mapMode =
-        (_mapMode == MapMode.footprint) ? MapMode.normal : MapMode.footprint;
+    _mapMode = (_mapMode == MapMode.footprint)
+        ? MapMode.normal
+        : MapMode.footprint;
     return oldMode;
   }
 
