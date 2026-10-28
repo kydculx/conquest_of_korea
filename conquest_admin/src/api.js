@@ -164,11 +164,21 @@ export async function fetchUserFootprints(userId) {
 }
 
 export async function neutralizeTile(tileId) {
-  const { error } = await supabase
-    .from('captured_tiles')
-    .delete()
-    .eq('id', tileId);
+  const { data, error } = await supabase.rpc('admin_neutralize_tile', {
+    p_tile_id: tileId,
+  });
   if (error) throw error;
+  return data;
+}
+
+export async function adminCaptureTile(tileId, q, r) {
+  const { data, error } = await supabase.rpc('admin_capture_tile', {
+    p_tile_id: tileId,
+    p_q: Number(q),
+    p_r: Number(r),
+  });
+  if (error) throw error;
+  return data;
 }
 
 export async function transferTileOwnership(tileId, userId, userColor) {

@@ -1,6 +1,14 @@
-import React, { useEffect, useState, useRef } from 'react';
+import { useEffect, useState, useRef } from 'react';
 import { useSearchParams, useNavigate } from 'react-router-dom';
-import { fetchTiles, fetchUsers, fetchUserFootprints, fetchUserCapturedTiles, formatTileCoords } from '../api';
+import {
+  fetchTiles,
+  fetchUsers,
+  fetchUserFootprints,
+  fetchUserCapturedTiles,
+  formatTileCoords,
+  adminCaptureTile,
+  neutralizeTile,
+} from '../api';
 import { supabase } from '../supabase';
 import { Radio, Compass, Layers, Users, Map as MapIcon, Zap, Camera, X } from 'lucide-react';
 import L from 'leaflet';
@@ -38,6 +46,17 @@ function getHexCorners(q, r) {
     corners.push([lat, lng]);
   }
   return corners;
+}
+
+function parseTileId(tileId) {
+  const parts = String(tileId).split('_');
+  if (parts.length < 3) return null;
+
+  const q = Number(parts[parts.length - 2]);
+  const r = Number(parts[parts.length - 1]);
+  if (!Number.isFinite(q) || !Number.isFinite(r)) return null;
+
+  return { q, r };
 }
 
 export default function DashboardTab() {
@@ -84,13 +103,17 @@ export default function DashboardTab() {
   const mapRef = useRef(null);
   const mapInstance = useRef(null);
   const polygonsGroup = useRef(null);
+  const photoMarkersGroup = useRef(null);
   const myLocationMarker = useRef(null);
   const hqMarker = useRef(null);
   const darkTileLayer = useRef(null);
   const satelliteTileLayer = useRef(null);
   const [isSatellite, setIsSatellite] = useState(false);
   const [mapReady, setMapReady] = useState(false);
+  const [showPhotoMarkers, setShowPhotoMarkers] = useState(true);
   const initialFitDone = useRef(false);
+  const actionInFlightRef = useRef(false);
+  const adminActionRef = useRef({ capture: null, neutralize: null });
 
   const handleGoToMyLocation = () => {
     if (!mapInstance.current) return;
@@ -172,6 +195,82 @@ export default function DashboardTab() {
       setLoading(false);
     }
   };
+
+  const refreshAfterAction = async () => {
+    await loadData();
+    if (!tilesUserId) return;
+
+    try {
+      const rows = await fetchUserCapturedTiles(tilesUserId);
+      setUserTiles(rows || []);
+      setUserTilesLoadedId(tilesUserId);
+    } catch (err) {
+      console.error(err);
+    }
+  };
+
+  const handleAdminCapture = async (tileId, q, r) => {
+    if (actionInFlightRef.current) return;
+
+    const confirmed = window.confirm(
+      `이 타일(${formatTileCoords(tileId)})을 관리자 계정으로 점령할까요?`
+    );
+    if (!confirmed) return;
+
+    actionInFlightRef.current = true;
+    try {
+      const captured = await adminCaptureTile(tileId, q, r);
+      if (!captured) throw new Error('점령 처리 결과를 확인할 수 없습니다.');
+      await refreshAfterAction();
+      alert('관리자 계정으로 점령했습니다.');
+    } catch (err) {
+      console.error(err);
+      alert(err?.message || '타일 점령 처리 중 오류가 발생했습니다.');
+    } finally {
+      actionInFlightRef.current = false;
+    }
+  };
+
+  const handleAdminNeutralize = async (tileId) => {
+    if (actionInFlightRef.current) return;
+
+    const confirmed = window.confirm(
+      `이 타일(${formatTileCoords(tileId)})을 중립으로 만들까요?`
+    );
+    if (!confirmed) return;
+
+    actionInFlightRef.current = true;
+    try {
+      const removed = await neutralizeTile(tileId);
+      if (!removed) throw new Error('이미 중립 상태이거나 타일을 찾을 수 없습니다.');
+      await refreshAfterAction();
+      alert('타일을 중립으로 만들었습니다.');
+    } catch (err) {
+      console.error(err);
+      alert(err?.message || '타일 중립화 처리 중 오류가 발생했습니다.');
+    } finally {
+      actionInFlightRef.current = false;
+    }
+  };
+
+  useEffect(() => {
+    adminActionRef.current = {
+      capture: handleAdminCapture,
+      neutralize: handleAdminNeutralize,
+    };
+  });
+
+  useEffect(() => {
+    window.adminCaptureTile = (tileId, q, r) =>
+      adminActionRef.current.capture?.(tileId, q, r);
+    window.adminNeutralizeTile = (tileId) =>
+      adminActionRef.current.neutralize?.(tileId);
+
+    return () => {
+      delete window.adminCaptureTile;
+      delete window.adminNeutralizeTile;
+    };
+  }, []);
 
   // Supabase 실시간 구독 및 폴링 바인딩
   useEffect(() => {
@@ -298,6 +397,7 @@ export default function DashboardTab() {
     darkLayer.addTo(map);
 
     polygonsGroup.current = L.layerGroup().addTo(map);
+    photoMarkersGroup.current = L.layerGroup().addTo(map);
     mapInstance.current = map;
     setMapReady(true);
 
@@ -311,8 +411,23 @@ export default function DashboardTab() {
         mapInstance.current.remove();
         mapInstance.current = null;
       }
+      polygonsGroup.current = null;
+      photoMarkersGroup.current = null;
     };
   }, []);
+
+  useEffect(() => {
+    if (!mapReady || !mapInstance.current) return;
+
+    const map = mapInstance.current;
+    const handleZoom = () => setShowPhotoMarkers(map.getZoom() >= 11);
+    handleZoom();
+    map.on('zoomend', handleZoom);
+
+    return () => {
+      map.off('zoomend', handleZoom);
+    };
+  }, [mapReady]);
 
   // 1-2. 위성 맵 토글에 따른 레이어 탈착 효과
   useEffect(() => {
@@ -393,6 +508,13 @@ export default function DashboardTab() {
         ? new Date(footprintMode ? tile.recorded_at : tile.captured_at).toLocaleString('ko-KR')
         : '-';
 
+      const adminActions = footprintMode ? '' : `
+        <div style="display: flex; gap: 6px; margin-top: 8px; flex-wrap: wrap;">
+          <button onclick="window.adminCaptureTile('${tileId}', ${q}, ${r})" style="background: #0ea5e9; color: white; border: none; padding: 4px 8px; border-radius: 5px; font-size: 0.72rem; font-weight: 700; cursor: pointer;">관리자로 점령</button>
+          <button onclick="window.adminNeutralizeTile('${tileId}')" style="background: #ef4444; color: white; border: none; padding: 4px 8px; border-radius: 5px; font-size: 0.72rem; font-weight: 700; cursor: pointer;">중립으로</button>
+        </div>
+      `;
+
       const popupContent = `
         <div style="font-family: monospace; color: var(--text-primary); line-height: 1.4; font-size: 0.8rem;">
           <strong style="color: ${color}">[사용자]</strong> ${ownerName}<br/>
@@ -402,12 +524,13 @@ export default function DashboardTab() {
             : `<strong>[점령]</strong> ${tile.capture_count ?? 1}회 중첩<br/>
           <strong>[점령날짜]</strong> ${capturedAt}<br/>`}
           <strong>[갤러리]</strong> ${galleryText}<br/>
+          ${adminActions}
           <strong>[좌표]</strong> Q:${q}, R:${r}
         </div>
       `;
 
       polygon.bindPopup(popupContent, {
-        minWidth: 130
+        minWidth: 210
       });
 
       polygonsGroup.current.addLayer(polygon);
@@ -469,7 +592,61 @@ export default function DashboardTab() {
     }
   }, [tiles, users, photoCounts, hqParam, mapReady, footprintTiles, footprintsUserId, footprintNickname, userTiles, tilesUserId, tilesNickname]);
 
-  // 2-1. 본진 이동(hq) 파라미터 시 지도 포커스 + 하이라이트 마커 표시
+  // 2-1. 사진이 등록된 타일에 카메라 아이콘 마커 표시
+  useEffect(() => {
+    if (!mapReady || !photoMarkersGroup.current) return;
+
+    photoMarkersGroup.current.clearLayers();
+    if (footprintsUserId) return;
+
+    const userTilesMode = !!tilesUserId && !footprintsUserId;
+    if (!userTilesMode && !showPhotoMarkers) return;
+
+    const allowedTileIds = userTilesMode
+      ? new Set(userTiles.map((tile) => tile.id || `hex_${tile.q}_${tile.r}`))
+      : null;
+
+    Object.entries(photoCounts).forEach(([tileId, count]) => {
+      if (!count) return;
+      if (allowedTileIds && !allowedTileIds.has(tileId)) return;
+
+      const coords = parseTileId(tileId);
+      if (!coords) return;
+
+      const [lat, lng] = hexToLatLng(coords.q, coords.r);
+      const marker = L.marker([lat, lng], {
+        icon: L.divIcon({
+          className: 'admin-photo-marker',
+          html: `
+            <div style="width: 22px; height: 22px; box-sizing: border-box; border-radius: 50%; background: rgba(0, 0, 0, 0.55); border: 1px solid #00ffcc; display: flex; align-items: center; justify-content: center; box-shadow: 0 0 6px rgba(0, 255, 204, 0.65);">
+              <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#ffffff" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M14.5 4h-5L7 7H4a2 2 0 0 0-2 2v9a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V9a2 2 0 0 0-2-2h-3l-2.5-3z"></path>
+                <circle cx="12" cy="13" r="3"></circle>
+              </svg>
+            </div>
+          `,
+          iconSize: [22, 22],
+          iconAnchor: [11, 11],
+        }),
+        title: `사진 ${count}장`,
+        zIndexOffset: 600,
+      });
+
+      marker.on('click', () => {
+        if (typeof window.openAdminGallery === 'function') {
+          window.openAdminGallery(tileId);
+        }
+      });
+
+      photoMarkersGroup.current.addLayer(marker);
+    });
+
+    return () => {
+      photoMarkersGroup.current?.clearLayers();
+    };
+  }, [mapReady, showPhotoMarkers, photoCounts, tilesUserId, footprintsUserId, userTiles]);
+
+  // 2-2. 본진 이동(hq) 파라미터 시 지도 포커스 + 하이라이트 마커 표시
   useEffect(() => {
     if (hqMarker.current) {
       hqMarker.current.remove();
