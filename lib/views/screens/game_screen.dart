@@ -114,7 +114,9 @@ class _GameScreenState extends State<GameScreen> {
       }
 
       _startLocationWaitTimer();
-      geo.checkPermissions().then((ok) async {
+      geo
+          .checkPermissions()
+          .then((ok) async {
         if (ok) {
           await geo.startTracking();
         } else {
@@ -125,7 +127,8 @@ class _GameScreenState extends State<GameScreen> {
             });
           }
         }
-      }).catchError((e) {
+          })
+          .catchError((e) {
         debugPrint('⚠️ 위치 권한 확인 실패: $e');
         if (mounted) {
           setState(() {
@@ -143,9 +146,15 @@ class _GameScreenState extends State<GameScreen> {
     // 1. 필요한 프로바이더 참조 획득 (listen: false 로 획득하여 watch로 인한 리빌드 차단)
     final newGameProvider = Provider.of<GameProvider>(context, listen: false);
     final newAuthProvider = Provider.of<AuthProvider>(context, listen: false);
-    final newLocationProvider = Provider.of<LocationProvider>(context, listen: false);
+    final newLocationProvider = Provider.of<LocationProvider>(
+      context,
+      listen: false,
+    );
     final newFlameGame = Provider.of<ConquestGame>(context, listen: false);
-    final newAchProvider = Provider.of<AchievementProvider>(context, listen: false);
+    final newAchProvider = Provider.of<AchievementProvider>(
+      context,
+      listen: false,
+    );
 
     // 2. 참조가 변경되었을 때만 기존 리스너 해제 및 신규 등록
     if (_gameProvider != newGameProvider ||
@@ -153,7 +162,6 @@ class _GameScreenState extends State<GameScreen> {
         _locationProvider != newLocationProvider ||
         _flameGame != newFlameGame ||
         _achievementProvider != newAchProvider) {
-      
       _gameProvider?.removeListener(_onStateChanged);
       _authProvider?.removeListener(_onStateChanged);
       _locationProvider?.removeListener(_onStateChanged);
@@ -169,7 +177,8 @@ class _GameScreenState extends State<GameScreen> {
       _authProvider?.addListener(_onStateChanged);
       _locationProvider?.addListener(_onStateChanged);
 
-      _achievementSubscription = _achievementProvider!.onAchievementUnlocked.listen((ach) {
+      _achievementSubscription = _achievementProvider!.onAchievementUnlocked
+          .listen((ach) {
         if (mounted) {
           AchievementToast.show(context, ach);
         }
@@ -267,7 +276,9 @@ class _GameScreenState extends State<GameScreen> {
       }
     }
 
-    final currentTiles = Map<String, HexTile>.from(_gameProvider!.capturedTiles);
+    final currentTiles = Map<String, HexTile>.from(
+      _gameProvider!.capturedTiles,
+    );
     final profile = _authProvider!.profile;
     final userId = _authProvider!.user?.id;
 
@@ -284,8 +295,9 @@ class _GameScreenState extends State<GameScreen> {
     // 정적 지형(랜드마크 / 차단 구역) 색상이 점령 색상보다 우선 적용되도록 한다.
     final tileProvider = Provider.of<GameTileProvider>(context, listen: false);
     final adminTileTypes = Map<int, TileType>.from(tileProvider.tileTypes);
-    final adminTileAttributes =
-        Map<String, TileAttribute>.from(tileProvider.tileAttributes);
+    final adminTileAttributes = Map<String, TileAttribute>.from(
+      tileProvider.tileAttributes,
+    );
 
     _flameGame!.updateCapturedTiles(
       capturedTiles: currentTiles,
@@ -332,8 +344,12 @@ class _GameScreenState extends State<GameScreen> {
 
     // 1. SNS 최초 로그인 등 약관 동의 리다이렉트만 최상단에서 감시
     // 프로필 로딩 중 깜빡임 방지: 로그인되었으나 프로필 정보가 없고 아직 로딩 중인 상태
-    final isAuthPending = context.select<AuthProvider, bool>((auth) =>
-        auth.isAuthenticated && auth.profile == null && (auth.isLoading || auth.isProfileLoading));
+    final isAuthPending = context.select<AuthProvider, bool>(
+      (auth) =>
+          auth.isAuthenticated &&
+          auth.profile == null &&
+          (auth.isLoading || auth.isProfileLoading),
+    );
 
     if (isAuthPending) {
       return Scaffold(
@@ -343,17 +359,20 @@ class _GameScreenState extends State<GameScreen> {
             gradient: GameColors.cozyDarkGradient,
           ),
           child: Center(
-            child: CircularProgressIndicator(
-              color: GameColors.accentNeon,
-            ),
+            child: CircularProgressIndicator(color: GameColors.accentNeon),
           ),
         ),
       );
     }
 
     // isProfileLoading: 로그인 직후 프로필 로딩 중에는 리다이렉트하지 않음 (깜빡임 방지)
-    final isRedirectNeeded = context.select<AuthProvider, bool>((auth) =>
-        auth.isAuthenticated && auth.profile == null && !auth.isLoading && !auth.isProfileLoading);
+    final isRedirectNeeded = context.select<AuthProvider, bool>(
+      (auth) =>
+          auth.isAuthenticated &&
+          auth.profile == null &&
+          !auth.isLoading &&
+          !auth.isProfileLoading,
+    );
 
     if (isRedirectNeeded) {
       return const TermsAgreementScreen(isSocial: true);
@@ -361,7 +380,8 @@ class _GameScreenState extends State<GameScreen> {
 
     // 2. 초기 맵 렌더링에 사용할 위치 획득 (최초 1회만 참조하고, 리스너가 지도 내부 제어를 직접 처리하므로 watch 차단)
     final locProvider = Provider.of<LocationProvider>(context, listen: false);
-    final initialLocation = locProvider.currentLocation ?? MapConfig.defaultPosition;
+    final initialLocation =
+        locProvider.currentLocation ?? MapConfig.defaultPosition;
     final flameGame = Provider.of<ConquestGame>(context, listen: false);
 
     return Scaffold(
@@ -392,8 +412,21 @@ class _GameScreenState extends State<GameScreen> {
               selector: (_, provider) => provider.alerts,
               builder: (context, alerts, child) {
                 if (alerts.isEmpty) return const SizedBox.shrink();
+                final hasActionableAlert = alerts.any(
+                  (alert) => alert.tileId != null,
+                );
                 return IgnorePointer(
-                  child: TacticalAlertList(alerts: alerts),
+                  ignoring: !hasActionableAlert,
+                  child: TacticalAlertList(
+                    alerts: alerts,
+                    onAlertTap: (alert) {
+                      final tileId = alert.tileId;
+                      if (tileId == null) return;
+                      final gameProvider = context.read<GameProvider>();
+                      gameProvider.removeAlert(alert.id);
+                      gameProvider.focusTile(tileId);
+                    },
+                  ),
                 );
               },
             ),
@@ -410,7 +443,9 @@ class _GameScreenState extends State<GameScreen> {
                 },
                 child: isInitialized
                     ? const SizedBox.shrink()
-                    : LoadingOverlay(message: GameStrings.tacticalSatelliteSync),
+                    : LoadingOverlay(
+                        message: GameStrings.tacticalSatelliteSync,
+                      ),
               );
             },
           ),
