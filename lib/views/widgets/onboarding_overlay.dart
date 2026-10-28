@@ -14,6 +14,7 @@ enum OnboardingStep {
   achievementBtn,
   rankingBtn,
   profileBtn,
+  calendarBtn,
   hqBtn,
   photoBtn, // 📸 타일 사진 촬영 안내 단계
   mapFollowBtn,
@@ -94,6 +95,10 @@ class _OnboardingOverlayState extends State<OnboardingOverlay> {
       OnboardingStep.profileBtn: _StepContent(
         title: GameStrings.onboardingProfileTitle,
         description: GameStrings.onboardingProfileDesc,
+      ),
+      OnboardingStep.calendarBtn: _StepContent(
+        title: GameStrings.onboardingCalendarTitle,
+        description: GameStrings.onboardingCalendarDesc,
       ),
       OnboardingStep.hqBtn: _StepContent(
         title: GameStrings.onboardingHQTitle,
@@ -226,6 +231,26 @@ class _OnboardingOverlayState extends State<OnboardingOverlay> {
 
         lineStart = Offset(targetRect.left + targetRect.width / 2, targetRect.bottom + 4.0);
         lineEnd = Offset(lineStart.dx.clamp(40.0, size.width - 40.0), cardTop - 2.0);
+        lineControl = Offset(lineStart.dx, lineEnd.dy - 30.0);
+        break;
+
+      case OnboardingStep.calendarBtn:
+        targetRect = Rect.fromLTWH(
+          size.width - 20.0 - 44.0,
+          topOffset + 44.0 + 10.0,
+          44.0,
+          44.0,
+        );
+        cardTop = size.height - baseBottomMargin - 220.0;
+
+        lineStart = Offset(
+          targetRect.left + targetRect.width / 2,
+          targetRect.bottom + 4.0,
+        );
+        lineEnd = Offset(
+          lineStart.dx.clamp(40.0, size.width - 40.0),
+          cardTop - 2.0,
+        );
         lineControl = Offset(lineStart.dx, lineEnd.dy - 30.0);
         break;
 
