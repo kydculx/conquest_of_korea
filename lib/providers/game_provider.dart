@@ -325,9 +325,10 @@ class GameProvider extends ChangeNotifier with WidgetsBindingObserver {
               body: {
                 'topic': 'user_$oldOwnerId',
                 'user_id': oldOwnerId,
+                'template': 'territory_attack',
                 'title': GameStrings.notificationInvasionTitle,
                 'body': GameStrings.notificationInvasionBody,
-                    'data_payload': {'type': 'territory_attack', 'tile_id': id},
+                'data_payload': {'type': 'territory_attack', 'tile_id': id},
               },
                 )
                 .then((response) {
@@ -594,6 +595,11 @@ class GameProvider extends ChangeNotifier with WidgetsBindingObserver {
           _notificationController.syncFromProfile(p);
           _lastNotifSyncUserId = p.id;
           _lastNotifMaster = p.isNotificationsEnabled;
+        }
+
+        final languageCode = _notificationController.languageCode;
+        if (languageCode != null && p.language != languageCode) {
+          unawaited(auth.updateLanguage(languageCode));
         }
       }
 
@@ -1134,6 +1140,19 @@ class GameProvider extends ChangeNotifier with WidgetsBindingObserver {
   }
 
   // --- Notification (NotificationController 위임) ---
+  Future<void> setNotificationLanguage(String languageCode) async {
+    await _notificationController.setLanguageCode(languageCode);
+
+    final normalized = _notificationController.languageCode;
+    final auth = _authProvider;
+    if (normalized != null &&
+        auth != null &&
+        auth.isAuthenticated &&
+        auth.profile != null) {
+      await auth.updateLanguage(normalized);
+    }
+  }
+
   Future<bool> toggleNotifications() =>
       _notificationController.toggleNotifications();
 

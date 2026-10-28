@@ -22,7 +22,24 @@ class NotificationController {
 
   bool _isNotificationEnabled = true;
 
+  static const List<String> _languageTopicCodes = [
+    'ko',
+    'en',
+    'zh',
+    'zh_TW',
+    'ja',
+    'es',
+    'fr',
+    'de',
+    'pt',
+  ];
+
+  String? _languageTopic;
+  String? _languageCode;
+
   // --- Getter (Provider에서 위임) ---
+
+  String? get languageCode => _languageCode;
 
   bool get isNotificationEnabled => _isNotificationEnabled;
 
@@ -56,6 +73,40 @@ class NotificationController {
         await PreferencesService.isNotificationEnabled();
     // 로드 직후 FCM 구독 상태 동기화
     await _updateFcmSubscriptions();
+  }
+
+  /// 현재 앱 언어에 해당하는 FCM 공지 토픽(lang_*)을 구독합니다.
+  ///
+  /// 언어가 바뀌면 이전 언어 토픽을 해제하고, 앱 재시작 후 남아 있을 수 있는
+  /// 다른 언어 토픽도 함께 정리합니다.
+  Future<void> setLanguageCode(String languageCode) async {
+    final normalized = _normalizeLanguageCode(languageCode);
+    if (normalized.isEmpty) return;
+
+    _languageCode = normalized;
+    final nextTopic = 'lang_$normalized';
+    if (_languageTopic == nextTopic) return;
+
+    final ns = NotificationService();
+    if (!ns.isInitialized) {
+      await ns.initialize();
+    }
+
+    _languageTopic = nextTopic;
+    for (final code in _languageTopicCodes) {
+      final topic = 'lang_$code';
+      if (topic == nextTopic) continue;
+      await _applyIfChanged(topic, false);
+    }
+    await _updateFcmSubscriptions();
+  }
+
+  String _normalizeLanguageCode(String code) {
+    final normalized = code.replaceAll('-', '_').toLowerCase();
+    if (normalized.startsWith('zh')) {
+      return normalized.contains('tw') ? 'zh_TW' : 'zh';
+    }
+    return normalized.split('_').first;
   }
 
   /// OS 시스템 레벨의 알림 권한을 확인하고,
@@ -151,20 +202,28 @@ class NotificationController {
 
     final userId = getUserId();
     final String? topicPersonal = userId != null ? 'user_$userId' : null;
+    final String? topicLanguage = _languageTopic;
 
     if (!_isNotificationEnabled) {
-      // 마스터 알림이 꺼진 경우 개인 토픽 구독 해제
+      // 마스터 알림이 꺼진 경우 개인/언어 토픽 구독 해제
       if (topicPersonal != null) {
         await _applyIfChanged(topicPersonal, false);
+      }
+      if (topicLanguage != null) {
+        await _applyIfChanged(topicLanguage, false);
       }
       debugPrint('🔔 [FCM 구독] 마스터 알림 해제로 인한 모든 토픽 구독 해제 완료.');
       return;
     }
 
-    // 마스터 알림이 켜져 있는 경우 개인 토픽 구독
+    // 마스터 알림이 켜져 있는 경우 개인/언어 토픽 구독
     if (topicPersonal != null) {
       await _applyIfChanged(topicPersonal, true);
       debugPrint('🔔 [FCM 구독] 개인 토픽($topicPersonal) 구독 완료.');
+    }
+    if (topicLanguage != null) {
+      await _applyIfChanged(topicLanguage, true);
+      debugPrint('🔔 [FCM 구독] 언어 토픽($topicLanguage) 구독 완료.');
     }
   }
 

@@ -1,9 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:easy_localization/easy_localization.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:provider/provider.dart';
 import '../../core/constants/colors.dart';
 import '../../core/constants/strings.dart';
 import '../../core/utils/toast_helper.dart';
+import '../../providers/game_provider.dart';
 import '../widgets/tactical_app_bar.dart';
 
 /// 앱의 표시 언어(한국어, 영어 등)를 변경하고 실시간으로 다국어를 적용할 수 있도록
@@ -221,7 +223,15 @@ class LanguageSettingsScreen extends StatelessWidget {
               targetMessage = GameStrings.languageChanged;
           }
 
+          final gameProvider = context.read<GameProvider>();
+          final languageCode =
+              locale.languageCode == 'zh' &&
+                  locale.countryCode?.toUpperCase() == 'TW'
+              ? 'zh_TW'
+              : locale.languageCode;
+
           await EasyLocalization.of(context)!.setLocale(locale);
+          await gameProvider.setNotificationLanguage(languageCode);
           if (context.mounted) {
             ToastHelper.show(
               context: context,

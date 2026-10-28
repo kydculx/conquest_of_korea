@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:google_fonts/google_fonts.dart';
@@ -31,6 +32,15 @@ class _SplashScreenState extends State<SplashScreen>
     super.didChangeDependencies();
     // 앱 첫 프레임 기동 시 스플래시 고해상도 이미지가 디코딩 렉 없이 0ms로 즉시 뜨도록 프리캐시 가속 적용
     precacheImage(const AssetImage(GameAssets.splashBg), context);
+
+    final locale = context.locale;
+    final languageCode =
+        locale.languageCode == 'zh' && locale.countryCode?.toUpperCase() == 'TW'
+        ? 'zh_TW'
+        : locale.languageCode;
+    unawaited(
+      context.read<GameProvider>().setNotificationLanguage(languageCode),
+    );
   }
 
   // 플랫폼에서 실제 동적 빌드 버전을 가져오는 비동기 메소드 (Failsafe 예외 장치 완비)
