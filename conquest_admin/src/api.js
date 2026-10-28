@@ -163,6 +163,18 @@ export async function fetchUserFootprints(userId) {
   return allRows;
 }
 
+export async function fetchUserDailyMovedTiles(userId, startDate, endDate) {
+  const { data, error } = await supabase
+    .from('daily_moved_tiles_history')
+    .select('stat_date, moved_tiles_count, updated_at')
+    .eq('user_id', userId)
+    .gte('stat_date', startDate)
+    .lt('stat_date', endDate)
+    .order('stat_date', { ascending: false });
+  if (error) throw error;
+  return data || [];
+}
+
 export async function neutralizeTile(tileId) {
   const { data, error } = await supabase.rpc('admin_neutralize_tile', {
     p_tile_id: tileId,
