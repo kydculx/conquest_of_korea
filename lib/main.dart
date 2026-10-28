@@ -27,6 +27,7 @@ import 'views/screens/auth/signup_screen.dart';
 import 'views/screens/profile_screen.dart';
 import 'views/screens/ranking_screen.dart';
 import 'views/screens/achievement_screen.dart';
+import 'views/screens/daily_records_screen.dart';
 import 'views/screens/pattern_guide_screen.dart';
 import 'providers/auth_provider.dart';
 import 'providers/ranking_provider.dart';
@@ -197,6 +198,7 @@ class _ConquestApp extends StatelessWidget {
         AppRoutes.ranking: (context) => const RankingScreen(),
         AppRoutes.achievement: (context) => const AchievementScreen(),
         AppRoutes.patternGuide: (context) => const PatternGuideScreen(),
+        AppRoutes.dailyRecords: (context) => const DailyRecordsScreen(),
       },
     );
   }

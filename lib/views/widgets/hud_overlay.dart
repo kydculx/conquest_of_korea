@@ -12,6 +12,7 @@ import 'hud_map_mode_button.dart';
 import 'completed_pattern_list.dart';
 import 'hud_map_cycle_button.dart';
 import 'hud_map_follow_button.dart';
+import 'hud_daily_records_button.dart';
 import 'hud_hq_move_button.dart';
 import 'hud_photo_button.dart';
 import 'hud_satellite_bubble.dart';
@@ -92,6 +93,13 @@ class HudOverlay extends StatelessWidget {
             auth: auth,
             onProfileClosed: onProfileClosed,
           ),
+        ),
+
+        // [하단 좌측 - 이동 기록 달력] 카메라 버튼 바로 위에 배치 (42x42)
+        Positioned(
+          bottom: baseBottomMargin + bottomPadding + 17.0 + (42.0 + 10.0) * 3,
+          left: 20.0,
+          child: const DailyRecordsActionButton(size: 42, iconSize: 20),
         ),
 
         // [하단 좌측 - 현재 타일 사진첩 갤러리/카메라 버튼] 본진 버튼 바로 위에 배치 (42x42)
