@@ -882,7 +882,7 @@ class GameProvider extends ChangeNotifier with WidgetsBindingObserver {
         PreferencesService.setSecondLastVisitedTileId(oldLastTileId);
 
         _supabase
-            .incrementMovedTiles(auth.profile!.id)
+            .incrementMovedTilesForRecord(auth.profile!.id, DateTime.now())
             .then((success) {
           if (success) {
             final updatedProfile = auth.profile!.copyWith(
