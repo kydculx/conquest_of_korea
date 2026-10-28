@@ -130,9 +130,13 @@ class _DailyRecordsScreenState extends State<DailyRecordsScreen> {
             children: [
               _buildMonthHeader(locale),
               Expanded(
-                child: !auth.isAuthenticated
-                    ? _buildLoginRequired()
-                    : _buildBody(locale),
+                child: GestureDetector(
+                  behavior: HitTestBehavior.translucent,
+                  onHorizontalDragEnd: _handleMonthSwipe,
+                  child: !auth.isAuthenticated
+                      ? _buildLoginRequired()
+                      : _buildBody(locale),
+                ),
               ),
             ],
           ),
@@ -142,57 +146,44 @@ class _DailyRecordsScreenState extends State<DailyRecordsScreen> {
   }
 
   Widget _buildMonthHeader(String locale) {
-    final currentMonth = _monthStart(DateTime.now());
-    final canGoNext = _visibleMonth.isBefore(currentMonth);
-
     return Padding(
       padding: const EdgeInsets.fromLTRB(12, 10, 12, 4),
-      child: Row(
-        children: [
-          _MonthArrowButton(
-            icon: Icons.chevron_left_rounded,
-            tooltip: GameStrings.dailyRecordPreviousMonth,
-            onTap: () => _loadMonth(
-              DateTime.utc(_visibleMonth.year, _visibleMonth.month - 1, 1),
+      child: Center(
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            _MonthArrowButton(
+              icon: Icons.chevron_left_rounded,
+              tooltip: GameStrings.dailyRecordPreviousMonth,
+              onTap: () => _changeMonth(-1),
             ),
-          ),
-          Expanded(
-            child: InkWell(
-              borderRadius: BorderRadius.circular(14),
-              onTap: _showMonthPicker,
-              child: Padding(
-                padding: const EdgeInsets.symmetric(vertical: 6),
-                child: Column(
-                  children: [
-                    Text(
-                      DateFormat.yMMMM(locale).format(_visibleMonth),
-                      textAlign: TextAlign.center,
-                      style: TextStyle(
-                        color: GameColors.textPrimary,
-                        fontSize: 18,
-                        fontWeight: FontWeight.w700,
-                        letterSpacing: -0.2,
-                      ),
+            ConstrainedBox(
+              constraints: const BoxConstraints(minWidth: 150),
+              child: InkWell(
+                borderRadius: BorderRadius.circular(14),
+                onTap: _showMonthPicker,
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(vertical: 6),
+                  child: Text(
+                    DateFormat.yMMMM(locale).format(_visibleMonth),
+                    textAlign: TextAlign.center,
+                    style: TextStyle(
+                      color: GameColors.textPrimary,
+                      fontSize: 18,
+                      fontWeight: FontWeight.w700,
+                      letterSpacing: -0.2,
                     ),
-                  ],
+                  ),
                 ),
               ),
             ),
-          ),
-          _MonthArrowButton(
-            icon: Icons.chevron_right_rounded,
-            tooltip: GameStrings.dailyRecordNextMonth,
-            onTap: canGoNext
-                ? () => _loadMonth(
-                    DateTime.utc(
-                      _visibleMonth.year,
-                      _visibleMonth.month + 1,
-                      1,
-                    ),
-                  )
-                : null,
-          ),
-        ],
+            _MonthArrowButton(
+              icon: Icons.chevron_right_rounded,
+              tooltip: GameStrings.dailyRecordNextMonth,
+              onTap: _canGoNextMonth ? () => _changeMonth(1) : null,
+            ),
+          ],
+        ),
       ),
     );
   }
@@ -600,6 +591,30 @@ class _DailyRecordsScreenState extends State<DailyRecordsScreen> {
         ),
       ),
     );
+  }
+
+  bool get _canGoNextMonth {
+    final currentMonth = _monthStart(DateTime.now());
+    return _visibleMonth.isBefore(currentMonth);
+  }
+
+  void _changeMonth(int delta) {
+    if (_isLoading) return;
+    if (delta > 0 && !_canGoNextMonth) return;
+    _loadMonth(
+      DateTime(_visibleMonth.year, _visibleMonth.month + delta, 1),
+    );
+  }
+
+  void _handleMonthSwipe(DragEndDetails details) {
+    if (_isLoading || _loginRequired || _loadFailed) return;
+    final velocity = details.primaryVelocity ?? 0;
+    if (velocity.abs() < 200) return;
+    if (velocity < 0) {
+      _changeMonth(1);
+    } else {
+      _changeMonth(-1);
+    }
   }
 
   Future<void> _showMonthPicker() async {
