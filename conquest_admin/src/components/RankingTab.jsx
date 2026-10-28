@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { supabase } from '../supabase';
 import { Trophy, Compass, RotateCcw, Search, Award } from 'lucide-react';
 import Pagination from './Pagination';
@@ -35,6 +35,7 @@ export default function RankingTab() {
   };
 
   useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     loadRankings();
   }, [sortBy]);
 
@@ -77,6 +78,20 @@ export default function RankingTab() {
             className={`tactical-btn ${sortBy === 'daily_moved_tiles_count' ? 'active' : ''}`}
           >
             <Compass size={16} /> 일일 이동 순
+            <span
+              style={{
+                fontSize: '0.58rem',
+                fontWeight: 700,
+                letterSpacing: '0.02em',
+                padding: '0.12rem 0.32rem',
+                borderRadius: '999px',
+                color: 'var(--accent-cyan)',
+                background: 'rgba(56, 189, 248, 0.1)',
+                border: '1px solid rgba(56, 189, 248, 0.28)',
+              }}
+            >
+              UTC 기준
+            </span>
           </button>
           <button
             onClick={() => { setSortBy('total_moved_tiles_count'); setPage(1); }}
@@ -121,7 +136,7 @@ export default function RankingTab() {
                 <th>사용자</th>
                 <th style={{ textAlign: 'right' }}>
                   {sortBy === 'captured_tiles_count' ? '점령 영토' : 
-                   sortBy === 'daily_moved_tiles_count' ? '일일 이동' : '누적 이동'}
+                   sortBy === 'daily_moved_tiles_count' ? '일일 이동 (UTC 기준)' : '누적 이동'}
                 </th>
               </tr>
             </thead>
