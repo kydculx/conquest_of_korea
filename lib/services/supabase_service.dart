@@ -250,6 +250,28 @@ class SupabaseService {
     }
   }
 
+  /// 타일 이동 시 랭킹 카운터와 현지 날짜 일일 기록을 함께 갱신합니다.
+  Future<bool> incrementMovedTilesForRecord(
+    String userId,
+    DateTime localDate,
+  ) async {
+    try {
+      lastError = null;
+      final response = await _client.rpc(
+        'increment_moved_tiles_with_local_date',
+        params: {
+          'p_user_id': userId,
+          'p_local_date': _localDateKey(localDate),
+        },
+      );
+      return response as bool? ?? false;
+    } catch (e) {
+      lastError = e.toString();
+      debugPrint('❌ RPC 이동 타일·현지 날짜 기록 실패: $e');
+      return false;
+    }
+  }
+
   /// 특정 월의 일별 이동 타일 수를 조회합니다.
   ///
   /// 이동 타일 이력 테이블이 아직 적용되지 않은 서버에서는 예외를
@@ -259,14 +281,14 @@ class SupabaseService {
     DateTime month,
   ) async {
     try {
-      final start = DateTime.utc(month.year, month.month, 1);
-      final end = DateTime.utc(month.year, month.month + 1, 1);
+      final start = DateTime(month.year, month.month, 1);
+      final end = DateTime(month.year, month.month + 1, 1);
       final response = await _client
-          .from('daily_moved_tiles_history')
+          .from('daily_local_moved_tiles_history')
           .select('stat_date, moved_tiles_count')
           .eq('user_id', userId)
-          .gte('stat_date', _dailyRecordDateKey(start))
-          .lt('stat_date', _dailyRecordDateKey(end))
+          .gte('stat_date', _localDateKey(start))
+          .lt('stat_date', _localDateKey(end))
           .order('stat_date');
 
       final result = <String, int>{};
@@ -286,11 +308,10 @@ class SupabaseService {
     }
   }
 
-  String _dailyRecordDateKey(DateTime date) {
-    final utc = date.toUtc();
-    final year = utc.year.toString().padLeft(4, '0');
-    final month = utc.month.toString().padLeft(2, '0');
-    final day = utc.day.toString().padLeft(2, '0');
+  String _localDateKey(DateTime date) {
+    final year = date.year.toString().padLeft(4, '0');
+    final month = date.month.toString().padLeft(2, '0');
+    final day = date.day.toString().padLeft(2, '0');
     return '$year-$month-$day';
   }
 
