@@ -578,7 +578,7 @@
   "languageChineseSimplified": "中国語（簡体字）",
   "languageChineseTraditional": "中国語（繁体字）",
   "linkHealthApp": "歩数連携",
-  "dailyRecordTitle": "移動記録カレンダー",
+  "dailyRecordTitle": "月間移動",
   "dailyRecordMonthTotal": "月間の移動タイル",
   "dailyRecordToday": "今日",
   "dailyRecordEmpty": "この月の移動記録はありません。",
@@ -597,6 +597,6 @@
   "dailyRecordDailyAverage": "1日平均",
   "dailyRecordBestDay": "最高記録",
   "rankingDailyUtcNote": "UTC基準",
-  "onboardingCalendarTitle": "移動記録カレンダー",
+  "onboardingCalendarTitle": "月間移動",
   "onboardingCalendarDesc": "プロフィールの下にあるカレンダーボタンを押すと、スマートフォンの日付を基準に、1日に移動したタイル数を月ごとに確認できます。左右にスワイプして前月・翌月へ移動できます。"
 }

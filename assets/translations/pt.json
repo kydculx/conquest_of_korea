@@ -578,7 +578,7 @@
   "languageChineseSimplified": "Chinês Simplificado (Chinese Simplified)",
   "languageChineseTraditional": "Chinês Tradicional (Chinese Traditional)",
   "linkHealthApp": "Conectar passos",
-  "dailyRecordTitle": "Calendário de movimentos",
+  "dailyRecordTitle": "Movimentos do mês",
   "dailyRecordMonthTotal": "Casas movidas no mês",
   "dailyRecordToday": "Hoje",
   "dailyRecordEmpty": "Nenhum registro de movimento neste mês.",
@@ -597,6 +597,6 @@
   "dailyRecordDailyAverage": "Média diária",
   "dailyRecordBestDay": "Melhor dia",
   "rankingDailyUtcNote": "Base UTC",
-  "onboardingCalendarTitle": "Calendário de movimentos",
+  "onboardingCalendarTitle": "Movimentos do mês",
   "onboardingCalendarDesc": "Toque no botão de calendário abaixo do seu perfil para ver quantas casas você moveu por dia, com base na data do seu celular. Deslize para a esquerda ou direita para mudar de mês."
 }

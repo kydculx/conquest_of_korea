@@ -578,7 +578,7 @@
   "languageChineseSimplified": "Chinois Simplifié (Chinese Simplified)",
   "languageChineseTraditional": "Chinois Traditionnel (Chinese Traditional)",
   "linkHealthApp": "Connecter les pas",
-  "dailyRecordTitle": "Calendrier des déplacements",
+  "dailyRecordTitle": "Déplacements du mois",
   "dailyRecordMonthTotal": "Cases déplacées du mois",
   "dailyRecordToday": "Aujourd'hui",
   "dailyRecordEmpty": "Aucun déplacement enregistré ce mois-ci.",
@@ -597,6 +597,6 @@
   "dailyRecordDailyAverage": "Moyenne quotidienne",
   "dailyRecordBestDay": "Meilleur jour",
   "rankingDailyUtcNote": "Référence UTC",
-  "onboardingCalendarTitle": "Calendrier des déplacements",
+  "onboardingCalendarTitle": "Déplacements du mois",
   "onboardingCalendarDesc": "Appuyez sur le bouton calendrier sous votre profil pour voir le nombre de cases déplacées chaque jour selon la date de votre téléphone. Balayez à gauche ou à droite pour changer de mois."
 }

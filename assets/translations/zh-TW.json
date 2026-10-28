@@ -578,7 +578,7 @@
   "languageChineseSimplified": "簡體中文 (Simplified Chinese)",
   "languageChineseTraditional": "繁體中文 (Traditional Chinese)",
   "linkHealthApp": "連接步數",
-  "dailyRecordTitle": "移動記錄日曆",
+  "dailyRecordTitle": "月度移動",
   "dailyRecordMonthTotal": "當月移動格數",
   "dailyRecordToday": "今天",
   "dailyRecordEmpty": "本月沒有移動記錄。",
@@ -597,6 +597,6 @@
   "dailyRecordDailyAverage": "日均",
   "dailyRecordBestDay": "最高記錄",
   "rankingDailyUtcNote": "UTC 基準",
-  "onboardingCalendarTitle": "移動記錄日曆",
+  "onboardingCalendarTitle": "月度移動",
   "onboardingCalendarDesc": "點擊個人資料下方的日曆按鈕，可依手機日期查看每天移動的格數。左右滑動可切換月份。"
 }

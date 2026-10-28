@@ -578,7 +578,7 @@
   "languageChineseSimplified": "Chinesisch Vereinfacht (Chinese Simplified)",
   "languageChineseTraditional": "Chinesisch Traditionell (Chinese Traditional)",
   "linkHealthApp": "Schritte verbinden",
-  "dailyRecordTitle": "Bewegungskalender",
+  "dailyRecordTitle": "Monatliche Bewegung",
   "dailyRecordMonthTotal": "Bewegte Felder des Monats",
   "dailyRecordToday": "Heute",
   "dailyRecordEmpty": "Keine Bewegungsdaten für diesen Monat.",
@@ -597,6 +597,6 @@
   "dailyRecordDailyAverage": "Tagesdurchschnitt",
   "dailyRecordBestDay": "Bester Tag",
   "rankingDailyUtcNote": "UTC-Basis",
-  "onboardingCalendarTitle": "Bewegungskalender",
+  "onboardingCalendarTitle": "Monatliche Bewegung",
   "onboardingCalendarDesc": "Tippe unter deinem Profil auf die Kalender-Schaltfläche, um die täglich bewegten Felder nach dem Datum deines Telefons zu sehen. Wische nach links oder rechts, um den Monat zu wechseln."
 }

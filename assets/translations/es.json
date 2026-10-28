@@ -578,7 +578,7 @@
   "languageChineseSimplified": "Chino Simplificado (Chinese Simplified)",
   "languageChineseTraditional": "Chino Tradicional (Chinese Traditional)",
   "linkHealthApp": "Conectar pasos",
-  "dailyRecordTitle": "Calendario de movimientos",
+  "dailyRecordTitle": "Movimiento mensual",
   "dailyRecordMonthTotal": "Casillas movidas del mes",
   "dailyRecordToday": "Hoy",
   "dailyRecordEmpty": "No hay registros de movimiento este mes.",
@@ -597,6 +597,6 @@
   "dailyRecordDailyAverage": "Promedio diario",
   "dailyRecordBestDay": "Mejor día",
   "rankingDailyUtcNote": "Base UTC",
-  "onboardingCalendarTitle": "Calendario de movimientos",
+  "onboardingCalendarTitle": "Movimiento mensual",
   "onboardingCalendarDesc": "Toca el botón del calendario debajo de tu perfil para ver cuántas casillas te moviste cada día según la fecha de tu teléfono. Desliza a izquierda o derecha para cambiar de mes."
 }

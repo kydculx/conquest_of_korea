@@ -578,7 +578,7 @@
   "languageChineseSimplified": "Chinese Simplified (중국어 간체)",
   "languageChineseTraditional": "Chinese Traditional (중국어 번체)",
   "linkHealthApp": "Connect Steps",
-  "dailyRecordTitle": "Movement Calendar",
+  "dailyRecordTitle": "Monthly Moves",
   "dailyRecordMonthTotal": "Monthly moved tiles",
   "dailyRecordToday": "Today",
   "dailyRecordEmpty": "No movement records for this month.",
@@ -597,6 +597,6 @@
   "dailyRecordDailyAverage": "Daily average",
   "dailyRecordBestDay": "Best day",
   "rankingDailyUtcNote": "Based on UTC",
-  "onboardingCalendarTitle": "Movement Calendar",
+  "onboardingCalendarTitle": "Monthly Moves",
   "onboardingCalendarDesc": "Tap the calendar button below your profile to see how many tiles you moved each day, based on your phone date. Swipe left or right to move between months."
 }
