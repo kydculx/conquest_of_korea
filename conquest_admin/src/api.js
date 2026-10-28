@@ -236,7 +236,7 @@ export async function updateGoldRate(newValue) {
 /**
  * 5. FCM 알림 전송 (시뮬레이션 혹은 Edge Function 트리거용)
  */
-export async function sendFcmNotification(title, body, targetTopic, notifType = 'system_notice', tileId = '') {
+export async function sendFcmNotification(title, body, targetTopic, notifType = 'system_notice', tileId = '', template = '') {
   const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
   const supabaseKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
 
@@ -257,6 +257,43 @@ export async function sendFcmNotification(title, body, targetTopic, notifType = 
       topic: targetTopic,
       title: title,
       body: body,
+      template: template || undefined,
+      data_payload: {
+        type: notifType,
+        tile_id: tileId
+      }
+    })
+  });
+
+  const resData = await response.json();
+
+  if (!response.ok) {
+    throw new Error(resData.error || `HTTP 에러 status: ${response.status}`);
+  }
+
+  return resData;
+}
+
+/**
+ * 5c. 언어별 FCM 공지 전송 (lang_* 토픽)
+ */
+export async function sendLocalizedFcmNotification(localizedNotifications, notifType = 'system_notice', tileId = '') {
+  const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
+  const supabaseKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
+
+  if (!supabaseUrl || !supabaseKey) {
+    throw new Error('Supabase URL or Anon Key is missing.');
+  }
+
+  const response = await fetch(`${supabaseUrl}/functions/v1/send-push`, {
+    method: 'POST',
+    headers: {
+      'Authorization': `Bearer ${supabaseKey}`,
+      'apikey': supabaseKey,
+      'Content-Type': 'application/json'
+    },
+    body: JSON.stringify({
+      localized_notifications: localizedNotifications,
       data_payload: {
         type: notifType,
         tile_id: tileId
