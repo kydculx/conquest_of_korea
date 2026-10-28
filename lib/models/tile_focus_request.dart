@@ -14,6 +14,6 @@ class TileFocusRequest {
   const TileFocusRequest({
     required this.tileId,
     required this.destination,
-    this.highlightDuration = const Duration(seconds: 2),
+    this.highlightDuration = const Duration(seconds: 5),
   });
 }

@@ -731,7 +731,7 @@ class GameProvider extends ChangeNotifier with WidgetsBindingObserver {
   /// 특정 타일을 지도 중앙에 배치하고 지정 시간 동안 깜빡이며 강조합니다.
   void focusTile(
     String tileId, {
-    Duration highlightDuration = const Duration(seconds: 2),
+    Duration highlightDuration = const Duration(seconds: 5),
   }) {
     if (_isDisposed) return;
 

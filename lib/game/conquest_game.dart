@@ -323,7 +323,7 @@ class ConquestGame extends FlameGame {
   /// 특정 타일을 지정 시간 동안 깜빡이며 강조합니다.
   void highlightTile(
     String tileId, {
-    Duration duration = const Duration(seconds: 2),
+    Duration duration = const Duration(seconds: 5),
   }) {
     _highlightedTileId = tileId;
     _highlightUntil = DateTime.now().add(duration);
