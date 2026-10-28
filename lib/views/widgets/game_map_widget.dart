@@ -14,7 +14,7 @@ import '../../providers/location_provider.dart';
 import '../../providers/achievement_provider.dart';
 import '../../services/hex_service.dart';
 import '../../core/constants/strings.dart';
-
+import '../../models/tile_focus_request.dart';
 
 /// 지도(FlutterMap) + Flame 엔진 레이어를 결합한 위젯
 class GameMapWidget extends StatefulWidget {
@@ -45,6 +45,12 @@ class _GameMapWidgetState extends State<GameMapWidget>
   Offset? _lastPointerPos; // 진단: 마지막 손가락 위치
   LatLng? _lastCamPos; // 진단: 마지막 카메라 중심
 
+  /// FlutterMap 준비 완료 여부 (준비 전 포커스 요청은 대기)
+  bool _mapReady = false;
+
+  /// 연속 알림 탭 시 이전 포커스 비동기 작업이 새 요청을 덮어쓰지 않도록 하는 순번
+  int _focusRequestSeq = 0;
+
   @override
   void initState() {
     super.initState();
@@ -74,10 +80,13 @@ class _GameMapWidgetState extends State<GameMapWidget>
         }
       });
     }
+
+    _tryApplyPendingTileFocus();
   }
 
   @override
   void dispose() {
+    _focusRequestSeq++;
     _locProvider?.removeListener(_onLocationProviderChanged);
     _gameProvider?.removeListener(_onGameProviderChanged);
     _mapMoveSub?.cancel();
@@ -94,8 +103,9 @@ class _GameMapWidgetState extends State<GameMapWidget>
       _lastIsFollowing = true;
       final loc = _locProvider;
       if (loc != null && loc.currentLocation != null) {
-        final double targetRotation =
-            gameProvider.isMapRotationMode ? -loc.heading : 0.0;
+        final double targetRotation = gameProvider.isMapRotationMode
+            ? -loc.heading
+            : 0.0;
         _animatedMapMove(
           loc.currentLocation!,
           MapConfig.focusZoom,
@@ -108,10 +118,13 @@ class _GameMapWidgetState extends State<GameMapWidget>
 
     // [최적화] 맵 회전 모드 또는 내 위치 추적 상태 변경 시, 지도의 회전 및 투영 상태를 즉각 동기화 반영
     _onLocationProviderChanged();
+
+    // 알림 탭 등으로 요청된 타일 포커스가 있으면 처리한다.
+    _tryApplyPendingTileFocus();
   }
 
   void _onLocationProviderChanged() {
-    if (!mounted || _locProvider == null) return;
+    if (!mounted || !_mapReady || _locProvider == null) return;
 
     final loc = _locProvider!;
     final gameProvider = Provider.of<GameProvider>(context, listen: false);
@@ -127,8 +140,14 @@ class _GameMapWidgetState extends State<GameMapWidget>
         _pointerCount == 0 &&
         !isAnimating) {
       // 실제 카메라 센터 위치와 목적지의 변위 차이를 판별하여 유효 이동이 일어났을 때만 move 기동
-      final double latDiff = (_mapController.camera.center.latitude - loc.currentLocation!.latitude).abs();
-      final double lngDiff = (_mapController.camera.center.longitude - loc.currentLocation!.longitude).abs();
+      final double latDiff =
+          (_mapController.camera.center.latitude -
+                  loc.currentLocation!.latitude)
+              .abs();
+      final double lngDiff =
+          (_mapController.camera.center.longitude -
+                  loc.currentLocation!.longitude)
+              .abs();
       if (latDiff > 0.00001 || lngDiff > 0.00001) {
         _mapController.move(loc.currentLocation!, _currentZoom);
         hasMoved = true;
@@ -171,9 +190,12 @@ class _GameMapWidgetState extends State<GameMapWidget>
   @override
   void didUpdateWidget(GameMapWidget oldWidget) {
     super.didUpdateWidget(oldWidget);
+    if (!_mapReady) return;
+
     // 위치가 갱신되었고 '내 위치 추적' 모드라면 지도를 이동시킴 (맵 회전 모드가 아닐 때만 딜레이 애니메이션 적용)
     final gameProvider = Provider.of<GameProvider>(context, listen: false);
-    if (gameProvider.isFollowingUser && widget.initialLocation != oldWidget.initialLocation) {
+    if (gameProvider.isFollowingUser &&
+        widget.initialLocation != oldWidget.initialLocation) {
       if (!gameProvider.isMapRotationMode) {
         _animatedMapMove(widget.initialLocation, MapConfig.focusZoom, 0.0);
       }
@@ -191,8 +213,9 @@ class _GameMapWidgetState extends State<GameMapWidget>
   void _animatedMapMove(
     LatLng destLocation,
     double destZoom,
-    double destRotation,
-  ) {
+    double destRotation, {
+    VoidCallback? onComplete,
+  }) {
     _stopAnimation();
 
     final latTween = Tween<double>(
@@ -241,10 +264,95 @@ class _GameMapWidgetState extends State<GameMapWidget>
           _animationController = null;
         }
         controller.dispose();
+        onComplete?.call();
       }
     });
 
     controller.forward();
+  }
+
+  /// 지도 이동 애니메이션을 Future로 감싸 완료 시점을 기다립니다.
+  Future<void> _animatedMapMoveAsync(
+    LatLng destLocation,
+    double destZoom,
+    double destRotation,
+  ) async {
+    final completer = Completer<void>();
+
+    try {
+      _animatedMapMove(
+        destLocation,
+        destZoom,
+        destRotation,
+        onComplete: () {
+          if (!completer.isCompleted) completer.complete();
+        },
+      );
+    } catch (e) {
+      debugPrint('⚠️ 지도 이동 애니메이션 시작 실패: $e');
+      if (!completer.isCompleted) completer.complete();
+    }
+
+    await Future.any<void>([
+      completer.future,
+      Future<void>.delayed(const Duration(milliseconds: 2000)),
+    ]);
+  }
+
+  /// 대기 중인 타일 포커스 요청을 지도가 준비된 시점에 적용합니다.
+  void _tryApplyPendingTileFocus() {
+    if (!mounted || !_mapReady) return;
+
+    final gameProvider = _gameProvider;
+    final request = gameProvider?.pendingTileFocus;
+    if (gameProvider == null || request == null) return;
+
+    // 초기 데이터 로딩 오버레이가 걷힌 뒤 포커스를 시작한다.
+    if (!gameProvider.isInitialized) return;
+
+    gameProvider.consumePendingTileFocus();
+    unawaited(_applyTileFocus(request));
+  }
+
+  /// 요청된 타일로 카메라를 이동하고, 도착 후 지정 시간 동안 타일을 강조합니다.
+  Future<void> _applyTileFocus(TileFocusRequest request) async {
+    final seq = ++_focusRequestSeq;
+    _gameProvider?.setFollowingUser(false);
+
+    final double distance = HexService.calculateDistance(
+      _mapController.camera.center,
+      request.destination,
+    );
+
+    final Future<void> moveFuture;
+    if (distance > 5000) {
+      // 먼 거리는 중간 경로가 로드되지 않아도 되도록 즉시 이동한다.
+      _mapController.move(request.destination, MapConfig.focusZoom);
+      _mapController.rotate(0.0);
+      widget.game.updateProjection(_mapController);
+      moveFuture = Future<void>.value();
+    } else {
+      moveFuture = _animatedMapMoveAsync(
+        request.destination,
+        MapConfig.focusZoom,
+        0.0,
+      );
+    }
+
+    final loadFuture =
+        _gameProvider?.ensureTileLoaded(request.tileId) ?? Future<void>.value();
+
+    try {
+      await Future.wait<void>([moveFuture, loadFuture]);
+    } catch (e) {
+      debugPrint('⚠️ 타일 포커스 처리 실패: $e');
+    }
+
+    if (!mounted || seq != _focusRequestSeq) return;
+    widget.game.highlightTile(
+      request.tileId,
+      duration: request.highlightDuration,
+    );
   }
 
   @override
@@ -277,7 +385,8 @@ class _GameMapWidgetState extends State<GameMapWidget>
                 cam.size.width > 0) {
               final fingerPx = (event.position - _lastPointerPos!).distance;
               final deg2px = 256.0 * math.pow(2.0, cam.zoom) / 360.0;
-              final dLat = (cam.center.latitude - _lastCamPos!.latitude) * deg2px;
+              final dLat =
+                  (cam.center.latitude - _lastCamPos!.latitude) * deg2px;
               final dLng =
                   (cam.center.longitude - _lastCamPos!.longitude) * deg2px;
               final camPx = math.sqrt(dLat * dLat + dLng * dLng);
@@ -310,7 +419,10 @@ class _GameMapWidgetState extends State<GameMapWidget>
               ),
               backgroundColor: GameColors.transparent,
               onMapReady: () {
+                _mapReady = true;
                 widget.game.updateProjection(_mapController);
+                _onLocationProviderChanged();
+                _tryApplyPendingTileFocus();
               },
               onTap: (tapPosition, point) {
                 final hex = HexService.latLngToHex(point);
@@ -325,7 +437,10 @@ class _GameMapWidgetState extends State<GameMapWidget>
                 }
 
                 if (gameProvider.showCompletedPatterns) {
-                  final consumedTileIds = Provider.of<AchievementProvider>(context, listen: false).consumedTileIds;
+                  final consumedTileIds = Provider.of<AchievementProvider>(
+                    context,
+                    listen: false,
+                  ).consumedTileIds;
                   if (consumedTileIds.contains(tileId)) {
                     ScaffoldMessenger.of(context).clearSnackBars();
                     ScaffoldMessenger.of(context).showSnackBar(
@@ -386,12 +501,18 @@ class _GameMapWidgetState extends State<GameMapWidget>
                   final centerLatLng = _mapController.camera.center;
                   final hex = HexService.latLngToHex(centerLatLng);
                   // 화면 중심 기준으로 지정된 반경 영역의 타일을 REST로 실시간 동적 로드 (이동 가드 내장)
-                  final tileProvider = Provider.of<GameTileProvider>(context, listen: false);
-                  tileProvider.updateTilesInArea(hex['q']!, hex['r']!, radiusKm: MapConfig.mapLoadRadiusKm);
+                  final tileProvider = Provider.of<GameTileProvider>(
+                    context,
+                    listen: false,
+                  );
+                  tileProvider.updateTilesInArea(
+                    hex['q']!,
+                    hex['r']!,
+                    radiusKm: MapConfig.mapLoadRadiusKm,
+                  );
                 }
 
-                if (event.source ==
-                    MapEventSource.multiFingerGestureStart) {
+                if (event.source == MapEventSource.multiFingerGestureStart) {
                   WidgetsBinding.instance.addPostFrameCallback((_) {
                     if (mounted) setState(() => _isPinching = true);
                   });
@@ -406,10 +527,11 @@ class _GameMapWidgetState extends State<GameMapWidget>
 
                 if (event.source == MapEventSource.dragStart ||
                     event.source == MapEventSource.onDrag ||
-                    event.source ==
-                        MapEventSource.flingAnimationController) {
+                    event.source == MapEventSource.flingAnimationController) {
                   // 활성 포인터가 정확히 1개이고 핀치 줌 중이 아닐 때만 트래킹을 해제
-                  if (_pointerCount == 1 && !_isPinching && gameProvider.isFollowingUser) {
+                  if (_pointerCount == 1 &&
+                      !_isPinching &&
+                      gameProvider.isFollowingUser) {
                     WidgetsBinding.instance.addPostFrameCallback((_) {
                       if (mounted) {
                         gameProvider.setFollowingUser(false);
@@ -435,7 +557,8 @@ class _GameMapWidgetState extends State<GameMapWidget>
             children: [
               // 배경 지도 타일 (Selector로 감싸 스타일 변경 시에만 리빌드 격리)
               Selector<GameProvider, (bool, MapStyle)>(
-                selector: (_, provider) => (provider.showMap, provider.currentMapStyle),
+                selector: (_, provider) =>
+                    (provider.showMap, provider.currentMapStyle),
                 builder: (context, state, child) {
                   final showMap = state.$1;
                   final style = state.$2;
@@ -447,8 +570,7 @@ class _GameMapWidgetState extends State<GameMapWidget>
                   final tileLayer = TileLayer(
                     urlTemplate: style.url,
                     subdomains: const ['a', 'b', 'c', 'd'],
-                    userAgentPackageName:
-                        'com.watercherry.conquestofkorea',
+                    userAgentPackageName: 'com.watercherry.conquestofkorea',
                   );
 
                   if (style.colorMatrix != null) {
@@ -466,7 +588,7 @@ class _GameMapWidgetState extends State<GameMapWidget>
                 selector: (_, provider) => (
                   provider.photoTileIds,
                   provider.isFootprintMode,
-                  provider.showCompletedPatterns
+                  provider.showCompletedPatterns,
                 ),
                 builder: (context, state, child) {
                   final photoTileIds = state.$1;
@@ -479,7 +601,8 @@ class _GameMapWidgetState extends State<GameMapWidget>
                     return const SizedBox.shrink();
                   }
 
-                  final markers = photoTileIds.map((tileId) {
+                  final markers = photoTileIds
+                      .map((tileId) {
                     final parsed = HexService.parseTileId(tileId);
                     if (parsed == null) return null;
                     final q = parsed['q'] as int;
@@ -500,7 +623,9 @@ class _GameMapWidgetState extends State<GameMapWidget>
                           ),
                           boxShadow: [
                             BoxShadow(
-                              color: Palette.footprintMint.withValues(alpha: 0.65),
+                                  color: Palette.footprintMint.withValues(
+                                    alpha: 0.65,
+                                  ),
                               blurRadius: 4.0,
                             ),
                           ],
@@ -512,7 +637,9 @@ class _GameMapWidgetState extends State<GameMapWidget>
                         ),
                       ),
                     );
-                  }).whereType<Marker>().toList();
+                      })
+                      .whereType<Marker>()
+                      .toList();
 
                   return MarkerLayer(markers: markers);
                 },
