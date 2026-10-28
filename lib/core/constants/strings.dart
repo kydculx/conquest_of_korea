@@ -1459,6 +1459,30 @@ class GameStrings {
   /// 메일 앱을 열 수 없음
   static String cannotOpenMailApp(String email) =>
       'cannotOpenMailApp'.tr(namedArgs: {'email': email});
+
+  static String get dailyRecordTitle => 'dailyRecordTitle'.tr();
+  static String get dailyRecordMonthTotal => 'dailyRecordMonthTotal'.tr();
+  static String get dailyRecordToday => 'dailyRecordToday'.tr();
+  static String get dailyRecordUtcNote => 'dailyRecordUtcNote'.tr();
+  static String get dailyRecordEmpty => 'dailyRecordEmpty'.tr();
+  static String get dailyRecordLoadFailed => 'dailyRecordLoadFailed'.tr();
+  static String get dailyRecordNotReady => 'dailyRecordNotReady'.tr();
+  static String get dailyRecordRetry => 'dailyRecordRetry'.tr();
+  static String get dailyRecordPreviousMonth =>
+      'dailyRecordPreviousMonth'.tr();
+  static String get dailyRecordNextMonth => 'dailyRecordNextMonth'.tr();
+  static String get dailyRecordThisMonth => 'dailyRecordThisMonth'.tr();
+  static String get dailyRecordNoRecord => 'dailyRecordNoRecord'.tr();
+  static String get dailyRecordLoginRequired =>
+      'dailyRecordLoginRequired'.tr();
+  static String get dailyRecordLoginAction => 'dailyRecordLoginAction'.tr();
+  static String get dailyRecordPickerTitle => 'dailyRecordPickerTitle'.tr();
+  static String get dailyRecordTileUnit => 'dailyRecordTileUnit'.tr();
+  static String get dailyRecordRecordedDays =>
+      'dailyRecordRecordedDays'.tr();
+  static String get dailyRecordDailyAverage =>
+      'dailyRecordDailyAverage'.tr();
+  static String get dailyRecordBestDay => 'dailyRecordBestDay'.tr();
 }
 
 class GameUrls {
