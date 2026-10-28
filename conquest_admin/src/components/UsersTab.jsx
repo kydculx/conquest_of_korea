@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { fetchUsers, updateUserGold, updateUserMainBase, deleteUser, fetchUserAchievements, formatTileCoords } from '../api';
-import { Search, Edit2, RotateCcw, ShieldCheck, X, Trophy, Lock } from 'lucide-react';
+import { Search, Edit2, RotateCcw, ShieldCheck, X, Trophy, Lock, CalendarDays } from 'lucide-react';
 import Pagination from './Pagination';
 
 const PAGE_SIZE = 20;
@@ -41,6 +41,10 @@ export default function UsersTab() {
 
   const handleGoToFootprints = (user) => {
     navigate(`/admin/dashboard?footprints=${user.id}&nickname=${encodeURIComponent(user.nickname || '')}`);
+  };
+
+  const handleGoToDailyRecords = (user) => {
+    navigate(`/admin/user-daily?userId=${user.id}&nickname=${encodeURIComponent(user.nickname || '')}`);
   };
 
   const handleViewDetails = async (user) => {
@@ -263,6 +267,9 @@ export default function UsersTab() {
                       </button>
                       <button className="tactical-btn sm" onClick={() => handleGoToFootprints(user)}>
                         발자취
+                      </button>
+                      <button className="tactical-btn sm" onClick={() => handleGoToDailyRecords(user)}>
+                        <CalendarDays size={13} /> 일일기록
                       </button>
                       <button className="tactical-btn sm" onClick={() => handleViewDetails(user)}>
                         업적

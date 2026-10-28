@@ -7,6 +7,7 @@ import NotificationsTab from './components/NotificationsTab';
 import MapEditorTab from './components/MapEditorTab';
 import TileAttributeEditorTab from './components/TileAttributeEditorTab';
 import UserTilesTab from './components/UserTilesTab';
+import UserDailyRecordsTab from './components/UserDailyRecordsTab';
 import GalleryTab from './components/GalleryTab';
 import LandingPage from './components/LandingPage';
 import PromoPage from './components/PromoPage';
@@ -107,6 +108,7 @@ function AdminLayout({ user, onLogout }) {
     dashboard: { title: '대시보드', desc: '실시간 현황을 한눈에 확인합니다' },
     ranking: { title: '사용자 랭킹', desc: '점령과 이동 기록 기준 순위입니다' },
     users: { title: '사용자 관리', desc: '가입자 정보와 재화를 관리합니다' },
+    'user-daily': { title: '일일 이동 기록', desc: '사용자별 일일 이동 타일 기록입니다' },
     notifications: { title: '푸시 알림', desc: '전체 또는 개별 알림을 발송합니다' },
     gallery: { title: '갤러리', desc: '현장 사진 목록을 확인합니다' },
     'tile-editor': { title: '타일 속성 에디터', desc: '타일 속성을 직접 편집합니다' },
@@ -117,6 +119,7 @@ function AdminLayout({ user, onLogout }) {
     const currentPath = location.pathname;
     const item = allNavItems.find(m => currentPath.startsWith(m.path));
     if (item && pageMeta[item.id]) return pageMeta[item.id];
+    if (currentPath.startsWith('/admin/user-daily')) return pageMeta['user-daily'];
     if (currentPath === '/admin') return pageMeta.dashboard;
     return { title: '관리 콘솔', desc: '서비스 운영을 위한 도구 모음입니다' };
   };
@@ -378,6 +381,7 @@ export default function App() {
         <Route path="ranking" element={<RankingTab />} />
         <Route path="users" element={<UsersTab />} />
         <Route path="user-tiles" element={<UserTilesTab />} />
+        <Route path="user-daily" element={<UserDailyRecordsTab />} />
         <Route path="notifications" element={<NotificationsTab />} />
         <Route path="gallery" element={<GalleryTab />} />
         <Route path="tile-editor" element={<TileAttributeEditorTab />} />
