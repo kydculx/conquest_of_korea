@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { supabase } from '../supabase';
 import { Lock, Mail, ShieldAlert, Terminal, Eye, EyeOff } from 'lucide-react';
@@ -36,7 +36,7 @@ export default function LoginPage({ onLoginSuccess }) {
       }
 
       // 2. 어드민 권한 체크 (Auth Metadata 또는 Profiles 테이블)
-      let isAdmin = user.app_metadata?.role === 'admin' || user.user_metadata?.role === 'admin';
+      let isAdmin = user.app_metadata?.role === 'admin';
 
       if (!isAdmin) {
         // profiles 테이블에서 role 조회 시도

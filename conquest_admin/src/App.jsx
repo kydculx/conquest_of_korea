@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { Routes, Route, Navigate, useNavigate, useLocation, Outlet } from 'react-router-dom';
 import DashboardTab from './components/DashboardTab';
 import RankingTab from './components/RankingTab';
@@ -269,7 +269,7 @@ export default function App() {
         if (session && session.user) {
           const user = session.user;
           // 어드민 여부 확인 (Auth Metadata)
-          let isAdmin = user.app_metadata?.role === 'admin' || user.user_metadata?.role === 'admin';
+          let isAdmin = user.app_metadata?.role === 'admin';
           
           // Fallback: profiles 테이블 조회
           if (!isAdmin) {
@@ -304,7 +304,7 @@ export default function App() {
         setAdminUser(null);
       } else if (event === 'SIGNED_IN' && session?.user) {
         const user = session.user;
-        let isAdmin = user.app_metadata?.role === 'admin' || user.user_metadata?.role === 'admin';
+        let isAdmin = user.app_metadata?.role === 'admin';
         
         if (!isAdmin) {
           const { data: profile } = await supabase
