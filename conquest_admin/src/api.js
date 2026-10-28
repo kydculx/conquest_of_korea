@@ -165,7 +165,7 @@ export async function fetchUserFootprints(userId) {
 
 export async function fetchUserDailyMovedTiles(userId, startDate, endDate) {
   const { data, error } = await supabase
-    .from('daily_moved_tiles_history')
+    .from('daily_local_moved_tiles_history')
     .select('stat_date, moved_tiles_count, updated_at')
     .eq('user_id', userId)
     .gte('stat_date', startDate)
