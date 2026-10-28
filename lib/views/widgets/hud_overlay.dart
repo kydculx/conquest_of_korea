@@ -95,7 +95,7 @@ class HudOverlay extends StatelessWidget {
           ),
         ),
 
-        // [상단 우측 - 이동 기록 달력] 내 정보 버튼 바로 아래에 배치 (44x44)
+        // [상단 우측 - 월간 이동] 내 정보 버튼 바로 아래에 배치 (44x44)
         Positioned(
           top: topOffset + 44.0 + 10.0,
           right: 20.0,

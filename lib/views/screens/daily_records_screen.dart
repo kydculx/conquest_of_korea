@@ -9,7 +9,7 @@ import '../../providers/auth_provider.dart';
 import '../../services/supabase_service.dart';
 import '../widgets/tactical_app_bar.dart';
 
-/// UTC 일자별 이동 타일 수를 월 달력으로 보여주는 화면.
+/// 현지 날짜별 이동 타일 수를 월 달력으로 보여주는 화면.
 class DailyRecordsScreen extends StatefulWidget {
   const DailyRecordsScreen({super.key});
 
