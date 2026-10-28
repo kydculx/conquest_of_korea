@@ -250,6 +250,50 @@ class SupabaseService {
     }
   }
 
+  /// 특정 월의 일별 이동 타일 수를 조회합니다.
+  ///
+  /// 이동 타일 이력 테이블이 아직 적용되지 않은 서버에서는 예외를
+  /// 호출자에게 전달해 화면이 기능 비활성 상태를 표시할 수 있게 한다.
+  Future<Map<String, int>> fetchDailyMovedTilesMonth(
+    String userId,
+    DateTime month,
+  ) async {
+    try {
+      final start = DateTime.utc(month.year, month.month, 1);
+      final end = DateTime.utc(month.year, month.month + 1, 1);
+      final response = await _client
+          .from('daily_moved_tiles_history')
+          .select('stat_date, moved_tiles_count')
+          .eq('user_id', userId)
+          .gte('stat_date', _dailyRecordDateKey(start))
+          .lt('stat_date', _dailyRecordDateKey(end))
+          .order('stat_date');
+
+      final result = <String, int>{};
+      for (final row in response as List) {
+        final data = _toMap(row);
+        final statDate = data['stat_date'] as String?;
+        final count = (data['moved_tiles_count'] as num?)?.toInt();
+        if (statDate != null && count != null) {
+          result[statDate] = count;
+        }
+      }
+      return result;
+    } catch (e) {
+      lastError = e.toString();
+      debugPrint('⚠️ 월별 이동 타일 조회 실패: $e');
+      rethrow;
+    }
+  }
+
+  String _dailyRecordDateKey(DateTime date) {
+    final utc = date.toUtc();
+    final year = utc.year.toString().padLeft(4, '0');
+    final month = utc.month.toString().padLeft(2, '0');
+    final day = utc.day.toString().padLeft(2, '0');
+    return '$year-$month-$day';
+  }
+
   /// 특정 플레이어가 획득한 업적 목록을 데이터베이스(user_achievements)로부터 조회하여 반환합니다.
   Future<List<String>> fetchUserAchievements(String userId) async {
     try {
