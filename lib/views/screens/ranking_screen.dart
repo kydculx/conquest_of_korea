@@ -154,6 +154,27 @@ class _RankingScreenState extends State<RankingScreen> {
               ),
             ),
           ),
+          if (currentType == RankingType.dailyMovedTiles) ...[
+            const SizedBox(width: 8),
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 3),
+              decoration: BoxDecoration(
+                color: GameColors.accentNeon.withValues(alpha: 0.1),
+                borderRadius: BorderRadius.circular(6),
+                border: Border.all(
+                  color: GameColors.accentNeon.withValues(alpha: 0.28),
+                ),
+              ),
+              child: Text(
+                GameStrings.rankingDailyUtcNote,
+                style: TextStyle(
+                  color: GameColors.accentNeon,
+                  fontSize: 9.5,
+                  fontWeight: FontWeight.w700,
+                ),
+              ),
+            ),
+          ],
         ],
       ),
     );
