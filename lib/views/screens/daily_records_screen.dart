@@ -30,7 +30,7 @@ class _DailyRecordsScreenState extends State<DailyRecordsScreen> {
   @override
   void initState() {
     super.initState();
-    _visibleMonth = _monthStart(DateTime.now().toUtc());
+    _visibleMonth = _monthStart(DateTime.now());
   }
 
   @override
@@ -142,7 +142,7 @@ class _DailyRecordsScreenState extends State<DailyRecordsScreen> {
   }
 
   Widget _buildMonthHeader(String locale) {
-    final currentMonth = _monthStart(DateTime.now().toUtc());
+    final currentMonth = _monthStart(DateTime.now());
     final canGoNext = _visibleMonth.isBefore(currentMonth);
 
     return Padding(
@@ -172,15 +172,6 @@ class _DailyRecordsScreenState extends State<DailyRecordsScreen> {
                         fontSize: 18,
                         fontWeight: FontWeight.w700,
                         letterSpacing: -0.2,
-                      ),
-                    ),
-                    const SizedBox(height: 3),
-                    Text(
-                      GameStrings.dailyRecordUtcNote,
-                      style: TextStyle(
-                        color: GameColors.textMuted,
-                        fontSize: 10.5,
-                        fontWeight: FontWeight.w500,
                       ),
                     ),
                   ],
@@ -251,15 +242,6 @@ class _DailyRecordsScreenState extends State<DailyRecordsScreen> {
                 const SizedBox(height: 14),
                 _buildEmptyNote(),
               ],
-              const SizedBox(height: 20),
-              Text(
-                GameStrings.dailyRecordUtcNote,
-                textAlign: TextAlign.center,
-                style: TextStyle(
-                  color: GameColors.textMuted.withValues(alpha: 0.75),
-                  fontSize: 10.5,
-                ),
-              ),
             ],
           ),
         ),
@@ -401,7 +383,7 @@ class _DailyRecordsScreenState extends State<DailyRecordsScreen> {
     final daysInMonth = DateTime.utc(year, month + 1, 0).day;
     final leadingEmptyCells = firstDay.weekday % 7;
     final itemCount = ((leadingEmptyCells + daysInMonth + 6) ~/ 7) * 7;
-    final today = DateTime.now().toUtc();
+    final today = DateTime.now();
 
     return GridView.builder(
       shrinkWrap: true,
@@ -421,7 +403,7 @@ class _DailyRecordsScreenState extends State<DailyRecordsScreen> {
 
         final date = DateTime.utc(year, month, dayNumber);
         final count = _recordForDate(date);
-        final isToday = _isSameUtcDay(date, today);
+        final isToday = _isSameDay(date, today);
 
         return _buildDayCell(
           date: date,
@@ -627,7 +609,7 @@ class _DailyRecordsScreenState extends State<DailyRecordsScreen> {
       builder: (dialogContext) {
         return _MonthPickerDialog(
           initialMonth: _visibleMonth,
-          maxMonth: _monthStart(DateTime.now().toUtc()),
+          maxMonth: _monthStart(DateTime.now()),
           locale: locale,
         );
       },
@@ -693,19 +675,17 @@ class _DailyRecordsScreenState extends State<DailyRecordsScreen> {
   }
 
   DateTime _monthStart(DateTime date) {
-    final utc = date.toUtc();
-    return DateTime.utc(utc.year, utc.month, 1);
+    return DateTime(date.year, date.month, 1);
   }
 
-  bool _isSameUtcDay(DateTime a, DateTime b) {
+  bool _isSameDay(DateTime a, DateTime b) {
     return a.year == b.year && a.month == b.month && a.day == b.day;
   }
 
   String _dateKey(DateTime date) {
-    final utc = date.toUtc();
-    final year = utc.year.toString().padLeft(4, '0');
-    final month = utc.month.toString().padLeft(2, '0');
-    final day = utc.day.toString().padLeft(2, '0');
+    final year = date.year.toString().padLeft(4, '0');
+    final month = date.month.toString().padLeft(2, '0');
+    final day = date.day.toString().padLeft(2, '0');
     return '$year-$month-$day';
   }
 }
