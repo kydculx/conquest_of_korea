@@ -47,8 +47,6 @@ class ConquestGame extends FlameGame {
   /// 현재 활성화된 동전 목록 캐시
   List<UserCoin> _coins = [];
 
-
-
   /// 최근 렌더링에 사용 중인 LOD 레벨 상태 캐시 (-1: 초기값, 0 ~ 3: LOD 레벨)
   int _lastLodLevel = -1;
 
@@ -69,6 +67,12 @@ class ConquestGame extends FlameGame {
 
   /// 발자취 선택 시 네온 청록색 하이라이팅 조준마커 컴포넌트
   FootprintTargetMarker? _footprintTargetMarker;
+
+  /// 알림으로 찾은 타일을 깜빡이며 강조할 대상 타일 ID
+  String? _highlightedTileId;
+
+  /// 타일 강조 표시 종료 시각
+  DateTime? _highlightUntil;
 
   /// 현재 설정된 플레이어의 본부 기지(HQ) 타일 ID
   String? _currentHQTileId;
@@ -245,6 +249,11 @@ class ConquestGame extends FlameGame {
     }
     _frameTimeAccumulator %= _targetFrameTime;
 
+    if (_highlightUntil != null && DateTime.now().isAfter(_highlightUntil!)) {
+      _highlightedTileId = null;
+      _highlightUntil = null;
+    }
+
     super.update(dt);
 
     if (_mapController != null) {
@@ -255,7 +264,8 @@ class ConquestGame extends FlameGame {
       final currentSize = camera.nonRotatedSize;
 
       // 카메라 상태(중심, 줌, 회전, 크기 중 하나라도)가 변경되었는지 확인
-      final bool isCameraDirty = _prevCameraCenter == null ||
+      final bool isCameraDirty =
+          _prevCameraCenter == null ||
           _prevCameraCenter != currentCenter ||
           _prevCameraZoom != currentZoom ||
           _prevCameraRotation != currentRotation ||
@@ -297,7 +307,10 @@ class ConquestGame extends FlameGame {
         showFootprints: _showFootprints,
         footprints: _footprints,
         selectedFootprintTileId: _footprintTargetMarker != null
-            ? HexService.tileId(_footprintTargetMarker!.q, _footprintTargetMarker!.r)
+            ? HexService.tileId(
+                _footprintTargetMarker!.q,
+                _footprintTargetMarker!.r,
+              )
             : null,
         tileTypes: _tileTypes,
         tileAttributes: _tileAttributes,
@@ -305,6 +318,27 @@ class ConquestGame extends FlameGame {
     } else {
       _updateAllPositions();
     }
+  }
+
+  /// 특정 타일을 지정 시간 동안 깜빡이며 강조합니다.
+  void highlightTile(
+    String tileId, {
+    Duration duration = const Duration(seconds: 2),
+  }) {
+    _highlightedTileId = tileId;
+    _highlightUntil = DateTime.now().add(duration);
+
+    // 이전에 강조하던 타일은 즉시 해제하고 대상 타일만 남긴다.
+    for (final entry in _tileMap.entries) {
+      entry.value.highlightUntil = entry.key == tileId ? _highlightUntil : null;
+    }
+  }
+
+  /// 현재 유효한 강조 종료 시각을 반환합니다. 만료됐으면 null.
+  DateTime? get _activeHighlightUntil {
+    final until = _highlightUntil;
+    if (until == null || DateTime.now().isAfter(until)) return null;
+    return until;
   }
 
   /// 공통 렌더링 로직: 카메라 점프 가드 + LOD 체크 + 클러스터 리빌드 + Frustum Culling + 타일 생성/업데이트
@@ -370,13 +404,19 @@ class ConquestGame extends FlameGame {
       if (_showFootprints || _showCompletedPatterns) {
         return; // 발자취 또는 패턴 도감 모드 활성화 시 일반 점령지 렌더링 생략
       }
-      final centerLatLng = _clusterHelper.getTileCenter(tile.q, tile.r, id, dynamicHexSize);
+      final centerLatLng = _clusterHelper.getTileCenter(
+        tile.q,
+        tile.r,
+        id,
+        dynamicHexSize,
+      );
       final double lat = centerLatLng.latitude;
       final double lng = centerLatLng.longitude;
 
       if (lat >= minLat && lat <= maxLat && lng >= minLng && lng <= maxLng) {
         // [적군 영토 은폐 가드] 1순위 초고속 필터: 투영 및 지리 연산 전에 적군 타일을 선결 거름으로써 CPU 부하 99% 제거
-        if (dynamicHexSize >= GameConfig.lodSize3 && tile.userId != _currentUserId) {
+        if (dynamicHexSize >= GameConfig.lodSize3 &&
+            tile.userId != _currentUserId) {
           return;
         }
         visibleIds.add(id);
@@ -391,13 +431,22 @@ class ConquestGame extends FlameGame {
         if (parsed != null) {
           final int q = parsed['q'] as int;
           final int r = parsed['r'] as int;
-          final centerLatLng = _clusterHelper.getTileCenter(q, r, tileId, GameConfig.lodSize0);
+          final centerLatLng = _clusterHelper.getTileCenter(
+            q,
+            r,
+            tileId,
+            GameConfig.lodSize0,
+          );
           final double lat = centerLatLng.latitude;
           final double lng = centerLatLng.longitude;
 
-          if (lat >= minLat && lat <= maxLat && lng >= minLng && lng <= maxLng) {
+          if (lat >= minLat &&
+              lat <= maxLat &&
+              lng >= minLng &&
+              lng <= maxLng) {
             visibleIds.add(tileId);
-            visibleTiles.add(HexTile(
+            visibleTiles.add(
+              HexTile(
               id: tileId,
               q: q,
               r: r,
@@ -405,7 +454,8 @@ class ConquestGame extends FlameGame {
               colorHex: '#00FFCC', // 발자취 전용 네온 민트 그린
               capturedAt: footprint.recordedAt,
               captureCount: 1,
-            ));
+              ),
+            );
           }
         }
       });
@@ -418,13 +468,22 @@ class ConquestGame extends FlameGame {
         if (parsed != null) {
           final int q = parsed['q'] as int;
           final int r = parsed['r'] as int;
-          final centerLatLng = _clusterHelper.getTileCenter(q, r, tileId, dynamicHexSize);
+          final centerLatLng = _clusterHelper.getTileCenter(
+            q,
+            r,
+            tileId,
+            dynamicHexSize,
+          );
           final double lat = centerLatLng.latitude;
           final double lng = centerLatLng.longitude;
 
-          if (lat >= minLat && lat <= maxLat && lng >= minLng && lng <= maxLng) {
+          if (lat >= minLat &&
+              lat <= maxLat &&
+              lng >= minLng &&
+              lng <= maxLng) {
             visibleIds.add(tileId);
-            visibleTiles.add(HexTile(
+            visibleTiles.add(
+              HexTile(
               id: tileId,
               q: q,
               r: r,
@@ -432,7 +491,8 @@ class ConquestGame extends FlameGame {
               colorHex: '#0066FF', // 완료 패턴 타일용 특수 파란색
               capturedAt: DateTime.now(),
               captureCount: 1,
-            ));
+              ),
+            );
           }
         }
       }
@@ -446,13 +506,19 @@ class ConquestGame extends FlameGame {
         if (visibleIds.contains(tileId)) continue; // 이미 렌더링 목록에 있다면 스킵
 
         // 동전은 항상 기본 격자 크기(LOD 0) 기준으로 절대 중심점을 구하여 줌 배율 변경 시 튕김 방지
-        final centerLatLng = _clusterHelper.getTileCenter(coin.q, coin.r, tileId, GameConfig.lodSize0);
+        final centerLatLng = _clusterHelper.getTileCenter(
+          coin.q,
+          coin.r,
+          tileId,
+          GameConfig.lodSize0,
+        );
         final double lat = centerLatLng.latitude;
         final double lng = centerLatLng.longitude;
 
         if (lat >= minLat && lat <= maxLat && lng >= minLng && lng <= maxLng) {
           visibleIds.add(tileId);
-          visibleTiles.add(HexTile(
+          visibleTiles.add(
+            HexTile(
             id: tileId,
             q: coin.q,
             r: coin.r,
@@ -460,7 +526,8 @@ class ConquestGame extends FlameGame {
             colorHex: null, // 중립 상태
             capturedAt: coin.createdAt,
             captureCount: 0,
-          ));
+            ),
+          );
         }
       }
     }
@@ -475,8 +542,12 @@ class ConquestGame extends FlameGame {
         // 기본(0번) 타입은 색상 외곽선 의미가 없으므로 제외
         if (attr.typeId == 0) return;
 
-        final centerLatLng =
-            _clusterHelper.getTileCenter(attr.q, attr.r, tileId, dynamicHexSize);
+        final centerLatLng = _clusterHelper.getTileCenter(
+          attr.q,
+          attr.r,
+          tileId,
+          dynamicHexSize,
+        );
         final double lat = centerLatLng.latitude;
         final double lng = centerLatLng.longitude;
 
@@ -486,7 +557,8 @@ class ConquestGame extends FlameGame {
         if (lat >= minLat && lat <= maxLat && lng >= minLng && lng <= maxLng) {
           visibleIds.add(tileId);
           // 어드민 전용 마커 — fill은 null, 외곽선만 adminColorHex로 그려진다.
-          visibleTiles.add(HexTile(
+          visibleTiles.add(
+            HexTile(
             id: tileId,
             q: attr.q,
             r: attr.r,
@@ -494,7 +566,8 @@ class ConquestGame extends FlameGame {
             colorHex: null,
             capturedAt: DateTime.now(),
             captureCount: 0,
-          ));
+            ),
+          );
         }
       });
     }
@@ -502,7 +575,8 @@ class ConquestGame extends FlameGame {
     // 2. 화면 영역 밖으로 벗어났거나 실제 점령 데이터가 없는 기존 컴포넌트 타일들은 즉시 소멸시켜 CPU/메모리 부하 차단 (단, 현재 점령 진행 중인 타일은 예외 수호)
     final existingIds = _tileMap.keys.toSet();
     for (final id in existingIds) {
-      final isStillCapturing = id == capturingTileId ||
+      final isStillCapturing =
+          id == capturingTileId ||
           (satelliteCapturingTileId != null && id == satelliteCapturingTileId);
       if (!visibleIds.contains(id) && !isStillCapturing) {
         final component = _tileMap.remove(id);
@@ -517,18 +591,23 @@ class ConquestGame extends FlameGame {
       final int r = tileData.r;
 
       // 동전 및 발자취 타일은 줌 배율에 변동하지 않고 항상 고정 크기(LOD 0)로 중심점/꼭짓점을 매핑하여 렌더 왜곡 방지
-      final double targetSize = (tileData.userId == 'coin_marker' || tileData.userId == 'footprint_marker')
+      final double targetSize =
+          (tileData.userId == 'coin_marker' ||
+              tileData.userId == 'footprint_marker')
           ? GameConfig.lodSize0
           : dynamicHexSize;
 
       final centerLatLng = _clusterHelper.getTileCenter(q, r, id, targetSize);
       final cornerLatLngs = _clusterHelper.getTileCorners(q, r, id, targetSize);
-      final screenOffset = _mapController!.camera.latLngToScreenOffset(centerLatLng);
+      final screenOffset = _mapController!.camera.latLngToScreenOffset(
+        centerLatLng,
+      );
 
       final String? targetTileColorHex = _resolveTileColorHex(tileData);
       final String? targetAdminBorderColorHex = resolveAdminBorderColorHex(id);
 
-      final hasCoin = !_showFootprints &&
+      final hasCoin =
+          !_showFootprints &&
           !_showCompletedPatterns &&
           _coins.any((c) => c.tileId == id && !c.isCollected);
 
@@ -539,16 +618,24 @@ class ConquestGame extends FlameGame {
           adminColorHex: targetAdminBorderColorHex,
           hasCoin: hasCoin,
         );
+        _tileMap[id]!.highlightUntil = id == _highlightedTileId
+            ? _activeHighlightUntil
+            : null;
       } else {
-        final component = HexTileComponent(
+        final component =
+            HexTileComponent(
           q: q,
           r: r,
           centerLatLng: centerLatLng,
           cornerLatLngs: cornerLatLngs,
           colorHex: targetTileColorHex,
           adminColorHex: targetAdminBorderColorHex,
-          hexSize: targetSize, // dynamicHexSize 대신 targetSize를 전달하여 렌더링 크기 일치
+                hexSize:
+                    targetSize, // dynamicHexSize 대신 targetSize를 전달하여 렌더링 크기 일치
           hasCoin: hasCoin,
+                highlightUntil: id == _highlightedTileId
+                    ? _activeHighlightUntil
+                    : null,
         )
           ..position = Vector2(screenOffset.dx, screenOffset.dy)
           ..priority = 0;
@@ -616,7 +703,9 @@ class ConquestGame extends FlameGame {
     _updateFootprintTargetMarker(selectedFootprintTileId);
     if (_mapController == null) return;
 
-    final double dynamicHexSize = _clusterHelper.getHexSizeForZoom(_mapController!.camera.zoom);
+    final double dynamicHexSize = _clusterHelper.getHexSizeForZoom(
+      _mapController!.camera.zoom,
+    );
 
     // 공통 타일 렌더링
     _renderVisibleTiles(
@@ -681,6 +770,9 @@ class ConquestGame extends FlameGame {
         // 일반 점령 색상으로 fill이 들어오고 외곽선은 유지된다)
         adminColorHex: resolveAdminBorderColorHex(tileId),
       );
+      tile.highlightUntil = tileId == _highlightedTileId
+          ? _activeHighlightUntil
+          : null;
       // 타일 고유의 격자 크기 획득 (LOD 줌 레벨과 무관하게 고정 위치 유지)
       final parsed = HexService.parseTileId(tileId);
       final double targetHexSize = (parsed != null && parsed['size'] != null)
@@ -688,8 +780,15 @@ class ConquestGame extends FlameGame {
           : GameConfig.lodSize0;
 
       // 지도가 이동했거나 줌이 변경되었을 때를 위해 포지션 실시간 갱신
-      final centerLatLng = _clusterHelper.getTileCenter(tile.q, tile.r, tileId, targetHexSize);
-      final screenOffset = _mapController!.camera.latLngToScreenOffset(centerLatLng);
+      final centerLatLng = _clusterHelper.getTileCenter(
+        tile.q,
+        tile.r,
+        tileId,
+        targetHexSize,
+      );
+      final screenOffset = _mapController!.camera.latLngToScreenOffset(
+        centerLatLng,
+      );
       tile.position = Vector2(screenOffset.dx, screenOffset.dy);
     } else {
       // 맵에 존재하지 않는 중립 구역인 경우
@@ -718,17 +817,30 @@ class ConquestGame extends FlameGame {
         final double minLng = bounds.southWest.longitude - 0.02;
         final double maxLng = bounds.northEast.longitude + 0.02;
 
-        final centerLatLng = _clusterHelper.getTileCenter(q, r, tileId, targetHexSize);
+        final centerLatLng = _clusterHelper.getTileCenter(
+          q,
+          r,
+          tileId,
+          targetHexSize,
+        );
         final double lat = centerLatLng.latitude;
         final double lng = centerLatLng.longitude;
         final bool isGeographicallyVisible =
             lat >= minLat && lat <= maxLat && lng >= minLng && lng <= maxLng;
 
         if (isGeographicallyVisible) {
-          final cornerLatLngs = _clusterHelper.getTileCorners(q, r, tileId, targetHexSize);
-          final screenOffset = _mapController!.camera.latLngToScreenOffset(centerLatLng);
+          final cornerLatLngs = _clusterHelper.getTileCorners(
+            q,
+            r,
+            tileId,
+            targetHexSize,
+          );
+          final screenOffset = _mapController!.camera.latLngToScreenOffset(
+            centerLatLng,
+          );
 
-          final tempTile = HexTileComponent(
+          final tempTile =
+              HexTileComponent(
             q: q,
             r: r,
             centerLatLng: centerLatLng,
@@ -738,6 +850,9 @@ class ConquestGame extends FlameGame {
             isCapturing: isCapturing,
             progress: progress,
             capturingColorHex: colorHex,
+                  highlightUntil: tileId == _highlightedTileId
+                      ? _activeHighlightUntil
+                      : null,
           )
             ..position = Vector2(screenOffset.dx, screenOffset.dy)
             ..priority = 0;
@@ -762,7 +877,8 @@ class ConquestGame extends FlameGame {
     // onPositionChanged / onMapEvent / 게임 루프가 같은 프레임에 중복 호출해도
     // 실제 전량 재계산은 카메라가 변한 시점에 단 1회만 수행되어 드래그 중 프레임 붕괴를 방지합니다.
     final bool isFirstApply = _appliedCameraCenter == null;
-    final bool cameraChanged = isFirstApply ||
+    final bool cameraChanged =
+        isFirstApply ||
         _appliedCameraCenter!.latitude != currentCenter.latitude ||
         _appliedCameraCenter!.longitude != currentCenter.longitude ||
         _appliedCameraZoom != currentZoom ||
@@ -821,8 +937,15 @@ class ConquestGame extends FlameGame {
             ? (parsed['size'] as num).toDouble()
             : GameConfig.lodSize0;
 
-        final centerLatLng = _clusterHelper.getTileCenter(component.q, component.r, tileId, targetHexSize);
-        final screenOffset = _mapController!.camera.latLngToScreenOffset(centerLatLng);
+        final centerLatLng = _clusterHelper.getTileCenter(
+          component.q,
+          component.r,
+          tileId,
+          targetHexSize,
+        );
+        final screenOffset = _mapController!.camera.latLngToScreenOffset(
+          centerLatLng,
+        );
         component.position = Vector2(screenOffset.dx, screenOffset.dy);
       }
     }

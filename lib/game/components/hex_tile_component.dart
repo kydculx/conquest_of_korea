@@ -44,6 +44,9 @@ class HexTileComponent extends PositionComponent
   /// 이 타일에 동전이 있는지 여부
   bool hasCoin;
 
+  /// 알림으로 찾은 타일을 깜빡이며 강조할 종료 시각 (null이면 강조 없음)
+  DateTime? highlightUntil;
+
   /// 로컬 꼭짓점 6개의 픽셀 상대 좌표 리스트 (중심 (0, 0) 기준)
   List<Offset> localCorners = [];
 
@@ -84,6 +87,7 @@ class HexTileComponent extends PositionComponent
     this.progress = 0.0,
     this.capturingColorHex,
     this.hasCoin = false,
+    this.highlightUntil,
   });
 
   /// 점령 플레이어의 식별 색상, 점령 진행도 상태가 갱신되었을 때 해당 상태를 반영하고 화면 갱신을 준비합니다.
@@ -163,7 +167,8 @@ class HexTileComponent extends PositionComponent
     // 1. 초고속 프러스텀 컬링 (중심점 위치와 픽셀 반지름 기준으로 화면 경계 밖 타일 1차 스킵)
     final gameSize = game.size;
     final rVal = _tileRadius > 0 ? _tileRadius + 20.0 : 60.0;
-    final isVisible = position.x >= -rVal &&
+    final isVisible =
+        position.x >= -rVal &&
         position.x <= gameSize.x + rVal &&
         position.y >= -rVal &&
         position.y <= gameSize.y + rVal;
@@ -177,10 +182,13 @@ class HexTileComponent extends PositionComponent
     angle = currentRotation * (math.pi / 180.0);
 
     // 지도가 회전해도 헥사곤의 고유 형태는 변하지 않으므로, 패스 캐싱 조건에서 회전값 비교를 배제하여 CPU 연산 낭비를 완벽 차단합니다.
-    if (_cachedPath == null || (currentZoom - lastCalculatedZoom).abs() > 0.001) {
+    if (_cachedPath == null ||
+        (currentZoom - lastCalculatedZoom).abs() > 0.001) {
       if (game.mapController == null) return;
 
-      final centerOffset = game.mapController!.camera.latLngToScreenOffset(centerLatLng);
+      final centerOffset = game.mapController!.camera.latLngToScreenOffset(
+        centerLatLng,
+      );
 
       // 카메라 회전각(라디안)에 따른 역회전 삼각비 산출
       final double rotationRad = currentRotation * (math.pi / 180.0);
@@ -204,7 +212,9 @@ class HexTileComponent extends PositionComponent
       for (final c in localCorners) {
         radSum += math.sqrt(c.dx * c.dx + c.dy * c.dy);
       }
-      _tileRadius = localCorners.isNotEmpty ? radSum / localCorners.length : 0.0;
+      _tileRadius = localCorners.isNotEmpty
+          ? radSum / localCorners.length
+          : 0.0;
 
       // 둥근 모서리 벌집 타일(Rounded Hexagon Path) 로컬 좌표계 그리기 패스 생성
       final double cornerRadius = math.min(8.0, _tileRadius * 0.26);
@@ -232,7 +242,8 @@ class HexTileComponent extends PositionComponent
       _cachedPath = Path();
       for (int i = 0; i < insetCorners.length; i++) {
         final current = insetCorners[i];
-        final prev = insetCorners[(i - 1 + insetCorners.length) % insetCorners.length];
+        final prev =
+            insetCorners[(i - 1 + insetCorners.length) % insetCorners.length];
         final next = insetCorners[(i + 1) % insetCorners.length];
 
         final vPrevX = prev.dx - current.dx;
@@ -299,7 +310,8 @@ class HexTileComponent extends PositionComponent
     // 4. 점령 애니메이션 드로잉 (로컬 꼭짓점 기준 좌표 투영 100% 스킵)
     if (isCapturing) {
       final pulse = (0.5 + 0.5 * math.sin(_timer)).clamp(0.0, 1.0);
-      final captureColor = _parseColor(capturingColorHex) ?? GameColors.accentNeon;
+      final captureColor =
+          _parseColor(capturingColorHex) ?? GameColors.accentNeon;
 
       // 외곽선 펄스 효과
       _capturePaint.color = captureColor.withValues(
@@ -359,6 +371,37 @@ class HexTileComponent extends PositionComponent
       canvas.drawPath(_cachedPath!, adminBorderPaint);
     }
 
+    // 4.6 알림으로 찾은 타일 강조 — 지정 시간 동안 경고색으로 깜빡인다.
+    final DateTime? highlightEnd = highlightUntil;
+    if (highlightEnd != null) {
+      final DateTime now = DateTime.now();
+      if (now.isBefore(highlightEnd)) {
+        final double pulse =
+            0.5 + 0.5 * math.sin(now.millisecondsSinceEpoch / 90.0);
+        final Color highlightColor = GameColors.warning;
+
+        final Paint highlightFill = Paint()
+          ..color = highlightColor.withValues(alpha: 0.10 + 0.28 * pulse)
+          ..style = PaintingStyle.fill;
+        canvas.drawPath(_cachedPath!, highlightFill);
+
+        final Paint highlightGlow = Paint()
+          ..color = highlightColor.withValues(alpha: 0.30 + 0.50 * pulse)
+          ..style = PaintingStyle.stroke
+          ..strokeWidth = 2.5 + 2.5 * pulse
+          ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 2.0);
+        canvas.drawPath(_cachedPath!, highlightGlow);
+
+        final Paint highlightBorder = Paint()
+          ..color = highlightColor.withValues(alpha: 0.85)
+          ..style = PaintingStyle.stroke
+          ..strokeWidth = 1.8;
+        canvas.drawPath(_cachedPath!, highlightBorder);
+      } else {
+        highlightUntil = null;
+      }
+    }
+
     // 5. 동전 아이템 렌더링 (미획득 상태의 동전이 있는 경우)
     if (hasCoin) {
       // 제자리 회전 각도 및 가로 축소 비율 계산 (회전 속도: _coinTimer rad/s)
@@ -384,7 +427,10 @@ class HexTileComponent extends PositionComponent
       final Paint coinGlow = Paint()
         ..color = Palette.gold.withValues(alpha: 0.25)
         ..style = PaintingStyle.fill
-        ..maskFilter = const MaskFilter.blur(BlurStyle.normal, baseRadius * 0.4);
+        ..maskFilter = const MaskFilter.blur(
+          BlurStyle.normal,
+          baseRadius * 0.4,
+        );
       final Rect glowRect = Rect.fromCenter(
         center: const Offset(0, 3.0), // 화면 기준 항상 하단 3픽셀 오프셋
         width: baseRadius * 1.4,
@@ -394,7 +440,8 @@ class HexTileComponent extends PositionComponent
 
       // 2) 2.5D 두께 연출 (Side Edge) - 뒷면(Dark Edge)을 아래에 먼저 드로잉
       final Paint coinEdge = Paint()
-        ..color = Palette.goldDark // 어두운 황금/동색
+        ..color = Palette
+            .goldDark // 어두운 황금/동색
         ..style = PaintingStyle.fill;
       final Rect edgeRect = Rect.fromCenter(
         center: edgeCenter,
@@ -460,7 +507,5 @@ class HexTileComponent extends PositionComponent
 
       canvas.restore();
     }
-
-
   }
 }
