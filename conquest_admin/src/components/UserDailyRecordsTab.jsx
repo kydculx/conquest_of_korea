@@ -48,6 +48,8 @@ const formatUpdatedAt = (iso) => {
 const formatCount = (value) =>
   Number(value || 0).toLocaleString('ko-KR');
 
+const WEEKDAY_LABELS = ['일', '월', '화', '수', '목', '금', '토'];
+
 export default function UserDailyRecordsTab() {
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
@@ -118,6 +120,38 @@ export default function UserDailyRecordsTab() {
       average: records.length > 0 ? total / records.length : 0,
     };
   }, [records]);
+
+  const recordMap = useMemo(
+    () =>
+      new Map(
+        records.map((row) => [
+          row.stat_date,
+          Number(row.moved_tiles_count || 0),
+        ])
+      ),
+    [records]
+  );
+
+  const calendarCells = useMemo(() => {
+    const year = visibleMonth.getUTCFullYear();
+    const month = visibleMonth.getUTCMonth();
+    const firstDay = new Date(Date.UTC(year, month, 1));
+    const daysInMonth = new Date(Date.UTC(year, month + 1, 0)).getUTCDate();
+    const leading = firstDay.getUTCDay();
+    const cells = Array.from({ length: leading }, () => null);
+
+    for (let day = 1; day <= daysInMonth; day += 1) {
+      const dateKey = toDateKey(new Date(Date.UTC(year, month, day)));
+      cells.push({
+        day,
+        dateKey,
+        count: recordMap.get(dateKey) || 0,
+      });
+    }
+
+    while (cells.length % 7 !== 0) cells.push(null);
+    return cells;
+  }, [visibleMonth, recordMap]);
 
   if (!userId) return null;
 
@@ -238,6 +272,123 @@ export default function UserDailyRecordsTab() {
                   </div>
                 </div>
               ))}
+            </div>
+
+            <div
+              style={{
+                background: 'rgba(15, 23, 42, 0.28)',
+                border: '1px solid var(--border-soft)',
+                borderRadius: 'var(--radius-md)',
+                padding: '0.9rem',
+              }}
+            >
+              <div
+                style={{
+                  display: 'flex',
+                  justifyContent: 'space-between',
+                  alignItems: 'center',
+                  gap: '0.8rem',
+                  marginBottom: '0.7rem',
+                  flexWrap: 'wrap',
+                }}
+              >
+                <span style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', fontWeight: 700, fontSize: '0.84rem' }}>
+                  <CalendarDays size={15} style={{ color: 'var(--accent-cyan)' }} />
+                  월간 달력
+                </span>
+                <span style={{ fontSize: '0.72rem', color: 'var(--text-muted)' }}>
+                  숫자는 해당 날짜의 이동 타일 수입니다
+                </span>
+              </div>
+
+              <div
+                style={{
+                  display: 'grid',
+                  gridTemplateColumns: 'repeat(7, minmax(0, 1fr))',
+                  gap: '5px',
+                }}
+              >
+                {WEEKDAY_LABELS.map((label, index) => (
+                  <div
+                    key={label}
+                    style={{
+                      textAlign: 'center',
+                      fontSize: '0.68rem',
+                      fontWeight: 700,
+                      padding: '0.2rem 0',
+                      color:
+                        index === 0
+                          ? 'var(--accent-red)'
+                          : index === 6
+                            ? 'var(--blue-soft, #90caf9)'
+                            : 'var(--text-muted)',
+                    }}
+                  >
+                    {label}
+                  </div>
+                ))}
+
+                {calendarCells.map((cell, index) => {
+                  if (!cell) {
+                    return <div key={`empty-${index}`} />;
+                  }
+
+                  const isToday = cell.dateKey === todayKey;
+                  const ratio =
+                    totals.max > 0 ? cell.count / totals.max : 0;
+                  const hasCount = cell.count > 0;
+
+                  return (
+                    <div
+                      key={cell.dateKey}
+                      title={`${cell.dateKey} · ${formatCount(cell.count)}타일`}
+                      style={{
+                        minHeight: '66px',
+                        padding: '0.4rem 0.42rem',
+                        borderRadius: '10px',
+                        display: 'flex',
+                        flexDirection: 'column',
+                        justifyContent: 'space-between',
+                        gap: '0.3rem',
+                        background: isToday
+                          ? 'rgba(56, 189, 248, 0.14)'
+                          : hasCount
+                            ? `rgba(56, 189, 248, ${0.04 + ratio * 0.13})`
+                            : 'rgba(255, 255, 255, 0.02)',
+                        border: isToday
+                          ? '1px solid rgba(56, 189, 248, 0.55)'
+                          : '1px solid var(--border-soft)',
+                      }}
+                    >
+                      <span
+                        style={{
+                          fontSize: '0.7rem',
+                          fontWeight: isToday ? 800 : 600,
+                          color: isToday
+                            ? 'var(--accent-cyan)'
+                            : 'var(--text-secondary)',
+                        }}
+                      >
+                        {cell.day}
+                      </span>
+                      <span
+                        style={{
+                          fontSize: '0.66rem',
+                          fontWeight: hasCount ? 700 : 500,
+                          color: hasCount
+                            ? 'var(--accent-cyan)'
+                            : 'var(--text-muted)',
+                          whiteSpace: 'nowrap',
+                          overflow: 'hidden',
+                          textOverflow: 'ellipsis',
+                        }}
+                      >
+                        {hasCount ? `${formatCount(cell.count)}타일` : '-'}
+                      </span>
+                    </div>
+                  );
+                })}
+              </div>
             </div>
 
             <div className="tactical-table-container">
