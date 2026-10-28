@@ -1463,7 +1463,6 @@ class GameStrings {
   static String get dailyRecordTitle => 'dailyRecordTitle'.tr();
   static String get dailyRecordMonthTotal => 'dailyRecordMonthTotal'.tr();
   static String get dailyRecordToday => 'dailyRecordToday'.tr();
-  static String get dailyRecordUtcNote => 'dailyRecordUtcNote'.tr();
   static String get dailyRecordEmpty => 'dailyRecordEmpty'.tr();
   static String get dailyRecordLoadFailed => 'dailyRecordLoadFailed'.tr();
   static String get dailyRecordNotReady => 'dailyRecordNotReady'.tr();

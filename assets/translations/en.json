@@ -581,7 +581,6 @@
   "dailyRecordTitle": "Movement Calendar",
   "dailyRecordMonthTotal": "Monthly moved tiles",
   "dailyRecordToday": "Today",
-  "dailyRecordUtcNote": "UTC",
   "dailyRecordEmpty": "No movement records for this month.",
   "dailyRecordLoadFailed": "Could not load movement records.",
   "dailyRecordNotReady": "Movement records are being prepared.",

@@ -581,7 +581,6 @@
   "dailyRecordTitle": "Calendrier des déplacements",
   "dailyRecordMonthTotal": "Cases déplacées du mois",
   "dailyRecordToday": "Aujourd'hui",
-  "dailyRecordUtcNote": "Référence UTC",
   "dailyRecordEmpty": "Aucun déplacement enregistré ce mois-ci.",
   "dailyRecordLoadFailed": "Impossible de charger les déplacements.",
   "dailyRecordNotReady": "Les déplacements sont en préparation.",

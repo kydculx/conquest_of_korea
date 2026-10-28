@@ -581,7 +581,6 @@
   "dailyRecordTitle": "移动记录日历",
   "dailyRecordMonthTotal": "当月移动格数",
   "dailyRecordToday": "今天",
-  "dailyRecordUtcNote": "UTC 基准",
   "dailyRecordEmpty": "本月没有移动记录。",
   "dailyRecordLoadFailed": "无法加载移动记录。",
   "dailyRecordNotReady": "移动记录功能正在准备中。",

@@ -581,7 +581,6 @@
   "dailyRecordTitle": "이동 기록 달력",
   "dailyRecordMonthTotal": "월간 이동 타일",
   "dailyRecordToday": "오늘",
-  "dailyRecordUtcNote": "UTC 기준",
   "dailyRecordEmpty": "이 달의 이동 기록이 없습니다.",
   "dailyRecordLoadFailed": "이동 기록을 불러오지 못했습니다.",
   "dailyRecordNotReady": "이동 기록 기능을 준비 중입니다.",

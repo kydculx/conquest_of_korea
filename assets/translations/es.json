@@ -581,7 +581,6 @@
   "dailyRecordTitle": "Calendario de movimientos",
   "dailyRecordMonthTotal": "Casillas movidas del mes",
   "dailyRecordToday": "Hoy",
-  "dailyRecordUtcNote": "Base UTC",
   "dailyRecordEmpty": "No hay registros de movimiento este mes.",
   "dailyRecordLoadFailed": "No se pudieron cargar los registros de movimiento.",
   "dailyRecordNotReady": "Los registros de movimiento están en preparación.",

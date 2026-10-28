@@ -581,7 +581,6 @@
   "dailyRecordTitle": "移動記錄日曆",
   "dailyRecordMonthTotal": "當月移動格數",
   "dailyRecordToday": "今天",
-  "dailyRecordUtcNote": "UTC 基準",
   "dailyRecordEmpty": "本月沒有移動記錄。",
   "dailyRecordLoadFailed": "無法載入移動記錄。",
   "dailyRecordNotReady": "移動記錄功能正在準備中。",

@@ -581,7 +581,6 @@
   "dailyRecordTitle": "Bewegungskalender",
   "dailyRecordMonthTotal": "Bewegte Felder des Monats",
   "dailyRecordToday": "Heute",
-  "dailyRecordUtcNote": "UTC-Basis",
   "dailyRecordEmpty": "Keine Bewegungsdaten für diesen Monat.",
   "dailyRecordLoadFailed": "Bewegungsdaten konnten nicht geladen werden.",
   "dailyRecordNotReady": "Bewegungsdaten werden vorbereitet.",

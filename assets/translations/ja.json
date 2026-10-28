@@ -581,7 +581,6 @@
   "dailyRecordTitle": "移動記録カレンダー",
   "dailyRecordMonthTotal": "月間の移動タイル",
   "dailyRecordToday": "今日",
-  "dailyRecordUtcNote": "UTC基準",
   "dailyRecordEmpty": "この月の移動記録はありません。",
   "dailyRecordLoadFailed": "移動記録を読み込めませんでした。",
   "dailyRecordNotReady": "移動記録機能を準備中です。",
