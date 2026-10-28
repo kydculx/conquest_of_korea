@@ -12,6 +12,7 @@ import 'services/notification_service.dart';
 import 'core/theme.dart';
 import 'core/constants/app_routes.dart';
 import 'core/constants/strings.dart';
+import 'core/navigation/app_navigator.dart';
 import 'game/conquest_game.dart';
 import 'providers/game_provider.dart';
 import 'providers/game_tile_provider.dart';
@@ -181,6 +182,7 @@ class _ConquestApp extends StatelessWidget {
   Widget build(BuildContext context) {
     return MaterialApp(
       title: GameStrings.appName,
+      navigatorKey: appNavigatorKey,
       debugShowCheckedModeBanner: false,
       theme: TacticalTheme.darkTheme,
       localizationsDelegates: context.localizationDelegates,
