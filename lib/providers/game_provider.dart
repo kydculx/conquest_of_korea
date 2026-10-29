@@ -893,6 +893,18 @@ class GameProvider extends ChangeNotifier with WidgetsBindingObserver {
             _achievementProvider?.checkAndUnlock(
                   capturedTiles: capturedTiles,
                 );
+            _supabase
+                .fetchDailyMovedTilesForDate(
+                  auth.profile!.id,
+                  DateTime.now(),
+                )
+                .then((localDailyMoved) {
+              WidgetService.update(
+                territory: updatedProfile.capturedTilesCount,
+                dailyMoved: localDailyMoved,
+                steps: todaySteps,
+              );
+            });
             notifyListeners();
           }
             })

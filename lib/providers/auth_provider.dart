@@ -218,9 +218,13 @@ class AuthProvider extends ChangeNotifier {
 
       final profile = _profile;
       if (profile != null) {
+        final localDailyMoved = await _authService.getLocalDailyMovedTiles(
+          userId,
+          DateTime.now(),
+        );
         WidgetService.update(
           territory: profile.capturedTilesCount,
-          dailyMoved: profile.dailyMovedTilesCount,
+          dailyMoved: localDailyMoved,
         );
       }
 
