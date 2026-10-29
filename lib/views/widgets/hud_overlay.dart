@@ -64,18 +64,11 @@ class HudOverlay extends StatelessWidget {
         ),
 
 
-        // [상단 우측 - 패턴 도감 버튼] 업적 버튼 왼쪽에 1:1 대칭 정렬 나란히 배치 (44x44)
+        // [상단 우측 - 패턴 도감 버튼] 기존 업적 버튼 자리로 이동 (44x44)
         Positioned(
           top: topOffset,
-          right: 20.0 + 44.0 * 3 + 10.0 * 3, // 프로필 44 + 랭킹 44 + 업적 44 + 여백 30 오프셋 연산
+          right: 20.0 + 44.0 * 2 + 10.0 * 2,
           child: const PatternGuideActionButton(size: 44),
-        ),
-
-        // [상단 우측 - 업적 버튼] 랭킹 버튼 왼쪽에 1:1 대칭 정렬 나란히 배치 (44x44)
-        Positioned(
-          top: topOffset,
-          right: 20.0 + 44.0 + 10.0 + 44.0 + 10.0, // 프로필 44 + 랭킹 44 + 여백 20 오프셋 연산
-          child: const AchievementActionButton(size: 44),
         ),
 
         // [상단 우측 - 랭킹 버튼] 유저 프로필 버튼 바로 왼쪽에 1:1 대칭 정렬 나란히 배치 (44x44)
@@ -100,6 +93,13 @@ class HudOverlay extends StatelessWidget {
           top: topOffset + 44.0 + 10.0,
           right: 20.0,
           child: const DailyRecordsActionButton(size: 44, iconSize: 20),
+        ),
+
+        // [상단 우측 - 업적 버튼] 월간 이동 버튼 바로 아래에 배치 (44x44)
+        Positioned(
+          top: topOffset + 44.0 + 10.0 + 44.0 + 10.0,
+          right: 20.0,
+          child: const AchievementActionButton(size: 44),
         ),
 
         // [하단 좌측 - 현재 타일 사진첩 갤러리/카메라 버튼] 본진 버튼 바로 위에 배치 (42x42)
