@@ -3,7 +3,7 @@ import 'package:google_fonts/google_fonts.dart';
 import '../../core/constants/colors.dart';
 import '../../core/constants/strings.dart';
 
-/// 최초 로그인 시 사용되는 인게임 HUD UI 안내 온보딩 단계들 (화면 위에서 아래 방향의 논리적 순서)
+/// 최초 로그인 시 사용되는 인게임 HUD UI 안내 온보딩 단계들 (기능 사용 흐름에 따른 논리적 순서)
 enum OnboardingStep {
   welcome,
   myLocation,
@@ -11,12 +11,12 @@ enum OnboardingStep {
   timerBar,
   stepsBar,
   patternBtn,
-  achievementBtn,
   rankingBtn,
   profileBtn,
   calendarBtn,
-  hqBtn,
+  achievementBtn,
   photoBtn, // 📸 타일 사진 촬영 안내 단계
+  hqBtn,
   mapFollowBtn,
   mapModeToggleBtn,
   mapStyleBtn,
@@ -84,10 +84,6 @@ class _OnboardingOverlayState extends State<OnboardingOverlay> {
         title: GameStrings.onboardingPatternTitle,
         description: GameStrings.onboardingPatternDesc,
       ),
-      OnboardingStep.achievementBtn: _StepContent(
-        title: GameStrings.onboardingAchievementTitle,
-        description: GameStrings.onboardingAchievementDesc,
-      ),
       OnboardingStep.rankingBtn: _StepContent(
         title: GameStrings.onboardingRankingTitle,
         description: GameStrings.onboardingRankingDesc,
@@ -100,13 +96,17 @@ class _OnboardingOverlayState extends State<OnboardingOverlay> {
         title: GameStrings.onboardingCalendarTitle,
         description: GameStrings.onboardingCalendarDesc,
       ),
-      OnboardingStep.hqBtn: _StepContent(
-        title: GameStrings.onboardingHQTitle,
-        description: GameStrings.onboardingHQDesc,
+      OnboardingStep.achievementBtn: _StepContent(
+        title: GameStrings.onboardingAchievementTitle,
+        description: GameStrings.onboardingAchievementDesc,
       ),
       OnboardingStep.photoBtn: _StepContent(
         title: GameStrings.onboardingPhotoTitle,
         description: GameStrings.onboardingPhotoDesc,
+      ),
+      OnboardingStep.hqBtn: _StepContent(
+        title: GameStrings.onboardingHQTitle,
+        description: GameStrings.onboardingHQDesc,
       ),
       OnboardingStep.mapFollowBtn: _StepContent(
         title: GameStrings.onboardingMapFollowTitle,
@@ -199,7 +199,7 @@ class _OnboardingOverlayState extends State<OnboardingOverlay> {
         break;
 
       case OnboardingStep.patternBtn:
-        targetRect = Rect.fromLTWH(size.width - 20.0 - 44.0 * 4 - 10.0 * 3, topOffset, 44.0, 44.0);
+        targetRect = Rect.fromLTWH(size.width - 20.0 - 44.0 * 3 - 10.0 * 2, topOffset, 44.0, 44.0);
         cardTop = size.height - baseBottomMargin - 220.0;
 
         lineStart = Offset(targetRect.left + targetRect.width / 2, targetRect.bottom + 4.0);
@@ -208,7 +208,12 @@ class _OnboardingOverlayState extends State<OnboardingOverlay> {
         break;
 
       case OnboardingStep.achievementBtn:
-        targetRect = Rect.fromLTWH(size.width - 20.0 - 44.0 * 3 - 10.0 * 2, topOffset, 44.0, 44.0);
+        targetRect = Rect.fromLTWH(
+          size.width - 20.0 - 44.0,
+          topOffset + 44.0 + 10.0 + 44.0 + 10.0,
+          44.0,
+          44.0,
+        );
         cardTop = size.height - baseBottomMargin - 220.0;
 
         lineStart = Offset(targetRect.left + targetRect.width / 2, targetRect.bottom + 4.0);
