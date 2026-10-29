@@ -218,28 +218,35 @@ class _AchievementScreenState extends State<AchievementScreen> {
       child: Row(
         children: [
           // 원형 게이지
-          Stack(
-            alignment: Alignment.center,
-            children: [
-              SizedBox(
-                width: 72,
-                height: 72,
-                child: CircularProgressIndicator(
-                  value: progressRatio,
-                  strokeWidth: 6,
-                  backgroundColor: GameColors.dividerColor,
-                  valueColor: AlwaysStoppedAnimation<Color>(GameColors.accentNeon),
-                ),
-              ),
-              Text(
-                '${(progressRatio * 100).toInt()}%',
-                style: GoogleFonts.outfit(
-                  color: GameColors.textPrimary,
-                  fontWeight: FontWeight.bold,
-                  fontSize: 16,
-                ),
-              ),
-            ],
+          TweenAnimationBuilder<double>(
+            tween: Tween<double>(begin: 0.0, end: progressRatio),
+            duration: const Duration(seconds: 1),
+            curve: Curves.easeOutCubic,
+            builder: (context, animatedRatio, child) {
+              return Stack(
+                alignment: Alignment.center,
+                children: [
+                  SizedBox(
+                    width: 72,
+                    height: 72,
+                    child: CircularProgressIndicator(
+                      value: animatedRatio,
+                      strokeWidth: 6,
+                      backgroundColor: GameColors.dividerColor,
+                      valueColor: AlwaysStoppedAnimation<Color>(GameColors.accentNeon),
+                    ),
+                  ),
+                  Text(
+                    '${(animatedRatio * 100).toInt()}%',
+                    style: GoogleFonts.outfit(
+                      color: GameColors.textPrimary,
+                      fontWeight: FontWeight.bold,
+                      fontSize: 16,
+                    ),
+                  ),
+                ],
+              );
+            },
           ),
           const SizedBox(width: 20),
           // 정보 텍스트
@@ -347,16 +354,28 @@ class _AchievementScreenState extends State<AchievementScreen> {
                 ],
               ),
               const SizedBox(height: 6),
-              ClipRRect(
-                borderRadius: BorderRadius.circular(4),
-                child: LinearProgressIndicator(
-                  value: isUnlocked ? 1.0 : ratio,
-                  minHeight: 6,
-                  backgroundColor: GameColors.borderLight,
-                  valueColor: AlwaysStoppedAnimation<Color>(
-                    isUnlocked ? GameColors.accentNeon : GameColors.accentNeon.withValues(alpha: 0.4),
-                  ),
+              TweenAnimationBuilder<double>(
+                tween: Tween<double>(
+                  begin: 0.0,
+                  end: isUnlocked ? 1.0 : ratio,
                 ),
+                duration: const Duration(seconds: 1),
+                curve: Curves.easeOutCubic,
+                builder: (context, animatedRatio, child) {
+                  return ClipRRect(
+                    borderRadius: BorderRadius.circular(4),
+                    child: LinearProgressIndicator(
+                      value: animatedRatio,
+                      minHeight: 6,
+                      backgroundColor: GameColors.borderLight,
+                      valueColor: AlwaysStoppedAnimation<Color>(
+                        isUnlocked
+                            ? GameColors.accentNeon
+                            : GameColors.accentNeon.withValues(alpha: 0.4),
+                      ),
+                    ),
+                  );
+                },
               ),
             ],
           ),
