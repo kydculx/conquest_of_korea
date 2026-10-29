@@ -272,6 +272,26 @@ class SupabaseService {
     }
   }
 
+  /// 특정 현지 날짜의 이동 타일 수를 조회합니다.
+  Future<int> fetchDailyMovedTilesForDate(
+    String userId,
+    DateTime date,
+  ) async {
+    try {
+      final response = await _client
+          .from('daily_local_moved_tiles_history')
+          .select('moved_tiles_count')
+          .eq('user_id', userId)
+          .eq('stat_date', _localDateKey(date))
+          .maybeSingle();
+      return (response?['moved_tiles_count'] as num?)?.toInt() ?? 0;
+    } catch (e) {
+      lastError = e.toString();
+      debugPrint('⚠️ 현지 날짜 이동 타일 조회 실패: $e');
+      return 0;
+    }
+  }
+
   /// 특정 월의 일별 이동 타일 수를 조회합니다.
   ///
   /// 이동 타일 이력 테이블이 아직 적용되지 않은 서버에서는 예외를

@@ -181,6 +181,25 @@ class AuthService {
     }
   }
 
+  /// 특정 현지 날짜의 이동 타일 수를 조회합니다.
+  Future<int> getLocalDailyMovedTiles(String userId, DateTime date) async {
+    try {
+      final year = date.year.toString().padLeft(4, '0');
+      final month = date.month.toString().padLeft(2, '0');
+      final day = date.day.toString().padLeft(2, '0');
+      final response = await _client
+          .from('daily_local_moved_tiles_history')
+          .select('moved_tiles_count')
+          .eq('user_id', userId)
+          .eq('stat_date', '$year-$month-$day')
+          .maybeSingle();
+      return (response?['moved_tiles_count'] as num?)?.toInt() ?? 0;
+    } catch (e) {
+      debugPrint('⚠️ 위젯용 현지 이동 타일 조회 실패: $e');
+      return 0;
+    }
+  }
+
   /// 신규 사용자 프로필을 DB에 최초 등록(Insert/Upsert)합니다. (초기 가입 골드 등 포함)
   Future<void> createProfile(UserProfile profile) async {
     await _client.from('profiles').upsert(profile.toInsertJson());
