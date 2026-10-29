@@ -598,5 +598,11 @@
   "dailyRecordBestDay": "最高記録",
   "rankingDailyUtcNote": "UTC基準",
   "onboardingCalendarTitle": "月間移動",
-  "onboardingCalendarDesc": "プロフィールの下にあるカレンダーボタンを押すと、スマートフォンの日付を基準に、1日に移動したタイル数を月ごとに確認できます。左右にスワイプして前月・翌月へ移動できます。"
+  "onboardingCalendarDesc": "1日に移動したタイル数を月ごとに確認できます。左右にスワイプして前月・翌月へ移動できます。",
+  "dailyRecordDetailTitle": "移動詳細",
+  "dailyRecordMovedTiles": "移動タイル",
+  "dailyRecordGoal": "1日の目標",
+  "dailyRecordGoalAchieved": "目標達成",
+  "dailyRecordGoalRemaining": "あと {count} タイル",
+  "dailyRecordDetailEmpty": "この日の移動記録はありません。"
 }

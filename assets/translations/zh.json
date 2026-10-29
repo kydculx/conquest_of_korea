@@ -598,5 +598,11 @@
   "dailyRecordBestDay": "最高记录",
   "rankingDailyUtcNote": "UTC 基准",
   "onboardingCalendarTitle": "月度移动",
-  "onboardingCalendarDesc": "点击个人资料下方的日历按钮，可按手机日期查看每天移动的格数。左右滑动可切换月份。"
+  "onboardingCalendarDesc": "可按月查看每天移动的格数。左右滑动可切换月份。",
+  "dailyRecordDetailTitle": "移动详情",
+  "dailyRecordMovedTiles": "移动格数",
+  "dailyRecordGoal": "每日目标",
+  "dailyRecordGoalAchieved": "目标达成",
+  "dailyRecordGoalRemaining": "还差 {count} 格",
+  "dailyRecordDetailEmpty": "这一天没有移动记录。"
 }

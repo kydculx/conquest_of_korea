@@ -598,5 +598,11 @@
   "dailyRecordBestDay": "최고 기록",
   "rankingDailyUtcNote": "UTC 기준",
   "onboardingCalendarTitle": "월간 이동",
-  "onboardingCalendarDesc": "내 정보 버튼 아래의 달력 버튼을 누르면 휴대폰 날짜 기준으로 하루 동안 이동한 타일 수를 월별로 확인할 수 있습니다. 좌우로 스와이프해 이전 달과 다음 달을 이동할 수 있습니다."
+  "onboardingCalendarDesc": "하루 동안 이동한 타일 수를 월별로 확인할 수 있습니다. 좌우로 스와이프해 이전 달과 다음 달을 이동할 수 있습니다.",
+  "dailyRecordDetailTitle": "이동 상세",
+  "dailyRecordMovedTiles": "이동 타일",
+  "dailyRecordGoal": "일일 목표",
+  "dailyRecordGoalAchieved": "목표 달성",
+  "dailyRecordGoalRemaining": "{count}타일 남음",
+  "dailyRecordDetailEmpty": "이 날의 이동 기록이 없습니다."
 }

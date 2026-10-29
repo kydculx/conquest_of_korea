@@ -598,5 +598,11 @@
   "dailyRecordBestDay": "Melhor dia",
   "rankingDailyUtcNote": "Base UTC",
   "onboardingCalendarTitle": "Movimentos do mês",
-  "onboardingCalendarDesc": "Toque no botão de calendário abaixo do seu perfil para ver quantas casas você moveu por dia, com base na data do seu celular. Deslize para a esquerda ou direita para mudar de mês."
+  "onboardingCalendarDesc": "Veja quantas casas você moveu por dia, mês a mês. Deslize para a esquerda ou direita para mudar de mês.",
+  "dailyRecordDetailTitle": "Detalhes do movimento",
+  "dailyRecordMovedTiles": "Casas movidas",
+  "dailyRecordGoal": "Meta diária",
+  "dailyRecordGoalAchieved": "Meta alcançada",
+  "dailyRecordGoalRemaining": "Faltam {count} casas",
+  "dailyRecordDetailEmpty": "Nenhum registro de movimento neste dia."
 }

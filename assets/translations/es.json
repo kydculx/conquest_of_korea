@@ -598,5 +598,11 @@
   "dailyRecordBestDay": "Mejor día",
   "rankingDailyUtcNote": "Base UTC",
   "onboardingCalendarTitle": "Movimiento mensual",
-  "onboardingCalendarDesc": "Toca el botón del calendario debajo de tu perfil para ver cuántas casillas te moviste cada día según la fecha de tu teléfono. Desliza a izquierda o derecha para cambiar de mes."
+  "onboardingCalendarDesc": "Consulta cuántas casillas te moviste cada día, mes a mes. Desliza a izquierda o derecha para cambiar de mes.",
+  "dailyRecordDetailTitle": "Detalle de movimiento",
+  "dailyRecordMovedTiles": "Casillas movidas",
+  "dailyRecordGoal": "Objetivo diario",
+  "dailyRecordGoalAchieved": "Objetivo cumplido",
+  "dailyRecordGoalRemaining": "Faltan {count} casillas",
+  "dailyRecordDetailEmpty": "No hay registro de movimiento para este día."
 }

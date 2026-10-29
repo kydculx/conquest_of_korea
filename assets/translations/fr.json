@@ -598,5 +598,11 @@
   "dailyRecordBestDay": "Meilleur jour",
   "rankingDailyUtcNote": "Référence UTC",
   "onboardingCalendarTitle": "Déplacements du mois",
-  "onboardingCalendarDesc": "Appuyez sur le bouton calendrier sous votre profil pour voir le nombre de cases déplacées chaque jour selon la date de votre téléphone. Balayez à gauche ou à droite pour changer de mois."
+  "onboardingCalendarDesc": "Consultez le nombre de cases déplacées chaque jour, mois par mois. Balayez à gauche ou à droite pour changer de mois.",
+  "dailyRecordDetailTitle": "Détail du déplacement",
+  "dailyRecordMovedTiles": "Cases déplacées",
+  "dailyRecordGoal": "Objectif quotidien",
+  "dailyRecordGoalAchieved": "Objectif atteint",
+  "dailyRecordGoalRemaining": "Encore {count} cases",
+  "dailyRecordDetailEmpty": "Aucun déplacement enregistré ce jour-là."
 }

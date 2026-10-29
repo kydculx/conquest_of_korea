@@ -1485,6 +1485,17 @@ class GameStrings {
   static String get dailyRecordDailyAverage =>
       'dailyRecordDailyAverage'.tr();
   static String get dailyRecordBestDay => 'dailyRecordBestDay'.tr();
+  static String get dailyRecordDetailTitle =>
+      'dailyRecordDetailTitle'.tr();
+  static String get dailyRecordMovedTiles =>
+      'dailyRecordMovedTiles'.tr();
+  static String get dailyRecordGoal => 'dailyRecordGoal'.tr();
+  static String get dailyRecordGoalAchieved =>
+      'dailyRecordGoalAchieved'.tr();
+  static String dailyRecordGoalRemaining(int count) =>
+      'dailyRecordGoalRemaining'.tr(namedArgs: {'count': count.toString()});
+  static String get dailyRecordDetailEmpty =>
+      'dailyRecordDetailEmpty'.tr();
 }
 
 class GameUrls {

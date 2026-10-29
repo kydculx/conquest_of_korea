@@ -598,5 +598,11 @@
   "dailyRecordBestDay": "Bester Tag",
   "rankingDailyUtcNote": "UTC-Basis",
   "onboardingCalendarTitle": "Monatliche Bewegung",
-  "onboardingCalendarDesc": "Tippe unter deinem Profil auf die Kalender-Schaltfläche, um die täglich bewegten Felder nach dem Datum deines Telefons zu sehen. Wische nach links oder rechts, um den Monat zu wechseln."
+  "onboardingCalendarDesc": "Sieh dir die täglich bewegten Felder Monat für Monat an. Wische nach links oder rechts, um den Monat zu wechseln.",
+  "dailyRecordDetailTitle": "Bewegungsdetails",
+  "dailyRecordMovedTiles": "Bewegte Felder",
+  "dailyRecordGoal": "Tagesziel",
+  "dailyRecordGoalAchieved": "Ziel erreicht",
+  "dailyRecordGoalRemaining": "Noch {count} Felder",
+  "dailyRecordDetailEmpty": "Keine Bewegungsdaten für diesen Tag."
 }
