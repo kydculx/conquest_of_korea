@@ -1,3 +1,5 @@
+import 'dart:math' as math;
+
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
@@ -8,6 +10,8 @@ import '../../core/constants/strings.dart';
 import '../../providers/auth_provider.dart';
 import '../../services/supabase_service.dart';
 import '../widgets/tactical_app_bar.dart';
+
+const int _dailyTileGoal = 30;
 
 /// 현지 날짜별 이동 타일 수를 월 달력으로 보여주는 화면.
 class DailyRecordsScreen extends StatefulWidget {
@@ -382,7 +386,7 @@ class _DailyRecordsScreenState extends State<DailyRecordsScreen> {
       itemCount: itemCount,
       gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
         crossAxisCount: 7,
-        childAspectRatio: 0.78,
+        childAspectRatio: 0.72,
         crossAxisSpacing: 6,
         mainAxisSpacing: 6,
       ),
@@ -412,73 +416,85 @@ class _DailyRecordsScreenState extends State<DailyRecordsScreen> {
     required bool isToday,
     required String locale,
   }) {
-    final hasRecord = count != null && count > 0;
+    final value = count ?? 0;
+    final hasRecord = value > 0;
     final countLabel = hasRecord
-        ? '${_formatCount(count, locale)} ${GameStrings.dailyRecordTileUnit}'
+        ? '${_formatCount(value, locale)} ${GameStrings.dailyRecordTileUnit}'
         : GameStrings.dailyRecordNoRecord;
     final borderColor = isToday
         ? GameColors.accentNeon.withValues(alpha: 0.58)
         : GameColors.borderLight;
+    void onTap() => _showDayDetail(date, value, locale);
 
     return Semantics(
+      button: true,
       excludeSemantics: true,
       label:
           '${date.month}/${date.day} '
           '${isToday ? GameStrings.dailyRecordToday : ''} '
           '$countLabel',
-      child: Container(
-        padding: const EdgeInsets.fromLTRB(6, 5, 6, 5),
-        decoration: BoxDecoration(
-          color: isToday
-              ? GameColors.accentNeon.withValues(alpha: 0.08)
-              : Colors.white.withValues(alpha: 0.025),
-          borderRadius: BorderRadius.circular(11),
-          border: Border.all(color: borderColor, width: isToday ? 1.2 : 1),
-        ),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Row(
-              children: [
-                Text(
-                  '${date.day}',
-                  style: TextStyle(
-                    color: isToday
-                        ? GameColors.accentNeon
-                        : GameColors.textPrimary,
-                    fontSize: 11.5,
-                    fontWeight: isToday ? FontWeight.w800 : FontWeight.w600,
+      onTap: onTap,
+      child: GestureDetector(
+        behavior: HitTestBehavior.opaque,
+        onTap: onTap,
+        child: Container(
+          padding: const EdgeInsets.fromLTRB(5, 4, 5, 4),
+          decoration: BoxDecoration(
+            color: isToday
+                ? GameColors.accentNeon.withValues(alpha: 0.08)
+                : Colors.white.withValues(alpha: 0.025),
+            borderRadius: BorderRadius.circular(11),
+            border: Border.all(color: borderColor, width: isToday ? 1.2 : 1),
+          ),
+          child: LayoutBuilder(
+            builder: (context, constraints) {
+              final ringSize = constraints.maxWidth
+                  .clamp(26.0, 40.0)
+                  .toDouble();
+              return Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  Row(
+                    children: [
+                      Text(
+                        '${date.day}',
+                        style: TextStyle(
+                          color: isToday
+                              ? GameColors.accentNeon
+                              : GameColors.textPrimary,
+                          fontSize: 11.5,
+                          fontWeight: isToday
+                              ? FontWeight.w800
+                              : FontWeight.w600,
+                        ),
+                      ),
+                      const Spacer(),
+                      if (isToday)
+                        Container(
+                          width: 4,
+                          height: 4,
+                          decoration: BoxDecoration(
+                            color: GameColors.accentNeon,
+                            shape: BoxShape.circle,
+                          ),
+                        ),
+                    ],
                   ),
-                ),
-                const Spacer(),
-                if (isToday)
-                  Container(
-                    width: 4,
-                    height: 4,
-                    decoration: BoxDecoration(
-                      color: GameColors.accentNeon,
-                      shape: BoxShape.circle,
+                  const Spacer(),
+                  Center(
+                    child: _TileRing(
+                      count: value,
+                      goal: _dailyTileGoal,
+                      size: ringSize,
+                      locale: locale,
+                      achieved: value >= _dailyTileGoal,
                     ),
                   ),
-              ],
-            ),
-            const Spacer(),
-            FittedBox(
-              fit: BoxFit.scaleDown,
-              alignment: Alignment.centerLeft,
-              child: Text(
-                hasRecord ? _formatCount(count, locale) : '-',
-                maxLines: 1,
-                style: TextStyle(
-                  color: hasRecord
-                      ? Palette.footprintMint
-                      : GameColors.textMuted.withValues(alpha: 0.55),
-                  fontSize: 10.5,
-                  fontWeight: hasRecord ? FontWeight.w700 : FontWeight.w500,
-                ),
-              ),
-            ),
-          ],
+                  const Spacer(),
+                ],
+              );
+            },
+          ),
         ),
       ),
     );
@@ -601,9 +617,7 @@ class _DailyRecordsScreenState extends State<DailyRecordsScreen> {
   void _changeMonth(int delta) {
     if (_isLoading) return;
     if (delta > 0 && !_canGoNextMonth) return;
-    _loadMonth(
-      DateTime(_visibleMonth.year, _visibleMonth.month + delta, 1),
-    );
+    _loadMonth(DateTime(_visibleMonth.year, _visibleMonth.month + delta, 1));
   }
 
   void _handleMonthSwipe(DragEndDetails details) {
@@ -615,6 +629,207 @@ class _DailyRecordsScreenState extends State<DailyRecordsScreen> {
     } else {
       _changeMonth(-1);
     }
+  }
+
+  Future<void> _showDayDetail(DateTime date, int count, String locale) async {
+    final achieved = count >= _dailyTileGoal;
+    final remaining = math.max(0, _dailyTileGoal - count);
+
+    await showModalBottomSheet<void>(
+      context: context,
+      backgroundColor: Colors.transparent,
+      isScrollControlled: true,
+      builder: (sheetContext) {
+        return SafeArea(
+          top: false,
+          child: Container(
+            margin: const EdgeInsets.all(12),
+            padding: const EdgeInsets.fromLTRB(20, 10, 20, 20),
+            decoration: BoxDecoration(
+              color: GameColors.backgroundMedium,
+              borderRadius: BorderRadius.circular(24),
+              border: Border.all(
+                color: GameColors.borderNeon.withValues(alpha: 0.22),
+              ),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withValues(alpha: 0.35),
+                  blurRadius: 24,
+                  offset: const Offset(0, 10),
+                ),
+              ],
+            ),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                Center(
+                  child: Container(
+                    width: 38,
+                    height: 4,
+                    margin: const EdgeInsets.only(bottom: 14),
+                    decoration: BoxDecoration(
+                      color: Colors.white.withValues(alpha: 0.16),
+                      borderRadius: BorderRadius.circular(999),
+                    ),
+                  ),
+                ),
+                Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            GameStrings.dailyRecordDetailTitle,
+                            style: TextStyle(
+                              color: GameColors.textPrimary,
+                              fontSize: 17,
+                              fontWeight: FontWeight.w800,
+                            ),
+                          ),
+                          const SizedBox(height: 5),
+                          Text(
+                            '${DateFormat.yMMMMd(locale).format(date)} '
+                            '(${DateFormat.EEEE(locale).format(date)})',
+                            style: TextStyle(
+                              color: GameColors.textMuted,
+                              fontSize: 11.5,
+                              fontWeight: FontWeight.w500,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                    IconButton(
+                      onPressed: () => Navigator.pop(sheetContext),
+                      icon: const Icon(Icons.close_rounded),
+                      color: GameColors.textMuted,
+                      visualDensity: VisualDensity.compact,
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 10),
+                Center(
+                  child: _TileRing(
+                    count: count,
+                    goal: _dailyTileGoal,
+                    size: 132,
+                    locale: locale,
+                    achieved: achieved,
+                  ),
+                ),
+                const SizedBox(height: 12),
+                Text(
+                  '${GameStrings.dailyRecordMovedTiles} · '
+                  '${_formatCount(count, locale)} '
+                  '${GameStrings.dailyRecordTileUnit}',
+                  textAlign: TextAlign.center,
+                  style: TextStyle(
+                    color: GameColors.textPrimary,
+                    fontSize: 14,
+                    fontWeight: FontWeight.w700,
+                  ),
+                ),
+                const SizedBox(height: 14),
+                Container(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 13,
+                    vertical: 11,
+                  ),
+                  decoration: BoxDecoration(
+                    color:
+                        (achieved
+                                ? Palette.footprintMint
+                                : GameColors.accentNeon)
+                            .withValues(alpha: 0.08),
+                    borderRadius: BorderRadius.circular(13),
+                    border: Border.all(
+                      color:
+                          (achieved
+                                  ? Palette.footprintMint
+                                  : GameColors.accentNeon)
+                              .withValues(alpha: 0.24),
+                    ),
+                  ),
+                  child: Row(
+                    children: [
+                      Icon(
+                        achieved
+                            ? Icons.check_circle_rounded
+                            : Icons.flag_rounded,
+                        color: achieved
+                            ? Palette.footprintMint
+                            : GameColors.accentNeon,
+                        size: 20,
+                      ),
+                      const SizedBox(width: 9),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              '${GameStrings.dailyRecordGoal} · '
+                              '$_dailyTileGoal '
+                              '${GameStrings.dailyRecordTileUnit}',
+                              style: TextStyle(
+                                color: GameColors.textSecondary,
+                                fontSize: 11,
+                                fontWeight: FontWeight.w500,
+                              ),
+                            ),
+                            const SizedBox(height: 3),
+                            Text(
+                              achieved
+                                  ? GameStrings.dailyRecordGoalAchieved
+                                  : GameStrings.dailyRecordGoalRemaining(
+                                      remaining,
+                                    ),
+                              style: TextStyle(
+                                color: achieved
+                                    ? Palette.footprintMint
+                                    : GameColors.textPrimary,
+                                fontSize: 14,
+                                fontWeight: FontWeight.w800,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                if (count == 0) ...[
+                  const SizedBox(height: 10),
+                  Text(
+                    GameStrings.dailyRecordDetailEmpty,
+                    textAlign: TextAlign.center,
+                    style: TextStyle(
+                      color: GameColors.textMuted,
+                      fontSize: 11.5,
+                    ),
+                  ),
+                ],
+                const SizedBox(height: 16),
+                OutlinedButton(
+                  onPressed: () => Navigator.pop(sheetContext),
+                  style: OutlinedButton.styleFrom(
+                    foregroundColor: GameColors.textSecondary,
+                    side: BorderSide(color: GameColors.dividerColor),
+                    padding: const EdgeInsets.symmetric(vertical: 13),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(14),
+                    ),
+                  ),
+                  child: Text(GameStrings.close),
+                ),
+              ],
+            ),
+          ),
+        );
+      },
+    );
   }
 
   Future<void> _showMonthPicker() async {
@@ -702,6 +917,112 @@ class _DailyRecordsScreenState extends State<DailyRecordsScreen> {
     final month = date.month.toString().padLeft(2, '0');
     final day = date.day.toString().padLeft(2, '0');
     return '$year-$month-$day';
+  }
+}
+
+class _TileRing extends StatelessWidget {
+  final int count;
+  final int goal;
+  final double size;
+  final String locale;
+  final bool achieved;
+
+  const _TileRing({
+    required this.count,
+    required this.goal,
+    required this.size,
+    required this.locale,
+    required this.achieved,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final textColor = count <= 0
+        ? GameColors.textMuted.withValues(alpha: 0.6)
+        : achieved
+        ? Palette.footprintMint
+        : GameColors.textPrimary;
+
+    return SizedBox(
+      width: size,
+      height: size,
+      child: TweenAnimationBuilder<double>(
+        tween: Tween<double>(begin: 0.0, end: 1.0),
+        duration: const Duration(seconds: 1),
+        curve: Curves.easeOutCubic,
+        builder: (context, progressValue, child) {
+          final targetProgress = (count / goal).clamp(0.0, 1.0).toDouble();
+          final progress = targetProgress * progressValue;
+          final countLabel = NumberFormat.decimalPattern(
+            locale,
+          ).format((count * progressValue).round());
+          return CustomPaint(
+            painter: _TileRingPainter(progress: progress, achieved: achieved),
+            child: Center(
+              child: Padding(
+                padding: EdgeInsets.all(size * 0.16),
+                child: FittedBox(
+                  fit: BoxFit.scaleDown,
+                  child: Text(
+                    countLabel,
+                    maxLines: 1,
+                    style: TextStyle(
+                      color: textColor,
+                      fontSize: size * 0.27,
+                      fontWeight: FontWeight.w800,
+                      letterSpacing: -0.4,
+                    ),
+                  ),
+                ),
+              ),
+            ),
+          );
+        },
+      ),
+    );
+  }
+}
+
+class _TileRingPainter extends CustomPainter {
+  final double progress;
+  final bool achieved;
+
+  const _TileRingPainter({required this.progress, required this.achieved});
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final strokeWidth = (size.width * 0.09).clamp(4.0, 9.0).toDouble();
+    final center = Offset(size.width / 2, size.height / 2);
+    final radius = size.width / 2 - strokeWidth / 2;
+    final rect = Rect.fromCircle(center: center, radius: radius);
+
+    final trackPaint = Paint()
+      ..color = Colors.white.withValues(alpha: 0.08)
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = strokeWidth
+      ..strokeCap = StrokeCap.round;
+    canvas.drawArc(rect, -math.pi / 2, math.pi * 2, false, trackPaint);
+
+    if (progress <= 0) return;
+
+    final colors = achieved
+        ? const [Palette.accentCyan, Palette.footprintMint, Palette.softRed]
+        : const [Palette.accentCyan, Palette.footprintMint];
+    final paint = Paint()
+      ..shader = SweepGradient(
+        colors: colors,
+        transform: const GradientRotation(-math.pi / 2),
+      ).createShader(rect)
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = strokeWidth
+      ..strokeCap = StrokeCap.round;
+
+    canvas.drawArc(rect, -math.pi / 2, math.pi * 2 * progress, false, paint);
+  }
+
+  @override
+  bool shouldRepaint(covariant _TileRingPainter oldDelegate) {
+    return oldDelegate.progress != progress || oldDelegate.achieved != achieved;
   }
 }
 
