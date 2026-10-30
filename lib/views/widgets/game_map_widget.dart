@@ -11,7 +11,6 @@ import '../../core/constants/map_config.dart';
 import '../../providers/game_provider.dart';
 import '../../providers/game_tile_provider.dart';
 import '../../providers/location_provider.dart';
-import '../../providers/achievement_provider.dart';
 import '../../services/hex_service.dart';
 import '../../core/constants/strings.dart';
 import '../../models/tile_focus_request.dart';
@@ -429,19 +428,25 @@ class _GameMapWidgetState extends State<GameMapWidget>
                 final tileId = HexService.tileId(hex['q']!, hex['r']!);
 
                 if (gameProvider.isFootprintMode) {
-                  final footprint = gameProvider.footprints[tileId];
-                  if (footprint != null) {
-                    gameProvider.selectFootprintTile(tileId);
+                  // 현재 LOD 격자 안에서 탭 지점과 가장 가까운 실제 발자취 타일 선택
+                  final footprintTileId = widget.game.findFootprintTileIdNear(
+                    point,
+                    _mapController.camera.zoom,
+                  );
+                  if (footprintTileId != null) {
+                    gameProvider.selectFootprintTile(footprintTileId);
                   }
                   return;
                 }
 
                 if (gameProvider.showCompletedPatterns) {
-                  final consumedTileIds = Provider.of<AchievementProvider>(
-                    context,
-                    listen: false,
-                  ).consumedTileIds;
-                  if (consumedTileIds.contains(tileId)) {
+                  // 현재 LOD 격자 안에 소비 완료된 패턴 타일이 있는지 확인
+                  final hasConsumedPatternTile =
+                      widget.game.hasConsumedPatternTileNear(
+                    point,
+                    _mapController.camera.zoom,
+                  );
+                  if (hasConsumedPatternTile) {
                     ScaffoldMessenger.of(context).clearSnackBars();
                     ScaffoldMessenger.of(context).showSnackBar(
                       SnackBar(
