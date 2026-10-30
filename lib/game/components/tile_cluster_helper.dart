@@ -60,7 +60,10 @@ class TileClusterHelper {
           q: dq,
           r: dr,
           userId: tile.userId,
+          // 발자취 타일처럼 colorHex로만 색이 결정되는 마커의 색상 유실 방지
+          colorHex: tile.colorHex,
           capturedAt: tile.capturedAt,
+          captureCount: tile.captureCount,
         );
       } else if (tile.userId == currentUserId) {
         clustered[clusterId] = HexTile(
@@ -68,7 +71,9 @@ class TileClusterHelper {
           q: dq,
           r: dr,
           userId: currentUserId!,
+          colorHex: tile.colorHex,
           capturedAt: tile.capturedAt,
+          captureCount: tile.captureCount,
         );
       }
     });
@@ -76,10 +81,15 @@ class TileClusterHelper {
     return clustered;
   }
 
+  /// 타일 ID와 헥사곤 규격을 조합한 캐시 키 생성.
+  /// 동일한 LOD 0 타일 ID라도 렌더링 규격(hexSize)에 따라 중심/꼭짓점이 달라지므로
+  /// 반드시 규격을 키에 포함하여 LOD 간 캐시 오염을 방지합니다.
+  String _cacheKey(String id, double hexSize) => '${id}_$hexSize';
+
   /// 타일 ID에 상응하는 지리적 중심점 캐시 반환
   LatLng _getTileCenter(int q, int r, String id, double hexSize) {
     return tileCenterCache.putIfAbsent(
-      id,
+      _cacheKey(id, hexSize),
       () => HexService.hexToLatLng(q, r, hexSize: hexSize),
     );
   }
@@ -87,7 +97,7 @@ class TileClusterHelper {
   /// 타일 ID에 상응하는 지리적 6개 꼭짓점 캐시 반환
   List<LatLng> _getTileCorners(int q, int r, String id, double hexSize) {
     return tileCornersCache.putIfAbsent(
-      id,
+      _cacheKey(id, hexSize),
       () => HexService.getHexCorners(q, r, hexSize: hexSize),
     );
   }

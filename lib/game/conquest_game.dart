@@ -1,5 +1,6 @@
 import 'dart:ui';
 import 'package:flame/game.dart';
+import 'package:flutter/foundation.dart';
 import 'package:latlong2/latlong.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'components/player_component.dart';
@@ -91,6 +92,20 @@ class ConquestGame extends FlameGame {
 
   /// 플레이어의 발자취 데이터 맵 캐시
   Map<String, FootprintTile> _footprints = {};
+
+  /// 현재 LOD 규격으로 병합된 발자취 타일 캐시.
+  /// 카메라 이동(팬) 중에는 재병합을 생략하여 프레임 부하를 차단합니다.
+  Map<String, HexTile> _footprintClusterCache = {};
+
+  /// [_footprintClusterCache]가 마지막으로 빌드된 LOD 규격 (null: 캐시 없음)
+  double? _footprintClusterHexSize;
+
+  /// 현재 LOD 규격으로 병합된 완료 패턴 타일 캐시.
+  /// 카메라 이동(팬) 중에는 재병합을 생략하여 프레임 부하를 차단합니다.
+  Map<String, HexTile> _patternClusterCache = {};
+
+  /// [_patternClusterCache]가 마지막으로 빌드된 LOD 규격 (null: 캐시 없음)
+  double? _patternClusterHexSize;
 
   /// 해금된 패턴 업적에 소비된 타일 ID 목록 캐시
   Set<String> _consumedTileIds = {};
@@ -370,18 +385,13 @@ class ConquestGame extends FlameGame {
     final double dynamicHexSize = _clusterHelper.getHexSizeForZoom(currentZoom);
 
     // 줌 레벨(LOD) 스케일이 실제로 바뀌었을 경우 기존 컴포넌트들을 강제로 일괄 파기하여 무대 청소
-    if (_lastLodLevel != currentLod || _lastClusteredTiles.isEmpty) {
+    // (발자취 모드에서 점령 타일 데이터가 비어 있어도 매 프레임 컴포넌트가 재생성되지 않도록 LOD 변화만 감지)
+    if (_lastLodLevel != currentLod) {
       final toRemove = _tileMap.values.toList();
       removeAll(toRemove);
       _tileMap.clear();
       _lastLodLevel = currentLod;
     }
-
-    _lastClusteredTiles = _clusterHelper.rebuildClusteredTiles(
-      capturedTilesSource,
-      dynamicHexSize,
-      _currentUserId,
-    );
 
     // [초최적화 위경도 Frustum Culling] 뷰포트 지리지형 경계선 획득 및 안전 마진 정의
     final bounds = _mapController!.camera.visibleBounds;
@@ -400,102 +410,79 @@ class ConquestGame extends FlameGame {
     final Set<String> visibleIds = {};
     final List<HexTile> visibleTiles = [];
 
-    _lastClusteredTiles.forEach((id, tile) {
-      if (_showFootprints || _showCompletedPatterns) {
-        return; // 발자취 또는 패턴 도감 모드 활성화 시 일반 점령지 렌더링 생략
-      }
-      final centerLatLng = _clusterHelper.getTileCenter(
-        tile.q,
-        tile.r,
-        id,
+    // 일반 모드에서만 점령 타일 LOD 병합/렌더링 수행.
+    // 발자취·패턴 도감 모드에서는 일반 점령지를 그리지 않으므로 O(N) 병합 연산을 생략한다.
+    if (!_showFootprints && !_showCompletedPatterns) {
+      _lastClusteredTiles = _clusterHelper.rebuildClusteredTiles(
+        capturedTilesSource,
         dynamicHexSize,
+        _currentUserId,
       );
-      final double lat = centerLatLng.latitude;
-      final double lng = centerLatLng.longitude;
 
-      if (lat >= minLat && lat <= maxLat && lng >= minLng && lng <= maxLng) {
-        // [적군 영토 은폐 가드] 1순위 초고속 필터: 투영 및 지리 연산 전에 적군 타일을 선결 거름으로써 CPU 부하 99% 제거
-        if (dynamicHexSize >= GameConfig.lodSize3 &&
-            tile.userId != _currentUserId) {
-          return;
-        }
-        visibleIds.add(id);
-        visibleTiles.add(tile);
-      }
-    });
+      _lastClusteredTiles.forEach((id, tile) {
+        final centerLatLng = _clusterHelper.getTileCenter(
+          tile.q,
+          tile.r,
+          id,
+          dynamicHexSize,
+        );
+        final double lat = centerLatLng.latitude;
+        final double lng = centerLatLng.longitude;
 
-    // 발자취 모드 활성화 시 내 발자취 타일들을 가식 영역 체크 후 강제 렌더링 목록에 주입
-    if (_showFootprints) {
-      _footprints.forEach((tileId, footprint) {
-        final parsed = HexService.parseTileId(tileId);
-        if (parsed != null) {
-          final int q = parsed['q'] as int;
-          final int r = parsed['r'] as int;
-          final centerLatLng = _clusterHelper.getTileCenter(
-            q,
-            r,
-            tileId,
-            GameConfig.lodSize0,
-          );
-          final double lat = centerLatLng.latitude;
-          final double lng = centerLatLng.longitude;
-
-          if (lat >= minLat &&
-              lat <= maxLat &&
-              lng >= minLng &&
-              lng <= maxLng) {
-            visibleIds.add(tileId);
-            visibleTiles.add(
-              HexTile(
-              id: tileId,
-              q: q,
-              r: r,
-              userId: 'footprint_marker',
-              colorHex: '#00FFCC', // 발자취 전용 네온 민트 그린
-              capturedAt: footprint.recordedAt,
-              captureCount: 1,
-              ),
-            );
+        if (lat >= minLat && lat <= maxLat && lng >= minLng && lng <= maxLng) {
+          // [적군 영토 은폐 가드] 1순위 초고속 필터: 투영 및 지리 연산 전에 적군 타일을 선결 거름으로써 CPU 부하 99% 제거
+          if (dynamicHexSize >= GameConfig.lodSize3 &&
+              tile.userId != _currentUserId) {
+            return;
           }
+          visibleIds.add(id);
+          visibleTiles.add(tile);
         }
       });
     }
 
-    // 패턴 뷰 모드 활성화 시 완료한 패턴 타일들을 가식 영역 체크 후 강제 렌더링 목록에 주입
-    if (_showCompletedPatterns) {
-      for (final tileId in _consumedTileIds) {
-        final parsed = HexService.parseTileId(tileId);
-        if (parsed != null) {
-          final int q = parsed['q'] as int;
-          final int r = parsed['r'] as int;
-          final centerLatLng = _clusterHelper.getTileCenter(
-            q,
-            r,
-            tileId,
-            dynamicHexSize,
-          );
-          final double lat = centerLatLng.latitude;
-          final double lng = centerLatLng.longitude;
+    // 발자취 모드 활성화 시 내 발자취 타일들을 현재 LOD 규격으로 실시간 병합한 뒤
+    // 가식 영역 체크 후 강제 렌더링 목록에 주입
+    if (_showFootprints) {
+      final clusteredFootprints = _getClusteredFootprints(dynamicHexSize);
 
-          if (lat >= minLat &&
-              lat <= maxLat &&
-              lng >= minLng &&
-              lng <= maxLng) {
-            visibleIds.add(tileId);
-            visibleTiles.add(
-              HexTile(
-              id: tileId,
-              q: q,
-              r: r,
-              userId: 'pattern_consumed',
-              colorHex: '#0066FF', // 완료 패턴 타일용 특수 파란색
-              capturedAt: DateTime.now(),
-              captureCount: 1,
-              ),
-            );
-          }
+      clusteredFootprints.forEach((tileId, tile) {
+        final centerLatLng = _clusterHelper.getTileCenter(
+          tile.q,
+          tile.r,
+          tileId,
+          dynamicHexSize,
+        );
+        final double lat = centerLatLng.latitude;
+        final double lng = centerLatLng.longitude;
+
+        if (lat >= minLat && lat <= maxLat && lng >= minLng && lng <= maxLng) {
+          visibleIds.add(tileId);
+          visibleTiles.add(tile);
         }
-      }
+      });
+    }
+
+    // 패턴 뷰 모드 활성화 시 완료한 패턴 타일들을 현재 LOD 규격으로 병합한 뒤
+    // 가식 영역 체크 후 강제 렌더링 목록에 주입
+    if (_showCompletedPatterns) {
+      final clusteredPatterns = _getClusteredPatternTiles(dynamicHexSize);
+
+      clusteredPatterns.forEach((tileId, tile) {
+        final centerLatLng = _clusterHelper.getTileCenter(
+          tile.q,
+          tile.r,
+          tileId,
+          dynamicHexSize,
+        );
+        final double lat = centerLatLng.latitude;
+        final double lng = centerLatLng.longitude;
+
+        if (lat >= minLat && lat <= maxLat && lng >= minLng && lng <= maxLng) {
+          visibleIds.add(tileId);
+          visibleTiles.add(tile);
+        }
+      });
     }
 
     // 미획득 상태의 동전이 위치한 타일들을 가식 영역 체크 후 강제 렌더링 목록에 주입 (중립 구역 동전 시각화 보장, 발자취 및 패턴 모드 시 생략)
@@ -590,12 +577,10 @@ class ConquestGame extends FlameGame {
       final int q = tileData.q;
       final int r = tileData.r;
 
-      // 동전 및 발자취 타일은 줌 배율에 변동하지 않고 항상 고정 크기(LOD 0)로 중심점/꼭짓점을 매핑하여 렌더 왜곡 방지
+      // 동전 타일은 줌 배율에 변동하지 않고 항상 고정 크기(LOD 0)로 중심점/꼭짓점을 매핑하여 렌더 왜곡 방지
+      // (발자취 타일은 일반 점령 타일과 동일하게 현재 LOD 규격으로 병합되어 렌더링된다)
       final double targetSize =
-          (tileData.userId == 'coin_marker' ||
-              tileData.userId == 'footprint_marker')
-          ? GameConfig.lodSize0
-          : dynamicHexSize;
+          tileData.userId == 'coin_marker' ? GameConfig.lodSize0 : dynamicHexSize;
 
       final centerLatLng = _clusterHelper.getTileCenter(q, r, id, targetSize);
       final cornerLatLngs = _clusterHelper.getTileCorners(q, r, id, targetSize);
@@ -645,6 +630,74 @@ class ConquestGame extends FlameGame {
     }
   }
 
+  /// 발자취 원본(LOD 0) 타일들을 현재 줌 LOD 규격으로 병합한 결과를 반환합니다.
+  /// 병합 결과는 LOD 규격이 바뀌거나 발자취 데이터가 변경될 때만 재생성됩니다.
+  Map<String, HexTile> _getClusteredFootprints(double hexSize) {
+    if (_footprintClusterHexSize == hexSize) {
+      return _footprintClusterCache;
+    }
+
+    // 100m 원본 발자취 타일을 렌더링용 HexTile로 변환 (LOD 병합의 입력 데이터)
+    final Map<String, HexTile> footprintTiles = {};
+    _footprints.forEach((tileId, footprint) {
+      final parsed = HexService.parseTileId(tileId);
+      if (parsed == null) return;
+      footprintTiles[tileId] = HexTile(
+        id: tileId,
+        q: parsed['q'] as int,
+        r: parsed['r'] as int,
+        userId: 'footprint_marker',
+        colorHex: '#00FFCC', // 발자취 전용 네온 민트 그린
+        capturedAt: footprint.recordedAt,
+        captureCount: 1,
+      );
+    });
+
+    // 일반 점령 타일과 동일하게 현재 줌 LOD 규격으로 병합
+    _footprintClusterCache = _clusterHelper.rebuildClusteredTiles(
+      footprintTiles,
+      hexSize,
+      _currentUserId,
+    );
+    _footprintClusterHexSize = hexSize;
+    return _footprintClusterCache;
+  }
+
+  /// 완료 패턴 원본(LOD 0) 타일들을 현재 줌 LOD 규격으로 병합한 결과를 반환합니다.
+  /// 병합 결과는 LOD 규격이 바뀌거나 소비 타일 목록이 변경될 때만 재생성됩니다.
+  Map<String, HexTile> _getClusteredPatternTiles(double hexSize) {
+    if (_patternClusterHexSize == hexSize) {
+      return _patternClusterCache;
+    }
+
+    final DateTime now = DateTime.now();
+
+    // 100m 원본 완료 패턴 타일을 렌더링용 HexTile로 변환 (LOD 병합의 입력 데이터)
+    final Map<String, HexTile> patternTiles = {};
+    for (final tileId in _consumedTileIds) {
+      final parsed = HexService.parseTileId(tileId);
+      if (parsed == null) continue;
+      patternTiles[tileId] = HexTile(
+        id: tileId,
+        q: parsed['q'] as int,
+        r: parsed['r'] as int,
+        userId: 'pattern_consumed',
+        colorHex: '#0066FF', // 완료 패턴 타일용 특수 파란색
+        capturedAt: now,
+        captureCount: 1,
+      );
+    }
+
+    // 일반 점령 타일과 동일하게 현재 줌 LOD 규격으로 병합
+    _patternClusterCache = _clusterHelper.rebuildClusteredTiles(
+      patternTiles,
+      hexSize,
+      _currentUserId,
+    );
+    _patternClusterHexSize = hexSize;
+    return _patternClusterCache;
+  }
+
   /// 점령 타일 렌더링 업데이트 (LOD 병합 및 캐싱 최적화 버전)
   void updateCapturedTiles({
     required Map<String, HexTile> capturedTiles,
@@ -683,6 +736,11 @@ class ConquestGame extends FlameGame {
     _showCompletedPatterns = showCompletedPatterns;
     _showFootprints = showFootprints;
     if (footprints != null) {
+      // 발자취 데이터가 실제로 변경된 경우에만 LOD 병합 캐시를 무효화
+      if (!mapEquals(_footprints, footprints)) {
+        _footprintClusterCache = {};
+        _footprintClusterHexSize = null;
+      }
       _footprints = footprints;
     }
     if (tileTypes != null) {
@@ -691,7 +749,13 @@ class ConquestGame extends FlameGame {
     if (tileAttributes != null) {
       _tileAttributes = tileAttributes;
     }
-    _consumedTileIds = consumedTileIds ?? {};
+    final Set<String> nextConsumedTileIds = consumedTileIds ?? <String>{};
+    // 소비 타일 목록이 실제로 변경된 경우에만 패턴 LOD 병합 캐시를 무효화
+    if (!setEquals(_consumedTileIds, nextConsumedTileIds)) {
+      _patternClusterCache = {};
+      _patternClusterHexSize = null;
+    }
+    _consumedTileIds = nextConsumedTileIds;
     if (coins != null) {
       _coins = coins;
     }
@@ -1083,5 +1147,74 @@ class ConquestGame extends FlameGame {
       _footprintTargetMarker = FootprintTargetMarker(q: targetQ, r: targetR);
       add(_footprintTargetMarker!);
     }
+  }
+
+  /// 발자취 모드에서 탭한 지점이 속한 현재 LOD 격자 안의 실제 발자취 타일 중
+  /// 탭 지점과 가장 가까운 타일 ID를 반환합니다. 해당 격자에 발자취가 없으면 null.
+  String? findFootprintTileIdNear(LatLng point, double zoom) {
+    if (_footprints.isEmpty) return null;
+
+    final double hexSize = _clusterHelper.getHexSizeForZoom(zoom);
+    final lodHex = HexService.latLngToHex(point, hexSize: hexSize);
+    final int targetQ = lodHex['q']!;
+    final int targetR = lodHex['r']!;
+
+    String? nearestTileId;
+    double nearestDistance = double.infinity;
+
+    _footprints.forEach((tileId, footprint) {
+      final parsed = HexService.parseTileId(tileId);
+      if (parsed == null) return;
+      final int q = parsed['q'] as int;
+      final int r = parsed['r'] as int;
+      final LatLng centerLatLng = _clusterHelper.getTileCenter(
+        q,
+        r,
+        tileId,
+        GameConfig.lodSize0,
+      );
+
+      // 발자취 원본 타일이 현재 LOD 격자 셀에 병합되는지 확인
+      final cell = HexService.latLngToHex(centerLatLng, hexSize: hexSize);
+      if (cell['q'] != targetQ || cell['r'] != targetR) return;
+
+      final double distance = HexService.calculateDistance(point, centerLatLng);
+      if (distance < nearestDistance) {
+        nearestDistance = distance;
+        nearestTileId = tileId;
+      }
+    });
+
+    return nearestTileId;
+  }
+
+  /// 패턴 도감 모드에서 탭한 지점이 속한 현재 LOD 격자 안에
+  /// 소비 완료된 패턴 타일이 존재하는지 반환합니다.
+  bool hasConsumedPatternTileNear(LatLng point, double zoom) {
+    if (_consumedTileIds.isEmpty) return false;
+
+    final double hexSize = _clusterHelper.getHexSizeForZoom(zoom);
+    final lodHex = HexService.latLngToHex(point, hexSize: hexSize);
+    final int targetQ = lodHex['q']!;
+    final int targetR = lodHex['r']!;
+
+    for (final tileId in _consumedTileIds) {
+      final parsed = HexService.parseTileId(tileId);
+      if (parsed == null) continue;
+      final int q = parsed['q'] as int;
+      final int r = parsed['r'] as int;
+      final LatLng centerLatLng = _clusterHelper.getTileCenter(
+        q,
+        r,
+        tileId,
+        GameConfig.lodSize0,
+      );
+
+      // 소비 타일이 현재 LOD 격자 셀에 병합되는지 확인
+      final cell = HexService.latLngToHex(centerLatLng, hexSize: hexSize);
+      if (cell['q'] == targetQ && cell['r'] == targetR) return true;
+    }
+
+    return false;
   }
 }
