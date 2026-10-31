@@ -3,6 +3,7 @@ import 'dart:math';
 import 'package:flutter/material.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import '../core/constants/game_config.dart';
+import '../core/utils/device_platform.dart';
 import '../services/auth_service.dart';
 import '../services/notification_service.dart';
 import '../services/analytics_service.dart';
@@ -363,6 +364,7 @@ class AuthProvider extends ChangeNotifier {
         nickname: nickname,
         colorHex: colorHex,
         teamId: teamId,
+        devicePlatform: detectDevicePlatform(),
         mainBaseTileId: mainBaseTileId,
         termsAgreedAt: termsAgreedAt,
         privacyAgreedAt: privacyAgreedAt,

@@ -7,6 +7,7 @@ import '../models/user_profile.dart';
 import '../core/constants/strings.dart';
 import '../core/constants/game_config.dart';
 import '../core/app_config.dart';
+import '../core/utils/device_platform.dart';
 import 'analytics_service.dart';
 
 /// Supabase Auth 서비스와 소셜 로그인(구글, 애플) 연동을 총괄하는 인증 관리 서비스 클래스
@@ -64,6 +65,7 @@ class AuthService {
           'main_base_tile_id': mainBaseTileId,
           'gold': GameConfig.defaultSignupGold,
           'created_at': DateTime.now().toIso8601String(),
+          'device_platform': detectDevicePlatform(),
           'terms_agreed_at': termsAgreedAt.toIso8601String(),
           'privacy_agreed_at': privacyAgreedAt.toIso8601String(),
           'location_agreed_at': locationAgreedAt.toIso8601String(),
