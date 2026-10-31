@@ -1035,38 +1035,6 @@ textarea.tactical-input:focus {
   color: var(--accent-cyan);
 }
 
-/* 순위 뱃지 (Ranking) */
-.rank-badge {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  width: 28px;
-  height: 28px;
-  border-radius: 8px;
-  font-family: var(--font-display);
-  font-weight: 800;
-  font-size: 0.85rem;
-}
-
-.rank-badge.gold {
-  color: #fbbf24;
-  background: rgba(251, 191, 36, 0.12);
-  border: 1px solid rgba(251, 191, 36, 0.35);
-  box-shadow: 0 0 10px rgba(251, 191, 36, 0.2);
-}
-
-.rank-badge.silver {
-  color: #cbd5e1;
-  background: rgba(203, 213, 225, 0.12);
-  border: 1px solid rgba(203, 213, 225, 0.3);
-}
-
-.rank-badge.bronze {
-  color: #fdba74;
-  background: rgba(253, 186, 116, 0.12);
-  border: 1px solid rgba(253, 186, 116, 0.3);
-}
-
 /* 역할 뱃지 */
 .role-badge {
   display: inline-flex;

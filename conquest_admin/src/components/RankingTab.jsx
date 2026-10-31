@@ -20,7 +20,7 @@ export default function RankingTab() {
       
       const { data, error: err } = await supabase
         .from('profiles')
-        .select('id, nickname, color_hex, captured_tiles_count, daily_moved_tiles_count, total_moved_tiles_count, gold, created_at')
+        .select('id, nickname, captured_tiles_count, daily_moved_tiles_count, total_moved_tiles_count, gold, created_at')
         .neq('role', 'admin')
         .order(sortBy, { ascending: false });
 
@@ -47,13 +47,6 @@ export default function RankingTab() {
   const safePage = Math.min(page, totalPages);
   const pagedPlayers = filteredPlayers.slice((safePage - 1) * PAGE_SIZE, safePage * PAGE_SIZE);
   const rankOffset = (safePage - 1) * PAGE_SIZE;
-
-  const getRankBadge = (index) => {
-    if (index === 0) return { className: 'gold', label: '1위' };
-    if (index === 1) return { className: 'silver', label: '2위' };
-    if (index === 2) return { className: 'bronze', label: '3위' };
-    return { className: 'plain', label: `${index + 1}` };
-  };
 
   const getSortValue = (agent) => {
     if (sortBy === 'daily_moved_tiles_count') return agent.daily_moved_tiles_count || 0;
@@ -151,48 +144,22 @@ export default function RankingTab() {
                 pagedPlayers.map((agent, idx) => {
                   const index = rankOffset + idx;
                   const isRanked = getSortValue(agent) > 0;
-                  const rank = getRankBadge(index);
-                  const isTop3 = isRanked && index < 3;
                   return (
                     <tr
                       key={agent.id}
                     >
-                      <td style={{ textAlign: 'center', width: '90px' }}>
-                        {!isRanked ? (
-                          <span className="rank-badge plain">
-                            -
-                          </span>
-                        ) : isTop3 ? (
-                          <span className={`rank-badge ${rank.className}`}>
-                            <Award size={13} />
-                            {rank.label}
-                          </span>
-                        ) : (
-                          <span className="rank-badge plain">
-                            {rank.label}
-                          </span>
-                        )}
+                      <td style={{ textAlign: 'center', width: '80px' }}>
+                        {isRanked ? index + 1 : '-'}
                       </td>
                       <td>
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '0.7rem', minWidth: 0 }}>
-                          <div
-                            style={{
-                              width: '10px',
-                              height: '10px',
-                              borderRadius: '50%',
-                              backgroundColor: agent.color_hex || 'var(--accent-cyan)',
-                              flexShrink: 0
-                            }}
-                          />
-                          <div style={{
-                            fontWeight: 600,
-                            fontSize: '0.88rem',
-                            textOverflow: 'ellipsis',
-                            overflow: 'hidden',
-                            whiteSpace: 'nowrap'
-                          }}>
-                            {agent.nickname || '미등록 사용자'}
-                          </div>
+                        <div style={{
+                          fontWeight: 600,
+                          fontSize: '0.88rem',
+                          textOverflow: 'ellipsis',
+                          overflow: 'hidden',
+                          whiteSpace: 'nowrap'
+                        }}>
+                          {agent.nickname || '미등록 사용자'}
                         </div>
                       </td>
                       <td style={{
