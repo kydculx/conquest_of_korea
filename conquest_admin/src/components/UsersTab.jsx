@@ -150,6 +150,14 @@ export default function UsersTab() {
     return `${String(d.getFullYear()).slice(2)}.${p(d.getMonth() + 1)}.${p(d.getDate())}-${p(d.getHours())}:${p(d.getMinutes())}`;
   };
 
+  const formatDevicePlatform = (platform) => {
+    if (platform === 'ios') return 'iOS';
+    if (platform === 'android') return 'Android';
+    if (platform === 'web') return 'Web';
+    if (platform === 'other') return '기타';
+    return '-';
+  };
+
   const filteredUsers = users.filter(user =>
     user.nickname.toLowerCase().includes(searchTerm.toLowerCase()) ||
     user.id.toLowerCase().includes(searchTerm.toLowerCase())
@@ -192,6 +200,7 @@ export default function UsersTab() {
             <tr>
               <th>사용자 정보</th>
               <th>가입 일시</th>
+              <th>디바이스</th>
               <th>본진 기지 ID</th>
               <th>보유 골드</th>
               <th>점령 영토</th>
@@ -201,7 +210,7 @@ export default function UsersTab() {
           <tbody>
             {filteredUsers.length === 0 ? (
               <tr>
-                <td colSpan="6" className="empty-state">
+                <td colSpan="7" className="empty-state">
                   조건에 일치하는 사용자가 존재하지 않습니다.
                 </td>
               </tr>
@@ -216,6 +225,9 @@ export default function UsersTab() {
                   </td>
                   <td style={{ fontFamily: 'var(--font-mono)', fontSize: '0.8rem', whiteSpace: 'nowrap' }}>
                     {formatJoinedAt(user.created_at)}
+                  </td>
+                  <td style={{ fontSize: '0.82rem', whiteSpace: 'nowrap' }}>
+                    {formatDevicePlatform(user.device_platform)}
                   </td>
                   <td>
                     {editingBaseId === user.id ? (
@@ -369,6 +381,10 @@ export default function UsersTab() {
               <div>
                 <span className="kv-label">플레이어 ID (고유키)</span>
                 <div className="kv-value mono">{selectedUser.id}</div>
+              </div>
+              <div>
+                <span className="kv-label">디바이스</span>
+                <div className="kv-value">{formatDevicePlatform(selectedUser.device_platform)}</div>
               </div>
               <div>
                 <span className="kv-label">점령 구역</span>
