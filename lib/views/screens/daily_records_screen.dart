@@ -391,9 +391,9 @@ class _DailyRecordsScreenState extends State<DailyRecordsScreen> {
         children: [
           Row(
             children: [
-              Icon(
+              const Icon(
                 Icons.directions_walk_rounded,
-                color: GameColors.accentNeon,
+                color: Palette.neonGreen,
                 size: 18,
               ),
               const SizedBox(width: 8),
@@ -408,8 +408,8 @@ class _DailyRecordsScreenState extends State<DailyRecordsScreen> {
               const Spacer(),
               Text(
                 GameStrings.stepsCount(total),
-                style: TextStyle(
-                  color: GameColors.accentNeon,
+                style: const TextStyle(
+                  color: Palette.neonGreen,
                   fontSize: 13,
                   fontWeight: FontWeight.w800,
                 ),
@@ -439,12 +439,12 @@ class _DailyRecordsScreenState extends State<DailyRecordsScreen> {
           else
             SizedBox(
               height: 120,
-              child: CustomPaint(
-                painter: _StepBarChartPainter(
-                  values: values,
-                  maxValue: maxSteps,
-                  todayDay: isCurrentMonth ? now.day : null,
-                ),
+              child: _StepBarChart(
+                values: values,
+                maxValue: maxSteps,
+                todayDay: isCurrentMonth ? now.day : null,
+                month: month,
+                locale: locale,
               ),
             ),
         ],
@@ -944,16 +944,16 @@ class _DailyRecordsScreenState extends State<DailyRecordsScreen> {
                 Row(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
-                    Icon(
+                    const Icon(
                       Icons.directions_walk_rounded,
-                      color: GameColors.textMuted,
+                      color: Palette.neonGreen,
                       size: 16,
                     ),
                     const SizedBox(width: 6),
                     Text(
                       GameStrings.stepsCount(steps),
-                      style: TextStyle(
-                        color: GameColors.textSecondary,
+                      style: const TextStyle(
+                        color: Palette.neonGreen,
                         fontSize: 12.5,
                         fontWeight: FontWeight.w600,
                       ),
@@ -1338,7 +1338,7 @@ class _TileRingPainter extends CustomPainter {
       if (firstLapProgress > 0) {
         final firstLapPaint = Paint()
           ..shader = const SweepGradient(
-            colors: [Palette.orangeCoral, Palette.gold],
+            colors: [Palette.neonGreen, Palette.tealOk],
             transform: GradientRotation(-math.pi / 2),
           ).createShader(rect)
           ..style = PaintingStyle.stroke
@@ -1356,7 +1356,7 @@ class _TileRingPainter extends CustomPainter {
 
       if (stepProgress > 1) {
         final laterLapPaint = Paint()
-          ..color = Palette.gold
+          ..color = Palette.tealOk
           ..style = PaintingStyle.stroke
           ..strokeWidth = strokeWidth
           ..strokeCap = StrokeCap.round;
@@ -1384,7 +1384,11 @@ class _TileRingPainter extends CustomPainter {
         strokeWidth * 0.8,
         headShadowPaint,
       );
-      canvas.drawCircle(head, strokeWidth * 0.5, Paint()..color = Palette.gold);
+      canvas.drawCircle(
+        head,
+        strokeWidth * 0.5,
+        Paint()..color = Palette.tealOk,
+      );
     }
   }
 
@@ -1445,13 +1449,10 @@ class _StepBarChartPainter extends CustomPainter {
           begin: Alignment.bottomCenter,
           end: Alignment.topCenter,
           colors: isToday
-              ? [
-                  Palette.footprintMint.withValues(alpha: 0.55),
-                  Palette.footprintMint,
-                ]
+              ? [Palette.tealOk.withValues(alpha: 0.55), Palette.tealOk]
               : [
-                  GameColors.accentNeon.withValues(alpha: 0.3),
-                  GameColors.accentNeon.withValues(alpha: 0.85),
+                  Palette.neonGreen.withValues(alpha: 0.3),
+                  Palette.neonGreen.withValues(alpha: 0.85),
                 ],
         ).createShader(rect.outerRect);
       canvas.drawRRect(rect, paint);
@@ -1490,6 +1491,219 @@ class _StepBarChartPainter extends CustomPainter {
     }
     return false;
   }
+}
+
+class _StepBarChart extends StatefulWidget {
+  final List<int> values;
+  final int maxValue;
+  final int? todayDay;
+  final DateTime month;
+  final String locale;
+
+  const _StepBarChart({
+    required this.values,
+    required this.maxValue,
+    required this.todayDay,
+    required this.month,
+    required this.locale,
+  });
+
+  @override
+  State<_StepBarChart> createState() => _StepBarChartState();
+}
+
+class _StepBarChartState extends State<_StepBarChart> {
+  int? _selectedDay;
+
+  void _updateSelection(Offset localPosition, double width) {
+    if (widget.values.isEmpty || width <= 0) return;
+    final double clampedX = localPosition.dx.clamp(0.0, width - 0.001);
+    final int day = (clampedX / width * widget.values.length).floor() + 1;
+    final int safeDay = day.clamp(1, widget.values.length);
+    if (safeDay != _selectedDay) {
+      setState(() => _selectedDay = safeDay);
+    }
+  }
+
+  void _clearSelection() {
+    if (_selectedDay == null) return;
+    setState(() => _selectedDay = null);
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final double width = constraints.maxWidth;
+        final int? selectedDay = _selectedDay;
+        return Listener(
+          onPointerUp: (_) => _clearSelection(),
+          onPointerCancel: (_) => _clearSelection(),
+          child: GestureDetector(
+            behavior: HitTestBehavior.opaque,
+            onLongPressStart: (details) =>
+                _updateSelection(details.localPosition, width),
+            onLongPressMoveUpdate: (details) =>
+                _updateSelection(details.localPosition, width),
+            onLongPressEnd: (_) => _clearSelection(),
+            child: Stack(
+              clipBehavior: Clip.none,
+              children: [
+                Positioned.fill(
+                  child: CustomPaint(
+                    painter: _StepBarChartPainter(
+                      values: widget.values,
+                      maxValue: widget.maxValue,
+                      todayDay: widget.todayDay,
+                    ),
+                  ),
+                ),
+                if (selectedDay != null) _buildTooltip(selectedDay, width),
+              ],
+            ),
+          ),
+        );
+      },
+    );
+  }
+
+  Widget _buildTooltip(int day, double width) {
+    const double desiredBubbleWidth = 142;
+    final double bubbleWidth = math.min(desiredBubbleWidth, width - 8);
+    final double barCenterX = (day - 0.5) * (width / widget.values.length);
+    final double maxLeft = math.max(4.0, width - bubbleWidth - 4.0);
+    final double bubbleLeft = (barCenterX - bubbleWidth / 2).clamp(
+      4.0,
+      maxLeft,
+    );
+    final double pointerMin = math.min(14.0, bubbleWidth / 2);
+    final double pointerMax = math.max(pointerMin, bubbleWidth - 14.0);
+    final double pointerX = (barCenterX - bubbleLeft).clamp(
+      pointerMin,
+      pointerMax,
+    );
+    final int steps = widget.values[day - 1];
+    final DateTime date = DateTime.utc(
+      widget.month.year,
+      widget.month.month,
+      day,
+    );
+    final String dateLabel = DateFormat.MMMd(widget.locale).format(date);
+
+    return Positioned(
+      left: bubbleLeft,
+      top: 0,
+      width: bubbleWidth,
+      child: _StepChartTooltip(
+        dateLabel: dateLabel,
+        steps: steps,
+        pointerX: pointerX,
+      ),
+    );
+  }
+}
+
+class _StepChartTooltip extends StatelessWidget {
+  final String dateLabel;
+  final int steps;
+  final double pointerX;
+
+  const _StepChartTooltip({
+    required this.dateLabel,
+    required this.steps,
+    required this.pointerX,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return CustomPaint(
+      painter: _StepTooltipPainter(pointerX: pointerX),
+      child: Padding(
+        padding: const EdgeInsets.fromLTRB(10, 7, 10, 13),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Text(
+              dateLabel,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: TextStyle(
+                color: GameColors.textMuted,
+                fontSize: 9.5,
+                fontWeight: FontWeight.w600,
+              ),
+            ),
+            const SizedBox(height: 2),
+            Text(
+              GameStrings.stepsCount(steps),
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: const TextStyle(
+                color: Palette.neonGreen,
+                fontSize: 11.5,
+                fontWeight: FontWeight.w800,
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _StepTooltipPainter extends CustomPainter {
+  final double pointerX;
+
+  const _StepTooltipPainter({required this.pointerX});
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    const double pointerHeight = 6;
+    const double radius = 10;
+    final double bodyHeight = size.height - pointerHeight;
+    if (bodyHeight <= 0 || size.width <= 0) return;
+
+    final RRect body = RRect.fromRectAndRadius(
+      Rect.fromLTWH(0, 0, size.width, bodyHeight),
+      const Radius.circular(radius),
+    );
+    final double px = pointerX.clamp(radius, size.width - radius);
+    final Path pointer = Path()
+      ..moveTo(px - 6, bodyHeight)
+      ..lineTo(px, size.height)
+      ..lineTo(px + 6, bodyHeight)
+      ..close();
+
+    final shadowPath = Path()
+      ..addRRect(body)
+      ..addPath(pointer, Offset.zero);
+    final shadowPaint = Paint()
+      ..color = Colors.black.withValues(alpha: 0.35)
+      ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 4.0);
+    canvas.drawPath(shadowPath.shift(const Offset(0, 2)), shadowPaint);
+
+    final fillPaint = Paint()
+      ..color = GameColors.backgroundMedium.withValues(alpha: 0.96)
+      ..style = PaintingStyle.fill;
+    canvas.drawRRect(body, fillPaint);
+
+    final borderPaint = Paint()
+      ..color = Palette.neonGreen.withValues(alpha: 0.5)
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = 1.0;
+    canvas.drawRRect(body, borderPaint);
+
+    canvas.drawPath(pointer, fillPaint);
+    final pointerBorder = Path()
+      ..moveTo(px - 6, bodyHeight)
+      ..lineTo(px, size.height)
+      ..lineTo(px + 6, bodyHeight);
+    canvas.drawPath(pointerBorder, borderPaint);
+  }
+
+  @override
+  bool shouldRepaint(covariant _StepTooltipPainter oldDelegate) =>
+      oldDelegate.pointerX != pointerX;
 }
 
 class _MonthArrowButton extends StatelessWidget {
