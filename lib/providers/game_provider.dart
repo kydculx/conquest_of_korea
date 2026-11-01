@@ -76,6 +76,12 @@ class GameProvider extends ChangeNotifier with WidgetsBindingObserver {
   int _todaySteps = 0;
   int get todaySteps => _todaySteps;
 
+  /// 최근 일일 걸음수 DB 동기화 상태 캐시 (중복 업로드 방지)
+  String? _lastSyncedStepUserId;
+  DateTime? _lastSyncedStepDate;
+  int? _lastSyncedStepCount;
+  bool _isSyncingSteps = false;
+
   /// 사용자가 설정한 로컬 GPS 정확도 레벨 ('high', 'best', 'bestForNavigation', 'medium')
   String _gpsAccuracyLevel = 'high';
   String get gpsAccuracyLevel => _gpsAccuracyLevel;
@@ -666,8 +672,34 @@ class GameProvider extends ChangeNotifier with WidgetsBindingObserver {
         _isStepDenied = denied;
         notifyListeners();
       }
+      await _syncDailySteps(steps);
     } catch (e) {
       debugPrint('⚠️ 걸음수 데이터 업데이트 중 에러: $e');
+    }
+  }
+
+  Future<void> _syncDailySteps(int steps) async {
+    final userId = _userId;
+    if (userId == null || !_isAuthenticated || steps <= 0) return;
+    if (_isSyncingSteps) return;
+
+    final now = DateTime.now();
+    final date = DateTime(now.year, now.month, now.day);
+    if (_lastSyncedStepUserId == userId &&
+        _lastSyncedStepDate == date &&
+        _lastSyncedStepCount == steps) {
+      return;
+    }
+
+    _isSyncingSteps = true;
+    try {
+      final success = await _supabase.upsertDailySteps(userId, date, steps);
+      if (!success) return;
+      _lastSyncedStepUserId = userId;
+      _lastSyncedStepDate = date;
+      _lastSyncedStepCount = steps;
+    } finally {
+      _isSyncingSteps = false;
     }
   }
 

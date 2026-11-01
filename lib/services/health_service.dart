@@ -13,8 +13,9 @@ class HealthService {
   static final HealthService instance = HealthService._privateConstructor();
 
   final Health _health = Health();
-  static const MethodChannel _healthChannel =
-      MethodChannel('com.watercherry.conquest_mobile/health');
+  static const MethodChannel _healthChannel = MethodChannel(
+    'com.watercherry.conquest_mobile/health',
+  );
 
   /// 플랫폼별 건강 앱 연동 설정 화면으로 이동합니다.
   /// - Android: Health Connect 앱 권한 설정 -> Health Connect 메인 설정 -> 앱 설정 폴백
@@ -27,8 +28,9 @@ class HealthService {
 
     try {
       if (Platform.isAndroid) {
-        final bool? success =
-            await _healthChannel.invokeMethod<bool>('openHealthSettings');
+        final bool? success = await _healthChannel.invokeMethod<bool>(
+          'openHealthSettings',
+        );
         if (success == true) return true;
         return await Geolocator.openAppSettings();
       } else if (Platform.isIOS) {
@@ -37,8 +39,10 @@ class HealthService {
         try {
           final healthUri = Uri.parse('x-apple-health://');
           if (await canLaunchUrl(healthUri)) {
-            final launched = await launchUrl(healthUri,
-                mode: LaunchMode.externalApplication);
+            final launched = await launchUrl(
+              healthUri,
+              mode: LaunchMode.externalApplication,
+            );
             if (launched) return true;
           }
         } catch (_) {
@@ -131,13 +135,18 @@ class HealthService {
       if (Platform.isAndroid) {
         final status = await _health.getHealthConnectSdkStatus();
         if (status != HealthConnectSdkStatus.sdkAvailable) {
-          debugPrint('⚠️ Health Connect Sdk is not available: status = $status');
+          debugPrint(
+            '⚠️ Health Connect Sdk is not available: status = $status',
+          );
           _lastCheckTime = now;
           _lastCheckResult = false;
           return false;
         }
       }
-      final bool? hasPermission = await _health.hasPermissions(_types, permissions: _permissions);
+      final bool? hasPermission = await _health.hasPermissions(
+        _types,
+        permissions: _permissions,
+      );
       _lastCheckTime = now;
       _lastCheckResult = hasPermission ?? false;
       // 네이티브 확정 false면 거부 플래그 세팅 (UI 연동 안내용, resume에서 해제)
@@ -162,8 +171,11 @@ class HealthService {
     try {
       if (Platform.isAndroid) {
         final status = await _health.getHealthConnectSdkStatus();
-        if (status == HealthConnectSdkStatus.sdkUnavailableProviderUpdateRequired) {
-          debugPrint('⚠️ Health Connect Provider (Update) required. Launching install redirect.');
+        if (status ==
+            HealthConnectSdkStatus.sdkUnavailableProviderUpdateRequired) {
+          debugPrint(
+            '⚠️ Health Connect Provider (Update) required. Launching install redirect.',
+          );
           await _health.installHealthConnect();
           return false;
         } else if (status == HealthConnectSdkStatus.sdkUnavailable) {
@@ -171,7 +183,10 @@ class HealthService {
           return false;
         }
       }
-      final bool requested = await _health.requestAuthorization(_types, permissions: _permissions);
+      final bool requested = await _health.requestAuthorization(
+        _types,
+        permissions: _permissions,
+      );
       // 명시 요청 결과를 캐시에 반영 (거부 시 이후 네이티브 호출 생략)
       _denied = !requested;
       _lastCheckTime = DateTime.now();
@@ -227,5 +242,43 @@ class HealthService {
       debugPrint('⚠️ HealthService.getTodaySteps 중 에러 발생: $e');
       return 0;
     }
+  }
+
+  /// 지정한 기간의 현지 날짜별 누적 걸음수를 조회합니다.
+  /// 하루 단위(86400초) 버킷을 한 번에 조회하며, 권한이 없거나 실패하면 빈 맵을 반환합니다.
+  Future<Map<String, int>> getDailySteps(DateTime start, DateTime end) async {
+    if (kDebugMode && Platform.environment.containsKey('FLUTTER_TEST')) {
+      return const {};
+    }
+    try {
+      final hasPermission = await hasStepPermissions();
+      if (!hasPermission) return const {};
+
+      final points = await _health.getHealthIntervalDataFromTypes(
+        startDate: start,
+        endDate: end,
+        types: _types,
+        interval: 86400,
+      );
+
+      final result = <String, int>{};
+      for (final point in points) {
+        final value = point.value;
+        if (value is! NumericHealthValue) continue;
+        final key = _localDateKey(point.dateFrom);
+        result[key] = (result[key] ?? 0) + value.numericValue.round();
+      }
+      return result;
+    } catch (e) {
+      debugPrint('⚠️ HealthService.getDailySteps 중 에러 발생: $e');
+      return const {};
+    }
+  }
+
+  String _localDateKey(DateTime date) {
+    final year = date.year.toString().padLeft(4, '0');
+    final month = date.month.toString().padLeft(2, '0');
+    final day = date.day.toString().padLeft(2, '0');
+    return '$year-$month-$day';
   }
 }
