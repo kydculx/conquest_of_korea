@@ -1188,10 +1188,12 @@ class _TileRing extends StatelessWidget {
         : achieved
         ? Palette.footprintMint
         : GameColors.textPrimary;
-    final double maxProgress = math
-        .max(count / goal, steps / _dailyStepLap)
-        .toDouble();
-    final double extraLaps = math.max(0.0, maxProgress - 1);
+    final double tileTarget = count / goal;
+    final double stepTarget = steps / _dailyStepLap;
+    final double maxTarget = math.max(tileTarget, stepTarget).toDouble();
+    final double tileRatio = maxTarget > 0 ? tileTarget / maxTarget : 0.0;
+    final double stepRatio = maxTarget > 0 ? stepTarget / maxTarget : 0.0;
+    final double extraLaps = math.max(0.0, maxTarget - 1);
     final Duration animationDuration = Duration(
       milliseconds: (1200 + extraLaps * 600).round(),
     );
@@ -1200,15 +1202,16 @@ class _TileRing extends StatelessWidget {
       width: size,
       height: size,
       child: TweenAnimationBuilder<double>(
-        tween: Tween<double>(begin: 0.0, end: 1.0),
+        tween: Tween<double>(begin: 0.0, end: maxTarget),
         duration: animationDuration,
         curve: Curves.easeInOutCubic,
-        builder: (context, progressValue, child) {
-          final progress = (count / goal) * progressValue;
-          final stepProgress = (steps / _dailyStepLap) * progressValue;
+        builder: (context, animatedMax, child) {
+          final progress = animatedMax * tileRatio;
+          final stepProgress = animatedMax * stepRatio;
+          final countRatio = maxTarget > 0 ? animatedMax / maxTarget : 0.0;
           final countLabel = NumberFormat.decimalPattern(
             locale,
-          ).format((count * progressValue).round());
+          ).format((count * countRatio).round());
           return CustomPaint(
             painter: _TileRingPainter(
               progress: progress,
@@ -1253,143 +1256,129 @@ class _TileRingPainter extends CustomPainter {
 
   @override
   void paint(Canvas canvas, Size size) {
-    final double strokeWidth = (size.width * 0.07).clamp(2.5, 7.0).toDouble();
+    final double strokeWidth = (size.width * 0.08).clamp(3.0, 9.0).toDouble();
     final center = Offset(size.width / 2, size.height / 2);
     final double outerRadius = size.width / 2 - strokeWidth / 2;
     final double gap = strokeWidth * 0.55;
     final double innerRadius = outerRadius - strokeWidth - gap;
     if (innerRadius <= 0) return;
 
-    final trackPaint = Paint()
-      ..color = Colors.white.withValues(alpha: 0.08)
+    // 그래프 배경(트랙)은 타일 이동 기록 유무와 관계없이 항상 주황 계열로 유지한다.
+    const Color tileTrackColor = Palette.softRed;
+    final Color tileHeadColor = achieved
+        ? Palette.softRed
+        : Palette.footprintMint;
+    const Color stepHeadColor = Palette.tealOk;
+
+    final Paint outerTrackPaint = Paint()
+      ..color = stepHeadColor.withValues(alpha: 0.22)
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = strokeWidth
+      ..strokeCap = StrokeCap.round;
+    final Paint innerTrackPaint = Paint()
+      ..color = tileTrackColor.withValues(alpha: 0.22)
       ..style = PaintingStyle.stroke
       ..strokeWidth = strokeWidth
       ..strokeCap = StrokeCap.round;
 
-    canvas.drawCircle(center, outerRadius, trackPaint);
-    canvas.drawCircle(center, innerRadius, trackPaint);
+    canvas.drawCircle(center, outerRadius, outerTrackPaint);
+    canvas.drawCircle(center, innerRadius, innerTrackPaint);
 
     if (progress > 0) {
-      final rect = Rect.fromCircle(center: center, radius: innerRadius);
-      final colors = achieved
-          ? const [Palette.accentCyan, Palette.footprintMint, Palette.softRed]
-          : const [Palette.accentCyan, Palette.footprintMint];
-      final Color lastColor = achieved
-          ? Palette.softRed
-          : Palette.footprintMint;
-      final double firstLapProgress = progress.clamp(0.0, 1.0);
-
-      if (firstLapProgress > 0) {
-        final firstLapPaint = Paint()
-          ..shader = SweepGradient(
-            colors: colors,
-            transform: const GradientRotation(-math.pi / 2),
-          ).createShader(rect)
-          ..style = PaintingStyle.stroke
-          ..strokeWidth = strokeWidth
-          ..strokeCap = StrokeCap.round;
-
-        canvas.drawArc(
-          rect,
-          -math.pi / 2,
-          math.pi * 2 * firstLapProgress,
-          false,
-          firstLapPaint,
-        );
-      }
-
-      if (progress > 1) {
-        final laterLapPaint = Paint()
-          ..color = lastColor
-          ..style = PaintingStyle.stroke
-          ..strokeWidth = strokeWidth
-          ..strokeCap = StrokeCap.round;
-
-        canvas.drawArc(
-          rect,
-          -math.pi / 2,
-          math.pi * 2 * (progress - 1),
-          false,
-          laterLapPaint,
-        );
-      }
-
-      final headAngle = -math.pi / 2 + math.pi * 2 * progress;
-      final head = Offset(
+      final Rect rect = Rect.fromCircle(center: center, radius: innerRadius);
+      final double headAngle = -math.pi / 2 + math.pi * 2 * progress;
+      final Offset head = Offset(
         center.dx + innerRadius * math.cos(headAngle),
         center.dy + innerRadius * math.sin(headAngle),
       );
+      final Offset tangent = Offset(-math.sin(headAngle), math.cos(headAngle));
 
-      final headShadowPaint = Paint()
-        ..color = Colors.black.withValues(alpha: 0.45)
-        ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 2.0);
-      canvas.drawCircle(
-        head + Offset(0, strokeWidth * 0.25),
-        strokeWidth * 0.8,
-        headShadowPaint,
+      _drawSolidArc(
+        canvas,
+        rect,
+        tileHeadColor,
+        progress.clamp(0.0, 1.0),
+        strokeWidth,
       );
-      canvas.drawCircle(head, strokeWidth * 0.5, Paint()..color = lastColor);
+      // 링을 모두 그린 뒤 머리를 마지막에 얹어, 여러 바퀴가 겹쳐도 항상 보이게 한다.
+      _drawHead(canvas, head, tangent, strokeWidth, tileHeadColor);
     }
 
     if (stepProgress > 0) {
-      final rect = Rect.fromCircle(center: center, radius: outerRadius);
-      final double firstLapProgress = stepProgress.clamp(0.0, 1.0);
-
-      if (firstLapProgress > 0) {
-        final firstLapPaint = Paint()
-          ..shader = const SweepGradient(
-            colors: [Palette.neonGreen, Palette.tealOk],
-            transform: GradientRotation(-math.pi / 2),
-          ).createShader(rect)
-          ..style = PaintingStyle.stroke
-          ..strokeWidth = strokeWidth
-          ..strokeCap = StrokeCap.round;
-
-        canvas.drawArc(
-          rect,
-          -math.pi / 2,
-          math.pi * 2 * firstLapProgress,
-          false,
-          firstLapPaint,
-        );
-      }
-
-      if (stepProgress > 1) {
-        final laterLapPaint = Paint()
-          ..color = Palette.tealOk
-          ..style = PaintingStyle.stroke
-          ..strokeWidth = strokeWidth
-          ..strokeCap = StrokeCap.round;
-
-        canvas.drawArc(
-          rect,
-          -math.pi / 2,
-          math.pi * 2 * (stepProgress - 1),
-          false,
-          laterLapPaint,
-        );
-      }
-
-      final headAngle = -math.pi / 2 + math.pi * 2 * stepProgress;
-      final head = Offset(
+      final Rect rect = Rect.fromCircle(center: center, radius: outerRadius);
+      final double headAngle = -math.pi / 2 + math.pi * 2 * stepProgress;
+      final Offset head = Offset(
         center.dx + outerRadius * math.cos(headAngle),
         center.dy + outerRadius * math.sin(headAngle),
       );
+      final Offset tangent = Offset(-math.sin(headAngle), math.cos(headAngle));
 
-      final headShadowPaint = Paint()
-        ..color = Colors.black.withValues(alpha: 0.45)
-        ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 2.0);
-      canvas.drawCircle(
-        head + Offset(0, strokeWidth * 0.25),
-        strokeWidth * 0.8,
-        headShadowPaint,
+      _drawSolidArc(
+        canvas,
+        rect,
+        stepHeadColor,
+        stepProgress.clamp(0.0, 1.0),
+        strokeWidth,
       );
-      canvas.drawCircle(
-        head,
-        strokeWidth * 0.5,
-        Paint()..color = Palette.tealOk,
-      );
+      // 링을 모두 그린 뒤 머리를 마지막에 얹어, 여러 바퀴가 겹쳐도 항상 보이게 한다.
+      _drawHead(canvas, head, tangent, strokeWidth, stepHeadColor);
     }
+  }
+
+  void _drawSolidArc(
+    Canvas canvas,
+    Rect rect,
+    Color color,
+    double progress,
+    double strokeWidth,
+  ) {
+    if (progress <= 0) return;
+    final Paint paint = Paint()
+      ..color = color
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = strokeWidth
+      ..strokeCap = StrokeCap.round;
+    canvas.drawArc(rect, -math.pi / 2, math.pi * 2 * progress, false, paint);
+  }
+
+  /// 머리 색은 몸통과 동일하게 유지하고, 머리 각도(진행 방향) 앞쪽에만
+  /// 그림자를 드리워 머리 위치가 항상 드러나게 한다.
+  void _drawHead(
+    Canvas canvas,
+    Offset head,
+    Offset tangent,
+    double strokeWidth,
+    Color color,
+  ) {
+    // 1. 머리 각도에 맞춰 앞쪽에 드리우는 그림자
+    //    넓게 퍼지는 그림자 위에 가까운 진한 그림자를 겹쳐 음영을 강조한다.
+    final Paint softShadowPaint = Paint()
+      ..color = Colors.black.withValues(alpha: 0.26)
+      ..maskFilter = MaskFilter.blur(
+        BlurStyle.normal,
+        math.max(2.0, strokeWidth * 0.3),
+      );
+    canvas.drawCircle(
+      head + tangent * (strokeWidth * 0.62),
+      strokeWidth * 0.62,
+      softShadowPaint,
+    );
+
+    final Paint shadowPaint = Paint()
+      ..color = Colors.black.withValues(alpha: 0.6)
+      ..maskFilter = MaskFilter.blur(
+        BlurStyle.normal,
+        math.max(1.5, strokeWidth * 0.18),
+      );
+    canvas.drawCircle(
+      head + tangent * (strokeWidth * 0.5),
+      strokeWidth * 0.5,
+      shadowPaint,
+    );
+
+    // 2. 몸통과 같은 색으로 머리 끝을 둥글게 마감한다.
+    //    머리와 겹치는 그림자는 덮이고, 앞쪽 그림자만 남는다.
+    canvas.drawCircle(head, strokeWidth * 0.5, Paint()..color = color);
   }
 
   @override
