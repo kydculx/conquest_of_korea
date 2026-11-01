@@ -1,17 +1,19 @@
 import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
-import 'package:intl/intl.dart';
+import 'package:intl/intl.dart' hide TextDirection;
 import 'package:provider/provider.dart';
 
 import '../../core/constants/app_routes.dart';
 import '../../core/constants/colors.dart';
 import '../../core/constants/strings.dart';
 import '../../providers/auth_provider.dart';
+import '../../services/health_service.dart';
 import '../../services/supabase_service.dart';
 import '../widgets/tactical_app_bar.dart';
 
 const int _dailyTileGoal = 30;
+const int _dailyStepLap = 10000;
 
 /// 현지 날짜별 이동 타일 수를 월 달력으로 보여주는 화면.
 class DailyRecordsScreen extends StatefulWidget {
@@ -22,19 +24,33 @@ class DailyRecordsScreen extends StatefulWidget {
 }
 
 class _DailyRecordsScreenState extends State<DailyRecordsScreen> {
-  late DateTime _visibleMonth;
-  Map<String, int> _records = {};
-  bool _isLoading = true;
-  bool _loginRequired = false;
-  bool _loadFailed = false;
-  bool _notReady = false;
+  static const Duration _monthTransitionDuration = Duration(milliseconds: 260);
+
+  late final DateTime _minMonth;
+  late final DateTime _maxMonth;
+  late final List<DateTime> _months;
+  late final PageController _pageController;
+  late int _currentPage;
+
+  final Map<String, _MonthRecords> _monthCache = {};
+  final Set<String> _backfilledMonths = {};
   String? _loadedUserId;
-  int _requestId = 0;
 
   @override
   void initState() {
     super.initState();
-    _visibleMonth = _monthStart(DateTime.now());
+    final now = DateTime.now();
+    _maxMonth = _monthStart(now);
+    _minMonth = DateTime(now.year - 6, 1, 1);
+    _months = _buildMonths(_minMonth, _maxMonth);
+    _currentPage = _months.length - 1;
+    _pageController = PageController(initialPage: _currentPage);
+  }
+
+  @override
+  void dispose() {
+    _pageController.dispose();
+    super.dispose();
   }
 
   @override
@@ -43,68 +59,126 @@ class _DailyRecordsScreenState extends State<DailyRecordsScreen> {
     final auth = Provider.of<AuthProvider>(context);
     if (!auth.isAuthenticated) {
       _loadedUserId = null;
-      _loginRequired = true;
-      _isLoading = false;
-      _records = {};
+      _monthCache.clear();
+      _backfilledMonths.clear();
       return;
     }
 
     final userId = auth.profile?.id;
-    if (userId == null) {
-      _loginRequired = false;
-      _isLoading = true;
-      return;
-    }
+    if (userId == null || userId == _loadedUserId) return;
 
-    if (userId != _loadedUserId) {
-      _loadedUserId = userId;
-      _loginRequired = false;
-      WidgetsBinding.instance.addPostFrameCallback((_) {
-        if (mounted && _loadedUserId == userId) {
-          _loadMonth(_visibleMonth);
+    _loadedUserId = userId;
+    _monthCache.clear();
+    _backfilledMonths.clear();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted || _loadedUserId != userId) return;
+      _loadMonth(_months[_currentPage]);
+      _prefetchNeighbors(_currentPage);
+    });
+  }
+
+  DateTime get _visibleMonth => _months[_currentPage];
+
+  List<DateTime> _buildMonths(DateTime from, DateTime to) {
+    final months = <DateTime>[];
+    var cursor = DateTime(from.year, from.month, 1);
+    final end = DateTime(to.year, to.month, 1);
+    while (!cursor.isAfter(end)) {
+      months.add(cursor);
+      cursor = DateTime(cursor.year, cursor.month + 1, 1);
+    }
+    return months;
+  }
+
+  String _monthKey(DateTime month) =>
+      '${month.year.toString().padLeft(4, '0')}-'
+      '${month.month.toString().padLeft(2, '0')}';
+
+  Future<void> _loadMonth(DateTime month, {bool force = false}) async {
+    final userId = _loadedUserId;
+    if (userId == null) return;
+
+    final state = _monthCache.putIfAbsent(_monthKey(month), _MonthRecords.new);
+    if (state.isLoading || (state.loaded && !force)) return;
+
+    setState(() {
+      state.isLoading = true;
+      state.loadFailed = false;
+      state.notReady = false;
+    });
+
+    try {
+      final supabase = context.read<SupabaseService>();
+      final results = await Future.wait([
+        supabase.fetchDailyMovedTilesMonth(userId, month),
+        supabase.fetchDailyStepsMonth(userId, month),
+      ]);
+
+      var stepRecords = results[1];
+      final monthKey = _monthKey(month);
+      if (!_backfilledMonths.contains(monthKey)) {
+        _backfilledMonths.add(monthKey);
+        final monthStart = DateTime(month.year, month.month, 1);
+        final monthEnd = DateTime(month.year, month.month + 1, 1);
+        final healthSteps = await HealthService.instance.getDailySteps(
+          monthStart,
+          monthEnd,
+        );
+        if (healthSteps.isNotEmpty) {
+          final startKey = _dateKey(monthStart);
+          final endKey = _dateKey(monthEnd);
+          healthSteps.removeWhere(
+            (key, _) =>
+                key.compareTo(startKey) < 0 || key.compareTo(endKey) >= 0,
+          );
+          if (healthSteps.isNotEmpty) {
+            await supabase.upsertDailyStepsBulk(userId, healthSteps);
+            stepRecords = {...stepRecords, ...healthSteps};
+          }
         }
+      }
+
+      if (!mounted || _loadedUserId != userId) return;
+      setState(() {
+        state.records = results[0];
+        state.steps = stepRecords;
+        state.isLoading = false;
+        state.loaded = true;
+      });
+    } catch (e) {
+      if (!mounted || _loadedUserId != userId) return;
+      setState(() {
+        state.isLoading = false;
+        state.loaded = true;
+        state.loadFailed = true;
+        state.notReady = _isMissingHistoryTable(e);
       });
     }
   }
 
-  Future<void> _loadMonth(DateTime month) async {
-    final auth = context.read<AuthProvider>();
-    final userId = auth.profile?.id;
-    if (userId == null) {
-      if (!mounted) return;
-      setState(() {
-        _loginRequired = !auth.isAuthenticated;
-        _isLoading = false;
-      });
-      return;
+  void _prefetchNeighbors(int page) {
+    for (final offset in const [-1, 1]) {
+      final target = page + offset;
+      if (target >= 0 && target < _months.length) {
+        _loadMonth(_months[target]);
+      }
     }
+  }
 
-    final requestId = ++_requestId;
-    setState(() {
-      _visibleMonth = _monthStart(month);
-      _isLoading = true;
-      _loginRequired = false;
-      _loadFailed = false;
-      _notReady = false;
-    });
+  void _onPageChanged(int page) {
+    if (page == _currentPage) return;
+    setState(() => _currentPage = page);
+    _loadMonth(_months[page]);
+    _prefetchNeighbors(page);
+  }
 
-    try {
-      final records = await context
-          .read<SupabaseService>()
-          .fetchDailyMovedTilesMonth(userId, _visibleMonth);
-      if (!mounted || requestId != _requestId) return;
-      setState(() {
-        _records = records;
-        _isLoading = false;
-      });
-    } catch (e) {
-      if (!mounted || requestId != _requestId) return;
-      setState(() {
-        _isLoading = false;
-        _loadFailed = true;
-        _notReady = _isMissingHistoryTable(e);
-      });
-    }
+  void _goToPage(int page) {
+    if (page < 0 || page >= _months.length) return;
+    _pageController.animateToPage(
+      page,
+      duration: _monthTransitionDuration,
+      curve: Curves.easeOutCubic,
+    );
   }
 
   bool _isMissingHistoryTable(Object error) {
@@ -134,13 +208,9 @@ class _DailyRecordsScreenState extends State<DailyRecordsScreen> {
             children: [
               _buildMonthHeader(locale),
               Expanded(
-                child: GestureDetector(
-                  behavior: HitTestBehavior.translucent,
-                  onHorizontalDragEnd: _handleMonthSwipe,
-                  child: !auth.isAuthenticated
-                      ? _buildLoginRequired()
-                      : _buildBody(locale),
-                ),
+                child: !auth.isAuthenticated
+                    ? _buildLoginRequired()
+                    : _buildBody(auth, locale),
               ),
             ],
           ),
@@ -159,7 +229,9 @@ class _DailyRecordsScreenState extends State<DailyRecordsScreen> {
             _MonthArrowButton(
               icon: Icons.chevron_left_rounded,
               tooltip: GameStrings.dailyRecordPreviousMonth,
-              onTap: () => _changeMonth(-1),
+              onTap: _currentPage > 0
+                  ? () => _goToPage(_currentPage - 1)
+                  : null,
             ),
             ConstrainedBox(
               constraints: const BoxConstraints(minWidth: 150),
@@ -184,7 +256,9 @@ class _DailyRecordsScreenState extends State<DailyRecordsScreen> {
             _MonthArrowButton(
               icon: Icons.chevron_right_rounded,
               tooltip: GameStrings.dailyRecordNextMonth,
-              onTap: _canGoNextMonth ? () => _changeMonth(1) : null,
+              onTap: _currentPage < _months.length - 1
+                  ? () => _goToPage(_currentPage + 1)
+                  : null,
             ),
           ],
         ),
@@ -192,26 +266,65 @@ class _DailyRecordsScreenState extends State<DailyRecordsScreen> {
     );
   }
 
-  Widget _buildBody(String locale) {
-    if (_isLoading) {
+  Widget _buildBody(AuthProvider auth, String locale) {
+    if (auth.profile == null) {
       return Center(
         child: CircularProgressIndicator(color: GameColors.accentNeon),
       );
     }
-    if (_loginRequired) {
-      return _buildLoginRequired();
-    }
-    if (_loadFailed) {
-      return _buildLoadFailed();
-    }
-    return _buildCalendarContent(locale);
+
+    return PageView.builder(
+      controller: _pageController,
+      itemCount: _months.length,
+      onPageChanged: _onPageChanged,
+      itemBuilder: (context, index) {
+        final month = _months[index];
+        final state = _monthCache[_monthKey(month)];
+
+        if (state != null && state.loadFailed) {
+          return _buildLoadFailed(month, state);
+        }
+
+        return Stack(
+          children: [
+            _buildCalendarContent(
+              locale,
+              month,
+              state?.records ?? const {},
+              state?.steps ?? const {},
+              isLoading: state == null || state.isLoading,
+            ),
+            if (state == null || state.isLoading)
+              Positioned(
+                top: 6,
+                left: 16,
+                right: 16,
+                child: ClipRRect(
+                  borderRadius: BorderRadius.circular(999),
+                  child: LinearProgressIndicator(
+                    minHeight: 2.5,
+                    backgroundColor: Colors.transparent,
+                    color: GameColors.accentNeon,
+                  ),
+                ),
+              ),
+          ],
+        );
+      },
+    );
   }
 
-  Widget _buildCalendarContent(String locale) {
-    final total = _monthTotal();
-    final recordedDays = _recordedDays();
+  Widget _buildCalendarContent(
+    String locale,
+    DateTime month,
+    Map<String, int> records,
+    Map<String, int> steps, {
+    bool isLoading = false,
+  }) {
+    final total = _monthTotal(month, records);
+    final recordedDays = _recordedDays(month, records);
     final average = recordedDays > 0 ? total / recordedDays : 0.0;
-    final maxDay = _maxDay();
+    final maxDay = _maxDay(month, records);
 
     return SingleChildScrollView(
       padding: const EdgeInsets.fromLTRB(16, 8, 16, 28),
@@ -232,8 +345,10 @@ class _DailyRecordsScreenState extends State<DailyRecordsScreen> {
               const SizedBox(height: 18),
               _buildWeekdayHeader(locale),
               const SizedBox(height: 6),
-              _buildCalendarGrid(locale),
-              if (total <= 0) ...[
+              _buildCalendarGrid(locale, month, records, steps),
+              const SizedBox(height: 18),
+              _buildStepGraphCard(locale, month, steps),
+              if (!isLoading && total <= 0) ...[
                 const SizedBox(height: 14),
                 _buildEmptyNote(),
               ],
@@ -242,6 +357,103 @@ class _DailyRecordsScreenState extends State<DailyRecordsScreen> {
         ),
       ),
     );
+  }
+
+  Widget _buildStepGraphCard(
+    String locale,
+    DateTime month,
+    Map<String, int> steps,
+  ) {
+    final daysInMonth = DateTime.utc(month.year, month.month + 1, 0).day;
+    final values = List<int>.generate(daysInMonth, (index) {
+      final date = DateTime.utc(month.year, month.month, index + 1);
+      return _stepForDate(steps, date);
+    });
+    final total = values.fold<int>(0, (sum, value) => sum + value);
+    final recordedDays = values.where((value) => value > 0).length;
+    final average = recordedDays > 0 ? total / recordedDays : 0.0;
+    var maxSteps = 0;
+    for (final value in values) {
+      if (value > maxSteps) maxSteps = value;
+    }
+    final now = DateTime.now();
+    final isCurrentMonth = month.year == now.year && month.month == now.month;
+
+    return Container(
+      padding: const EdgeInsets.fromLTRB(16, 14, 16, 12),
+      decoration: BoxDecoration(
+        color: Colors.white.withValues(alpha: 0.025),
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: GameColors.borderLight),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          Row(
+            children: [
+              Icon(
+                Icons.directions_walk_rounded,
+                color: GameColors.accentNeon,
+                size: 18,
+              ),
+              const SizedBox(width: 8),
+              Text(
+                GameStrings.dailyRecordStepsTitle,
+                style: TextStyle(
+                  color: GameColors.textPrimary,
+                  fontSize: 13,
+                  fontWeight: FontWeight.w700,
+                ),
+              ),
+              const Spacer(),
+              Text(
+                GameStrings.stepsCount(total),
+                style: TextStyle(
+                  color: GameColors.accentNeon,
+                  fontSize: 13,
+                  fontWeight: FontWeight.w800,
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 4),
+          Text(
+            '${GameStrings.dailyRecordDailyAverage} · '
+            '${GameStrings.stepsCount(average.round())}',
+            style: TextStyle(
+              color: GameColors.textMuted,
+              fontSize: 10.5,
+              fontWeight: FontWeight.w500,
+            ),
+          ),
+          const SizedBox(height: 12),
+          if (maxSteps <= 0)
+            Padding(
+              padding: const EdgeInsets.symmetric(vertical: 18),
+              child: Text(
+                GameStrings.dailyRecordStepEmpty,
+                textAlign: TextAlign.center,
+                style: TextStyle(color: GameColors.textMuted, fontSize: 11.5),
+              ),
+            )
+          else
+            SizedBox(
+              height: 120,
+              child: CustomPaint(
+                painter: _StepBarChartPainter(
+                  values: values,
+                  maxValue: maxSteps,
+                  todayDay: isCurrentMonth ? now.day : null,
+                ),
+              ),
+            ),
+        ],
+      ),
+    );
+  }
+
+  int _stepForDate(Map<String, int> steps, DateTime date) {
+    return steps[_dateKey(date)] ?? 0;
   }
 
   Widget _buildMonthTotalCard(String locale, int total) {
@@ -371,9 +583,14 @@ class _DailyRecordsScreenState extends State<DailyRecordsScreen> {
     );
   }
 
-  Widget _buildCalendarGrid(String locale) {
-    final year = _visibleMonth.year;
-    final month = _visibleMonth.month;
+  Widget _buildCalendarGrid(
+    String locale,
+    DateTime monthDate,
+    Map<String, int> records,
+    Map<String, int> steps,
+  ) {
+    final year = monthDate.year;
+    final month = monthDate.month;
     final firstDay = DateTime.utc(year, month, 1);
     final daysInMonth = DateTime.utc(year, month + 1, 0).day;
     final leadingEmptyCells = firstDay.weekday % 7;
@@ -397,12 +614,14 @@ class _DailyRecordsScreenState extends State<DailyRecordsScreen> {
         }
 
         final date = DateTime.utc(year, month, dayNumber);
-        final count = _recordForDate(date);
+        final count = _recordForDate(records, date);
+        final stepCount = _stepForDate(steps, date);
         final isToday = _isSameDay(date, today);
 
         return _buildDayCell(
           date: date,
           count: count,
+          steps: stepCount,
           isToday: isToday,
           locale: locale,
         );
@@ -413,6 +632,7 @@ class _DailyRecordsScreenState extends State<DailyRecordsScreen> {
   Widget _buildDayCell({
     required DateTime date,
     required int? count,
+    required int steps,
     required bool isToday,
     required String locale,
   }) {
@@ -424,7 +644,7 @@ class _DailyRecordsScreenState extends State<DailyRecordsScreen> {
     final borderColor = isToday
         ? GameColors.accentNeon.withValues(alpha: 0.58)
         : GameColors.borderLight;
-    void onTap() => _showDayDetail(date, value, locale);
+    void onTap() => _showDayDetail(date, value, steps, locale);
 
     return Semantics(
       button: true,
@@ -432,7 +652,8 @@ class _DailyRecordsScreenState extends State<DailyRecordsScreen> {
       label:
           '${date.month}/${date.day} '
           '${isToday ? GameStrings.dailyRecordToday : ''} '
-          '$countLabel',
+          '$countLabel '
+          '${GameStrings.stepsCount(steps)}',
       onTap: onTap,
       child: GestureDetector(
         behavior: HitTestBehavior.opaque,
@@ -485,6 +706,7 @@ class _DailyRecordsScreenState extends State<DailyRecordsScreen> {
                     child: _TileRing(
                       count: value,
                       goal: _dailyTileGoal,
+                      steps: steps,
                       size: ringSize,
                       locale: locale,
                       achieved: value >= _dailyTileGoal,
@@ -531,7 +753,7 @@ class _DailyRecordsScreenState extends State<DailyRecordsScreen> {
     );
   }
 
-  Widget _buildLoadFailed() {
+  Widget _buildLoadFailed(DateTime month, _MonthRecords state) {
     return Center(
       child: Padding(
         padding: const EdgeInsets.all(28),
@@ -539,13 +761,15 @@ class _DailyRecordsScreenState extends State<DailyRecordsScreen> {
           mainAxisSize: MainAxisSize.min,
           children: [
             Icon(
-              _notReady ? Icons.cloud_off_rounded : Icons.error_outline_rounded,
+              state.notReady
+                  ? Icons.cloud_off_rounded
+                  : Icons.error_outline_rounded,
               color: GameColors.textMuted,
               size: 34,
             ),
             const SizedBox(height: 12),
             Text(
-              _notReady
+              state.notReady
                   ? GameStrings.dailyRecordNotReady
                   : GameStrings.dailyRecordLoadFailed,
               textAlign: TextAlign.center,
@@ -557,7 +781,7 @@ class _DailyRecordsScreenState extends State<DailyRecordsScreen> {
             ),
             const SizedBox(height: 14),
             TextButton.icon(
-              onPressed: () => _loadMonth(_visibleMonth),
+              onPressed: () => _loadMonth(month, force: true),
               icon: const Icon(Icons.refresh_rounded, size: 17),
               label: Text(GameStrings.dailyRecordRetry),
               style: TextButton.styleFrom(
@@ -609,29 +833,12 @@ class _DailyRecordsScreenState extends State<DailyRecordsScreen> {
     );
   }
 
-  bool get _canGoNextMonth {
-    final currentMonth = _monthStart(DateTime.now());
-    return _visibleMonth.isBefore(currentMonth);
-  }
-
-  void _changeMonth(int delta) {
-    if (_isLoading) return;
-    if (delta > 0 && !_canGoNextMonth) return;
-    _loadMonth(DateTime(_visibleMonth.year, _visibleMonth.month + delta, 1));
-  }
-
-  void _handleMonthSwipe(DragEndDetails details) {
-    if (_isLoading || _loginRequired || _loadFailed) return;
-    final velocity = details.primaryVelocity ?? 0;
-    if (velocity.abs() < 200) return;
-    if (velocity < 0) {
-      _changeMonth(1);
-    } else {
-      _changeMonth(-1);
-    }
-  }
-
-  Future<void> _showDayDetail(DateTime date, int count, String locale) async {
+  Future<void> _showDayDetail(
+    DateTime date,
+    int count,
+    int steps,
+    String locale,
+  ) async {
     final achieved = count >= _dailyTileGoal;
     final remaining = math.max(0, _dailyTileGoal - count);
 
@@ -715,6 +922,7 @@ class _DailyRecordsScreenState extends State<DailyRecordsScreen> {
                   child: _TileRing(
                     count: count,
                     goal: _dailyTileGoal,
+                    steps: steps,
                     size: 132,
                     locale: locale,
                     achieved: achieved,
@@ -731,6 +939,26 @@ class _DailyRecordsScreenState extends State<DailyRecordsScreen> {
                     fontSize: 14,
                     fontWeight: FontWeight.w700,
                   ),
+                ),
+                const SizedBox(height: 6),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Icon(
+                      Icons.directions_walk_rounded,
+                      color: GameColors.textMuted,
+                      size: 16,
+                    ),
+                    const SizedBox(width: 6),
+                    Text(
+                      GameStrings.stepsCount(steps),
+                      style: TextStyle(
+                        color: GameColors.textSecondary,
+                        fontSize: 12.5,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                  ],
                 ),
                 const SizedBox(height: 14),
                 Container(
@@ -839,50 +1067,57 @@ class _DailyRecordsScreenState extends State<DailyRecordsScreen> {
       builder: (dialogContext) {
         return _MonthPickerDialog(
           initialMonth: _visibleMonth,
-          maxMonth: _monthStart(DateTime.now()),
+          maxMonth: _maxMonth,
           locale: locale,
         );
       },
     );
-    if (picked != null && mounted) {
-      await _loadMonth(picked);
+    if (picked == null || !mounted) return;
+
+    final index = _months.indexWhere(
+      (month) => month.year == picked.year && month.month == picked.month,
+    );
+    if (index < 0) return;
+
+    if ((index - _currentPage).abs() <= 1) {
+      _goToPage(index);
+    } else {
+      _pageController.jumpToPage(index);
+      _onPageChanged(index);
     }
   }
 
-  int? _recordForDate(DateTime date) {
-    return _records[_dateKey(date)];
+  int? _recordForDate(Map<String, int> records, DateTime date) {
+    return records[_dateKey(date)];
   }
 
-  int _monthTotal() {
-    final year = _visibleMonth.year;
-    final month = _visibleMonth.month;
-    final daysInMonth = DateTime.utc(year, month + 1, 0).day;
+  int _monthTotal(DateTime month, Map<String, int> records) {
+    final daysInMonth = DateTime.utc(month.year, month.month + 1, 0).day;
     var total = 0;
     for (var day = 1; day <= daysInMonth; day++) {
-      total += _records[_dateKey(DateTime.utc(year, month, day))] ?? 0;
+      total +=
+          records[_dateKey(DateTime.utc(month.year, month.month, day))] ?? 0;
     }
     return total;
   }
 
-  int _recordedDays() {
-    final year = _visibleMonth.year;
-    final month = _visibleMonth.month;
-    final daysInMonth = DateTime.utc(year, month + 1, 0).day;
+  int _recordedDays(DateTime month, Map<String, int> records) {
+    final daysInMonth = DateTime.utc(month.year, month.month + 1, 0).day;
     var days = 0;
     for (var day = 1; day <= daysInMonth; day++) {
-      final count = _records[_dateKey(DateTime.utc(year, month, day))] ?? 0;
+      final count =
+          records[_dateKey(DateTime.utc(month.year, month.month, day))] ?? 0;
       if (count > 0) days++;
     }
     return days;
   }
 
-  int _maxDay() {
-    final year = _visibleMonth.year;
-    final month = _visibleMonth.month;
-    final daysInMonth = DateTime.utc(year, month + 1, 0).day;
+  int _maxDay(DateTime month, Map<String, int> records) {
+    final daysInMonth = DateTime.utc(month.year, month.month + 1, 0).day;
     var max = 0;
     for (var day = 1; day <= daysInMonth; day++) {
-      final count = _records[_dateKey(DateTime.utc(year, month, day))] ?? 0;
+      final count =
+          records[_dateKey(DateTime.utc(month.year, month.month, day))] ?? 0;
       if (count > max) max = count;
     }
     return max;
@@ -920,9 +1155,19 @@ class _DailyRecordsScreenState extends State<DailyRecordsScreen> {
   }
 }
 
+class _MonthRecords {
+  Map<String, int> records = const <String, int>{};
+  Map<String, int> steps = const <String, int>{};
+  bool isLoading = false;
+  bool loaded = false;
+  bool loadFailed = false;
+  bool notReady = false;
+}
+
 class _TileRing extends StatelessWidget {
   final int count;
   final int goal;
+  final int steps;
   final double size;
   final String locale;
   final bool achieved;
@@ -930,6 +1175,7 @@ class _TileRing extends StatelessWidget {
   const _TileRing({
     required this.count,
     required this.goal,
+    required this.steps,
     required this.size,
     required this.locale,
     required this.achieved,
@@ -942,25 +1188,36 @@ class _TileRing extends StatelessWidget {
         : achieved
         ? Palette.footprintMint
         : GameColors.textPrimary;
+    final double maxProgress = math
+        .max(count / goal, steps / _dailyStepLap)
+        .toDouble();
+    final double extraLaps = math.max(0.0, maxProgress - 1);
+    final Duration animationDuration = Duration(
+      milliseconds: (1200 + extraLaps * 600).round(),
+    );
 
     return SizedBox(
       width: size,
       height: size,
       child: TweenAnimationBuilder<double>(
         tween: Tween<double>(begin: 0.0, end: 1.0),
-        duration: const Duration(seconds: 1),
-        curve: Curves.easeOutCubic,
+        duration: animationDuration,
+        curve: Curves.easeInOutCubic,
         builder: (context, progressValue, child) {
-          final targetProgress = (count / goal).clamp(0.0, 1.0).toDouble();
-          final progress = targetProgress * progressValue;
+          final progress = (count / goal) * progressValue;
+          final stepProgress = (steps / _dailyStepLap) * progressValue;
           final countLabel = NumberFormat.decimalPattern(
             locale,
           ).format((count * progressValue).round());
           return CustomPaint(
-            painter: _TileRingPainter(progress: progress, achieved: achieved),
+            painter: _TileRingPainter(
+              progress: progress,
+              stepProgress: stepProgress,
+              achieved: achieved,
+            ),
             child: Center(
               child: Padding(
-                padding: EdgeInsets.all(size * 0.16),
+                padding: EdgeInsets.all(size * 0.12),
                 child: FittedBox(
                   fit: BoxFit.scaleDown,
                   child: Text(
@@ -985,44 +1242,253 @@ class _TileRing extends StatelessWidget {
 
 class _TileRingPainter extends CustomPainter {
   final double progress;
+  final double stepProgress;
   final bool achieved;
 
-  const _TileRingPainter({required this.progress, required this.achieved});
+  const _TileRingPainter({
+    required this.progress,
+    required this.stepProgress,
+    required this.achieved,
+  });
 
   @override
   void paint(Canvas canvas, Size size) {
-    final strokeWidth = (size.width * 0.09).clamp(4.0, 9.0).toDouble();
+    final double strokeWidth = (size.width * 0.07).clamp(2.5, 7.0).toDouble();
     final center = Offset(size.width / 2, size.height / 2);
-    final radius = size.width / 2 - strokeWidth / 2;
-    final rect = Rect.fromCircle(center: center, radius: radius);
+    final double outerRadius = size.width / 2 - strokeWidth / 2;
+    final double gap = strokeWidth * 0.55;
+    final double innerRadius = outerRadius - strokeWidth - gap;
+    if (innerRadius <= 0) return;
 
     final trackPaint = Paint()
       ..color = Colors.white.withValues(alpha: 0.08)
       ..style = PaintingStyle.stroke
       ..strokeWidth = strokeWidth
       ..strokeCap = StrokeCap.round;
-    canvas.drawArc(rect, -math.pi / 2, math.pi * 2, false, trackPaint);
 
-    if (progress <= 0) return;
+    canvas.drawCircle(center, outerRadius, trackPaint);
+    canvas.drawCircle(center, innerRadius, trackPaint);
 
-    final colors = achieved
-        ? const [Palette.accentCyan, Palette.footprintMint, Palette.softRed]
-        : const [Palette.accentCyan, Palette.footprintMint];
-    final paint = Paint()
-      ..shader = SweepGradient(
-        colors: colors,
-        transform: const GradientRotation(-math.pi / 2),
-      ).createShader(rect)
-      ..style = PaintingStyle.stroke
-      ..strokeWidth = strokeWidth
-      ..strokeCap = StrokeCap.round;
+    if (progress > 0) {
+      final rect = Rect.fromCircle(center: center, radius: innerRadius);
+      final colors = achieved
+          ? const [Palette.accentCyan, Palette.footprintMint, Palette.softRed]
+          : const [Palette.accentCyan, Palette.footprintMint];
+      final Color lastColor = achieved
+          ? Palette.softRed
+          : Palette.footprintMint;
+      final double firstLapProgress = progress.clamp(0.0, 1.0);
 
-    canvas.drawArc(rect, -math.pi / 2, math.pi * 2 * progress, false, paint);
+      if (firstLapProgress > 0) {
+        final firstLapPaint = Paint()
+          ..shader = SweepGradient(
+            colors: colors,
+            transform: const GradientRotation(-math.pi / 2),
+          ).createShader(rect)
+          ..style = PaintingStyle.stroke
+          ..strokeWidth = strokeWidth
+          ..strokeCap = StrokeCap.round;
+
+        canvas.drawArc(
+          rect,
+          -math.pi / 2,
+          math.pi * 2 * firstLapProgress,
+          false,
+          firstLapPaint,
+        );
+      }
+
+      if (progress > 1) {
+        final laterLapPaint = Paint()
+          ..color = lastColor
+          ..style = PaintingStyle.stroke
+          ..strokeWidth = strokeWidth
+          ..strokeCap = StrokeCap.round;
+
+        canvas.drawArc(
+          rect,
+          -math.pi / 2,
+          math.pi * 2 * (progress - 1),
+          false,
+          laterLapPaint,
+        );
+      }
+
+      final headAngle = -math.pi / 2 + math.pi * 2 * progress;
+      final head = Offset(
+        center.dx + innerRadius * math.cos(headAngle),
+        center.dy + innerRadius * math.sin(headAngle),
+      );
+
+      final headShadowPaint = Paint()
+        ..color = Colors.black.withValues(alpha: 0.45)
+        ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 2.0);
+      canvas.drawCircle(
+        head + Offset(0, strokeWidth * 0.25),
+        strokeWidth * 0.8,
+        headShadowPaint,
+      );
+      canvas.drawCircle(head, strokeWidth * 0.5, Paint()..color = lastColor);
+    }
+
+    if (stepProgress > 0) {
+      final rect = Rect.fromCircle(center: center, radius: outerRadius);
+      final double firstLapProgress = stepProgress.clamp(0.0, 1.0);
+
+      if (firstLapProgress > 0) {
+        final firstLapPaint = Paint()
+          ..shader = const SweepGradient(
+            colors: [Palette.orangeCoral, Palette.gold],
+            transform: GradientRotation(-math.pi / 2),
+          ).createShader(rect)
+          ..style = PaintingStyle.stroke
+          ..strokeWidth = strokeWidth
+          ..strokeCap = StrokeCap.round;
+
+        canvas.drawArc(
+          rect,
+          -math.pi / 2,
+          math.pi * 2 * firstLapProgress,
+          false,
+          firstLapPaint,
+        );
+      }
+
+      if (stepProgress > 1) {
+        final laterLapPaint = Paint()
+          ..color = Palette.gold
+          ..style = PaintingStyle.stroke
+          ..strokeWidth = strokeWidth
+          ..strokeCap = StrokeCap.round;
+
+        canvas.drawArc(
+          rect,
+          -math.pi / 2,
+          math.pi * 2 * (stepProgress - 1),
+          false,
+          laterLapPaint,
+        );
+      }
+
+      final headAngle = -math.pi / 2 + math.pi * 2 * stepProgress;
+      final head = Offset(
+        center.dx + outerRadius * math.cos(headAngle),
+        center.dy + outerRadius * math.sin(headAngle),
+      );
+
+      final headShadowPaint = Paint()
+        ..color = Colors.black.withValues(alpha: 0.45)
+        ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 2.0);
+      canvas.drawCircle(
+        head + Offset(0, strokeWidth * 0.25),
+        strokeWidth * 0.8,
+        headShadowPaint,
+      );
+      canvas.drawCircle(head, strokeWidth * 0.5, Paint()..color = Palette.gold);
+    }
   }
 
   @override
   bool shouldRepaint(covariant _TileRingPainter oldDelegate) {
-    return oldDelegate.progress != progress || oldDelegate.achieved != achieved;
+    return oldDelegate.progress != progress ||
+        oldDelegate.stepProgress != stepProgress ||
+        oldDelegate.achieved != achieved;
+  }
+}
+
+class _StepBarChartPainter extends CustomPainter {
+  final List<int> values;
+  final int maxValue;
+  final int? todayDay;
+
+  const _StepBarChartPainter({
+    required this.values,
+    required this.maxValue,
+    required this.todayDay,
+  });
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    if (values.isEmpty || maxValue <= 0) return;
+
+    const double labelHeight = 16;
+    const double topPadding = 6;
+    final double chartHeight = size.height - labelHeight - topPadding;
+    if (chartHeight <= 0) return;
+
+    final double slotWidth = size.width / values.length;
+    final double barWidth = (slotWidth * 0.62).clamp(2.0, 10.0).toDouble();
+
+    final gridPaint = Paint()
+      ..color = GameColors.borderLight.withValues(alpha: 0.45)
+      ..strokeWidth = 0.8;
+    for (final ratio in const [0.0, 0.5, 1.0]) {
+      final y = topPadding + chartHeight * (1 - ratio);
+      canvas.drawLine(Offset(0, y), Offset(size.width, y), gridPaint);
+    }
+
+    for (var i = 0; i < values.length; i++) {
+      final value = values[i];
+      final ratio = value / maxValue;
+      final barHeight = chartHeight * ratio;
+      if (barHeight <= 0) continue;
+
+      final left = i * slotWidth + (slotWidth - barWidth) / 2;
+      final top = topPadding + chartHeight - barHeight;
+      final rect = RRect.fromRectAndRadius(
+        Rect.fromLTWH(left, top, barWidth, barHeight),
+        Radius.circular(barWidth / 2),
+      );
+      final isToday = todayDay == i + 1;
+      final paint = Paint()
+        ..shader = LinearGradient(
+          begin: Alignment.bottomCenter,
+          end: Alignment.topCenter,
+          colors: isToday
+              ? [
+                  Palette.footprintMint.withValues(alpha: 0.55),
+                  Palette.footprintMint,
+                ]
+              : [
+                  GameColors.accentNeon.withValues(alpha: 0.3),
+                  GameColors.accentNeon.withValues(alpha: 0.85),
+                ],
+        ).createShader(rect.outerRect);
+      canvas.drawRRect(rect, paint);
+    }
+
+    final labelDays = <int>{1, 5, 10, 15, 20, 25, values.length};
+    for (final day in labelDays) {
+      if (day < 1 || day > values.length) continue;
+      final textPainter = TextPainter(
+        text: TextSpan(
+          text: '$day',
+          style: TextStyle(
+            color: GameColors.textMuted,
+            fontSize: 9,
+            fontWeight: FontWeight.w500,
+          ),
+        ),
+        textDirection: TextDirection.ltr,
+      )..layout();
+      final centerX = (day - 0.5) * slotWidth;
+      textPainter.paint(
+        canvas,
+        Offset(centerX - textPainter.width / 2, size.height - labelHeight + 2),
+      );
+    }
+  }
+
+  @override
+  bool shouldRepaint(covariant _StepBarChartPainter oldDelegate) {
+    if (oldDelegate.maxValue != maxValue || oldDelegate.todayDay != todayDay) {
+      return true;
+    }
+    if (oldDelegate.values.length != values.length) return true;
+    for (var i = 0; i < values.length; i++) {
+      if (oldDelegate.values[i] != values[i]) return true;
+    }
+    return false;
   }
 }
 
