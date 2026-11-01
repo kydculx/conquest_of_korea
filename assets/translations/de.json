@@ -604,5 +604,7 @@
   "dailyRecordGoal": "Tagesziel",
   "dailyRecordGoalAchieved": "Ziel erreicht",
   "dailyRecordGoalRemaining": "Noch {count} Felder",
-  "dailyRecordDetailEmpty": "Keine Bewegungsdaten für diesen Tag."
+  "dailyRecordDetailEmpty": "Keine Bewegungsdaten für diesen Tag.",
+  "dailyRecordStepsTitle": "Schritte",
+  "dailyRecordStepEmpty": "Keine Schrittdaten für diesen Monat."
 }

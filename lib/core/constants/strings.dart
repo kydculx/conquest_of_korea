@@ -1496,6 +1496,8 @@ class GameStrings {
       'dailyRecordGoalRemaining'.tr(namedArgs: {'count': count.toString()});
   static String get dailyRecordDetailEmpty =>
       'dailyRecordDetailEmpty'.tr();
+  static String get dailyRecordStepsTitle => 'dailyRecordStepsTitle'.tr();
+  static String get dailyRecordStepEmpty => 'dailyRecordStepEmpty'.tr();
 }
 
 class GameUrls {

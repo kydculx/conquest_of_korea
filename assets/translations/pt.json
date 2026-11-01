@@ -604,5 +604,7 @@
   "dailyRecordGoal": "Meta diária",
   "dailyRecordGoalAchieved": "Meta alcançada",
   "dailyRecordGoalRemaining": "Faltam {count} casas",
-  "dailyRecordDetailEmpty": "Nenhum registro de movimento neste dia."
+  "dailyRecordDetailEmpty": "Nenhum registro de movimento neste dia.",
+  "dailyRecordStepsTitle": "Passos",
+  "dailyRecordStepEmpty": "Nenhum registro de passos para este mês."
 }

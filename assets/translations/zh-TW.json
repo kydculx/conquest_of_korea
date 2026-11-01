@@ -604,5 +604,7 @@
   "dailyRecordGoal": "每日目標",
   "dailyRecordGoalAchieved": "目標達成",
   "dailyRecordGoalRemaining": "還差 {count} 格",
-  "dailyRecordDetailEmpty": "這一天沒有移動記錄。"
+  "dailyRecordDetailEmpty": "這一天沒有移動記錄。",
+  "dailyRecordStepsTitle": "步數",
+  "dailyRecordStepEmpty": "本月沒有步數記錄。"
 }

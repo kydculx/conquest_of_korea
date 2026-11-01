@@ -604,5 +604,7 @@
   "dailyRecordGoal": "Daily goal",
   "dailyRecordGoalAchieved": "Goal achieved",
   "dailyRecordGoalRemaining": "{count} tiles to go",
-  "dailyRecordDetailEmpty": "No movement record for this day."
+  "dailyRecordDetailEmpty": "No movement record for this day.",
+  "dailyRecordStepsTitle": "Steps",
+  "dailyRecordStepEmpty": "No step records for this month."
 }

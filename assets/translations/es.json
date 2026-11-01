@@ -604,5 +604,7 @@
   "dailyRecordGoal": "Objetivo diario",
   "dailyRecordGoalAchieved": "Objetivo cumplido",
   "dailyRecordGoalRemaining": "Faltan {count} casillas",
-  "dailyRecordDetailEmpty": "No hay registro de movimiento para este día."
+  "dailyRecordDetailEmpty": "No hay registro de movimiento para este día.",
+  "dailyRecordStepsTitle": "Pasos",
+  "dailyRecordStepEmpty": "No hay registros de pasos para este mes."
 }

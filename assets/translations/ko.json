@@ -604,5 +604,7 @@
   "dailyRecordGoal": "일일 목표",
   "dailyRecordGoalAchieved": "목표 달성",
   "dailyRecordGoalRemaining": "{count}타일 남음",
-  "dailyRecordDetailEmpty": "이 날의 이동 기록이 없습니다."
+  "dailyRecordDetailEmpty": "이 날의 이동 기록이 없습니다.",
+  "dailyRecordStepsTitle": "걸음수",
+  "dailyRecordStepEmpty": "이 달의 걸음수 기록이 없습니다."
 }

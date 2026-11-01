@@ -604,5 +604,7 @@
   "dailyRecordGoal": "Objectif quotidien",
   "dailyRecordGoalAchieved": "Objectif atteint",
   "dailyRecordGoalRemaining": "Encore {count} cases",
-  "dailyRecordDetailEmpty": "Aucun déplacement enregistré ce jour-là."
+  "dailyRecordDetailEmpty": "Aucun déplacement enregistré ce jour-là.",
+  "dailyRecordStepsTitle": "Pas",
+  "dailyRecordStepEmpty": "Aucun relevé de pas pour ce mois."
 }

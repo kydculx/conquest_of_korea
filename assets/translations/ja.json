@@ -604,5 +604,7 @@
   "dailyRecordGoal": "1日の目標",
   "dailyRecordGoalAchieved": "目標達成",
   "dailyRecordGoalRemaining": "あと {count} タイル",
-  "dailyRecordDetailEmpty": "この日の移動記録はありません。"
+  "dailyRecordDetailEmpty": "この日の移動記録はありません。",
+  "dailyRecordStepsTitle": "歩数",
+  "dailyRecordStepEmpty": "この月の歩数記録はありません。"
 }
