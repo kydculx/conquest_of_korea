@@ -19,13 +19,41 @@ class RankingScreen extends StatefulWidget {
 }
 
 class _RankingScreenState extends State<RankingScreen> {
+  static const List<String> _types = [
+    RankingType.capturedTiles,
+    RankingType.dailyMovedTiles,
+    RankingType.totalMovedTiles,
+  ];
+
+  late final PageController _pageController;
+
   @override
   void initState() {
     super.initState();
-    // 화면 최초 빌드 완료 직후 최신 랭킹 데이터 비동기 조회 가동
+    final ranking = context.read<RankingProvider>();
+    final initialIndex = _types.indexOf(ranking.currentType);
+    _pageController = PageController(
+      initialPage: initialIndex >= 0 ? initialIndex : 0,
+    );
+
+    // 화면 최초 빌드 완료 직후 모든 탭의 최신 랭킹 데이터를 미리 조회
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      context.read<RankingProvider>().loadRankings();
+      if (!mounted) return;
+      final provider = context.read<RankingProvider>();
+      for (final type in _types) {
+        provider.loadRankings(
+          type: type,
+          force: true,
+          select: type == provider.currentType,
+        );
+      }
     });
+  }
+
+  @override
+  void dispose() {
+    _pageController.dispose();
+    super.dispose();
   }
 
   Widget _buildTabSelector(RankingProvider ranking) {
@@ -49,7 +77,16 @@ class _RankingScreenState extends State<RankingScreen> {
         selected: {ranking.currentType},
         showSelectedIcon: false,
         onSelectionChanged: (selected) {
-          ranking.loadRankings(type: selected.first);
+          final type = selected.first;
+          final index = _types.indexOf(type);
+          if (index >= 0 && _pageController.hasClients) {
+            _pageController.animateToPage(
+              index,
+              duration: const Duration(milliseconds: 260),
+              curve: Curves.easeOutCubic,
+            );
+          }
+          ranking.loadRankings(type: type);
         },
       ),
     );
@@ -197,33 +234,44 @@ class _RankingScreenState extends State<RankingScreen> {
           // 배경 은은한 격자 라인 데코레이션 (Premium aesthetic)
           Positioned.fill(
             child: IgnorePointer(
-              child: CustomPaint(
-                painter: _TacticalGridPainter(),
-              ),
+              child: CustomPaint(painter: _TacticalGridPainter()),
             ),
           ),
 
-          // 랭킹 리스트 영역
+          // 랭킹 탭 + 스와이프 페이지 영역
           Positioned.fill(
-            child: ranking.isLoading && ranking.topRankings.isEmpty
-                ? Center(
-                    child: CircularProgressIndicator(
-                      color: GameColors.accentNeon,
-                    ),
-                  )
-                : Column(
-                    children: [
-                      _buildTabSelector(ranking),
-                      _buildDescriptionCard(ranking.currentType),
-                      _buildHeaderRow(ranking.currentType),
-                      Expanded(
-                        child: _RankingListView(
-                          ranking: ranking,
-                          currentUserId: auth.user?.id,
-                        ),
-                      ),
-                    ],
+            child: Column(
+              children: [
+                _buildTabSelector(ranking),
+                Expanded(
+                  child: PageView.builder(
+                    controller: _pageController,
+                    itemCount: _types.length,
+                    onPageChanged: (index) {
+                      context.read<RankingProvider>().loadRankings(
+                        type: _types[index],
+                      );
+                    },
+                    itemBuilder: (context, index) {
+                      final type = _types[index];
+                      return Column(
+                        children: [
+                          _buildDescriptionCard(type),
+                          _buildHeaderRow(type),
+                          Expanded(
+                            child: _RankingListView(
+                              ranking: ranking,
+                              type: type,
+                              currentUserId: auth.user?.id,
+                            ),
+                          ),
+                        ],
+                      );
+                    },
                   ),
+                ),
+              ],
+            ),
           ),
 
           // 하단 고정 내 랭킹 앵커 배너 (로그인 유저가 있고 프로필 정보가 유효할 시 항시 노출)
@@ -266,14 +314,17 @@ class _TacticalGridPainter extends CustomPainter {
   bool shouldRepaint(covariant CustomPainter oldDelegate) => false;
 }
 
-
-
 /// 1위부터 100위까지 랭킹 리스트를 렌더링하는 위젯
 class _RankingListView extends StatelessWidget {
   final RankingProvider ranking;
+  final String type;
   final String? currentUserId;
 
-  const _RankingListView({required this.ranking, required this.currentUserId});
+  const _RankingListView({
+    required this.ranking,
+    required this.type,
+    required this.currentUserId,
+  });
 
   int _getValueForProfile(String type, UserProfile profile) {
     if (type == RankingType.capturedTiles) {
@@ -287,8 +338,13 @@ class _RankingListView extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final list = ranking.topRankings;
+    final list = ranking.topRankingsFor(type);
     if (list.isEmpty) {
+      if (ranking.isLoadingFor(type)) {
+        return Center(
+          child: CircularProgressIndicator(color: GameColors.accentNeon),
+        );
+      }
       return Center(
         child: Text(
           GameStrings.noRankingData,
@@ -297,12 +353,14 @@ class _RankingListView extends StatelessWidget {
       );
     }
 
-    return ListView.builder(
+    final listView = ListView.builder(
+      key: PageStorageKey<String>(type),
       padding: EdgeInsets.only(
         left: 16,
         right: 16,
         top: 4,
-        bottom: 120 + MediaQuery.of(context).padding.bottom, // 하단 플로팅 배너 간섭 방지 패딩
+        bottom:
+            120 + MediaQuery.of(context).padding.bottom, // 하단 플로팅 배너 간섭 방지 패딩
       ),
       itemCount: list.length,
       itemBuilder: (context, index) {
@@ -310,13 +368,13 @@ class _RankingListView extends StatelessWidget {
         final isMe = profile.id == currentUserId;
 
         // 기록값이 0 이하이면 순위를 부여하지 않음 (번호 미표시)
-        final myVal = _getValueForProfile(ranking.currentType, profile);
+        final myVal = _getValueForProfile(type, profile);
         int rank = 0;
         if (myVal > 0) {
           // 공동 순위(Standard Competition Ranking) 계산
           rank = 1;
           for (int i = 0; i < index; i++) {
-            final otherVal = _getValueForProfile(ranking.currentType, list[i]);
+            final otherVal = _getValueForProfile(type, list[i]);
             if (otherVal > myVal) {
               rank++;
             }
@@ -326,10 +384,30 @@ class _RankingListView extends StatelessWidget {
         return _RankingListTile(
           rank: rank,
           profile: profile,
-          rankingType: ranking.currentType,
+          rankingType: type,
           isMe: isMe,
         );
       },
+    );
+
+    return Stack(
+      children: [
+        listView,
+        if (ranking.isLoadingFor(type))
+          Positioned(
+            top: 0,
+            left: 16,
+            right: 16,
+            child: ClipRRect(
+              borderRadius: BorderRadius.circular(999),
+              child: LinearProgressIndicator(
+                minHeight: 2.5,
+                backgroundColor: Colors.transparent,
+                color: GameColors.accentNeon,
+              ),
+            ),
+          ),
+      ],
     );
   }
 }
@@ -395,7 +473,10 @@ class _RankingListTile extends StatelessWidget {
                   : null,
             ),
             child: ListTile(
-              contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
+              contentPadding: const EdgeInsets.symmetric(
+                horizontal: 16,
+                vertical: 6,
+              ),
               leading: SizedBox(
                 width: 42,
                 height: 42,
@@ -417,7 +498,9 @@ class _RankingListTile extends StatelessWidget {
                             ),
                             boxShadow: [
                               BoxShadow(
-                                color: medalGradient.first.withValues(alpha: 0.3),
+                                color: medalGradient.first.withValues(
+                                  alpha: 0.3,
+                                ),
                                 blurRadius: 6,
                                 spreadRadius: 0.5,
                                 offset: const Offset(0, 1.5),
@@ -440,7 +523,9 @@ class _RankingListTile extends StatelessWidget {
                           height: 28,
                           decoration: BoxDecoration(
                             shape: BoxShape.circle,
-                            color: GameColors.tacticalGray.withValues(alpha: 0.3),
+                            color: GameColors.tacticalGray.withValues(
+                              alpha: 0.3,
+                            ),
                             border: Border.all(
                               color: Palette.accentCyan.withValues(alpha: 0.15),
                               width: 0.8,
@@ -465,7 +550,9 @@ class _RankingListTile extends StatelessWidget {
                     child: Text(
                       profile.nickname,
                       style: GoogleFonts.fredoka(
-                        color: isMe ? Palette.accentCyan : GameColors.textPrimary,
+                        color: isMe
+                            ? Palette.accentCyan
+                            : GameColors.textPrimary,
                         fontSize: 14.5,
                         fontWeight: FontWeight.bold,
                       ),
@@ -542,7 +629,10 @@ class _MyRankingFloatingBanner extends StatelessWidget {
             children: [
               // 내 순위 요약 배지
               Container(
-                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 12,
+                  vertical: 8,
+                ),
                 decoration: BoxDecoration(
                   borderRadius: BorderRadius.circular(10),
                   gradient: const LinearGradient(
@@ -559,7 +649,9 @@ class _MyRankingFloatingBanner extends StatelessWidget {
                   ],
                 ),
                 child: Text(
-                  rank > 0 ? GameStrings.rankUnit(rank) : GameStrings.rankUnranked,
+                  rank > 0
+                      ? GameStrings.rankUnit(rank)
+                      : GameStrings.rankUnranked,
                   style: GoogleFonts.fredoka(
                     color: Colors.white,
                     fontSize: 13.5,
