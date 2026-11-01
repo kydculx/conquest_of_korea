@@ -34,16 +34,74 @@ class _AchievementScreenState extends State<AchievementScreen> {
 
   String _activeFilterId = 'ALL';
 
+  late final PageController _pageController;
+  late final Map<String, GlobalKey> _chipKeys;
+  int _currentPage = 0;
+
   @override
   void initState() {
     super.initState();
+    _pageController = PageController();
+    _chipKeys = {
+      for (final filter in _filterCategories)
+        filter['id'] as String: GlobalKey(),
+    };
     // 화면 진입 시 최신 상태를 기반으로 미해금 업적들의 달성 조건 충족 여부를 즉시 자동 검사 및 해금 처리
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (mounted) {
         final gameProvider = Provider.of<GameProvider>(context, listen: false);
-        final achProvider = Provider.of<AchievementProvider>(context, listen: false);
+        final achProvider = Provider.of<AchievementProvider>(
+          context,
+          listen: false,
+        );
         achProvider.checkAndUnlock(capturedTiles: gameProvider.capturedTiles);
       }
+    });
+  }
+
+  @override
+  void dispose() {
+    _pageController.dispose();
+    super.dispose();
+  }
+
+  void _selectCategory(int index) {
+    if (index < 0 || index >= _filterCategories.length) return;
+    if (index == _currentPage) return;
+
+    final id = _filterCategories[index]['id'] as String;
+    setState(() {
+      _activeFilterId = id;
+      _currentPage = index;
+    });
+    if (_pageController.hasClients) {
+      _pageController.animateToPage(
+        index,
+        duration: const Duration(milliseconds: 260),
+        curve: Curves.easeOutCubic,
+      );
+    }
+  }
+
+  void _onPageChanged(int index) {
+    if (index == _currentPage) return;
+
+    final id = _filterCategories[index]['id'] as String;
+    setState(() {
+      _activeFilterId = id;
+      _currentPage = index;
+    });
+
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
+      final chipContext = _chipKeys[id]?.currentContext;
+      if (chipContext == null) return;
+      Scrollable.ensureVisible(
+        chipContext,
+        alignment: 0.5,
+        duration: const Duration(milliseconds: 250),
+        curve: Curves.easeOutCubic,
+      );
     });
   }
 
@@ -52,14 +110,14 @@ class _AchievementScreenState extends State<AchievementScreen> {
     switch (filterId) {
       case 'CAPTURE':
         return ach.category == AchievementCategory.capturedTiles ||
-               ach.category == AchievementCategory.enemyCapturedTiles;
+            ach.category == AchievementCategory.enemyCapturedTiles;
       case 'EXPLORATION':
         return ach.category == AchievementCategory.totalMovedTiles ||
-               ach.category == AchievementCategory.dailyMovedTiles ||
-               ach.category == AchievementCategory.mainBaseMove;
+            ach.category == AchievementCategory.dailyMovedTiles ||
+            ach.category == AchievementCategory.mainBaseMove;
       case 'SATELLITE':
         return ach.category == AchievementCategory.satelliteCapture ||
-               ach.category == AchievementCategory.satelliteInfo;
+            ach.category == AchievementCategory.satelliteInfo;
       case 'FORTIFICATION':
         return ach.category == AchievementCategory.hqFortification;
       case 'GOLD':
@@ -84,13 +142,10 @@ class _AchievementScreenState extends State<AchievementScreen> {
 
     // 전체 달성 통계
     final totalCount = allAchievements.length;
-    final unlockedCount = allAchievements.where((a) => unlockedIds.contains(a.id)).length;
+    final unlockedCount = allAchievements
+        .where((a) => unlockedIds.contains(a.id))
+        .length;
     final progressRatio = totalCount > 0 ? unlockedCount / totalCount : 0.0;
-
-    // 필터링 적용된 목록 산출
-    final filteredAchievements = allAchievements
-        .where((ach) => _matchesFilter(ach, _activeFilterId))
-        .toList();
 
     return Scaffold(
       appBar: TacticalAppBar(
@@ -99,9 +154,7 @@ class _AchievementScreenState extends State<AchievementScreen> {
       ),
       extendBodyBehindAppBar: false,
       body: Container(
-        decoration: const BoxDecoration(
-          gradient: GameColors.cozyDarkGradient,
-        ),
+        decoration: const BoxDecoration(gradient: GameColors.cozyDarkGradient),
         child: SafeArea(
           child: Column(
             children: [
@@ -112,34 +165,54 @@ class _AchievementScreenState extends State<AchievementScreen> {
               _buildFilterChips(),
               const SizedBox(height: 12),
 
-              // 3. 업적 리스트
+              // 3. 업적 리스트 (카테고리별 스와이프)
               Expanded(
-                child: achProvider.isLoading
-                    ? Center(
+                child: PageView.builder(
+                  controller: _pageController,
+                  itemCount: _filterCategories.length,
+                  onPageChanged: _onPageChanged,
+                  itemBuilder: (context, index) {
+                    if (achProvider.isLoading) {
+                      return Center(
                         child: CircularProgressIndicator(
-                          valueColor: AlwaysStoppedAnimation<Color>(GameColors.accentNeon),
-                        ),
-                      )
-                    : filteredAchievements.isEmpty
-                        ? Center(
-                            child: Text(
-                              GameStrings.noAchievements,
-                              style: TextStyle(
-                                color: GameColors.textSecondary,
-                                fontFamily: 'Fredoka',
-                              ),
-                            ),
-                          )
-                        : ListView.separated(
-                            padding: const EdgeInsets.fromLTRB(16, 8, 16, 16),
-                            itemCount: filteredAchievements.length,
-                            separatorBuilder: (context, index) => const SizedBox(height: 12),
-                            itemBuilder: (context, index) {
-                              final ach = filteredAchievements[index];
-                              final isUnlocked = unlockedIds.contains(ach.id);
-                              return _buildAchievementCard(ach, isUnlocked, profile);
-                            },
+                          valueColor: AlwaysStoppedAnimation<Color>(
+                            GameColors.accentNeon,
                           ),
+                        ),
+                      );
+                    }
+
+                    final id = _filterCategories[index]['id'] as String;
+                    final achievements = allAchievements
+                        .where((ach) => _matchesFilter(ach, id))
+                        .toList();
+
+                    if (achievements.isEmpty) {
+                      return Center(
+                        child: Text(
+                          GameStrings.noAchievements,
+                          style: TextStyle(
+                            color: GameColors.textSecondary,
+                            fontFamily: 'Fredoka',
+                          ),
+                        ),
+                      );
+                    }
+
+                    return ListView.separated(
+                      key: PageStorageKey<String>(id),
+                      padding: const EdgeInsets.fromLTRB(16, 8, 16, 16),
+                      itemCount: achievements.length,
+                      separatorBuilder: (context, index) =>
+                          const SizedBox(height: 12),
+                      itemBuilder: (context, index) {
+                        final ach = achievements[index];
+                        final isUnlocked = unlockedIds.contains(ach.id);
+                        return _buildAchievementCard(ach, isUnlocked, profile);
+                      },
+                    );
+                  },
+                ),
               ),
             ],
           ),
@@ -164,12 +237,15 @@ class _AchievementScreenState extends State<AchievementScreen> {
           final isActive = _activeFilterId == id;
 
           return ChoiceChip(
+            key: _chipKeys[id],
             label: Text(
               labelKey.tr(),
               style: TextStyle(
                 fontSize: 12,
                 fontWeight: isActive ? FontWeight.bold : FontWeight.normal,
-                color: isActive ? GameColors.tacticalBlack : GameColors.textSecondary,
+                color: isActive
+                    ? GameColors.tacticalBlack
+                    : GameColors.textSecondary,
               ),
             ),
             selected: isActive,
@@ -184,9 +260,7 @@ class _AchievementScreenState extends State<AchievementScreen> {
             ),
             onSelected: (selected) {
               if (selected) {
-                setState(() {
-                  _activeFilterId = id;
-                });
+                _selectCategory(index);
               }
             },
           );
@@ -196,23 +270,24 @@ class _AchievementScreenState extends State<AchievementScreen> {
   }
 
   /// 상단 대시보드 위젯 (진척도 게이지 포함)
-  Widget _buildHeaderDashboard(int unlockedCount, int totalCount, double progressRatio) {
+  Widget _buildHeaderDashboard(
+    int unlockedCount,
+    int totalCount,
+    double progressRatio,
+  ) {
     return Container(
       margin: const EdgeInsets.fromLTRB(16, 12, 16, 8),
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
         color: GameColors.backgroundMedium.withValues(alpha: 0.7),
         borderRadius: BorderRadius.circular(20),
-        border: Border.all(
-          color: GameColors.borderNeon,
-          width: 1.0,
-        ),
+        border: Border.all(color: GameColors.borderNeon, width: 1.0),
         boxShadow: [
           BoxShadow(
             color: GameColors.accentNeon.withValues(alpha: 0.03),
             blurRadius: 12,
             spreadRadius: 2,
-          )
+          ),
         ],
       ),
       child: Row(
@@ -233,7 +308,9 @@ class _AchievementScreenState extends State<AchievementScreen> {
                       value: animatedRatio,
                       strokeWidth: 6,
                       backgroundColor: GameColors.dividerColor,
-                      valueColor: AlwaysStoppedAnimation<Color>(GameColors.accentNeon),
+                      valueColor: AlwaysStoppedAnimation<Color>(
+                        GameColors.accentNeon,
+                      ),
                     ),
                   ),
                   Text(
@@ -274,31 +351,38 @@ class _AchievementScreenState extends State<AchievementScreen> {
                 const SizedBox(height: 6),
                 Text(
                   GameStrings.myAchievementSub,
-                  style: TextStyle(
-                    color: GameColors.textMuted,
-                    fontSize: 11,
-                  ),
+                  style: TextStyle(color: GameColors.textMuted, fontSize: 11),
                 ),
               ],
             ),
-          )
+          ),
         ],
       ),
     );
   }
 
   /// 업적 카드 위젯 (업적제목, 업적설명, 진척도 3가지 정보만 렌더링)
-  Widget _buildAchievementCard(Achievement ach, bool isUnlocked, dynamic profile) {
+  Widget _buildAchievementCard(
+    Achievement ach,
+    bool isUnlocked,
+    dynamic profile,
+  ) {
     final currentVal = _getCurrentValueForCategory(ach, profile);
-    final ratio = ach.threshold > 0 ? (currentVal / ach.threshold).clamp(0.0, 1.0) : 0.0;
+    final ratio = ach.threshold > 0
+        ? (currentVal / ach.threshold).clamp(0.0, 1.0)
+        : 0.0;
 
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: GameColors.backgroundMedium.withValues(alpha: isUnlocked ? 0.85 : 0.5),
+        color: GameColors.backgroundMedium.withValues(
+          alpha: isUnlocked ? 0.85 : 0.5,
+        ),
         borderRadius: BorderRadius.circular(16),
         border: Border.all(
-          color: isUnlocked ? GameColors.accentNeon.withValues(alpha: 0.5) : GameColors.borderLight,
+          color: isUnlocked
+              ? GameColors.accentNeon.withValues(alpha: 0.5)
+              : GameColors.borderLight,
           width: 1.0,
         ),
       ),
@@ -309,7 +393,9 @@ class _AchievementScreenState extends State<AchievementScreen> {
           Text(
             ach.getLocalizedTitle(),
             style: TextStyle(
-              color: isUnlocked ? GameColors.textPrimary : GameColors.textSecondary,
+              color: isUnlocked
+                  ? GameColors.textPrimary
+                  : GameColors.textSecondary,
               fontSize: 15,
               fontWeight: FontWeight.bold,
             ),
@@ -318,10 +404,7 @@ class _AchievementScreenState extends State<AchievementScreen> {
           // 2. 업적 설명
           Text(
             ach.getLocalizedDescription(),
-            style: TextStyle(
-              color: GameColors.textMuted,
-              fontSize: 12,
-            ),
+            style: TextStyle(color: GameColors.textMuted, fontSize: 12),
           ),
           const SizedBox(height: 12),
           // 3. 진척도
@@ -336,7 +419,9 @@ class _AchievementScreenState extends State<AchievementScreen> {
                         ? '${ach.threshold.toInt()}/${ach.threshold.toInt()}'
                         : '${currentVal.toInt()}/${ach.threshold.toInt()}',
                     style: TextStyle(
-                      color: isUnlocked ? GameColors.accentNeon : GameColors.textSecondary,
+                      color: isUnlocked
+                          ? GameColors.accentNeon
+                          : GameColors.textSecondary,
                       fontSize: 11,
                       fontWeight: FontWeight.w600,
                       fontFamily: 'Fredoka',
@@ -345,7 +430,9 @@ class _AchievementScreenState extends State<AchievementScreen> {
                   Text(
                     isUnlocked ? '100%' : '${(ratio * 100).toInt()}%',
                     style: TextStyle(
-                      color: isUnlocked ? GameColors.accentNeon : GameColors.textSecondary,
+                      color: isUnlocked
+                          ? GameColors.accentNeon
+                          : GameColors.textSecondary,
                       fontSize: 11,
                       fontWeight: FontWeight.w600,
                       fontFamily: 'Fredoka',
@@ -355,10 +442,7 @@ class _AchievementScreenState extends State<AchievementScreen> {
               ),
               const SizedBox(height: 6),
               TweenAnimationBuilder<double>(
-                tween: Tween<double>(
-                  begin: 0.0,
-                  end: isUnlocked ? 1.0 : ratio,
-                ),
+                tween: Tween<double>(begin: 0.0, end: isUnlocked ? 1.0 : ratio),
                 duration: const Duration(seconds: 1),
                 curve: Curves.easeOutCubic,
                 builder: (context, animatedRatio, child) {
@@ -403,21 +487,32 @@ class _AchievementScreenState extends State<AchievementScreen> {
         return (profile.satelliteScanCount as num).toDouble();
       case AchievementCategory.hqFortification:
         final gameProvider = Provider.of<GameProvider>(context, listen: false);
-        final achProvider = Provider.of<AchievementProvider>(context, listen: false);
-        return achProvider.getHQFortificationLevel(
-          profile.mainBaseTileId,
-          profile.id,
-          gameProvider.capturedTiles,
-        ).toDouble();
+        final achProvider = Provider.of<AchievementProvider>(
+          context,
+          listen: false,
+        );
+        return achProvider
+            .getHQFortificationLevel(
+              profile.mainBaseTileId,
+              profile.id,
+              gameProvider.capturedTiles,
+            )
+            .toDouble();
       case AchievementCategory.goldAmount:
         return (profile.gold as num).toDouble();
       case AchievementCategory.mainBaseMove:
         return (profile.mainBaseMoveCount as num).toDouble();
       case AchievementCategory.photoUpload:
-        final achProvider = Provider.of<AchievementProvider>(context, listen: false);
+        final achProvider = Provider.of<AchievementProvider>(
+          context,
+          listen: false,
+        );
         return achProvider.userUniquePhotoTilesCount.toDouble();
       case AchievementCategory.patternMatch:
-        final achProvider = Provider.of<AchievementProvider>(context, listen: false);
+        final achProvider = Provider.of<AchievementProvider>(
+          context,
+          listen: false,
+        );
         return achProvider.tierPatternCount(ach.id).toDouble();
     }
   }
