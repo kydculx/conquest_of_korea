@@ -15,6 +15,17 @@ import '../widgets/tactical_app_bar.dart';
 const int _dailyTileGoal = 30;
 const int _dailyStepLap = 10000;
 
+/// 타일 수가 커져도 링이 과도하게 여러 바퀴 돌지 않도록,
+/// 자릿수에 따라 1바퀴당 타일 수를 30 → 300 → 3,000 → 30,000 …으로 키운다.
+double _tileLapSizeFor(int count) {
+  if (count <= 100) return 30;
+  if (count <= 1000) return 300;
+  if (count <= 10000) return 3000;
+  if (count <= 100000) return 30000;
+  if (count <= 1000000) return 300000;
+  return 3000000;
+}
+
 /// 현지 날짜별 이동 타일 수를 월 달력으로 보여주는 화면.
 class DailyRecordsScreen extends StatefulWidget {
   const DailyRecordsScreen({super.key});
@@ -705,7 +716,6 @@ class _DailyRecordsScreenState extends State<DailyRecordsScreen> {
                   Center(
                     child: _TileRing(
                       count: value,
-                      goal: _dailyTileGoal,
                       steps: steps,
                       size: ringSize,
                       locale: locale,
@@ -921,7 +931,6 @@ class _DailyRecordsScreenState extends State<DailyRecordsScreen> {
                 Center(
                   child: _TileRing(
                     count: count,
-                    goal: _dailyTileGoal,
                     steps: steps,
                     size: 132,
                     locale: locale,
@@ -1166,7 +1175,6 @@ class _MonthRecords {
 
 class _TileRing extends StatelessWidget {
   final int count;
-  final int goal;
   final int steps;
   final double size;
   final String locale;
@@ -1174,7 +1182,6 @@ class _TileRing extends StatelessWidget {
 
   const _TileRing({
     required this.count,
-    required this.goal,
     required this.steps,
     required this.size,
     required this.locale,
@@ -1188,14 +1195,16 @@ class _TileRing extends StatelessWidget {
         : achieved
         ? Palette.footprintMint
         : GameColors.textPrimary;
-    final double tileTarget = count / goal;
+    final double tileLap = _tileLapSizeFor(count);
+    final double tileTarget = count / tileLap;
     final double stepTarget = steps / _dailyStepLap;
     final double maxTarget = math.max(tileTarget, stepTarget).toDouble();
     final double tileRatio = maxTarget > 0 ? tileTarget / maxTarget : 0.0;
     final double stepRatio = maxTarget > 0 ? stepTarget / maxTarget : 0.0;
+    // 바퀴 수가 많아져도 애니메이션이 길어지지 않도록 최대 2.5초로 제한한다.
     final double extraLaps = math.max(0.0, maxTarget - 1);
     final Duration animationDuration = Duration(
-      milliseconds: (1200 + extraLaps * 600).round(),
+      milliseconds: (1200 + math.min(2.5, extraLaps) * 500).round(),
     );
 
     return SizedBox(
@@ -1216,7 +1225,6 @@ class _TileRing extends StatelessWidget {
             painter: _TileRingPainter(
               progress: progress,
               stepProgress: stepProgress,
-              achieved: achieved,
             ),
             child: Center(
               child: Padding(
@@ -1246,13 +1254,8 @@ class _TileRing extends StatelessWidget {
 class _TileRingPainter extends CustomPainter {
   final double progress;
   final double stepProgress;
-  final bool achieved;
 
-  const _TileRingPainter({
-    required this.progress,
-    required this.stepProgress,
-    required this.achieved,
-  });
+  const _TileRingPainter({required this.progress, required this.stepProgress});
 
   @override
   void paint(Canvas canvas, Size size) {
@@ -1263,11 +1266,8 @@ class _TileRingPainter extends CustomPainter {
     final double innerRadius = outerRadius - strokeWidth - gap;
     if (innerRadius <= 0) return;
 
-    // 그래프 배경(트랙)은 타일 이동 기록 유무와 관계없이 항상 주황 계열로 유지한다.
-    const Color tileTrackColor = Palette.softRed;
-    final Color tileHeadColor = achieved
-        ? Palette.softRed
-        : Palette.footprintMint;
+    // 타일 링은 진행률/달성 여부와 관계없이 항상 주황 계열로 표시한다.
+    const Color tileColor = Palette.softRed;
     const Color stepHeadColor = Palette.tealOk;
 
     final Paint outerTrackPaint = Paint()
@@ -1276,7 +1276,7 @@ class _TileRingPainter extends CustomPainter {
       ..strokeWidth = strokeWidth
       ..strokeCap = StrokeCap.round;
     final Paint innerTrackPaint = Paint()
-      ..color = tileTrackColor.withValues(alpha: 0.22)
+      ..color = tileColor.withValues(alpha: 0.22)
       ..style = PaintingStyle.stroke
       ..strokeWidth = strokeWidth
       ..strokeCap = StrokeCap.round;
@@ -1296,12 +1296,12 @@ class _TileRingPainter extends CustomPainter {
       _drawSolidArc(
         canvas,
         rect,
-        tileHeadColor,
+        tileColor,
         progress.clamp(0.0, 1.0),
         strokeWidth,
       );
       // 링을 모두 그린 뒤 머리를 마지막에 얹어, 여러 바퀴가 겹쳐도 항상 보이게 한다.
-      _drawHead(canvas, head, tangent, strokeWidth, tileHeadColor);
+      _drawHead(canvas, head, tangent, strokeWidth, tileColor);
     }
 
     if (stepProgress > 0) {
@@ -1384,8 +1384,7 @@ class _TileRingPainter extends CustomPainter {
   @override
   bool shouldRepaint(covariant _TileRingPainter oldDelegate) {
     return oldDelegate.progress != progress ||
-        oldDelegate.stepProgress != stepProgress ||
-        oldDelegate.achieved != achieved;
+        oldDelegate.stepProgress != stepProgress;
   }
 }
 
