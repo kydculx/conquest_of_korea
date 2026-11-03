@@ -601,11 +601,8 @@ class _GameMapWidgetState extends State<GameMapWidget>
                   if (state.$2 || state.$3) {
                     return const SizedBox.shrink();
                   }
-                  // 카메라 줌 레벨이 일정 수준 이하(너무 멀리 줌아웃 - LOD 2 수준)일 때는 마커 레이어 생략
-                  if (_currentZoom < MapConfig.minZoom + 3) {
-                    return const SizedBox.shrink();
-                  }
 
+                  // 줌 레벨과 관계없이 사진이 있는 타일은 항상 아이콘을 노출한다.
                   final markers = photoTileIds
                       .map((tileId) {
                     final parsed = HexService.parseTileId(tileId);
