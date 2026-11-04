@@ -60,6 +60,10 @@ class CaptureController {
   /// 점령 성공 후 서버에 정보 저장 API를 전송 중인지 여부
   bool _isSaving = false;
 
+  /// 계정 전환 세대. 로그아웃 후 늦게 끝난 저장 콜백이 이전 계정 상태를
+  /// 다시 반영하지 못하도록 한다.
+  int _generation = 0;
+
   /// 현재 물리 점령을 시도 중인 타일 ID를 반환합니다.
   String? get capturingTileId => _capturingTileId;
 
@@ -149,9 +153,28 @@ class CaptureController {
     onStateChanged();
   }
 
+  /// 로그아웃/계정 전환 시 진행 중인 물리 점령 상태를 강제로 초기화합니다.
+  void resetAccountState() {
+    _generation++;
+    _captureTimer?.cancel();
+    _captureTimer = null;
+    _capturingTileId = null;
+    _userId = null;
+    _startLocation = null;
+    _colorHex = null;
+    _startTime = null;
+    _targetDuration = null;
+    _captureProgress = 0.0;
+    _targetCaptureCount = 0;
+    _wasEnemyTile = false;
+    _isSaving = false;
+    onStateChanged();
+  }
+
   /// 점령이 완료된 타일 정보(위치, 경계 좌표, 소유자 색상 등)를 직렬화하여 Supabase DB에 적재합니다.
   Future<void> _saveCapture(LatLng? currentLocation) async {
     if (_isSaving) return;
+    final int generation = _generation;
     _isSaving = true;
     _captureTimer?.cancel();
     _vibrate(500);
@@ -189,8 +212,10 @@ class CaptureController {
         debugPrint('⚠️ 점령 전 골드 정산 실패 (계속 진행): $e');
       }
     }
+    if (generation != _generation) return;
 
     final success = await _supabase.captureTile(tile);
+    if (generation != _generation) return;
     if (success) {
       onTileCaptured(tile.id, tile, wasEnemyTile: _wasEnemyTile);
       onAlert(GameStrings.captureSuccessAlert, AlertType.success);

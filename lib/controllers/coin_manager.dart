@@ -27,11 +27,22 @@ class CoinManager {
 
   List<UserCoin> _coins = [];
 
+  /// 계정 전환 세대. 로그아웃 후 늦게 도착한 응답이 이전 계정 동전을
+  /// 다시 표시하지 못하도록 한다.
+  int _generation = 0;
+
   /// 동전 재생성이 비동기적으로 중복 실행되는 것을 방지하는 뮤텍스 락 플래그
   bool _isRegeneratingCoins = false;
 
   /// 오늘 생성된 동전 목록 (수집 여부 포함)
   List<UserCoin> get coins => List.unmodifiable(_coins);
+
+  /// 로그아웃/계정 전환 시 이전 계정의 동전 목록과 재생성 락을 비웁니다.
+  void reset() {
+    _generation++;
+    _coins = [];
+    _isRegeneratingCoins = false;
+  }
 
   CoinManager({
     required SupabaseService supabase,
@@ -56,6 +67,7 @@ class CoinManager {
   Future<void> checkAndSyncCoins() async {
     final myId = _userId;
     if (myId == null) return;
+    final int generation = _generation;
     if (_isRegeneratingCoins) {
       debugPrint('🪙 [동전 가드] 이미 동전 재생성이 진행 중이므로 중복 동기화 패치를 취소합니다.');
       return;
@@ -67,17 +79,19 @@ class CoinManager {
           "${nowUtc.year}-${nowUtc.month.toString().padLeft(2, '0')}-${nowUtc.day.toString().padLeft(2, '0')}";
 
       final lastDate = await PreferencesService.getLastCoinGeneratedDate();
+      if (generation != _generation) return;
 
       if (_coins.isNotEmpty && lastDate == todayStr) {
         return;
       }
 
       final existingCoins = await _supabase.fetchUserCoins(myId);
+      if (generation != _generation) return;
 
       if (lastDate != todayStr || existingCoins.isEmpty) {
         debugPrint(
             '🪙 자정 경과 또는 동전 없음 감지 ➔ 동전 재생성 시작 (UTC: $todayStr)');
-        await _regenerateCoins(myId, todayStr);
+        await _regenerateCoins(myId, todayStr, generation);
       } else {
         _coins = existingCoins;
         _notifyListeners();
@@ -91,6 +105,7 @@ class CoinManager {
   Future<void> checkCoinCollection(String tileId) async {
     final myId = _userId;
     if (myId == null) return;
+    final int generation = _generation;
 
     final coinIndex =
         _coins.indexWhere((c) => c.tileId == tileId && !c.isCollected);
@@ -116,6 +131,8 @@ class CoinManager {
     try {
       final success =
           await _supabase.collectCoin(myId, tileId, GameConfig.coinGoldReward);
+      // 응답 대기 중 로그아웃/계정 전환이 일어났다면 이전 계정 상태를 갱신하지 않는다.
+      if (generation != _generation) return;
       if (success) {
         AudioService().playNotification();
         _onAlert(
@@ -136,8 +153,12 @@ class CoinManager {
   }
 
   /// 본진(또는 현재 위치) 중심 반경 내 타일 후보군에서 10개의 동전을 선정해 재생성합니다.
-  Future<void> _regenerateCoins(String userId, String todayStr) async {
-    if (_isRegeneratingCoins) return;
+  Future<void> _regenerateCoins(
+    String userId,
+    String todayStr,
+    int generation,
+  ) async {
+    if (_isRegeneratingCoins || generation != _generation) return;
     _isRegeneratingCoins = true;
 
     final hqTileId = _auth?.profile?.mainBaseTileId;
@@ -275,7 +296,9 @@ class CoinManager {
       }).toList();
 
       await _supabase.clearUserCoins(userId);
+      if (generation != _generation) return;
       final insertSuccess = await _supabase.insertUserCoins(newCoins);
+      if (generation != _generation) return;
 
       if (insertSuccess) {
         _coins = newCoins;
@@ -286,7 +309,10 @@ class CoinManager {
     } catch (e) {
       debugPrint('⚠️ 동전 생성 중 오류 발생: $e');
     } finally {
-      _isRegeneratingCoins = false;
+      // 계정이 바뀐 뒤 새 세대의 재생성이 시작됐다면 그 락을 해제하지 않는다.
+      if (generation == _generation) {
+        _isRegeneratingCoins = false;
+      }
     }
   }
 }

@@ -102,6 +102,10 @@ class SatelliteCaptureController {
   /// 위성 점령 정보의 서버 저장 진행 여부
   bool _isSaving = false;
 
+  /// 계정 전환 세대. 로그아웃 후 늦게 끝난 저장 콜백이 이전 계정 상태를
+  /// 다시 반영하지 못하도록 한다.
+  int _generation = 0;
+
   // --- 생성자 ---
 
   SatelliteCaptureController({
@@ -304,6 +308,24 @@ class SatelliteCaptureController {
     onStateChanged();
   }
 
+  /// 로그아웃/계정 전환 시 이전 계정의 위성 점령 진행 상태와
+  /// 마지막 점령 시각(쿨타임)을 초기화합니다.
+  void resetAccountState() {
+    _generation++;
+    _timer?.cancel();
+    _timer = null;
+    _capturingTileId = null;
+    _phase = SatelliteCapturePhase.none;
+    _travelProgress = 0.0;
+    _captureProgress = 0.0;
+    _travelDuration = null;
+    _captureDuration = null;
+    _phaseStartTime = null;
+    _isSaving = false;
+    _lastCaptureTime = null;
+    onStateChanged();
+  }
+
   /// 리소스 해제
   void dispose() {
     _timer?.cancel();
@@ -315,6 +337,7 @@ class SatelliteCaptureController {
   /// 위성 점령 데이터 DB 저장 및 쿨타임 갱신
   Future<void> _saveCapture(String tileId) async {
     if (_isSaving) return;
+    final int generation = _generation;
     _isSaving = true;
     _timer?.cancel();
 
@@ -347,6 +370,7 @@ class SatelliteCaptureController {
     );
 
     final success = await _supabase.captureTile(tile);
+    if (generation != _generation) return;
     if (success) {
       _lastCaptureTime = DateTime.now();
 
@@ -376,6 +400,7 @@ class SatelliteCaptureController {
         debugPrint('⚠️ 위성 점령 재화 차감 중 오류 발생: $e');
       }
 
+      if (generation != _generation) return;
       onCaptureSuccess(tileId, tile);
       onAlert(GameStrings.satelliteCaptureSuccess, AlertType.success);
 
