@@ -83,6 +83,12 @@ class MapViewController {
     _mapMode = MapMode.normal;
   }
 
+  /// 로그아웃/계정 전환 시 이전 계정의 발자취·패턴 보기 상태를
+  /// 일반 모드로 되돌립니다. (알림 없음 — 호출자가 묶어서 notify)
+  void resetAccountViewMode() {
+    _mapMode = MapMode.normal;
+  }
+
   void toggleFollowingUser() {
     _isFollowingUser = !_isFollowingUser;
     _notifyListeners();

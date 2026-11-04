@@ -335,6 +335,10 @@ class AchievementProvider extends ChangeNotifier {
         _unlockedAchievementIds = [];
         _consumedTileIds.clear();
         _achievementTiles.clear();
+        _userUniquePhotoTilesCount = 0;
+        _isLoading = false;
+        _isChecking = false;
+        _hasPendingCheck = false;
         notifyListeners();
       }
     }
@@ -345,16 +349,21 @@ class AchievementProvider extends ChangeNotifier {
     _isLoading = true;
     notifyListeners();
     try {
-      _unlockedAchievementIds = await _supabase.fetchUserAchievements(userId);
+      final unlocked = await _supabase.fetchUserAchievements(userId);
+      if (_currentUserId != userId) return;
+      _unlockedAchievementIds = unlocked;
       final consumed = await _supabase.fetchConsumedTileIds(userId);
+      if (_currentUserId != userId) return;
       _consumedTileIds.clear();
       _consumedTileIds.addAll(consumed);
 
       final achTiles = await _supabase.fetchAchievementTiles(userId);
+      if (_currentUserId != userId) return;
       _achievementTiles.clear();
       _achievementTiles.addAll(achTiles);
 
       await loadPatternRegistry();
+      if (_currentUserId != userId) return;
 
       if (_authProvider != null && _authProvider!.profile != null) {
         _userUniquePhotoTilesCount = _authProvider!.profile!.photoUploadCount;

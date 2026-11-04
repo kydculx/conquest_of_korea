@@ -13,6 +13,13 @@ class GameAlertManager {
   /// 화면 상단에 표시 중인 알림 목록 (최대 5개, 최신순)
   List<GameAlert> get alerts => List.unmodifiable(_alerts);
 
+  /// 로그아웃/계정 전환 시 이전 계정의 알림을 모두 제거합니다.
+  void clear() {
+    if (_alerts.isEmpty) return;
+    _alerts.clear();
+    _notifyListeners();
+  }
+
   GameAlertManager({required VoidCallback notifyListeners})
     : _notifyListeners = notifyListeners;
 
