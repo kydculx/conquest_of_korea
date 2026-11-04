@@ -7,6 +7,7 @@ import '../core/utils/device_platform.dart';
 import '../services/auth_service.dart';
 import '../services/notification_service.dart';
 import '../services/analytics_service.dart';
+import '../services/preferences_service.dart';
 import '../services/widget_service.dart';
 import '../models/user_profile.dart';
 
@@ -85,17 +86,29 @@ class AuthProvider extends ChangeNotifier {
       _loadProfile(initialUser.id, isAppStart: true);
       _updateSessionIdInDatabase(initialUser.id);
       _subscribeProfileRealtime(initialUser.id);
+    } else {
+      // 세션이 없는 상태로 시작하면 이전 계정의 로컬 기록도 비운다.
+      AnalyticsService.setUserId(null);
+      _notificationService.setCurrentUserId(null);
+      unawaited(PreferencesService.clearUserSessionData());
+      unawaited(WidgetService.update(territory: 0, dailyMoved: 0));
     }
 
     _authService.authStateChanges.listen((data) {
       final AuthChangeEvent event = data.event;
       final Session? session = data.session;
+      final String? previousUserId = _user?.id;
 
       _user = session?.user;
 
       if (event == AuthChangeEvent.signedIn) {
         final user = _user;
         if (user == null) return;
+        // 계정이 직접 교체된 경우(로그아웃 이벤트 없이 세션 교체) 이전 계정의
+        // 마지막 방문 타일·동전 날짜·알림 설정 등 로컬 기록을 먼저 제거한다.
+        if (previousUserId != null && previousUserId != user.id) {
+          unawaited(PreferencesService.clearUserSessionData());
+        }
         _isDuplicateLoggedOut = false;
         _isProfileLoading = true;
         notifyListeners();
@@ -111,16 +124,30 @@ class AuthProvider extends ChangeNotifier {
         // [개선] 개인 토픽 구독은 _loadProfile에서 알림 설정과 함께 일괄 처리하므로
         // 부팅 직후 인증 이벤트 분기에서는 호출하지 않는다 (중복 FCM 왕복 방지).
       } else if (event == AuthChangeEvent.signedOut) {
-        _profileSubscription?.cancel();
-        _profileSubscription = null;
+        _user = null;
+        _clearLocalAuthState();
         _notificationService.setCurrentUserId(null);
-        final user = _user;
-        if (user != null) {
-          _notificationService.unsubscribeFromTopic('user_${user.id}');
+        if (previousUserId != null) {
+          unawaited(
+            _notificationService.unsubscribeFromTopic('user_$previousUserId'),
+          );
         }
-        _profile = null;
+        AnalyticsService.setUserId(null);
+        unawaited(PreferencesService.clearUserSessionData());
+        unawaited(WidgetService.update(territory: 0, dailyMoved: 0));
+        notifyListeners();
       }
     }, onError: (e) => debugPrint('⚠️ 인증 상태 변경 스트림 에러: $e'));
+  }
+
+  /// 로그아웃/계정 전환 시 메모리에 남아 있는 이전 계정 상태를 비웁니다.
+  void _clearLocalAuthState() {
+    _profileSubscription?.cancel();
+    _profileSubscription = null;
+    _profile = null;
+    _isProfileLoading = false;
+    _isLoading = false;
+    _error = null;
   }
 
   /// DB profiles 테이블의 last_session_id 필드를 로컬 세션 ID로 업데이트합니다.
@@ -307,12 +334,20 @@ class AuthProvider extends ChangeNotifier {
   /// 로그아웃
   Future<void> signOut() async {
     final user = _user;
-    if (user != null) {
-      _notificationService.setCurrentUserId(null);
-      await _notificationService.unsubscribeFromTopic('user_${user.id}');
+    try {
+      if (user != null) {
+        _notificationService.setCurrentUserId(null);
+        await _notificationService.unsubscribeFromTopic('user_${user.id}');
+      }
+      await _authService.signOut();
+    } finally {
+      _user = null;
       AnalyticsService.setUserId(null);
+      _clearLocalAuthState();
+      unawaited(PreferencesService.clearUserSessionData());
+      unawaited(WidgetService.update(territory: 0, dailyMoved: 0));
+      notifyListeners();
     }
-    await _authService.signOut();
   }
 
   /// 구글 로그인
@@ -541,7 +576,10 @@ class AuthProvider extends ChangeNotifier {
       // 3. 로컬 로그아웃 및 상태 전면 초기화
       await _authService.signOut();
       _user = null;
-      _profile = null;
+      AnalyticsService.setUserId(null);
+      _clearLocalAuthState();
+      unawaited(PreferencesService.clearUserSessionData());
+      unawaited(WidgetService.update(territory: 0, dailyMoved: 0));
       notifyListeners();
     } finally {
       _setLoading(false);
