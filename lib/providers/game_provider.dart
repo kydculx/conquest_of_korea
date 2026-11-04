@@ -467,7 +467,10 @@ class GameProvider extends ChangeNotifier with WidgetsBindingObserver {
 
   /// 특정 타일 ID에 등록된 사진첩 데이터를 Supabase에서 로드하고 캐시를 갱신합니다.
   Future<List<Map<String, dynamic>>> loadPhotosForTile(String tileId) async {
+    final userId = _userId;
     final photos = await PhotoService().fetchPhotosForTile(tileId);
+    // 응답 대기 중 로그아웃/계정 전환이 일어났다면 이전 계정 캐시를 채우지 않는다.
+    if (userId == null || userId != _userId) return [];
     _tilePhotosCache[tileId] = photos;
     notifyListeners();
     return photos;
@@ -578,6 +581,10 @@ class GameProvider extends ChangeNotifier with WidgetsBindingObserver {
   String? _lastNotifSyncUserId;
   bool? _lastNotifMaster;
 
+  /// 마지막으로 발자취/사진 타일 목록을 로드한 사용자 ID.
+  /// 프로필 로딩 완료 시점(세션 토큰 준비 후)에 한 번만 로드하기 위한 가드.
+  String? _lastTileDataUserId;
+
   void setAuthProvider(AuthProvider auth) {
     final oldProfile = _profile;
     _authProvider = auth;
@@ -592,8 +599,17 @@ class GameProvider extends ChangeNotifier with WidgetsBindingObserver {
           _goldManager.setGold(serverGold);
         }
 
-        // 알림 설정 동기화: 동일 사용자/동일 설정이면 FCM 토픽 재호출 생략
+        // 프로필 조회가 성공한 시점 = Supabase 세션 토큰이 서버에 반영된 시점.
+        // 이때 발자취와 사진 타일 목록을 로드해야 로그인 직후 빈 응답을 피할 수 있다.
         final p = auth.profile!;
+        if (_lastTileDataUserId != p.id) {
+          _lastTileDataUserId = p.id;
+          _tileProvider.loadUserSessionData(p.id).catchError((e) {
+            debugPrint('⚠️ 로그인 후 발자취/사진 타일 로드 실패: $e');
+          });
+        }
+
+        // 알림 설정 동기화: 동일 사용자/동일 설정이면 FCM 토픽 재호출 생략
         final sameNotifState =
             _lastNotifSyncUserId == p.id &&
             _lastNotifMaster == p.isNotificationsEnabled;
@@ -620,10 +636,27 @@ class GameProvider extends ChangeNotifier with WidgetsBindingObserver {
       _notificationController.resetToDefault();
       _isAutoCapture = false;
       _tileSelection.resetScanState();
-      _satelliteController.cancelCapture();
-      _captureController.cancelCapture();
+      _tileSelection.clearSelectedFootprintQuietly();
+      _satelliteController.resetAccountState();
+      _captureController.resetAccountState();
       _lastNotifSyncUserId = null;
       _lastNotifMaster = null;
+      _lastTileDataUserId = null;
+
+      // 로그아웃/계정 전환 시 이전 계정의 지도·타일·재화·알림 상태를 모두 비운다.
+      _tileProvider.reset();
+      _tilePhotosCache.clear();
+      _alertManager.clear();
+      _coinManager.reset();
+      _mapView.resetAccountViewMode();
+      _lastTileId = null;
+      _secondLastTileId = null;
+      _lastProcessedTileId = null;
+      _pendingTileFocus = null;
+      _pendingInvasionTileId = null;
+      _lastSyncedStepUserId = null;
+      _lastSyncedStepDate = null;
+      _lastSyncedStepCount = null;
     }
     notifyListeners();
   }

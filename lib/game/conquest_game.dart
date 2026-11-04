@@ -728,6 +728,11 @@ class ConquestGame extends FlameGame {
     _lastCapturingColorHex = capturingColorHex;
     _isScanMode = isScanMode;
     _currentUserId = currentUserId;
+    // 로그아웃 상태에서는 이전 계정의 타일 강조 표시가 남지 않게 한다.
+    if (currentUserId == null) {
+      _highlightedTileId = null;
+      _highlightUntil = null;
+    }
     _isSatelliteCapturing = isSatelliteCapturing;
     _satelliteCapturePhase = satelliteCapturePhase;
     _satelliteTravelProgress = satelliteTravelProgress;

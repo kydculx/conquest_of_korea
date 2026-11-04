@@ -19,6 +19,10 @@ class GameTileProvider extends ChangeNotifier {
   final SupabaseService _supabase;
   AuthProvider? _authProvider;
 
+  /// 마지막으로 바인딩된 계정 ID. AuthProvider는 동일 인스턴스가 갱신되므로
+  /// 이 값을 별도로 보관해야 로그인/로그아웃 전환을 정확히 감지할 수 있다.
+  String? _currentUserId;
+
   /// 초기화 완료 처리를 조율하는 Completer
   final Completer<void> _initCompleter = Completer<void>();
   bool _hasInitializedLocation = false;
@@ -81,37 +85,57 @@ class GameTileProvider extends ChangeNotifier {
   GameTileProvider({required SupabaseService supabase}) : _supabase = supabase;
 
   /// 모든 캐시 데이터를 청소합니다 (로그아웃/사용자 변경 시 호출).
+  /// 계정 식별자도 함께 비워 다음 로그인 시 새 사용자 데이터를 다시 로드하게 한다.
   void reset() {
+    _currentUserId = null;
+    _clearCaches();
+  }
+
+  void _clearCaches() {
     _capturedTiles.clear();
     _footprints.clear();
     _photoTileIds.clear();
+    _revealedTileTimes.clear();
+    _agentNicknames.clear();
     // 어드민 속성은 사용자 전환과 무관한 전역 데이터이므로 유지하되
     // 영역 캐시 강제 플래그만 무효화한다.
     _lastCheckedAreaTileId = null;
     _lastAreaFetchTime = null;
+    _lastServerCheckTime = null;
+    // 진행 중이던 이전 계정의 영역 조회 응답이 늦게 도착해 캐시를
+    // 다시 채우지 못하도록 요청 세대를 증가시킨다.
+    _areaRequestSeq++;
     _hasInitializedLocation = false;
     notifyListeners();
   }
 
   // --- AuthProvider 바인딩 ---
   void setAuthProvider(AuthProvider auth) {
-    final oldUserId = _userId;
     _authProvider = auth;
     final newUserId = auth.user?.id;
+    if (_currentUserId == newUserId) return;
 
-    if (oldUserId != newUserId) {
-      // 로그인 사용자 세션이 변경된 경우 캐시 전면 초기화
-      reset();
+    _currentUserId = newUserId;
+    // 계정이 바뀌면 이전 계정 캐시만 즉시 비운다.
+    // 발자취/사진 타일 로딩은 프로필(세션 토큰) 준비 후
+    // loadUserSessionData에서 수행한다.
+    _clearCaches();
+  }
 
-      if (newUserId != null) {
-        // 새 사용자의 발자취 데이터를 비동기로 로드
-        loadFootprints(newUserId).catchError((e) {
-          debugPrint('⚠️ 새 사용자 발자취 로드 실패: $e');
-        });
-        loadPhotoTileIds().catchError((e) {
-          debugPrint('⚠️ 새 사용자 사진 타일 ID 로드 실패: $e');
-        });
-      }
+  /// 프로필 로딩 완료 시점에 호출됩니다.
+  /// 계정이 바뀐 경우 캐시를 먼저 비운 뒤 발자취/사진 타일 목록을 로드합니다.
+  Future<void> loadUserSessionData(String userId) async {
+    if (_currentUserId != userId) {
+      _currentUserId = userId;
+      _clearCaches();
+    }
+    try {
+      await Future.wait([
+        loadFootprints(userId),
+        loadPhotoTileIds(),
+      ]);
+    } catch (e) {
+      debugPrint('⚠️ 사용자 타일 데이터 로드 실패: $e');
     }
   }
 
@@ -125,19 +149,11 @@ class GameTileProvider extends ChangeNotifier {
   bool get isInitialized => _isInitialized;
   Future<void> get initializationFuture => _initCompleter.future;
 
-  /// [개편] 서버 전체 로드 대신 최초 위치 획득 후 5km 선별 조회를 대기하도록 설정하며, 로그인 시 발자취 및 사진 등록 타일 목록을 백그라운드 로드합니다.
+  /// [개편] 서버 전체 로드 대신 최초 위치 획득 후 5km 선별 조회를 대기하도록 설정합니다.
+  /// 로그인 사용자 데이터(발자취·사진 타일)는 프로필 로딩이 끝난 뒤
+  /// GameProvider의 profile-ready 경로에서 로드합니다.
   Future<void> init() async {
     try {
-      final myId = _userId;
-      if (myId != null) {
-        // 초기화 프로세스가 네트워크 대기에 블로킹되지 않도록 비동기 백그라운드 처리
-        loadFootprints(myId).catchError((e) {
-          debugPrint('⚠️ 초기 발자취 백그라운드 로드 실패: $e');
-        });
-        loadPhotoTileIds().catchError((e) {
-          debugPrint('⚠️ 초기 사진 타일 ID 백그라운드 로드 실패: $e');
-        });
-      }
       // 어드민이 정의한 타일 타입은 전역 캐시이므로 초기화 시 1회 로드
       loadTileTypes().catchError((e) {
         debugPrint('⚠️ 초기 타일 타입 백그라운드 로드 실패: $e');
@@ -153,8 +169,11 @@ class GameTileProvider extends ChangeNotifier {
 
   /// [신규] 사진이 등록된 모든 타일 ID 목록을 서버에서 일괄 로딩하여 로컬 캐시를 구성합니다.
   Future<void> loadPhotoTileIds() async {
+    final String? loadUserId = _userId;
     try {
       final ids = await _supabase.fetchPhotoTileIds();
+      // 응답 대기 중 로그아웃/계정 전환이 일어났다면 적용하지 않는다.
+      if (_userId != loadUserId) return;
       _photoTileIds.clear();
       _photoTileIds.addAll(ids);
       notifyListeners();
@@ -198,6 +217,8 @@ class GameTileProvider extends ChangeNotifier {
     try {
       // Supabase DB 서버 데이터 비동기 조회하여 캐시에 병합
       final list = await _supabase.fetchUserFootprints(userId);
+      // 응답 대기 중 로그아웃/계정 전환이 일어났다면 적용하지 않는다.
+      if (_userId != userId) return;
       for (final tile in list) {
         _footprints[tile.tileId] = tile;
       }
