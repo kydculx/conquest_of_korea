@@ -11,12 +11,123 @@ import {
 } from '../api';
 import { supabase } from '../supabase';
 import { Radio, Compass, Layers, Users, Map as MapIcon, Zap, Camera, X } from 'lucide-react';
-import L from 'leaflet';
-import 'leaflet/dist/leaflet.css'; // Leaflet 기본 레이아웃 스타일 직접 로드
 
 const originLat = 37.5665;
 const originLng = 126.9780;
 const hexSize = 100.0; // 100m 정밀 타일 규격
+
+const GOOGLE_MAPS_API_KEY = import.meta.env.VITE_GOOGLE_MAPS_API_KEY;
+
+const DARK_MAP_STYLES = [
+  { elementType: 'geometry', stylers: [{ color: '#151b26' }] },
+  { elementType: 'labels.text.fill', stylers: [{ color: '#8b98a5' }] },
+  { elementType: 'labels.text.stroke', stylers: [{ color: '#151b26' }] },
+  {
+    featureType: 'administrative',
+    elementType: 'geometry',
+    stylers: [{ color: '#2b3648' }],
+  },
+  {
+    featureType: 'poi',
+    elementType: 'labels.text.fill',
+    stylers: [{ color: '#6b7a8c' }],
+  },
+  {
+    featureType: 'poi.park',
+    elementType: 'geometry',
+    stylers: [{ color: '#1b2a2a' }],
+  },
+  {
+    featureType: 'road',
+    elementType: 'geometry',
+    stylers: [{ color: '#263041' }],
+  },
+  {
+    featureType: 'road',
+    elementType: 'geometry.stroke',
+    stylers: [{ color: '#1a2230' }],
+  },
+  {
+    featureType: 'road',
+    elementType: 'labels.text.fill',
+    stylers: [{ color: '#94a3b8' }],
+  },
+  { featureType: 'transit', stylers: [{ visibility: 'off' }] },
+  {
+    featureType: 'water',
+    elementType: 'geometry',
+    stylers: [{ color: '#0b1220' }],
+  },
+  {
+    featureType: 'water',
+    elementType: 'labels.text.fill',
+    stylers: [{ color: '#4b5e78' }],
+  },
+];
+
+function svgDataUri(svg) {
+  return `data:image/svg+xml;charset=UTF-8,${encodeURIComponent(svg)}`;
+}
+
+const CAMERA_ICON_URL = svgDataUri(`
+  <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 22 22">
+    <circle cx="11" cy="11" r="10.5" fill="rgba(0,0,0,0.55)" stroke="#00ffcc" stroke-width="1"/>
+    <g transform="translate(5 5) scale(0.5)" fill="none" stroke="#ffffff" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+      <path d="M14.5 4h-5L7 7H4a2 2 0 0 0-2 2v9a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V9a2 2 0 0 0-2-2h-3l-2.5-3z"/>
+      <circle cx="12" cy="13" r="3"/>
+    </g>
+  </svg>
+`);
+
+const HQ_ICON_URL = svgDataUri(`
+  <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 18 18">
+    <circle cx="9" cy="9" r="7" fill="#FFD700" stroke="#ffffff" stroke-width="2"/>
+  </svg>
+`);
+
+const MY_LOCATION_ICON_URL = svgDataUri(`
+  <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 14 14">
+    <circle cx="7" cy="7" r="6" fill="#00e5ff" stroke="#ffffff" stroke-width="2"/>
+  </svg>
+`);
+
+let googleMapsPromise = null;
+
+function loadGoogleMaps() {
+  if (window.google?.maps) return Promise.resolve(window.google.maps);
+  if (googleMapsPromise) return googleMapsPromise;
+  if (!GOOGLE_MAPS_API_KEY) {
+    return Promise.reject(
+      new Error(
+        'Google Maps API 키가 없습니다. conquest_admin/.env에 VITE_GOOGLE_MAPS_API_KEY를 설정해 주세요.'
+      )
+    );
+  }
+
+  googleMapsPromise = new Promise((resolve, reject) => {
+    const callbackName = '__conquestAdminGoogleMapsReady';
+    window[callbackName] = () => {
+      delete window[callbackName];
+      resolve(window.google.maps);
+    };
+
+    const script = document.createElement('script');
+    script.src = `https://maps.googleapis.com/maps/api/js?key=${encodeURIComponent(
+      GOOGLE_MAPS_API_KEY
+    )}&v=weekly&loading=async&callback=${callbackName}`;
+    script.async = true;
+    script.defer = true;
+    script.onerror = () => {
+      delete window[callbackName];
+      googleMapsPromise = null;
+      reject(new Error('Google Maps 스크립트를 불러오지 못했습니다. API 키와 네트워크를 확인해 주세요.'));
+    };
+    document.head.appendChild(script);
+  });
+
+  return googleMapsPromise;
+}
+
 
 // 헥스 그리드 좌표를 경위도로 변환
 function hexToLatLng(q, r) {
@@ -102,21 +213,21 @@ export default function DashboardTab() {
 
   const mapRef = useRef(null);
   const mapInstance = useRef(null);
-  const polygonsGroup = useRef(null);
-  const photoMarkersGroup = useRef(null);
+  const polygonsRef = useRef([]);
+  const photoMarkersRef = useRef([]);
   const myLocationMarker = useRef(null);
   const hqMarker = useRef(null);
-  const darkTileLayer = useRef(null);
-  const satelliteTileLayer = useRef(null);
+  const infoWindowRef = useRef(null);
   const [isSatellite, setIsSatellite] = useState(false);
   const [mapReady, setMapReady] = useState(false);
+  const [mapError, setMapError] = useState(null);
   const [showPhotoMarkers, setShowPhotoMarkers] = useState(true);
   const initialFitDone = useRef(false);
   const actionInFlightRef = useRef(false);
   const adminActionRef = useRef({ capture: null, neutralize: null });
 
   const handleGoToMyLocation = () => {
-    if (!mapInstance.current) return;
+    if (!mapInstance.current || !window.google?.maps) return;
 
     if (!navigator.geolocation) {
       alert('이 브라우저는 위치 정보를 지원하지 않습니다.');
@@ -126,21 +237,27 @@ export default function DashboardTab() {
     navigator.geolocation.getCurrentPosition(
       (position) => {
         const { latitude, longitude } = position.coords;
-        mapInstance.current.setView([latitude, longitude], 15);
+        const maps = window.google.maps;
+        const map = mapInstance.current;
+        const location = { lat: latitude, lng: longitude };
 
-        // 이전 마커 제거 후 신규 생성
+        map.setCenter(location);
+        map.setZoom(15);
+
         if (myLocationMarker.current) {
-          myLocationMarker.current.remove();
+          myLocationMarker.current.setMap(null);
         }
 
-        const myIcon = L.divIcon({
-          className: 'custom-my-location-marker',
-          html: `<div style="width: 14px; height: 14px; background-color: var(--accent-cyan); border: 2px solid white; border-radius: 50%; box-shadow: 0 0 8px rgba(59, 130, 246, 0.4);"></div>`,
-          iconSize: [14, 14],
-          iconAnchor: [7, 7]
+        myLocationMarker.current = new maps.Marker({
+          position: location,
+          map,
+          icon: {
+            url: MY_LOCATION_ICON_URL,
+            scaledSize: new maps.Size(14, 14),
+            anchor: new maps.Point(7, 7),
+          },
+          zIndex: 700,
         });
-
-        myLocationMarker.current = L.marker([latitude, longitude], { icon: myIcon }).addTo(mapInstance.current);
       },
       (error) => {
         console.error(error);
@@ -371,82 +488,100 @@ export default function DashboardTab() {
     };
   }, [tilesUserId]);
 
-  // 1. Leaflet 맵 초기화
+  // 1. Google Maps 초기화
   useEffect(() => {
-    if (!mapRef.current) return;
-    if (mapInstance.current) return;
+    const mapElement = mapRef.current;
+    let cancelled = false;
+    if (!mapElement || mapInstance.current) return;
 
-    // 하이테크 스타일 다크 맵 구축
-    const map = L.map(mapRef.current, {
-      zoomControl: true,
-      attributionControl: false
-    }).setView([originLat, originLng], 14);
+    const mapContainer = document.createElement('div');
+    mapContainer.style.width = '100%';
+    mapContainer.style.height = '100%';
+    mapElement.replaceChildren(mapContainer);
 
-    const darkLayer = L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_nolabels/{z}/{x}/{y}{r}.png?key=cb1_2pao_1_f708f02cfdb298af5ba94a21', {
-      maxZoom: 20
-    });
+    setMapError(null);
 
-    const satelliteLayer = L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', {
-      maxZoom: 19
-    });
+    loadGoogleMaps()
+      .then((maps) => {
+        if (cancelled) return;
 
-    darkTileLayer.current = darkLayer;
-    satelliteTileLayer.current = satelliteLayer;
+        const map = new maps.Map(mapContainer, {
+          center: { lat: originLat, lng: originLng },
+          zoom: 14,
+          mapTypeId: 'roadmap',
+          styles: DARK_MAP_STYLES,
+          backgroundColor: '#060911',
+          zoomControl: true,
+          mapTypeControl: false,
+          streetViewControl: false,
+          fullscreenControl: false,
+          clickableIcons: false,
+        });
 
-    // 기본적으로 다크 레이어 적재
-    darkLayer.addTo(map);
-
-    polygonsGroup.current = L.layerGroup().addTo(map);
-    photoMarkersGroup.current = L.layerGroup().addTo(map);
-    mapInstance.current = map;
-    setMapReady(true);
-
-    // 리액트 마운트 시 컨테이너 크기 왜곡 현상을 방지하기 위해 맵 레이아웃 갱신 강제 기동
-    setTimeout(() => {
-      if (map) map.invalidateSize();
-    }, 150);
+        mapInstance.current = map;
+        infoWindowRef.current = new maps.InfoWindow();
+        map.addListener('click', () => infoWindowRef.current?.close());
+        setMapReady(true);
+      })
+      .catch((err) => {
+        if (cancelled) return;
+        console.error(err);
+        setMapError(err?.message || 'Google Maps를 초기화하지 못했습니다.');
+      });
 
     return () => {
-      if (mapInstance.current) {
-        mapInstance.current.remove();
-        mapInstance.current = null;
+      cancelled = true;
+
+      polygonsRef.current.forEach((polygon) => polygon.setMap(null));
+      polygonsRef.current = [];
+      photoMarkersRef.current.forEach((marker) => marker.setMap(null));
+      photoMarkersRef.current = [];
+      myLocationMarker.current?.setMap(null);
+      myLocationMarker.current = null;
+      hqMarker.current?.setMap(null);
+      hqMarker.current = null;
+      infoWindowRef.current?.close();
+      infoWindowRef.current = null;
+
+      if (mapInstance.current && window.google?.maps) {
+        window.google.maps.event.clearInstanceListeners(mapInstance.current);
       }
-      polygonsGroup.current = null;
-      photoMarkersGroup.current = null;
+      mapInstance.current = null;
+
+      if (mapElement) {
+        mapElement.replaceChildren();
+      }
     };
   }, []);
 
   useEffect(() => {
-    if (!mapReady || !mapInstance.current) return;
+    if (!mapReady || !mapInstance.current || !window.google?.maps) return;
 
     const map = mapInstance.current;
     const handleZoom = () => setShowPhotoMarkers(map.getZoom() >= 11);
     handleZoom();
-    map.on('zoomend', handleZoom);
+    const listener = map.addListener('zoom_changed', handleZoom);
 
     return () => {
-      map.off('zoomend', handleZoom);
+      window.google?.maps?.event.removeListener(listener);
     };
   }, [mapReady]);
 
-  // 1-2. 위성 맵 토글에 따른 레이어 탈착 효과
+  // 1-2. 위성/일반 지도 전환
   useEffect(() => {
-    if (!mapInstance.current || !darkTileLayer.current || !satelliteTileLayer.current) return;
-
-    if (isSatellite) {
-      mapInstance.current.removeLayer(darkTileLayer.current);
-      mapInstance.current.addLayer(satelliteTileLayer.current);
-    } else {
-      mapInstance.current.removeLayer(satelliteTileLayer.current);
-      mapInstance.current.addLayer(darkTileLayer.current);
-    }
-  }, [isSatellite]);
+    if (!mapReady || !mapInstance.current) return;
+    mapInstance.current.setMapTypeId(isSatellite ? 'hybrid' : 'roadmap');
+  }, [isSatellite, mapReady]);
 
   // 2. 점령지 데이터 수신 시 헥사곤 폴리곤 실시간 렌더링
   useEffect(() => {
-    if (!mapReady || !mapInstance.current || !polygonsGroup.current) return;
+    if (!mapReady || !mapInstance.current || !window.google?.maps) return;
 
-    polygonsGroup.current.clearLayers();
+    const maps = window.google.maps;
+    const map = mapInstance.current;
+    polygonsRef.current.forEach((polygon) => polygon.setMap(null));
+    polygonsRef.current = [];
+    infoWindowRef.current?.close();
 
     const footprintMode = !!footprintsUserId;
     const userTilesMode = !!tilesUserId && !footprintsUserId;
@@ -463,7 +598,8 @@ export default function DashboardTab() {
 
     if (sourceTiles.length === 0) return;
 
-    const bounds = [];
+    const points = [];
+    const bounds = new maps.LatLngBounds();
     let renderedCount = 0;
 
     sourceTiles.forEach(tile => {
@@ -484,6 +620,7 @@ export default function DashboardTab() {
         return;
       }
       if (!corners || corners.length !== 6) return;
+      const center = hexToLatLng(q, r);
       const user = users.find(u => u.id === tile.user_id);
       const ownerName = footprintNickname || tilesNickname || (user ? (user.nickname || '미등록 사용자') : '미등록 사용자');
       const rawColor = tile.color_hex || user?.color_hex || '#00e5ff';
@@ -491,12 +628,15 @@ export default function DashboardTab() {
       const tileId = tile.id || `hex_${q}_${r}`;
       const isHQ = hqParam === tileId;
 
-      const polygon = L.polygon(corners, {
-        color: color,
-        weight: isHQ ? 4 : 2,
-        opacity: 0.95,
+      const polygon = new maps.Polygon({
+        paths: corners.map(([lat, lng]) => ({ lat, lng })),
+        strokeColor: color,
+        strokeOpacity: 0.95,
+        strokeWeight: isHQ ? 4 : 2,
         fillColor: color,
         fillOpacity: isHQ ? 0.55 : 0.45,
+        map,
+        zIndex: isHQ ? 10 : 1,
       });
 
       const count = photoCounts[tileId] || 0;
@@ -529,30 +669,32 @@ export default function DashboardTab() {
         </div>
       `;
 
-      polygon.bindPopup(popupContent, {
-        minWidth: 210
+      polygon.addListener('click', () => {
+        const infoWindow = infoWindowRef.current;
+        if (!infoWindow) return;
+        infoWindow.setContent(popupContent);
+        infoWindow.setPosition({ lat: center[0], lng: center[1] });
+        infoWindow.open(map);
       });
 
-      polygonsGroup.current.addLayer(polygon);
+      polygonsRef.current.push(polygon);
       renderedCount += 1;
-      try {
-        bounds.push(hexToLatLng(q, r));
-      } catch {
-        // bounds 계산 실패는 무시
-      }
+      points.push(center);
+      bounds.extend({ lat: center[0], lng: center[1] });
     });
 
     if (renderedCount === 0) return;
 
+    const focusPoint = (point, zoom) => {
+      map.setCenter({ lat: point[0], lng: point[1] });
+      map.setZoom(zoom);
+    };
+
     if (footprintMode || userTilesMode) {
-      try {
-        if (bounds.length === 1) {
-          mapInstance.current.setView(bounds[0], 14);
-        } else if (bounds.length > 1) {
-          mapInstance.current.fitBounds(L.latLngBounds(bounds), { padding: [40, 40] });
-        }
-      } catch {
-        // bounds 계산 실패는 무시
+      if (points.length === 1) {
+        focusPoint(points[0], 14);
+      } else if (points.length > 1) {
+        map.fitBounds(bounds, 40);
       }
       if (footprintMode) return;
     }
@@ -563,7 +705,7 @@ export default function DashboardTab() {
         const hqQ = Number(hqTile.q);
         const hqR = Number(hqTile.r);
         if (!Number.isNaN(hqQ) && !Number.isNaN(hqR)) {
-          mapInstance.current.setView(hexToLatLng(hqQ, hqR), 15);
+          focusPoint(hexToLatLng(hqQ, hqR), 15);
           return;
         }
       }
@@ -572,31 +714,31 @@ export default function DashboardTab() {
         const q = parseInt(parts[parts.length - 2], 10);
         const r = parseInt(parts[parts.length - 1], 10);
         if (!Number.isNaN(q) && !Number.isNaN(r)) {
-          mapInstance.current.setView(hexToLatLng(q, r), 15);
+          focusPoint(hexToLatLng(q, r), 15);
           return;
         }
       }
     }
 
-    if (!initialFitDone.current && bounds.length > 0) {
+    if (!initialFitDone.current && points.length > 0) {
       initialFitDone.current = true;
-      try {
-        if (bounds.length === 1) {
-          mapInstance.current.setView(bounds[0], 14);
-        } else {
-          mapInstance.current.fitBounds(L.latLngBounds(bounds), { padding: [40, 40] });
-        }
-      } catch {
-        mapInstance.current.setView(bounds[0], 14);
+      if (points.length === 1) {
+        focusPoint(points[0], 14);
+      } else {
+        map.fitBounds(bounds, 40);
       }
     }
   }, [tiles, users, photoCounts, hqParam, mapReady, footprintTiles, footprintsUserId, footprintNickname, userTiles, tilesUserId, tilesNickname]);
 
   // 2-1. 사진이 등록된 타일에 카메라 아이콘 마커 표시
   useEffect(() => {
-    if (!mapReady || !photoMarkersGroup.current) return;
+    if (!mapReady || !mapInstance.current || !window.google?.maps) return;
 
-    photoMarkersGroup.current.clearLayers();
+    const maps = window.google.maps;
+    const map = mapInstance.current;
+    photoMarkersRef.current.forEach((marker) => marker.setMap(null));
+    photoMarkersRef.current = [];
+
     if (footprintsUserId) return;
 
     const userTilesMode = !!tilesUserId && !footprintsUserId;
@@ -614,46 +756,41 @@ export default function DashboardTab() {
       if (!coords) return;
 
       const [lat, lng] = hexToLatLng(coords.q, coords.r);
-      const marker = L.marker([lat, lng], {
-        icon: L.divIcon({
-          className: 'admin-photo-marker',
-          html: `
-            <div style="width: 22px; height: 22px; box-sizing: border-box; border-radius: 50%; background: rgba(0, 0, 0, 0.55); border: 1px solid #00ffcc; display: flex; align-items: center; justify-content: center; box-shadow: 0 0 6px rgba(0, 255, 204, 0.65);">
-              <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#ffffff" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
-                <path d="M14.5 4h-5L7 7H4a2 2 0 0 0-2 2v9a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V9a2 2 0 0 0-2-2h-3l-2.5-3z"></path>
-                <circle cx="12" cy="13" r="3"></circle>
-              </svg>
-            </div>
-          `,
-          iconSize: [22, 22],
-          iconAnchor: [11, 11],
-        }),
+      const marker = new maps.Marker({
+        position: { lat, lng },
+        map,
+        icon: {
+          url: CAMERA_ICON_URL,
+          scaledSize: new maps.Size(22, 22),
+          anchor: new maps.Point(11, 11),
+        },
         title: `사진 ${count}장`,
-        zIndexOffset: 600,
+        zIndex: 600,
       });
 
-      marker.on('click', () => {
+      marker.addListener('click', () => {
         if (typeof window.openAdminGallery === 'function') {
           window.openAdminGallery(tileId);
         }
       });
 
-      photoMarkersGroup.current.addLayer(marker);
+      photoMarkersRef.current.push(marker);
     });
 
     return () => {
-      photoMarkersGroup.current?.clearLayers();
+      photoMarkersRef.current.forEach((marker) => marker.setMap(null));
+      photoMarkersRef.current = [];
     };
   }, [mapReady, showPhotoMarkers, photoCounts, tilesUserId, footprintsUserId, userTiles]);
 
   // 2-2. 본진 이동(hq) 파라미터 시 지도 포커스 + 하이라이트 마커 표시
   useEffect(() => {
     if (hqMarker.current) {
-      hqMarker.current.remove();
+      hqMarker.current.setMap(null);
       hqMarker.current = null;
     }
 
-    if (!mapInstance.current || !hqParam || footprintsUserId) return;
+    if (!mapReady || !mapInstance.current || !hqParam || footprintsUserId || !window.google?.maps) return;
 
     const parts = hqParam.split('_');
     if (parts.length < 3) return;
@@ -661,16 +798,21 @@ export default function DashboardTab() {
     const r = parseInt(parts[parts.length - 1], 10);
     if (Number.isNaN(q) || Number.isNaN(r)) return;
 
+    const maps = window.google.maps;
     const center = hexToLatLng(q, r);
-    mapInstance.current.setView(center, 15);
+    mapInstance.current.setCenter({ lat: center[0], lng: center[1] });
+    mapInstance.current.setZoom(15);
 
-    const hqIcon = L.divIcon({
-      className: 'custom-hq-marker',
-      html: `<div style="width: 18px; height: 18px; background: #FFD700; border: 2px solid white; border-radius: 50%; box-shadow: 0 0 12px rgba(255, 215, 0, 0.6);"></div>`,
-      iconSize: [18, 18],
-      iconAnchor: [9, 9]
+    hqMarker.current = new maps.Marker({
+      position: { lat: center[0], lng: center[1] },
+      map: mapInstance.current,
+      icon: {
+        url: HQ_ICON_URL,
+        scaledSize: new maps.Size(18, 18),
+        anchor: new maps.Point(9, 9),
+      },
+      zIndex: 700,
     });
-    hqMarker.current = L.marker(center, { icon: hqIcon }).addTo(mapInstance.current);
   }, [hqParam, mapReady, footprintsUserId]);
 
   if (error) {
@@ -758,7 +900,7 @@ export default function DashboardTab() {
           ))}
         </div>
 
-        {/* Leaflet 실시간 점령 지도 */}
+        {/* Google Maps 실시간 점령 지도 */}
         <div className="tactical-card map-card">
           <div className="card-head">
             <h3 className="card-title">
@@ -802,6 +944,23 @@ export default function DashboardTab() {
               ref={mapRef}
               className="map-element"
             />
+            {mapError && (
+              <div style={{
+                position: 'absolute', top: 0, left: 0, width: '100%', height: '100%',
+                background: 'rgba(10, 12, 16, 0.9)', backdropFilter: 'blur(4px)',
+                display: 'flex', alignItems: 'center', justifyContent: 'center',
+                padding: '2rem', textAlign: 'center', zIndex: 20, borderRadius: '8px'
+              }}>
+                <div>
+                  <div style={{ color: 'var(--accent-amber)', fontWeight: 'bold', marginBottom: '0.5rem' }}>
+                    Google Maps를 불러올 수 없습니다
+                  </div>
+                  <div style={{ color: 'var(--text-secondary)', fontSize: '0.85rem', lineHeight: 1.6 }}>
+                    {mapError}
+                  </div>
+                </div>
+              </div>
+            )}
             {loading && (
               <div style={{
                 position: 'absolute', top: 0, left: 0, width: '100%', height: '100%',
