@@ -63,6 +63,20 @@ class MapViewController {
     }
   }
 
+  /// 강제 재중앙 정렬 요청 식별자.
+  /// 값이 증가하면 지도 위젯이 현재 GPS 위치로 카메라를 다시 이동시킨다.
+  int _recenterRequestId = 0;
+
+  int get recenterRequestId => _recenterRequestId;
+
+  /// '내 위치' 버튼을 누른 것과 동일하게 카메라를 현재 위치로 중앙 정렬한다.
+  /// 이미 추적 중이어도 강제로 다시 중앙으로 이동시킨다.
+  void recenterOnUser() {
+    _isFollowingUser = true;
+    _recenterRequestId++;
+    _notifyListeners();
+  }
+
   /// 외부 요청으로 특정 타일을 보여줄 때 GPS 추적이 카메라를 되돌리지 않도록
   /// 추적 상태만 조용히 해제합니다.
   void disableFollowingQuiet() {

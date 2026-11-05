@@ -34,6 +34,7 @@ class _GameMapWidgetState extends State<GameMapWidget>
     with TickerProviderStateMixin {
   final MapController _mapController = MapController();
   bool _lastIsFollowing = true; // 추가: 이전 추적 상태 캐싱
+  int _lastRecenterRequestId = 0; // 추가: 강제 재중앙 정렬 요청 식별자 캐싱
   bool _isPinching = false; // 추가: 핀치 줌 진행 중 여부 플래그
   int _pointerCount = 0; // 추가: 화면에 터치 중인 활성 포인터(손가락) 개수
   double _currentZoom = MapConfig.focusZoom;
@@ -97,8 +98,16 @@ class _GameMapWidgetState extends State<GameMapWidget>
     if (!mounted || _gameProvider == null) return;
     final gameProvider = _gameProvider!;
 
-    // 전역 추적 상태 전이 감지 및 내 위치 애니메이션 복귀
-    if (gameProvider.isFollowingUser && !_lastIsFollowing) {
+    // 강제 재중앙 정렬 요청('내 위치' 버튼과 동일 효과) 감지
+    final bool recenterRequested =
+        gameProvider.recenterRequestId != _lastRecenterRequestId;
+    if (recenterRequested) {
+      _lastRecenterRequestId = gameProvider.recenterRequestId;
+    }
+
+    // 전역 추적 상태 전이 또는 강제 재중앙 정렬 요청 시 내 위치 애니메이션 복귀
+    if (gameProvider.isFollowingUser &&
+        (!_lastIsFollowing || recenterRequested)) {
       _lastIsFollowing = true;
       final loc = _locProvider;
       if (loc != null && loc.currentLocation != null) {

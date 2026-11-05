@@ -48,6 +48,9 @@ class _GameScreenState extends State<GameScreen> {
   StreamSubscription<Achievement>? _achievementSubscription;
   bool _showOnboarding = false;
 
+  /// 가이드 표시 전 '내 위치' 재중앙 정렬 애니메이션이 끝날 때까지 기다리는 시간.
+  static const Duration _guideRecenterDelay = Duration(milliseconds: 900);
+
   /// 첫 위치 수신 대기 타임아웃 여부 (15초 초과 시 재시도 UI 표시)
   bool _locationTimedOut = false;
   Timer? _locationWaitTimer;
@@ -394,8 +397,13 @@ class _GameScreenState extends State<GameScreen> {
           // HUD 레이어 (내부에 Selector 처리를 장착하여 독립 렌더링)
           HudOverlay(
             onProfileClosed: () async {
+              final game = context.read<GameProvider>();
               final hasSeen = await PreferencesService.hasSeenOnboarding();
               if (!hasSeen && mounted) {
+                // 가이드 표시 전에 '내 위치' 버튼과 동일하게 카메라를 현재 위치로 중앙 정렬한다.
+                game.recenterOnUser();
+                await Future<void>.delayed(_guideRecenterDelay);
+                if (!mounted) return;
                 setState(() {
                   _showOnboarding = true;
                 });

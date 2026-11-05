@@ -1155,6 +1155,12 @@ class GameProvider extends ChangeNotifier with WidgetsBindingObserver {
   // --- Map State (MapViewController 위임 + 모드 전환 오케스트레이션) ---
   void setFollowingUser(bool value) => _mapView.setFollowingUser(value);
 
+  /// 강제 재중앙 정렬 요청 식별자 (지도 위젯이 변경을 감지).
+  int get recenterRequestId => _mapView.recenterRequestId;
+
+  /// '내 위치' 버튼과 동일하게 카메라를 현재 위치로 재중앙 정렬한다.
+  void recenterOnUser() => _mapView.recenterOnUser();
+
   void toggleFollowingUser() => _mapView.toggleFollowingUser();
 
   void cycleMapMode() {
