@@ -1067,6 +1067,9 @@ class GameStrings {
   /// 포르투갈어
   static String get languagePortuguese => 'languagePortuguese'.tr();
 
+  /// 이탈리아어
+  static String get languageItalian => 'languageItalian'.tr();
+
   /// 언어 변경 완료 알림
   static String get languageChanged => 'languageChanged'.tr();
 
@@ -1093,6 +1096,9 @@ class GameStrings {
 
   /// 포르투갈어로 언어 변경 완료 알림
   static String get languageChangedToPortuguese => 'languageChangedToPortuguese'.tr();
+
+  /// 이탈리아어로 언어 변경 완료 알림
+  static String get languageChangedToItalian => 'languageChangedToItalian'.tr();
 
   /// 보안 해제 실패 알림
   static String get satSecurityDecryptFailed => 'satSecurityDecryptFailed'.tr();

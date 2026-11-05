@@ -160,6 +160,18 @@ class LanguageSettingsScreen extends StatelessWidget {
                       locale: const Locale('pt'),
                       isSelected: currentLocale.languageCode == 'pt',
                     ),
+                    Divider(
+                      height: 1,
+                      color: GameColors.dividerColor.withValues(alpha: 30 / 255),
+                      indent: 16,
+                      endIndent: 16,
+                    ),
+                    _buildLanguageItem(
+                      context: context,
+                      title: GameStrings.languageItalian,
+                      locale: const Locale('it'),
+                      isSelected: currentLocale.languageCode == 'it',
+                    ),
                   ],
                 ),
               ),
@@ -218,6 +230,9 @@ class LanguageSettingsScreen extends StatelessWidget {
               break;
             case 'pt':
               targetMessage = GameStrings.languageChangedToPortuguese;
+              break;
+            case 'it':
+              targetMessage = GameStrings.languageChangedToItalian;
               break;
             default:
               targetMessage = GameStrings.languageChanged;
