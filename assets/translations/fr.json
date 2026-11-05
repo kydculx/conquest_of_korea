@@ -279,7 +279,7 @@
   "satShieldWithTime": "Bouclier {time}",
   "satPeekTimeWithTime": "Info {time}",
   "satCaptureCount": "Captures: {count}",
-  "languageSettings": "Paramètres d'Idioma",
+  "languageSettings": "Paramètres de langue",
   "languageSettingsSub": "Changer la langue de l'application",
   "gpsAccuracySettings": "Paramètres de précision GPS",
   "gpsAccuracySettingsSub": "Contrôle la consommation de la batterie et la sensibilité des mises à jour de position.",
