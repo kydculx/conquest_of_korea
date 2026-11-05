@@ -9,6 +9,10 @@ import '../../providers/ranking_provider.dart';
 import '../../models/user_profile.dart';
 import '../widgets/tactical_app_bar.dart';
 
+/// 랭킹 표의 순위 열 폭.
+/// 영문 기준 5글자(예: "Rango")까지 한 줄로 표시되도록 여유 있게 잡는다.
+const double _rankColumnWidth = 56.0;
+
 /// 플레이어들의 활약상과 지배력을 시각화하고 조회할 수 있는 메인 랭킹 화면 클래스
 class RankingScreen extends StatefulWidget {
   /// RankingScreen 생성자
@@ -63,19 +67,30 @@ class _RankingScreenState extends State<RankingScreen> {
         segments: [
           ButtonSegment(
             value: RankingType.capturedTiles,
-            label: Text(GameStrings.capturedTerritory),
+            label: Text(
+              GameStrings.capturedTerritory,
+              textAlign: TextAlign.center,
+            ),
           ),
           ButtonSegment(
             value: RankingType.dailyMovedTiles,
-            label: Text(GameStrings.rankingHeaderDailyMovedTiles),
+            label: Text(
+              GameStrings.rankingHeaderDailyMovedTiles,
+              textAlign: TextAlign.center,
+            ),
           ),
           ButtonSegment(
             value: RankingType.totalMovedTiles,
-            label: Text(GameStrings.rankingHeaderTotalMovedTiles),
+            label: Text(
+              GameStrings.rankingHeaderTotalMovedTiles,
+              textAlign: TextAlign.center,
+            ),
           ),
         ],
         selected: {ranking.currentType},
         showSelectedIcon: false,
+        // 세 세그먼트를 동일 폭으로 전체 너비에 맞춰 제목을 가운데 정렬한다.
+        expandedInsets: EdgeInsets.zero,
         onSelectionChanged: (selected) {
           final type = selected.first;
           final index = _types.indexOf(type);
@@ -114,10 +129,13 @@ class _RankingScreenState extends State<RankingScreen> {
       child: Row(
         children: [
           SizedBox(
-            width: 42,
+            width: _rankColumnWidth,
             child: Center(
               child: Text(
                 GameStrings.rankingHeaderRank,
+                maxLines: 1,
+                softWrap: false,
+                textAlign: TextAlign.center,
                 style: const TextStyle(
                   color: Palette.accentCyan,
                   fontSize: 12,
@@ -217,6 +235,20 @@ class _RankingScreenState extends State<RankingScreen> {
     );
   }
 
+  /// 당겨서 새로고침: 모든 랭킹 탭 데이터를 서버에서 강제로 다시 조회한다.
+  Future<void> _refreshRanking(String type) async {
+    final ranking = context.read<RankingProvider>();
+    await Future.wait(
+      _types.map(
+        (t) => ranking.loadRankings(
+          type: t,
+          force: true,
+          select: t == type,
+        ),
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final ranking = context.watch<RankingProvider>();
@@ -263,6 +295,7 @@ class _RankingScreenState extends State<RankingScreen> {
                               ranking: ranking,
                               type: type,
                               currentUserId: auth.user?.id,
+                              onRefresh: () => _refreshRanking(type),
                             ),
                           ),
                         ],
@@ -319,11 +352,13 @@ class _RankingListView extends StatelessWidget {
   final RankingProvider ranking;
   final String type;
   final String? currentUserId;
+  final Future<void> Function() onRefresh;
 
   const _RankingListView({
     required this.ranking,
     required this.type,
     required this.currentUserId,
+    required this.onRefresh,
   });
 
   int _getValueForProfile(String type, UserProfile profile) {
@@ -340,21 +375,41 @@ class _RankingListView extends StatelessWidget {
   Widget build(BuildContext context) {
     final list = ranking.topRankingsFor(type);
     if (list.isEmpty) {
-      if (ranking.isLoadingFor(type)) {
-        return Center(
-          child: CircularProgressIndicator(color: GameColors.accentNeon),
-        );
-      }
-      return Center(
-        child: Text(
-          GameStrings.noRankingData,
-          style: TextStyle(color: GameColors.textMuted, fontSize: 13),
+      // 데이터가 없거나 로딩 중이어도 당겨서 새로고침이 가능하도록 스크롤 영역을 유지한다.
+      return RefreshIndicator(
+        color: GameColors.accentNeon,
+        backgroundColor: GameColors.backgroundMedium,
+        onRefresh: onRefresh,
+        child: LayoutBuilder(
+          builder: (context, constraints) {
+            return SingleChildScrollView(
+              key: PageStorageKey<String>('$type-empty'),
+              physics: const AlwaysScrollableScrollPhysics(),
+              child: ConstrainedBox(
+                constraints: BoxConstraints(minHeight: constraints.maxHeight),
+                child: Center(
+                  child: ranking.isLoadingFor(type)
+                      ? CircularProgressIndicator(
+                          color: GameColors.accentNeon,
+                        )
+                      : Text(
+                          GameStrings.noRankingData,
+                          style: TextStyle(
+                            color: GameColors.textMuted,
+                            fontSize: 13,
+                          ),
+                        ),
+                ),
+              ),
+            );
+          },
         ),
       );
     }
 
     final listView = ListView.builder(
       key: PageStorageKey<String>(type),
+      physics: const AlwaysScrollableScrollPhysics(),
       padding: EdgeInsets.only(
         left: 16,
         right: 16,
@@ -392,7 +447,12 @@ class _RankingListView extends StatelessWidget {
 
     return Stack(
       children: [
-        listView,
+        RefreshIndicator(
+          color: GameColors.accentNeon,
+          backgroundColor: GameColors.backgroundMedium,
+          onRefresh: onRefresh,
+          child: listView,
+        ),
         if (ranking.isLoadingFor(type))
           Positioned(
             top: 0,
@@ -478,7 +538,7 @@ class _RankingListTile extends StatelessWidget {
                 vertical: 6,
               ),
               leading: SizedBox(
-                width: 42,
+                width: _rankColumnWidth,
                 height: 42,
                 child: Center(
                   child: medalGradient != null
