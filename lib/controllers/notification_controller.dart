@@ -32,6 +32,7 @@ class NotificationController {
     'fr',
     'de',
     'pt',
+    'it',
   ];
 
   String? _languageTopic;

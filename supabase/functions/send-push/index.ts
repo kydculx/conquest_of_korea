@@ -21,6 +21,7 @@ const NOTIFICATION_TEMPLATES: Record<string, Record<string, { title: string; bod
     fr: { title: "⚠️ Alerte: Zone Perdue !", body: "Un autre joueur a pris votre zone !" },
     de: { title: "⚠️ Alarm: Zone verloren!", body: "Ein anderer Spieler hat Ihre Zone übernommen!" },
     pt: { title: "⚠️ Alerta: Área Perdida!", body: "Outro jogador tomou sua área !" },
+    it: { title: "⚠️ Avviso: Zona Persa!", body: "Un altro giocatore ha conquistato la tua zona!" },
   },
   satellite_complete: {
     ko: { title: "영토 확보 알림", body: "✓ 영토 확보 완료. 새로운 영토를 획득하였습니다." },
@@ -32,6 +33,7 @@ const NOTIFICATION_TEMPLATES: Record<string, Record<string, { title: string; bod
     fr: { title: "Alerte de Territoire Sécurisé", body: "✓ Capture complétée ! Nouveau territoire sécurisé." },
     de: { title: "Territorium gesichert", body: "✓ Einnahme abgeschlossen! Neues Territorium gesichert." },
     pt: { title: "Alerta de Território Garantido", body: "✓ Captura concluída! Novo território garantido." },
+    it: { title: "Territorio assicurato", body: "✓ Cattura completata! Nuovo territorio conquistato." },
   },
 };
 

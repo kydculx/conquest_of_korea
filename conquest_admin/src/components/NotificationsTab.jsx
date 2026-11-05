@@ -12,6 +12,7 @@ const NOTICE_LANGUAGES = [
   { code: 'fr', label: 'Français' },
   { code: 'de', label: 'Deutsch' },
   { code: 'pt', label: 'Português' },
+  { code: 'it', label: 'Italiano' },
 ];
 
 // 앱 assets/translations/ko.json의 알림 문구와 동일하게 유지
