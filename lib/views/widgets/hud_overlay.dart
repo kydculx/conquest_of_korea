@@ -17,6 +17,8 @@ import 'hud_hq_move_button.dart';
 import 'hud_photo_button.dart';
 import 'hud_satellite_bubble.dart';
 import 'hud_footprint_bubble.dart';
+import 'onboarding_targets.dart';
+import 'fold_aware.dart';
 
 /// 인게임 HUD 오버레이 (점수판, 점령 버튼, 유틸리티 버튼, 위성 스캔 연동)
 class HudOverlay extends StatelessWidget {
@@ -33,8 +35,16 @@ class HudOverlay extends StatelessWidget {
     final auth = context.read<AuthProvider>();
 
     // 기기별 상하단 안전 영역 높이 자동 산출
-    final double topPadding = MediaQuery.of(context).padding.top;
-    final double bottomPadding = MediaQuery.of(context).padding.bottom;
+    final EdgeInsets safePadding = MediaQuery.of(context).padding;
+    final Size size = MediaQuery.of(context).size;
+    final Rect? foldGap = activeFoldGap(context);
+    final Rect? foldPane = foldGap == null
+        ? null
+        : largerPaneForGap(size, safePadding, foldGap);
+    final double topPadding = safePadding.top;
+    final double bottomPadding = safePadding.bottom;
+    final double leftPadding = safePadding.left;
+    final double rightPadding = safePadding.right;
 
     // Y축 정밀 오프셋 연산
     final double topOffset = topPadding > 0 ? topPadding + 12.0 : 24.0;
@@ -49,16 +59,25 @@ class HudOverlay extends StatelessWidget {
         // [상단 좌측] 골드 정보 바, UTC 리셋 남은 시간 카운터, 걸음수 캡슐 세로 정렬 배치
         Positioned(
           top: topOffset + 3.0,
-          left: 20.0,
-          child: const Column(
+          left: 20.0 + leftPadding,
+          child: Column(
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              CozyHeaderBar(),
-              SizedBox(height: 6),
-              UtcTimerHeaderBar(),
-              SizedBox(height: 6),
-              StepsHeaderBar(),
+              KeyedSubtree(
+                key: OnboardingTargets.goldBar,
+                child: const CozyHeaderBar(),
+              ),
+              const SizedBox(height: 6),
+              KeyedSubtree(
+                key: OnboardingTargets.timerBar,
+                child: const UtcTimerHeaderBar(),
+              ),
+              const SizedBox(height: 6),
+              KeyedSubtree(
+                key: OnboardingTargets.stepsBar,
+                child: const StepsHeaderBar(),
+              ),
             ],
           ),
         ),
@@ -67,60 +86,84 @@ class HudOverlay extends StatelessWidget {
         // [상단 우측 - 패턴 도감 버튼] 기존 업적 버튼 자리로 이동 (44x44)
         Positioned(
           top: topOffset,
-          right: 20.0 + 44.0 * 2 + 10.0 * 2,
-          child: const PatternGuideActionButton(size: 44),
+          right: 20.0 + rightPadding + 44.0 * 2 + 10.0 * 2,
+          child: KeyedSubtree(
+            key: OnboardingTargets.patternBtn,
+            child: const PatternGuideActionButton(size: 44),
+          ),
         ),
 
         // [상단 우측 - 랭킹 버튼] 유저 프로필 버튼 바로 왼쪽에 1:1 대칭 정렬 나란히 배치 (44x44)
         Positioned(
           top: topOffset,
-          right: 20.0 + 44.0 + 10.0, // 프로필 단추 너비 44 + 여백 10 오프셋 연산
-          child: const RankingActionButton(size: 44),
+          right: 20.0 + rightPadding + 44.0 + 10.0, // 프로필 단추 너비 44 + 여백 10 오프셋 연산
+          child: KeyedSubtree(
+            key: OnboardingTargets.rankingBtn,
+            child: const RankingActionButton(size: 44),
+          ),
         ),
 
         // [상단 우측 - 프로필 버튼] 독립 배치된 내 정보 아바타 버튼 (44x44)
         Positioned(
           top: topOffset,
-          right: 20.0,
-          child: ProfileFloatingButton(
-            auth: auth,
-            onProfileClosed: onProfileClosed,
+          right: 20.0 + rightPadding,
+          child: KeyedSubtree(
+            key: OnboardingTargets.profileBtn,
+            child: ProfileFloatingButton(
+              auth: auth,
+              onProfileClosed: onProfileClosed,
+            ),
           ),
         ),
 
         // [상단 우측 - 월간 이동] 내 정보 버튼 바로 아래에 배치 (44x44)
         Positioned(
           top: topOffset + 44.0 + 10.0,
-          right: 20.0,
-          child: const DailyRecordsActionButton(size: 44, iconSize: 20),
+          right: 20.0 + rightPadding,
+          child: KeyedSubtree(
+            key: OnboardingTargets.calendarBtn,
+            child: const DailyRecordsActionButton(size: 44, iconSize: 20),
+          ),
         ),
 
         // [상단 우측 - 업적 버튼] 월간 이동 버튼 바로 아래에 배치 (44x44)
         Positioned(
           top: topOffset + 44.0 + 10.0 + 44.0 + 10.0,
-          right: 20.0,
-          child: const AchievementActionButton(size: 44),
+          right: 20.0 + rightPadding,
+          child: KeyedSubtree(
+            key: OnboardingTargets.achievementBtn,
+            child: const AchievementActionButton(size: 44),
+          ),
         ),
 
         // [하단 좌측 - 현재 타일 사진첩 갤러리/카메라 버튼] 본진 버튼 바로 위에 배치 (42x42)
         Positioned(
           bottom: baseBottomMargin + bottomPadding + 17.0 + (42.0 + 10.0) * 2,
-          left: 20.0,
-          child: const TilePhotoActionButton(size: 42, iconSize: 20),
+          left: 20.0 + leftPadding,
+          child: KeyedSubtree(
+            key: OnboardingTargets.photoBtn,
+            child: const TilePhotoActionButton(size: 42, iconSize: 20),
+          ),
         ),
 
         // [하단 좌측 - 본부 기지(HQ) 이동 및 설정 버튼] 내 위치 버튼 바로 위에 배치 (42x42)
         Positioned(
           bottom: baseBottomMargin + bottomPadding + 17.0 + 42.0 + 10.0,
-          left: 20.0,
-          child: const HQMoveButton(size: 42, iconSize: 20),
+          left: 20.0 + leftPadding,
+          child: KeyedSubtree(
+            key: OnboardingTargets.hqBtn,
+            child: const HQMoveButton(size: 42, iconSize: 20),
+          ),
         ),
 
         // [하단 좌측] 독립 배치된 내 위치 / 맵 회전 토글 버튼 (42x42)
         Positioned(
           bottom: baseBottomMargin + bottomPadding + 17.0,
-          left: 20.0,
-          child: const MapFollowRotationButton(size: 42, iconSize: 20),
+          left: 20.0 + leftPadding,
+          child: KeyedSubtree(
+            key: OnboardingTargets.mapFollowBtn,
+            child: const MapFollowRotationButton(size: 42, iconSize: 20),
+          ),
         ),
 
         // [하단 중앙] 콤팩트해진 점령 조작 버튼 (항상 자동 기동되므로 버튼 미노출)
@@ -129,15 +172,21 @@ class HudOverlay extends StatelessWidget {
         // [하단 우측 - 맵 뷰 모드 통합 토글 버튼] 테마 순환 버튼 바로 위에 배치 (44x44)
         Positioned(
           bottom: baseBottomMargin + bottomPadding + 16.0 + 44.0 + 10.0,
-          right: 20.0,
-          child: const MapModeToggleButton(size: 44),
+          right: 20.0 + rightPadding,
+          child: KeyedSubtree(
+            key: OnboardingTargets.mapModeToggleBtn,
+            child: const MapModeToggleButton(size: 44),
+          ),
         ),
 
         // [하단 우측 - 테마 순환 버튼] 접이식 메뉴를 걷어내고 기존 메뉴 버튼 자리에 독립형 젤리 단추로 배치 (44x44)
         Positioned(
           bottom: baseBottomMargin + bottomPadding + 16.0,
-          right: 20.0, // 기존 기어 트리거 메뉴 버튼 자리에 완벽 대칭 배치
-          child: MapStyleCycleButton(game: game, size: 44, iconSize: 22),
+          right: 20.0 + rightPadding, // 기존 기어 트리거 메뉴 버튼 자리에 완벽 대칭 배치
+          child: KeyedSubtree(
+            key: OnboardingTargets.mapStyleBtn,
+            child: MapStyleCycleButton(game: game, size: 44, iconSize: 22),
+          ),
         ),
 
         // [하단 중앙 - 패턴 모드 전용 완성 패턴 카드 리스트]
@@ -147,8 +196,8 @@ class HudOverlay extends StatelessWidget {
             final isPatternMode = mapMode == MapMode.pattern;
             return Positioned(
               bottom: baseBottomMargin + bottomPadding + 16.0,
-              left: 20.0 + 42.0 + 15.0,
-              right: 20.0 + 44.0 + 10.0,
+              left: foldPane != null ? foldPane.left + 8.0 : 20.0 + leftPadding + 42.0 + 15.0,
+              right: foldPane != null ? size.width - foldPane.right + 8.0 : 20.0 + rightPadding + 44.0 + 10.0,
               child: IgnorePointer(
                 ignoring: !isPatternMode,
                 child: AnimatedOpacity(
@@ -169,8 +218,8 @@ class HudOverlay extends StatelessWidget {
           builder: (context, isScanMode, child) {
             return Positioned(
               bottom: 90 + baseBottomMargin + bottomPadding,
-              left: 0,
-              right: 0,
+              left: foldPane?.left ?? leftPadding,
+              right: foldPane == null ? rightPadding : size.width - foldPane.right,
               child: IgnorePointer(
                 ignoring: !isScanMode,
                 child: Center(
@@ -194,8 +243,8 @@ class HudOverlay extends StatelessWidget {
             final showFootprint = selectedFootprintTileId != null;
             return Positioned(
               bottom: 90 + baseBottomMargin + bottomPadding,
-              left: 0,
-              right: 0,
+              left: foldPane?.left ?? leftPadding,
+              right: foldPane == null ? rightPadding : size.width - foldPane.right,
               child: IgnorePointer(
                 ignoring: !showFootprint,
                 child: Center(

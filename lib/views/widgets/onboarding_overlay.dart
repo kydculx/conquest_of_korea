@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import '../../core/constants/colors.dart';
 import '../../core/constants/strings.dart';
+import 'onboarding_targets.dart';
+import 'fold_aware.dart';
 
 /// 최초 로그인 시 사용되는 인게임 HUD UI 안내 온보딩 단계들 (기능 사용 흐름에 따른 논리적 순서)
 enum OnboardingStep {
@@ -131,11 +133,28 @@ class _OnboardingOverlayState extends State<OnboardingOverlay> {
     };
   }
 
+
+  Rect? _targetRectFor(GlobalKey key) {
+    final targetContext = key.currentContext;
+    if (targetContext == null) return null;
+    final targetRender = targetContext.findRenderObject();
+    if (targetRender is! RenderBox || !targetRender.hasSize) return null;
+    final overlayRender = context.findRenderObject();
+    if (overlayRender is! RenderBox) return null;
+    final topLeft = overlayRender.globalToLocal(
+      targetRender.localToGlobal(Offset.zero),
+    );
+    return topLeft & targetRender.size;
+  }
+
   @override
   Widget build(BuildContext context) {
     final size = MediaQuery.of(context).size;
-    final topPadding = MediaQuery.of(context).padding.top;
-    final bottomPadding = MediaQuery.of(context).padding.bottom;
+    final EdgeInsets safePadding = MediaQuery.of(context).padding;
+    final topPadding = safePadding.top;
+    final bottomPadding = safePadding.bottom;
+    final leftPadding = safePadding.left;
+    final rightPadding = safePadding.right;
 
     final double topOffset = topPadding > 0 ? topPadding + 12.0 : 24.0;
     final double bottomMargin = bottomPadding > 0 ? 16.0 : 32.0;
@@ -148,9 +167,15 @@ class _OnboardingOverlayState extends State<OnboardingOverlay> {
     Offset lineControl = Offset.zero;
 
     // 설명 카드의 Y좌표 및 크기 레이아웃을 단계별 분기하여 겹침 방지 처리
+    final Rect? foldGap = activeFoldGap(context);
+    final Rect? foldPane = foldGap == null
+        ? null
+        : largerPaneForGap(size, safePadding, foldGap);
     double cardTop = size.height * 0.35;
-    double cardLeft = 24.0;
-    double cardWidth = size.width - 48.0;
+    double cardLeft = foldPane != null ? foldPane.left + 16.0 : 24.0 + leftPadding;
+    double cardWidth = foldPane != null
+        ? foldPane.width - 32.0
+        : size.width - 48.0 - leftPadding - rightPadding;
 
     // 1. 단계별 targetRect 및 안내 팝업 배치 고정 좌표 연산
     switch (_currentStep) {
@@ -172,7 +197,7 @@ class _OnboardingOverlayState extends State<OnboardingOverlay> {
         break;
 
       case OnboardingStep.goldBar:
-        targetRect = Rect.fromLTWH(20.0, topOffset + 3.0, 160.0, 38.0);
+        targetRect = _targetRectFor(OnboardingTargets.goldBar) ?? Rect.fromLTWH(20.0 + leftPadding, topOffset + 3.0, 160.0, 38.0);
         cardTop = size.height - baseBottomMargin - 220.0; // 팝업 가림 방지를 위해 하단 배치
 
         lineStart = Offset(targetRect.left + targetRect.width / 2, targetRect.bottom + 4.0);
@@ -181,7 +206,7 @@ class _OnboardingOverlayState extends State<OnboardingOverlay> {
         break;
 
       case OnboardingStep.timerBar:
-        targetRect = Rect.fromLTWH(20.0, topOffset + 47.0, 130.0, 38.0);
+        targetRect = _targetRectFor(OnboardingTargets.timerBar) ?? Rect.fromLTWH(20.0 + leftPadding, topOffset + 47.0, 130.0, 38.0);
         cardTop = size.height - baseBottomMargin - 220.0;
 
         lineStart = Offset(targetRect.left + targetRect.width / 2, targetRect.bottom + 4.0);
@@ -190,7 +215,7 @@ class _OnboardingOverlayState extends State<OnboardingOverlay> {
         break;
 
       case OnboardingStep.stepsBar:
-        targetRect = Rect.fromLTWH(20.0, topOffset + 91.0, 120.0, 38.0);
+        targetRect = _targetRectFor(OnboardingTargets.stepsBar) ?? Rect.fromLTWH(20.0 + leftPadding, topOffset + 91.0, 120.0, 38.0);
         cardTop = size.height - baseBottomMargin - 220.0;
 
         lineStart = Offset(targetRect.left + targetRect.width / 2, targetRect.bottom + 4.0);
@@ -199,7 +224,7 @@ class _OnboardingOverlayState extends State<OnboardingOverlay> {
         break;
 
       case OnboardingStep.patternBtn:
-        targetRect = Rect.fromLTWH(size.width - 20.0 - 44.0 * 3 - 10.0 * 2, topOffset, 44.0, 44.0);
+        targetRect = _targetRectFor(OnboardingTargets.patternBtn) ?? Rect.fromLTWH(size.width - 20.0 - rightPadding - 44.0 * 3 - 10.0 * 2, topOffset, 44.0, 44.0);
         cardTop = size.height - baseBottomMargin - 220.0;
 
         lineStart = Offset(targetRect.left + targetRect.width / 2, targetRect.bottom + 4.0);
@@ -208,8 +233,8 @@ class _OnboardingOverlayState extends State<OnboardingOverlay> {
         break;
 
       case OnboardingStep.achievementBtn:
-        targetRect = Rect.fromLTWH(
-          size.width - 20.0 - 44.0,
+        targetRect = _targetRectFor(OnboardingTargets.achievementBtn) ?? Rect.fromLTWH(
+          size.width - 20.0 - rightPadding - 44.0,
           topOffset + 44.0 + 10.0 + 44.0 + 10.0,
           44.0,
           44.0,
@@ -222,7 +247,7 @@ class _OnboardingOverlayState extends State<OnboardingOverlay> {
         break;
 
       case OnboardingStep.rankingBtn:
-        targetRect = Rect.fromLTWH(size.width - 20.0 - 44.0 * 2 - 10.0, topOffset, 44.0, 44.0);
+        targetRect = _targetRectFor(OnboardingTargets.rankingBtn) ?? Rect.fromLTWH(size.width - 20.0 - rightPadding - 44.0 * 2 - 10.0, topOffset, 44.0, 44.0);
         cardTop = size.height - baseBottomMargin - 220.0;
 
         lineStart = Offset(targetRect.left + targetRect.width / 2, targetRect.bottom + 4.0);
@@ -231,7 +256,7 @@ class _OnboardingOverlayState extends State<OnboardingOverlay> {
         break;
 
       case OnboardingStep.profileBtn:
-        targetRect = Rect.fromLTWH(size.width - 20.0 - 44.0, topOffset, 44.0, 44.0);
+        targetRect = _targetRectFor(OnboardingTargets.profileBtn) ?? Rect.fromLTWH(size.width - 20.0 - rightPadding - 44.0, topOffset, 44.0, 44.0);
         cardTop = size.height - baseBottomMargin - 220.0;
 
         lineStart = Offset(targetRect.left + targetRect.width / 2, targetRect.bottom + 4.0);
@@ -240,8 +265,8 @@ class _OnboardingOverlayState extends State<OnboardingOverlay> {
         break;
 
       case OnboardingStep.calendarBtn:
-        targetRect = Rect.fromLTWH(
-          size.width - 20.0 - 44.0,
+        targetRect = _targetRectFor(OnboardingTargets.calendarBtn) ?? Rect.fromLTWH(
+          size.width - 20.0 - rightPadding - 44.0,
           topOffset + 44.0 + 10.0,
           44.0,
           44.0,
@@ -260,7 +285,7 @@ class _OnboardingOverlayState extends State<OnboardingOverlay> {
         break;
 
       case OnboardingStep.hqBtn:
-        targetRect = Rect.fromLTWH(20.0, size.height - baseBottomMargin - 17.0 - 42.0 * 2 - 10.0, 42.0, 42.0);
+        targetRect = _targetRectFor(OnboardingTargets.hqBtn) ?? Rect.fromLTWH(20.0 + leftPadding, size.height - baseBottomMargin - 17.0 - 42.0 * 2 - 10.0, 42.0, 42.0);
         cardTop = topOffset + 140.0;
 
         lineStart = Offset(targetRect.left + targetRect.width / 2, targetRect.top - 4.0);
@@ -269,7 +294,7 @@ class _OnboardingOverlayState extends State<OnboardingOverlay> {
         break;
 
       case OnboardingStep.photoBtn:
-        targetRect = Rect.fromLTWH(20.0, size.height - baseBottomMargin - 17.0 - 42.0 * 3 - 20.0, 42.0, 42.0);
+        targetRect = _targetRectFor(OnboardingTargets.photoBtn) ?? Rect.fromLTWH(20.0 + leftPadding, size.height - baseBottomMargin - 17.0 - 42.0 * 3 - 20.0, 42.0, 42.0);
         cardTop = topOffset + 140.0;
 
         lineStart = Offset(targetRect.left + targetRect.width / 2, targetRect.top - 4.0);
@@ -278,7 +303,7 @@ class _OnboardingOverlayState extends State<OnboardingOverlay> {
         break;
 
       case OnboardingStep.mapFollowBtn:
-        targetRect = Rect.fromLTWH(20.0, size.height - baseBottomMargin - 17.0 - 42.0, 42.0, 42.0);
+        targetRect = _targetRectFor(OnboardingTargets.mapFollowBtn) ?? Rect.fromLTWH(20.0 + leftPadding, size.height - baseBottomMargin - 17.0 - 42.0, 42.0, 42.0);
         cardTop = topOffset + 140.0; // 팝업 가림 방지를 위해 상단 배치
 
         lineStart = Offset(targetRect.left + targetRect.width / 2, targetRect.top - 4.0);
@@ -287,7 +312,7 @@ class _OnboardingOverlayState extends State<OnboardingOverlay> {
         break;
 
       case OnboardingStep.mapModeToggleBtn:
-        targetRect = Rect.fromLTWH(size.width - 20.0 - 44.0, size.height - baseBottomMargin - 16.0 - 44.0 * 2 - 10.0, 44.0, 44.0);
+        targetRect = _targetRectFor(OnboardingTargets.mapModeToggleBtn) ?? Rect.fromLTWH(size.width - 20.0 - rightPadding - 44.0, size.height - baseBottomMargin - 16.0 - 44.0 * 2 - 10.0, 44.0, 44.0);
         cardTop = topOffset + 140.0;
 
         lineStart = Offset(targetRect.left + targetRect.width / 2, targetRect.top - 4.0);
@@ -296,7 +321,7 @@ class _OnboardingOverlayState extends State<OnboardingOverlay> {
         break;
 
       case OnboardingStep.mapStyleBtn:
-        targetRect = Rect.fromLTWH(size.width - 20.0 - 44.0, size.height - baseBottomMargin - 16.0 - 44.0, 44.0, 44.0);
+        targetRect = _targetRectFor(OnboardingTargets.mapStyleBtn) ?? Rect.fromLTWH(size.width - 20.0 - rightPadding - 44.0, size.height - baseBottomMargin - 16.0 - 44.0, 44.0, 44.0);
         cardTop = topOffset + 140.0;
 
         lineStart = Offset(targetRect.left + targetRect.width / 2, targetRect.top - 4.0);
