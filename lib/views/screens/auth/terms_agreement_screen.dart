@@ -68,6 +68,7 @@ class _TermsAgreementScreenState extends State<TermsAgreementScreen> {
   void _showDetailBottomSheet(String title, String detailText) {
     showModalBottomSheet(
       context: context,
+      useSafeArea: true,
       backgroundColor: GameColors.backgroundMedium,
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
@@ -192,7 +193,7 @@ class _TermsAgreementScreenState extends State<TermsAgreementScreen> {
         decoration: const BoxDecoration(gradient: GameColors.cozyDarkGradient),
         child: SafeArea(
           child: Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 24),
+            padding: const EdgeInsets.fromLTRB(24, kToolbarHeight, 24, 0),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [

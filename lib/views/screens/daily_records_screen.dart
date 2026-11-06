@@ -337,36 +337,44 @@ class _DailyRecordsScreenState extends State<DailyRecordsScreen> {
     final average = recordedDays > 0 ? total / recordedDays : 0.0;
     final maxDay = _maxDay(month, records);
 
-    return SingleChildScrollView(
-      padding: const EdgeInsets.fromLTRB(16, 8, 16, 28),
-      child: Center(
-        child: ConstrainedBox(
-          constraints: const BoxConstraints(maxWidth: 560),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              _buildMonthTotalCard(locale, total),
-              const SizedBox(height: 10),
-              _buildSummaryRow(
-                locale: locale,
-                recordedDays: recordedDays,
-                average: average,
-                maxDay: maxDay,
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final contentMaxWidth = constraints.maxWidth >= 700
+            ? constraints.maxWidth
+            : 560.0;
+
+        return SingleChildScrollView(
+          padding: const EdgeInsets.fromLTRB(16, 8, 16, 28),
+          child: Center(
+            child: ConstrainedBox(
+              constraints: BoxConstraints(maxWidth: contentMaxWidth),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  _buildMonthTotalCard(locale, total),
+                  const SizedBox(height: 10),
+                  _buildSummaryRow(
+                    locale: locale,
+                    recordedDays: recordedDays,
+                    average: average,
+                    maxDay: maxDay,
+                  ),
+                  const SizedBox(height: 18),
+                  _buildWeekdayHeader(locale),
+                  const SizedBox(height: 6),
+                  _buildCalendarGrid(locale, month, records, steps),
+                  const SizedBox(height: 18),
+                  _buildStepGraphCard(locale, month, steps),
+                  if (!isLoading && total <= 0) ...[
+                    const SizedBox(height: 14),
+                    _buildEmptyNote(),
+                  ],
+                ],
               ),
-              const SizedBox(height: 18),
-              _buildWeekdayHeader(locale),
-              const SizedBox(height: 6),
-              _buildCalendarGrid(locale, month, records, steps),
-              const SizedBox(height: 18),
-              _buildStepGraphCard(locale, month, steps),
-              if (!isLoading && total <= 0) ...[
-                const SizedBox(height: 14),
-                _buildEmptyNote(),
-              ],
-            ],
+            ),
           ),
-        ),
-      ),
+        );
+      },
     );
   }
 

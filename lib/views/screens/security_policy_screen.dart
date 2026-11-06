@@ -20,7 +20,12 @@ class SecurityPolicyScreen extends StatelessWidget {
       ),
       body: SingleChildScrollView(
         child: Padding(
-          padding: const EdgeInsets.all(24.0),
+          padding: EdgeInsets.fromLTRB(
+            24.0 + MediaQuery.of(context).padding.left,
+            24.0,
+            24.0 + MediaQuery.of(context).padding.right,
+            24.0,
+          ),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
@@ -140,6 +145,7 @@ class SecurityPolicyScreen extends StatelessWidget {
   ) {
     showModalBottomSheet(
       context: context,
+      useSafeArea: true,
       backgroundColor: GameColors.backgroundMedium,
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(24)),

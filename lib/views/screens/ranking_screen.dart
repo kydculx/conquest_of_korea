@@ -8,6 +8,7 @@ import '../../providers/auth_provider.dart';
 import '../../providers/ranking_provider.dart';
 import '../../models/user_profile.dart';
 import '../widgets/tactical_app_bar.dart';
+import '../widgets/fold_aware.dart';
 
 /// 랭킹 표의 순위 열 폭.
 /// 영문 기준 5글자(예: "Rango")까지 한 줄로 표시되도록 여유 있게 잡는다.
@@ -272,7 +273,11 @@ class _RankingScreenState extends State<RankingScreen> {
 
           // 랭킹 탭 + 스와이프 페이지 영역
           Positioned.fill(
-            child: Column(
+            child: FoldAwareBody(
+              child: SafeArea(
+                top: false,
+                bottom: false,
+                child: Column(
               children: [
                 _buildTabSelector(ranking),
                 Expanded(
@@ -305,13 +310,15 @@ class _RankingScreenState extends State<RankingScreen> {
                 ),
               ],
             ),
+            ),
+            ),
           ),
 
           // 하단 고정 내 랭킹 앵커 배너 (로그인 유저가 있고 프로필 정보가 유효할 시 항시 노출)
           if (auth.isAuthenticated && auth.profile != null)
             Positioned(
-              left: 16,
-              right: 16,
+              left: 16 + MediaQuery.of(context).padding.left,
+              right: 16 + MediaQuery.of(context).padding.right,
               bottom: MediaQuery.of(context).padding.bottom > 0
                   ? MediaQuery.of(context).padding.bottom + 8.0
                   : 16.0,

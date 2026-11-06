@@ -175,7 +175,12 @@ class _NearbyGalleryScreenState extends State<NearbyGalleryScreen> {
       body: Column(
         children: [
           Padding(
-            padding: const EdgeInsets.fromLTRB(16, 12, 16, 0),
+            padding: EdgeInsets.fromLTRB(
+              16 + MediaQuery.of(context).padding.left,
+              12,
+              16 + MediaQuery.of(context).padding.right,
+              0,
+            ),
             child: SegmentedButton<bool>(
               segments: [
                 ButtonSegment(
@@ -200,7 +205,12 @@ class _NearbyGalleryScreenState extends State<NearbyGalleryScreen> {
             ),
           ),
           Padding(
-            padding: const EdgeInsets.fromLTRB(20, 4, 8, 0),
+            padding: EdgeInsets.fromLTRB(
+              20 + MediaQuery.of(context).padding.left,
+              4,
+              8 + MediaQuery.of(context).padding.right,
+              0,
+            ),
             child: Row(
               children: [
                 const Icon(
@@ -249,7 +259,12 @@ class _NearbyGalleryScreenState extends State<NearbyGalleryScreen> {
                         onRefresh: _loadFirst,
                         child: GridView.builder(
                           controller: _scrollController,
-                          padding: const EdgeInsets.fromLTRB(16, 12, 16, 24),
+                          padding: EdgeInsets.fromLTRB(
+                            16 + MediaQuery.of(context).padding.left,
+                            12,
+                            16 + MediaQuery.of(context).padding.right,
+                            24,
+                          ),
                           physics: const AlwaysScrollableScrollPhysics(
                             parent: BouncingScrollPhysics(),
                           ),
