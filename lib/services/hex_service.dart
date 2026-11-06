@@ -11,6 +11,13 @@ class HexService {
   /// 그리드 변환 시 기준점으로 삼는 기준 경도 (서울 중심부)
   static const double originLng = 126.9780;
 
+  /// Web Mercator 투영에 사용하는 지구 반경 (m)
+  static const double _earthRadius = 6378137.0;
+
+  /// 기준점(서울)에서의 Mercator 축척. 기존 그리드와 같은 타일 크기를 유지합니다.
+  static const double _originLatRad = originLat * math.pi / 180;
+  static final double _mercatorScale = math.cos(_originLatRad);
+
   /// 헥사곤 그리드 BFS 탐색 시 사용할 6방향 인접 타일 좌표 오프셋
   static const hexDirections = [
     [1, 0],
@@ -61,16 +68,31 @@ class HexService {
     return {'x': rx, 'y': ry, 'z': rz};
   }
 
-  /// 물리 위도/경도 좌표를 지도상의 정수 헥사곤 좌표(q, r) 쌍으로 계산 변환합니다.
+  /// 물리 위도/경도 좌표를 Web Mercator 평면 좌표로 투영한 뒤 헥사곤 좌표(q, r)로 변환합니다.
+  ///
+  /// 지도(flutter_map, Google Maps)가 Web Mercator를 사용하므로, 헥사곤도 같은
+  /// 투영 평면에서 정의해야 모든 위도에서 화면상 동일한 모양으로 보입니다.
   static Map<String, int> latLngToHex(
     LatLng location, {
     double hexSize = GameConfig.tileSize,
   }) {
-    const double latRad = originLat * math.pi / 180;
-    final double x =
+    final double latRad = location.latitude * math.pi / 180;
+    final double xMeters =
+        _earthRadius *
         (location.longitude - originLng) *
-        (111320 * math.cos(latRad) / hexSize);
-    final double y = (location.latitude - originLat) * (111320 / hexSize);
+        math.pi /
+        180 *
+        _mercatorScale;
+    final double yMeters =
+        _earthRadius *
+        math.log(
+          math.tan(math.pi / 4 + latRad / 2) /
+              math.tan(math.pi / 4 + _originLatRad / 2),
+        ) *
+        _mercatorScale;
+
+    final double x = xMeters / hexSize;
+    final double y = yMeters / hexSize;
 
     final double q = (math.sqrt(3) / 3) * x - (1 / 3) * y;
     final double r = (2 / 3) * y;
@@ -79,42 +101,56 @@ class HexService {
     return {'q': cube['x']!, 'r': cube['z']!};
   }
 
-  /// 헥사곤 좌표(q, r)를 물리 지도 상의 위도/경도 중심 좌표(LatLng)로 역변환합니다.
+  /// 헥사곤 좌표(q, r)를 Web Mercator 평면 좌표로 바꾼 뒤 위도/경도 중심 좌표로 역변환합니다.
   static LatLng hexToLatLng(
     int q,
     int r, {
     double hexSize = GameConfig.tileSize,
   }) {
-    final double x = math.sqrt(3) * q + (math.sqrt(3) / 2) * r;
-    final double y = (3 / 2) * r.toDouble();
-
-    const double latRad = originLat * math.pi / 180;
-    final double lat = (y * hexSize / 111320) + originLat;
-    final double lng = (x * hexSize / (111320 * math.cos(latRad))) + originLng;
-
-    return LatLng(lat, lng);
+    final List<double> meters = _hexToMeters(q, r, hexSize);
+    return _metersToLatLng(meters[0], meters[1]);
   }
 
   /// 특정 타일(q, r)의 외곽 테두리를 형성하는 6개 꼭짓점의 위도/경도 좌표 목록을 계산하여 반환합니다.
+  ///
+  /// 꼭짓점은 Mercator 평면에서 정육각형으로 배치한 뒤 위경도로 역변환합니다.
   static List<LatLng> getHexCorners(
     int q,
     int r, {
     double hexSize = GameConfig.tileSize,
   }) {
-    final LatLng center = hexToLatLng(q, r, hexSize: hexSize);
-    const double latRad = originLat * math.pi / 180; // 일관되게 기준 위도(originLat)의 cos 사용
-    final double latScale = hexSize / 111320;
-    final double lngScale = hexSize / (111320 * math.cos(latRad)); // 이웃 타일 간의 가로 너비가 균일하게 맞물림
+    final List<double> meters = _hexToMeters(q, r, hexSize);
     final List<LatLng> corners = [];
 
     for (int i = 0; i < 6; i++) {
       final double angleDeg = 60.0 * i - 30.0;
       final double angleRad = (math.pi / 180.0) * angleDeg;
-      final double lat = center.latitude + latScale * math.sin(angleRad);
-      final double lng = center.longitude + lngScale * math.cos(angleRad);
-      corners.add(LatLng(lat, lng));
+      final double xMeters = meters[0] + math.cos(angleRad) * hexSize;
+      final double yMeters = meters[1] + math.sin(angleRad) * hexSize;
+      corners.add(_metersToLatLng(xMeters, yMeters));
     }
     return corners;
+  }
+
+  /// 헥사곤 좌표(q, r)를 Mercator 평면의 미터 좌표로 변환합니다.
+  static List<double> _hexToMeters(int q, int r, double hexSize) {
+    final double x = math.sqrt(3) * q + (math.sqrt(3) / 2) * r;
+    final double y = 1.5 * r;
+    return [x * hexSize, y * hexSize];
+  }
+
+  /// Mercator 평면의 미터 좌표를 위도/경도로 역변환합니다.
+  static LatLng _metersToLatLng(double xMeters, double yMeters) {
+    final double latRad =
+        2 *
+            math.atan(
+              math.exp(yMeters / (_earthRadius * _mercatorScale)) *
+                  math.tan(math.pi / 4 + _originLatRad / 2),
+            ) -
+        math.pi / 2;
+    final double lng =
+        originLng + (xMeters / (_earthRadius * _mercatorScale)) * 180 / math.pi;
+    return LatLng(latRad * 180 / math.pi, lng);
   }
 
   /// 두 헥사곤 좌표쌍 간의 거리를 헥사곤 그리드 링(Ring) 개수 단위로 계산하여 반환합니다.
@@ -189,4 +225,3 @@ class HexService {
     return null;
   }
 }
-
