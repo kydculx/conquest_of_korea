@@ -25,71 +25,13 @@ import {
   AlertTriangle,
   X,
 } from 'lucide-react';
-
-const originLat = 37.5665;
-const originLng = 126.9780;
-const hexSize = 100.0; // 100m 정밀 타일 규격
-
-// 헥스 그리드 좌표 -> 위경도 변환
-function hexToLatLng(q, r) {
-  const x = Math.sqrt(3) * q + (Math.sqrt(3) / 2) * r;
-  const y = (3 / 2) * r;
-
-  const latRad = (originLat * Math.PI) / 180;
-  const lat = (y * hexSize) / 111320 + originLat;
-  const lng = (x * hexSize) / (111320 * Math.cos(latRad)) + originLng;
-
-  return [lat, lng];
-}
-
-// 헥스 꼭짓점 6개 경위도 배열 계산
-function getHexCorners(q, r) {
-  const center = hexToLatLng(q, r);
-  const latRad = (originLat * Math.PI) / 180;
-  const latScale = hexSize / 111320;
-  const lngScale = hexSize / (111320 * Math.cos(latRad));
-  const corners = [];
-
-  for (let i = 0; i < 6; i++) {
-    const angleDeg = 60.0 * i - 30.0;
-    const angleRad = (Math.PI / 180.0) * angleDeg;
-    const lat = center[0] + latScale * Math.sin(angleRad);
-    const lng = center[1] + lngScale * Math.cos(angleRad);
-    corners.push([lat, lng]);
-  }
-  return corners;
-}
-
-// 위경도 -> 가장 가까운 헥스 좌표 (q, r) 계산
-function latLngToHex(lat, lng) {
-  const latRad = (originLat * Math.PI) / 180;
-  const y = ((lat - originLat) * 111320) / hexSize;
-  const x = ((lng - originLng) * (111320 * Math.cos(latRad))) / hexSize;
-
-  const r = (2 / 3) * y;
-  const q = (Math.sqrt(3) / 3) * x - (1 / 3) * y;
-
-  return cubeRound(q, r);
-}
-
-// 큐브 좌표계 반올림
-function cubeRound(fracQ, fracR) {
-  const fracS = -fracQ - fracR;
-  let q = Math.round(fracQ);
-  let r = Math.round(fracR);
-  let s = Math.round(fracS);
-
-  const qDiff = Math.abs(q - fracQ);
-  const rDiff = Math.abs(r - fracR);
-  const sDiff = Math.abs(s - fracS);
-
-  if (qDiff > rDiff && qDiff > sDiff) {
-    q = -r - s;
-  } else if (rDiff > sDiff) {
-    r = -q - s;
-  }
-  return { q, r };
-}
+import {
+  hexToLatLng,
+  getHexCorners,
+  latLngToHex,
+  ORIGIN_LAT as originLat,
+  ORIGIN_LNG as originLng,
+} from '../hexGrid';
 
 export default function TileAttributeEditorTab() {
   // 타일 타입 목록

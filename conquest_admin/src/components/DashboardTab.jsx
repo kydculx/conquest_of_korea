@@ -11,10 +11,12 @@ import {
 } from '../api';
 import { supabase } from '../supabase';
 import { Radio, Compass, Layers, Users, Map as MapIcon, Zap, Camera, X } from 'lucide-react';
-
-const originLat = 37.5665;
-const originLng = 126.9780;
-const hexSize = 100.0; // 100m 정밀 타일 규격
+import {
+  hexToLatLng,
+  getHexCorners,
+  ORIGIN_LAT as originLat,
+  ORIGIN_LNG as originLng,
+} from '../hexGrid';
 
 const GOOGLE_MAPS_API_KEY = import.meta.env.VITE_GOOGLE_MAPS_API_KEY;
 
@@ -128,36 +130,6 @@ function loadGoogleMaps() {
   return googleMapsPromise;
 }
 
-
-// 헥스 그리드 좌표를 경위도로 변환
-function hexToLatLng(q, r) {
-  const x = Math.sqrt(3) * q + (Math.sqrt(3) / 2) * r;
-  const y = (3 / 2) * r;
-
-  const latRad = originLat * Math.PI / 180;
-  const lat = (y * hexSize / 111320) + originLat;
-  const lng = (x * hexSize / (111320 * Math.cos(latRad))) + originLng;
-
-  return [lat, lng];
-}
-
-// 헥스 꼭짓점 6개 경위도 배열 계산
-function getHexCorners(q, r) {
-  const center = hexToLatLng(q, r);
-  const latRad = originLat * Math.PI / 180;
-  const latScale = hexSize / 111320;
-  const lngScale = hexSize / (111320 * Math.cos(latRad));
-  const corners = [];
-
-  for (let i = 0; i < 6; i++) {
-    const angleDeg = 60.0 * i - 30.0;
-    const angleRad = (Math.PI / 180.0) * angleDeg;
-    const lat = center[0] + latScale * Math.sin(angleRad);
-    const lng = center[1] + lngScale * Math.cos(angleRad);
-    corners.push([lat, lng]);
-  }
-  return corners;
-}
 
 function parseTileId(tileId) {
   const parts = String(tileId).split('_');
