@@ -1,8 +1,11 @@
 import 'dart:io';
+import 'dart:async';
+import 'dart:ui' as ui;
 import 'package:flutter/foundation.dart';
 import 'package:conquest_mobile/views/screens/splash_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:device_info_plus/device_info_plus.dart';
 import 'package:provider/provider.dart';
 import 'package:wakelock_plus/wakelock_plus.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
@@ -88,8 +91,7 @@ void main() async {
     debugPrint('⚠️ 걸음 수 권한 확인 실패: $e');
   }
 
-  // 세로 모드 고정
-  await SystemChrome.setPreferredOrientations([DeviceOrientation.portraitUp]);
+  await applyOrientationPolicy();
 
   runApp(
     EasyLocalization(
@@ -169,7 +171,7 @@ void main() async {
           // Flame 게임 엔진 인스턴스
           Provider(create: (_) => ConquestGame()),
         ],
-        child: const _ConquestApp(),
+        child: const _OrientationPolicy(child: _ConquestApp()),
       ),
     ),
   );
@@ -203,6 +205,152 @@ class _ConquestApp extends StatelessWidget {
       },
     );
   }
+}
+
+bool? _iPhoneDuoCache;
+
+Future<bool> _detectIPhoneDuo() async {
+  final cached = _iPhoneDuoCache;
+  if (cached != null) return cached;
+  if (kIsWeb || defaultTargetPlatform != TargetPlatform.iOS) {
+    _iPhoneDuoCache = false;
+    return false;
+  }
+  try {
+    final iosInfo = await DeviceInfoPlugin().iosInfo;
+    final simulatorModel = Platform.environment['SIMULATOR_MODEL_IDENTIFIER'];
+    final isDuo = iosInfo.utsname.machine == 'iPhone19,4' ||
+        simulatorModel == 'iPhone19,4';
+    _iPhoneDuoCache = isDuo;
+    return isDuo;
+  } catch (e) {
+    debugPrint('⚠️ 기기 모델 확인 실패: $e');
+    _iPhoneDuoCache = false;
+    return false;
+  }
+}
+
+/// 앱이 실제로 렌더링 중인 FlutterView.
+/// `views.first`는 Duo처럼 디스플레이가 여러 개인 기기에서 접힌 쪽(외부) 뷰를
+/// 집을 수 있으므로, runApp이 사용하는 implicitView를 우선한다.
+ui.FlutterView? _activeFlutterView() {
+  final dispatcher = WidgetsBinding.instance.platformDispatcher;
+  final implicit = dispatcher.implicitView;
+  if (implicit != null) return implicit;
+  final views = dispatcher.views;
+  if (views.isEmpty) return null;
+  return views.reduce((a, b) {
+    final aArea = a.physicalSize.width * a.physicalSize.height;
+    final bArea = b.physicalSize.width * b.physicalSize.height;
+    return aArea >= bArea ? a : b;
+  });
+}
+
+/// 디스플레이 자체의 논리 크기. 회전/접힘 전환 중에도 외부/내부 화면을
+/// 구분할 수 있어 Duo 접힘 판정에 더 안정적이다.
+Size _displayLogicalSize(ui.FlutterView? view) {
+  if (view == null) return Size.zero;
+  try {
+    final display = view.display;
+    return display.size / display.devicePixelRatio;
+  } catch (_) {
+    return Size.zero;
+  }
+}
+
+List<DeviceOrientation>? _lastAppliedOrientations;
+
+Future<void> applyOrientationPolicy() async {
+  final isDuo = await _detectIPhoneDuo();
+  final view = _activeFlutterView();
+  final viewSize = view == null
+      ? Size.zero
+      : view.physicalSize / view.devicePixelRatio;
+  final displaySize = _displayLogicalSize(view);
+
+  final folds = view?.displayFeatures ?? const <ui.DisplayFeature>[];
+  final hasFold = folds.any(
+    (feature) =>
+        feature.type == ui.DisplayFeatureType.fold ||
+        feature.type == ui.DisplayFeatureType.hinge,
+  );
+
+  // Duo는 디스플레이 크기로 내부/외부를 구분한다.
+  final referenceSize =
+      isDuo && displaySize.width > 0 && displaySize.height > 0
+      ? displaySize
+      : viewSize;
+  final isDuoInner = isDuo && referenceSize.shortestSide >= 600;
+  final isAndroidFoldOpen =
+      !kIsWeb &&
+      defaultTargetPlatform == TargetPlatform.android &&
+      hasFold &&
+      viewSize.shortestSide >= 600;
+
+  final target = isDuoInner || isAndroidFoldOpen
+      ? const [
+          DeviceOrientation.portraitUp,
+          DeviceOrientation.landscapeLeft,
+          DeviceOrientation.landscapeRight,
+        ]
+      : const [DeviceOrientation.portraitUp];
+
+  debugPrint(
+    '🧭 orientation: duo=$isDuo inner=$isDuoInner '
+    'view=$viewSize display=$displaySize target=${target.length}',
+  );
+
+  // 같은 값을 반복 적용하면 iOS가 회전/리사이즈를 다시 평가하며
+  // 접힘 전환 중 레이아웃이 흔들릴 수 있으므로 변경 시에만 적용한다.
+  if (listEquals(_lastAppliedOrientations, target)) return;
+  _lastAppliedOrientations = List<DeviceOrientation>.of(target);
+  await SystemChrome.setPreferredOrientations(target);
+}
+
+class _OrientationPolicy extends StatefulWidget {
+  final Widget child;
+
+  const _OrientationPolicy({required this.child});
+
+  @override
+  State<_OrientationPolicy> createState() => _OrientationPolicyState();
+}
+
+class _OrientationPolicyState extends State<_OrientationPolicy>
+    with WidgetsBindingObserver {
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addObserver(this);
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) unawaited(applyOrientationPolicy());
+    });
+  }
+
+  @override
+  void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
+    super.dispose();
+  }
+
+  @override
+  void didChangeMetrics() {
+    // 메트릭 콜백 시점에는 뷰 크기가 아직 갱신 전일 수 있어
+    // 다음 프레임에서 새 크기를 읽어 판정한다.
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) unawaited(applyOrientationPolicy());
+    });
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state == AppLifecycleState.resumed) {
+      unawaited(applyOrientationPolicy());
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) => widget.child;
 }
 
 /// 플레이어의 로그인 세션 여부와 계정 등록 절차를 판정하기 전 최초의 인게임 연출(스플래시 화면)을 실행하기 위한 Wrapper 위젯
