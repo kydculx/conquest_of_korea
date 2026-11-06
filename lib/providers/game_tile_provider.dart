@@ -22,6 +22,7 @@ class GameTileProvider extends ChangeNotifier {
   /// 마지막으로 바인딩된 계정 ID. AuthProvider는 동일 인스턴스가 갱신되므로
   /// 이 값을 별도로 보관해야 로그인/로그아웃 전환을 정확히 감지할 수 있다.
   String? _currentUserId;
+  bool _disposed = false;
 
   /// 초기화 완료 처리를 조율하는 Completer
   final Completer<void> _initCompleter = Completer<void>();
@@ -106,7 +107,20 @@ class GameTileProvider extends ChangeNotifier {
     // 다시 채우지 못하도록 요청 세대를 증가시킨다.
     _areaRequestSeq++;
     _hasInitializedLocation = false;
-    notifyListeners();
+    _notifyLater();
+  }
+
+  void _notifyLater() {
+    scheduleMicrotask(() {
+      if (_disposed) return;
+      notifyListeners();
+    });
+  }
+
+  @override
+  void dispose() {
+    _disposed = true;
+    super.dispose();
   }
 
   // --- AuthProvider 바인딩 ---
