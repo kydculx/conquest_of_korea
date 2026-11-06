@@ -8,6 +8,7 @@ import '../../providers/auth_provider.dart';
 import '../../providers/game_provider.dart';
 import '../../services/preferences_service.dart';
 import '../widgets/tactical_app_bar.dart';
+import '../widgets/fold_aware.dart';
 import '../widgets/profile_widgets.dart';
 import '../widgets/profile/account_dialogs.dart';
 import '../widgets/profile/contact_support.dart';
@@ -64,6 +65,11 @@ class _ProfileScreenState extends State<ProfileScreen>
     final game = context.watch<GameProvider>();
     final profile = auth.profile;
     final bool isAuth = auth.isAuthenticated && profile != null;
+    final media = MediaQuery.of(context);
+    // 좌/우는 각자의 시스템 안전영역을 따른다.
+    // (max로 통일하면 한쪽 인셋이 큰 기기에서 전체가 가운데로 밀린다)
+    final leftInset = 8.0 + media.padding.left;
+    final rightInset = 8.0 + media.padding.right;
 
     return Scaffold(
       backgroundColor: GameColors.tacticalBlack,
@@ -71,212 +77,242 @@ class _ProfileScreenState extends State<ProfileScreen>
         titleText: GameStrings.agentProfile,
         showBackButton: true,
       ),
-      body: SingleChildScrollView(
-        child: Padding(
-          padding: const EdgeInsets.all(24.0),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              // 프로필 상단 카드
-              if (isAuth)
-                ProfileHeaderCard(
-                  auth: auth,
-                  game: game,
-                  onEditNickname: () =>
-                      showNicknameChangeDialog(context, auth: auth, game: game),
-                )
-              else
-                const ProfileLoginPromptCard(),
-
-              // [로그인 플레이어 전용] 게임 설정 섹션
-              if (isAuth) ...[
-                const SizedBox(height: 24),
-                _sectionLabel(GameStrings.operationSettings),
-                const SizedBox(height: 12),
-                ProfileMenuCard(children: [
-                  ProfileMenuItem(
-                    icon: Icons.notifications_active,
-                    title: GameStrings.pushNotifications,
-                    subtitle: GameStrings.pushNotificationsSub,
-                    trailing: Switch(
-                      value: game.isNotificationEnabled,
-                      onChanged: (_) => game.openNotificationSettings(),
-                      activeThumbColor: GameColors.accentNeon,
-                    ),
-                    onTap: game.openNotificationSettings,
-                  ),
-                  const ProfileMenuDivider(),
-                  ProfileMenuItem(
-                    icon: Icons.my_location_rounded,
-                    title: GameStrings.profileRebaseTitle,
-                    subtitle: GameStrings.profileRebaseSubtitle,
-                    onTap: () => handleRebase(context, auth),
-                  ),
-                ]),
-              ],
-
-              // 시스템 설정 섹션
-              const SizedBox(height: 24),
-              _sectionLabel(GameStrings.systemSettings),
-              const SizedBox(height: 12),
-              ProfileMenuCard(children: [
-                // 가이드 다시보기
-                ProfileMenuItem(
-                  icon: Icons.help_outline_rounded,
-                  title: GameStrings.tutorialReplayTitle,
-                  subtitle: GameStrings.tutorialReplaySubtitle,
-                  onTap: () async {
-                    await PreferencesService.setSeenOnboarding(false);
-                    if (context.mounted) {
-                      Navigator.of(context).pop(true);
-                    }
-                  },
-                ),
-                const ProfileMenuDivider(),
-
-                // 언어 설정
-                ProfileMenuItem(
-                  icon: Icons.translate_rounded,
-                  title: GameStrings.languageSettings,
-                  subtitle: GameStrings.languageSettingsSub,
-                  onTap: () => Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                      builder: (context) => const LanguageSettingsScreen(),
-                    ),
-                  ),
-                ),
-                const ProfileMenuDivider(),
-
-                // GPS 정확도 설정
-                ProfileMenuItem(
-                  icon: Icons.gps_fixed_rounded,
-                  title: GameStrings.gpsAccuracySettings,
-                  subtitle: GameStrings.gpsAccuracySettingsSub,
-                  onTap: () => showGpsAccuracyDialog(context, game: game),
-                ),
-              ]),
-
-              // 앱 정보 섹션
-              const SizedBox(height: 24),
-              _sectionLabel(GameStrings.appInfo),
-              const SizedBox(height: 12),
-              ProfileMenuCard(children: [
-                // 서비스 이용약관
-                ProfileMenuItem(
-                  icon: Icons.description_rounded,
-                  title: GameStrings.termsOfService,
-                  subtitle: GameStrings.termsOfServiceSub,
-                  onTap: () {
-                    final lang = context.locale.languageCode == 'ko' ? 'ko' : 'en';
-                    Navigator.push(
+      body: FoldAwareBody(
+        child: SingleChildScrollView(
+          child: Padding(
+            padding: EdgeInsets.fromLTRB(
+              leftInset,
+              24.0,
+              rightInset,
+              24.0,
+            ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                // 프로필 상단 카드
+                if (isAuth)
+                  ProfileHeaderCard(
+                    auth: auth,
+                    game: game,
+                    onEditNickname: () => showNicknameChangeDialog(
                       context,
-                      MaterialPageRoute(
-                        builder: (context) => PolicyWebviewScreen(
-                          title: GameStrings.termsOfService,
-                          url: '${GameUrls.termsOfService}?lang=$lang',
-                        ),
-                      ),
-                    );
-                  },
-                ),
-                const ProfileMenuDivider(),
-
-                // 개인정보 처리방침
-                ProfileMenuItem(
-                  icon: Icons.privacy_tip_rounded,
-                  title: GameStrings.privacyPolicy,
-                  subtitle: GameStrings.privacyPolicySub,
-                  onTap: () {
-                    final lang = context.locale.languageCode == 'ko' ? 'ko' : 'en';
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder: (context) => PolicyWebviewScreen(
-                          title: GameStrings.privacyPolicy,
-                          url: '${GameUrls.privacyPolicy}?lang=$lang',
-                        ),
-                      ),
-                    );
-                  },
-                ),
-                const ProfileMenuDivider(),
-
-                // 문의하기
-                ProfileMenuItem(
-                  icon: Icons.mail_outline_rounded,
-                  title: GameStrings.contactSupport,
-                  subtitle: GameStrings.contactSupportSub,
-                  onTap: () => handleContactSupport(context),
-                ),
-                const ProfileMenuDivider(),
-
-                // 버전
-                ProfileMenuItem(
-                  icon: Icons.info_outline_rounded,
-                  title: GameStrings.appVersion,
-                  trailing: Text(
-                    'v${VersionConfig.version} (${VersionConfig.buildNumber})',
-                    style: TextStyle(
-                      color: GameColors.textMuted,
-                      fontSize: 12,
-                      fontWeight: FontWeight.bold,
+                      auth: auth,
+                      game: game,
                     ),
-                  ),
-                ),
-              ]),
+                  )
+                else
+                  const ProfileLoginPromptCard(),
 
-              // 계정 관리 섹션
-              if (isAuth) ...[
+                // [로그인 플레이어 전용] 게임 설정 섹션
+                if (isAuth) ...[
+                  const SizedBox(height: 24),
+                  _sectionLabel(GameStrings.operationSettings),
+                  const SizedBox(height: 12),
+                  ProfileMenuCard(
+                    children: [
+                      ProfileMenuItem(
+                        icon: Icons.notifications_active,
+                        title: GameStrings.pushNotifications,
+                        subtitle: GameStrings.pushNotificationsSub,
+                        trailing: Switch(
+                          value: game.isNotificationEnabled,
+                          onChanged: (_) => game.openNotificationSettings(),
+                          activeThumbColor: GameColors.accentNeon,
+                        ),
+                        onTap: game.openNotificationSettings,
+                      ),
+                      const ProfileMenuDivider(),
+                      ProfileMenuItem(
+                        icon: Icons.my_location_rounded,
+                        title: GameStrings.profileRebaseTitle,
+                        subtitle: GameStrings.profileRebaseSubtitle,
+                        onTap: () => handleRebase(context, auth),
+                      ),
+                    ],
+                  ),
+                ],
+
+                // 시스템 설정 섹션
                 const SizedBox(height: 24),
-                _sectionLabel(GameStrings.accountManagement),
+                _sectionLabel(GameStrings.systemSettings),
                 const SizedBox(height: 12),
-                ProfileMenuCard(children: [
-                  ProfileMenuItem(
-                    icon: Icons.logout,
-                    title: GameStrings.logout,
-                    titleColor: GameColors.error,
-                    onTap: () async {
-                      final confirm = await showLogoutConfirmDialog(context);
-                      if (confirm == true) {
-                        await auth.signOut();
+                ProfileMenuCard(
+                  children: [
+                    // 가이드 다시보기
+                    ProfileMenuItem(
+                      icon: Icons.help_outline_rounded,
+                      title: GameStrings.tutorialReplayTitle,
+                      subtitle: GameStrings.tutorialReplaySubtitle,
+                      onTap: () async {
+                        await PreferencesService.setSeenOnboarding(false);
                         if (context.mounted) {
-                          Navigator.of(context).pop();
+                          Navigator.of(context).pop(true);
                         }
-                      }
-                    },
-                  ),
-                  ProfileMenuItem(
-                    icon: Icons.delete_forever,
-                    title: GameStrings.deleteAccount,
-                    titleColor: GameColors.error,
-                    onTap: () async {
-                      final confirm = await showDeleteAccountConfirmDialog(context);
-                      if (confirm == true) {
-                        await auth.deleteAccount();
-                        if (context.mounted) {
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            SnackBar(content: Text(GameStrings.deleteAccountSuccess)),
+                      },
+                    ),
+                    const ProfileMenuDivider(),
+
+                    // 언어 설정
+                    ProfileMenuItem(
+                      icon: Icons.translate_rounded,
+                      title: GameStrings.languageSettings,
+                      subtitle: GameStrings.languageSettingsSub,
+                      onTap: () => Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (context) => const LanguageSettingsScreen(),
+                        ),
+                      ),
+                    ),
+                    const ProfileMenuDivider(),
+
+                    // GPS 정확도 설정
+                    ProfileMenuItem(
+                      icon: Icons.gps_fixed_rounded,
+                      title: GameStrings.gpsAccuracySettings,
+                      subtitle: GameStrings.gpsAccuracySettingsSub,
+                      onTap: () => showGpsAccuracyDialog(context, game: game),
+                    ),
+                  ],
+                ),
+
+                // 앱 정보 섹션
+                const SizedBox(height: 24),
+                _sectionLabel(GameStrings.appInfo),
+                const SizedBox(height: 12),
+                ProfileMenuCard(
+                  children: [
+                    // 서비스 이용약관
+                    ProfileMenuItem(
+                      icon: Icons.description_rounded,
+                      title: GameStrings.termsOfService,
+                      subtitle: GameStrings.termsOfServiceSub,
+                      onTap: () {
+                        final lang = context.locale.languageCode == 'ko'
+                            ? 'ko'
+                            : 'en';
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (context) => PolicyWebviewScreen(
+                              title: GameStrings.termsOfService,
+                              url: '${GameUrls.termsOfService}?lang=$lang',
+                            ),
+                          ),
+                        );
+                      },
+                    ),
+                    const ProfileMenuDivider(),
+
+                    // 개인정보 처리방침
+                    ProfileMenuItem(
+                      icon: Icons.privacy_tip_rounded,
+                      title: GameStrings.privacyPolicy,
+                      subtitle: GameStrings.privacyPolicySub,
+                      onTap: () {
+                        final lang = context.locale.languageCode == 'ko'
+                            ? 'ko'
+                            : 'en';
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (context) => PolicyWebviewScreen(
+                              title: GameStrings.privacyPolicy,
+                              url: '${GameUrls.privacyPolicy}?lang=$lang',
+                            ),
+                          ),
+                        );
+                      },
+                    ),
+                    const ProfileMenuDivider(),
+
+                    // 문의하기
+                    ProfileMenuItem(
+                      icon: Icons.mail_outline_rounded,
+                      title: GameStrings.contactSupport,
+                      subtitle: GameStrings.contactSupportSub,
+                      onTap: () => handleContactSupport(context),
+                    ),
+                    const ProfileMenuDivider(),
+
+                    // 버전
+                    ProfileMenuItem(
+                      icon: Icons.info_outline_rounded,
+                      title: GameStrings.appVersion,
+                      trailing: Text(
+                        'v${VersionConfig.version} (${VersionConfig.buildNumber})',
+                        style: TextStyle(
+                          color: GameColors.textMuted,
+                          fontSize: 12,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+
+                // 계정 관리 섹션
+                if (isAuth) ...[
+                  const SizedBox(height: 24),
+                  _sectionLabel(GameStrings.accountManagement),
+                  const SizedBox(height: 12),
+                  ProfileMenuCard(
+                    children: [
+                      ProfileMenuItem(
+                        icon: Icons.logout,
+                        title: GameStrings.logout,
+                        titleColor: GameColors.error,
+                        onTap: () async {
+                          final confirm = await showLogoutConfirmDialog(
+                            context,
                           );
-                          Navigator.of(context).pop();
-                        }
-                      }
-                    },
+                          if (confirm == true) {
+                            await auth.signOut();
+                            if (context.mounted) {
+                              Navigator.of(context).pop();
+                            }
+                          }
+                        },
+                      ),
+                      ProfileMenuItem(
+                        icon: Icons.delete_forever,
+                        title: GameStrings.deleteAccount,
+                        titleColor: GameColors.error,
+                        onTap: () async {
+                          final confirm = await showDeleteAccountConfirmDialog(
+                            context,
+                          );
+                          if (confirm == true) {
+                            await auth.deleteAccount();
+                            if (context.mounted) {
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                SnackBar(
+                                  content: Text(
+                                    GameStrings.deleteAccountSuccess,
+                                  ),
+                                ),
+                              );
+                              Navigator.of(context).pop();
+                            }
+                          }
+                        },
+                      ),
+                    ],
                   ),
-                ]),
-              ],
+                ],
 
-              const SizedBox(height: 40),
-              Center(
-                child: Text(
-                  '${GameStrings.appName} v${VersionConfig.version} (${VersionConfig.buildNumber})',
-                  style: TextStyle(
-                    color: GameColors.textMuted.withValues(alpha: 100 / 255),
-                    fontSize: 12,
+                const SizedBox(height: 40),
+                Center(
+                  child: Text(
+                    '${GameStrings.appName} v${VersionConfig.version} (${VersionConfig.buildNumber})',
+                    style: TextStyle(
+                      color: GameColors.textMuted.withValues(alpha: 100 / 255),
+                      fontSize: 12,
+                    ),
                   ),
                 ),
-              ),
-            ],
+              ],
+            ),
           ),
         ),
       ),

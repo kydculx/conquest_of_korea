@@ -71,7 +71,9 @@ class ProfileLoginPromptCard extends StatelessWidget {
             width: double.infinity,
             height: 48,
             child: ElevatedButton(
-              onPressed: onLoginTap ?? () => Navigator.pushNamed(context, AppRoutes.login),
+              onPressed:
+                  onLoginTap ??
+                  () => Navigator.pushNamed(context, AppRoutes.login),
               style: ElevatedButton.styleFrom(
                 backgroundColor: GameColors.accentNeon,
                 foregroundColor: GameColors.tacticalBlack,
@@ -81,7 +83,10 @@ class ProfileLoginPromptCard extends StatelessWidget {
               ),
               child: Text(
                 GameStrings.login,
-                style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
+                style: const TextStyle(
+                  fontWeight: FontWeight.bold,
+                  fontSize: 14,
+                ),
               ),
             ),
           ),
@@ -138,18 +143,34 @@ class ProfileMenuCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      decoration: ShapeDecoration(
-        color: GameColors.backgroundMedium.withValues(alpha: 0.6),
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(16),
-          side: BorderSide(
-            color: GameColors.dividerColor.withValues(alpha: 0.15),
-            width: 1,
+    // ListTile은 내부적으로 SafeArea(minimum: contentPadding)로 감싸서
+    // MediaQuery.padding의 좌/우 시스템 인셋을 콘텐츠 패딩에 더한다.
+    // 접이식 기기 가로 모드처럼 padding.right만 큰 경우 > 아이콘/스위치가
+    // 왼쪽으로 밀리므로, 카드 내부에서는 좌우 시스템 패딩을 제거한다.
+    return MediaQuery.removePadding(
+      context: context,
+      removeLeft: true,
+      removeRight: true,
+      child: ListTileTheme(
+        contentPadding: const EdgeInsets.symmetric(horizontal: 16),
+        child: Container(
+          width: double.infinity,
+          decoration: ShapeDecoration(
+            color: GameColors.backgroundMedium.withValues(alpha: 0.6),
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(16),
+              side: BorderSide(
+                color: GameColors.dividerColor.withValues(alpha: 0.15),
+                width: 1,
+              ),
+            ),
+          ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: children,
           ),
         ),
       ),
-      child: Column(children: children),
     );
   }
 }
