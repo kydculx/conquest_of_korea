@@ -53,6 +53,7 @@ class TilePhotoActionButton extends StatelessWidget {
         // 사진 촬영 / 근처 갤러리 선택 메뉴
         final String? choice = await showModalBottomSheet<String>(
           context: context,
+          useSafeArea: true,
           backgroundColor: GameColors.backgroundMedium,
           shape: const RoundedRectangleBorder(
             borderRadius: BorderRadius.vertical(top: Radius.circular(24)),

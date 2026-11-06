@@ -27,8 +27,8 @@ class AchievementToast extends StatefulWidget {
     overlayEntry = OverlayEntry(
       builder: (context) => Positioned(
         top: MediaQuery.of(context).padding.top + 16,
-        left: 20,
-        right: 20,
+        left: 20 + MediaQuery.of(context).padding.left,
+        right: 20 + MediaQuery.of(context).padding.right,
         child: Material(
           color: Colors.transparent,
           child: AchievementToast(

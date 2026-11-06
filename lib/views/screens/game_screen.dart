@@ -26,6 +26,7 @@ import '../widgets/tactical_dialog.dart';
 import '../../models/tile_model.dart';
 import '../../models/alert_model.dart';
 import '../widgets/onboarding_overlay.dart';
+import '../widgets/fold_aware.dart';
 
 /// 메인 게임 화면
 /// 실시간 헥사곤 지도와 플레이어의 실시간 GPS 위치를 화면 상에 시각화하고,
@@ -342,7 +343,13 @@ class _GameScreenState extends State<GameScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final double topPadding = MediaQuery.of(context).padding.top;
+    final EdgeInsets safePadding = MediaQuery.of(context).padding;
+    final Size size = MediaQuery.of(context).size;
+    final Rect? foldGap = activeFoldGap(context);
+    final Rect? foldPane = foldGap == null
+        ? null
+        : largerPaneForGap(size, safePadding, foldGap);
+    final double topPadding = safePadding.top;
     final double topOffset = topPadding > 0 ? topPadding + 12.0 : 24.0;
 
     // 1. SNS 최초 로그인 등 약관 동의 리다이렉트만 최상단에서 감시
@@ -414,8 +421,10 @@ class _GameScreenState extends State<GameScreen> {
           // 알림 레이어 (알림 리스트 변동 시에만 국한 리빌드)
           Positioned(
             top: topOffset + 132.0,
-            left: 20,
-            right: 20,
+            left: foldPane?.left ?? 20 + safePadding.left,
+            right: foldPane == null
+                ? 20 + safePadding.right
+                : size.width - foldPane.right,
             child: Selector<GameProvider, List<GameAlert>>(
               selector: (_, provider) => provider.alerts,
               builder: (context, alerts, child) {

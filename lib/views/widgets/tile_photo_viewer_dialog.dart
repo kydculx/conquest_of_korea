@@ -363,6 +363,7 @@ class _TilePhotoDetailScreenState extends State<TilePhotoDetailScreen> {
     final String photoId = photo['id'] ?? '';
     final String uploaderId = photo['user_id'] ?? '';
     final bool isMyPhoto = currentUserId != null && uploaderId == currentUserId;
+    final EdgeInsets safePadding = MediaQuery.of(context).padding;
     final String photoUrl = photo['photo_url'] ?? '';
     final String uploader = photo['user_nickname'] ?? 'None';
     final String rawDate = photo['created_at'] ?? '';
@@ -442,7 +443,7 @@ class _TilePhotoDetailScreenState extends State<TilePhotoDetailScreen> {
             // 2. 뒤로가기 단추
             Positioned(
               top: MediaQuery.of(context).padding.top + 16,
-              left: 16,
+              left: 16 + safePadding.left,
               child: GestureDetector(
                 onTap: () {
                   Navigator.pop(context, _anyDeleted);
@@ -470,7 +471,7 @@ class _TilePhotoDetailScreenState extends State<TilePhotoDetailScreen> {
             if (isMyPhoto)
               Positioned(
                 top: MediaQuery.of(context).padding.top + 16,
-                right: 16,
+                right: 16 + safePadding.right,
                 child: GestureDetector(
                   onTap: () => _handleDeletePhoto(photoId, photoUrl),
                   child: Container(
@@ -495,8 +496,8 @@ class _TilePhotoDetailScreenState extends State<TilePhotoDetailScreen> {
             // 4. 슬라이더 상단 인디케이터 수치 (예: 3 / 8)
             Positioned(
               top: MediaQuery.of(context).padding.top + 20,
-              left: 0,
-              right: 0,
+              left: safePadding.left,
+              right: safePadding.right,
               child: Align(
                 alignment: Alignment.topCenter,
                 child: Container(
@@ -537,8 +538,8 @@ class _TilePhotoDetailScreenState extends State<TilePhotoDetailScreen> {
             // 5. 하단 상세 정보 그라데이션 박스
             Positioned(
               bottom: 0,
-              left: 0,
-              right: 0,
+              left: safePadding.left,
+              right: safePadding.right,
               child: Container(
                 decoration: BoxDecoration(
                   gradient: LinearGradient(

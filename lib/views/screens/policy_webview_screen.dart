@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:webview_flutter/webview_flutter.dart';
 import '../../core/constants/colors.dart';
 import '../widgets/tactical_app_bar.dart';
+import '../widgets/fold_aware.dart';
 
 /// 나중에 플레이어가 기입할 외부 정책/약관 URL을 모바일 브라우저 렌더러로
 /// 실시간 연동해 보여주는 하이테크 스타일 공통 웹뷰 스크린 컴포넌트입니다.
@@ -57,17 +58,23 @@ class _PolicyWebviewScreenState extends State<PolicyWebviewScreen> {
         titleText: widget.title,
         showBackButton: true,
       ),
-      body: Stack(
-        children: [
-          WebViewWidget(controller: _controller),
-          if (_isLoading)
-            Center(
-              child: CircularProgressIndicator(
-                color: GameColors.accentNeon,
-                strokeWidth: 3.0,
-              ),
+      body: SafeArea(
+        top: false,
+        bottom: false,
+        child: Stack(
+          children: [
+            FoldAwareBody(
+              child: WebViewWidget(controller: _controller),
             ),
-        ],
+            if (_isLoading)
+              Center(
+                child: CircularProgressIndicator(
+                  color: GameColors.accentNeon,
+                  strokeWidth: 3.0,
+                ),
+              ),
+          ],
+        ),
       ),
     );
   }
