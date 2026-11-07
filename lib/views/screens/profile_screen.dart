@@ -19,6 +19,14 @@ import '../widgets/profile/rebase_flow.dart';
 import 'language_settings_screen.dart';
 import 'policy_webview_screen.dart';
 
+String _policyLangCode(Locale locale) {
+  if (locale.languageCode == 'zh') {
+    final region = locale.countryCode;
+    return region == 'TW' || region == 'HK' ? 'zh-TW' : 'zh';
+  }
+  return locale.languageCode;
+}
+
 /// 로그인한 플레이어의 상세 프로필 상태(소속 테마 색상, 점령한 총 영토 수)를
 /// 검토하고, 테마 색상 수정 및 본진 이전(Rebase), 로그아웃 등 설정을 관리하는 프로필 화면입니다.
 ///
@@ -188,9 +196,7 @@ class _ProfileScreenState extends State<ProfileScreen>
                       title: GameStrings.termsOfService,
                       subtitle: GameStrings.termsOfServiceSub,
                       onTap: () {
-                        final lang = context.locale.languageCode == 'ko'
-                            ? 'ko'
-                            : 'en';
+                        final lang = _policyLangCode(context.locale);
                         Navigator.push(
                           context,
                           MaterialPageRoute(
@@ -210,9 +216,7 @@ class _ProfileScreenState extends State<ProfileScreen>
                       title: GameStrings.privacyPolicy,
                       subtitle: GameStrings.privacyPolicySub,
                       onTap: () {
-                        final lang = context.locale.languageCode == 'ko'
-                            ? 'ko'
-                            : 'en';
+                        final lang = _policyLangCode(context.locale);
                         Navigator.push(
                           context,
                           MaterialPageRoute(
