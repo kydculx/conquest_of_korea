@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, lazy, Suspense } from 'react';
 import { Routes, Route, Navigate, useNavigate, useLocation, Outlet } from 'react-router-dom';
 import DashboardTab from './components/DashboardTab';
 import RankingTab from './components/RankingTab';
@@ -11,9 +11,10 @@ import UserDailyRecordsTab from './components/UserDailyRecordsTab';
 import GalleryTab from './components/GalleryTab';
 import LandingPage from './components/LandingPage';
 import PromoPage from './components/PromoPage';
-import TermsPage from './components/TermsPage';
-import PrivacyPage from './components/PrivacyPage';
 import LoginPage from './components/LoginPage';
+
+const TermsPage = lazy(() => import('./components/TermsPage'));
+const PrivacyPage = lazy(() => import('./components/PrivacyPage'));
 import { supabase } from './supabase';
 import {
   Users,
@@ -345,7 +346,8 @@ export default function App() {
   }
 
   return (
-    <Routes>
+    <Suspense fallback={<div className="tactical-spinner" style={{ margin: '20vh auto' }} />}>
+      <Routes>
       {/* 1. 메인 홈페이지 게임 소개 랜딩페이지 */}
       <Route path="/" element={<LandingPage />} />
       <Route path="/promo" element={<PromoPage />} />
@@ -390,6 +392,7 @@ export default function App() {
 
       {/* 정의되지 않은 주소는 메인 홈페이지로 리다이렉트 */}
       <Route path="*" element={<Navigate to="/" replace />} />
-    </Routes>
+      </Routes>
+    </Suspense>
   );
 }
