@@ -40,7 +40,7 @@ class GameScreen extends StatefulWidget {
 }
 
 /// [GameScreen]의 생명주기와 위치 추적 권한 및 배터리 절전 예외 처리를 관장하는 상태 클래스입니다.
-class _GameScreenState extends State<GameScreen> {
+class _GameScreenState extends State<GameScreen> with WidgetsBindingObserver {
   GameProvider? _gameProvider;
   AuthProvider? _authProvider;
   LocationProvider? _locationProvider;
@@ -55,6 +55,7 @@ class _GameScreenState extends State<GameScreen> {
   /// 첫 위치 수신 대기 타임아웃 여부 (15초 초과 시 재시도 UI 표시)
   bool _locationTimedOut = false;
   Timer? _locationWaitTimer;
+  bool _awaitingLocationSettings = false;
 
   /// 위치 대기 타이머 시작 (수신 즉시 해제, 15초 초과 시 재시도 안내)
   void _startLocationWaitTimer() {
@@ -71,30 +72,15 @@ class _GameScreenState extends State<GameScreen> {
     });
   }
 
-  /// 위치 재시도: 권한 재확인 후 추적 재시작
+  /// 위치 재시도: 인앱 고지 확인 후 권한 재확인 및 추적 재시작
   Future<void> _retryLocation() async {
-    final geo = context.read<GeoService>();
-    _startLocationWaitTimer();
     if (mounted) setState(() {});
-    try {
-      final ok = await geo.checkPermissions();
-      if (ok) {
-        await geo.startTracking();
-      } else {
-        // 권한 흐름이 설정 화면으로 넘어간 경우 복귀 후 상태 반영
-        if (mounted) {
-          setState(() {
-            _locationTimedOut = true;
-          });
-        }
-      }
-    } catch (e) {
-      debugPrint('⚠️ 위치 재시도 실패: $e');
-    }
+    await _startLocationFlow();
   }
 
   /// 위치 설정 화면 열기 (GPS 꺼짐이면 위치 설정, 그 외엔 앱 설정)
   Future<void> _openLocationSetup() async {
+    _awaitingLocationSettings = true;
     final enabled = await Geolocator.isLocationServiceEnabled();
     if (enabled) {
       await Geolocator.openAppSettings();
@@ -103,44 +89,190 @@ class _GameScreenState extends State<GameScreen> {
     }
   }
 
+  Future<void> _startLocationFlow() async {
+    if (!mounted) return;
+
+    // 인앱 고지는 최초 1회만 노출합니다. (권한 거부 상태가 이어져도 반복 노출하지 않음)
+    final needsDisclosure =
+        !await PreferencesService.isLocationDisclosureAccepted();
+    if (!mounted) return;
+
+    if (needsDisclosure) {
+      final accepted = await _showLocationDisclosure();
+      if (!accepted) {
+        if (mounted) {
+          setState(() {
+            _locationTimedOut = true;
+          });
+        }
+        return;
+      }
+      await PreferencesService.setLocationDisclosureAccepted();
+    }
+
+    await _requestLocationAndStart();
+  }
+
+  Future<void> _requestLocationAndStart() async {
+    if (!mounted) return;
+    final geo = context.read<GeoService>();
+    _startLocationWaitTimer();
+    if (mounted) setState(() {});
+
+    try {
+      final ok = await geo.checkPermissions();
+      if (!mounted) return;
+      if (!ok) {
+        setState(() {
+          _locationTimedOut = true;
+        });
+        return;
+      }
+
+      await geo.startTracking();
+      if (!mounted) return;
+
+      final permission = await Geolocator.checkPermission();
+      if (permission != LocationPermission.always) {
+        await _maybeShowBackgroundLocationSetup();
+      }
+    } catch (e) {
+      debugPrint('⚠️ 위치 권한 확인 실패: $e');
+      if (!mounted) return;
+      setState(() {
+        _locationTimedOut = true;
+      });
+    }
+  }
+
+  Future<bool> _showLocationDisclosure() async {
+    final accepted = await showDialog<bool>(
+      context: context,
+      barrierDismissible: false,
+      builder: (context) => TacticalDialog(
+        title: GameStrings.locationDisclosureTitle,
+        icon: Icons.location_on_rounded,
+        accentColor: GameColors.accentNeon,
+        maxWidth: 360,
+        content: ConstrainedBox(
+          constraints: const BoxConstraints(maxHeight: 280),
+          child: SingleChildScrollView(
+            child: Text(
+              GameStrings.locationDisclosureBody,
+              style: TextStyle(
+                color: GameColors.textSecondary,
+                fontSize: 13,
+                height: 1.5,
+              ),
+            ),
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context, false),
+            child: Text(
+              GameStrings.later,
+              style: const TextStyle(fontWeight: FontWeight.bold),
+            ),
+          ),
+          ElevatedButton(
+            onPressed: () => Navigator.pop(context, true),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: GameColors.accentNeon,
+              foregroundColor: GameColors.tacticalBlack,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(16),
+              ),
+            ),
+            child: Text(
+              GameStrings.locationDisclosureAgree,
+              style: const TextStyle(fontWeight: FontWeight.bold),
+            ),
+          ),
+        ],
+      ),
+    );
+    return accepted ?? false;
+  }
+
+  Future<void> _maybeShowBackgroundLocationSetup() async {
+    if (!mounted) return;
+    if (await PreferencesService.isLocationSettingsGuided()) return;
+    if (!mounted) return;
+
+    final openSettings = await showDialog<bool>(
+      context: context,
+      barrierDismissible: false,
+      builder: (context) => TacticalDialog(
+        title: GameStrings.bgLocationSetupTitle,
+        icon: Icons.location_on_rounded,
+        accentColor: GameColors.accentNeon,
+        maxWidth: 360,
+        content: SingleChildScrollView(
+          child: Text(
+            GameStrings.bgLocationSetupMessage,
+            style: TextStyle(
+              color: GameColors.textSecondary,
+              fontSize: 13,
+              height: 1.5,
+            ),
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context, false),
+            child: Text(
+              GameStrings.later,
+              style: const TextStyle(fontWeight: FontWeight.bold),
+            ),
+          ),
+          ElevatedButton(
+            onPressed: () => Navigator.pop(context, true),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: GameColors.accentNeon,
+              foregroundColor: GameColors.tacticalBlack,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(16),
+              ),
+            ),
+            child: Text(
+              GameStrings.setupNow,
+              style: const TextStyle(fontWeight: FontWeight.bold),
+            ),
+          ),
+        ],
+      ),
+    );
+
+    if (openSettings == true) {
+      // 실제로 설정 화면을 열었을 때만 1회 안내를 소진합니다.
+      await PreferencesService.setLocationSettingsGuided();
+      _awaitingLocationSettings = true;
+      await Geolocator.openAppSettings();
+    }
+  }
+
   @override
   void initState() {
     super.initState();
+    WidgetsBinding.instance.addObserver(this);
     WidgetsBinding.instance.addPostFrameCallback((_) async {
-      final geo = context.read<GeoService>();
-
-      // 최초 로그인 온보딩 가이드 체크
       final hasSeen = await PreferencesService.hasSeenOnboarding();
       if (!hasSeen && mounted) {
         setState(() {
           _showOnboarding = true;
         });
       }
-
-      _startLocationWaitTimer();
-      geo
-          .checkPermissions()
-          .then((ok) async {
-        if (ok) {
-          await geo.startTracking();
-        } else {
-          // 권한 미획득 시 타임아웃 UI를 즉시 노출하여 대기 고착 방지
-          if (mounted) {
-            setState(() {
-              _locationTimedOut = true;
-            });
-          }
-        }
-          })
-          .catchError((e) {
-        debugPrint('⚠️ 위치 권한 확인 실패: $e');
-        if (mounted) {
-          setState(() {
-            _locationTimedOut = true;
-          });
-        }
-      });
+      await _startLocationFlow();
     });
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state == AppLifecycleState.resumed && _awaitingLocationSettings) {
+      _awaitingLocationSettings = false;
+      _startLocationFlow();
+    }
   }
 
   @override
@@ -333,6 +465,7 @@ class _GameScreenState extends State<GameScreen> {
 
   @override
   void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
     _locationWaitTimer?.cancel();
     _gameProvider?.removeListener(_onStateChanged);
     _authProvider?.removeListener(_onStateChanged);
