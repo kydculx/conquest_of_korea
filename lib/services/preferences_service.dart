@@ -34,22 +34,6 @@ class PreferencesService {
     await prefs.setBool(_locationSettingsGuidedKey, true);
   }
 
-  // --- 걸음 수 권한 안내 상태 (main) ---
-  // Health Connect 권한 요청은 앱 시작 시 1회만 하여
-  // 매 실행마다 권한 화면/설치 리다이렉트가 반복되는 것을 방지합니다.
-
-  static const _stepPermissionAskedKey = 'step_permission_asked';
-
-  static Future<bool> isStepPermissionAsked() async {
-    final prefs = await SharedPreferences.getInstance();
-    return prefs.getBool(_stepPermissionAskedKey) ?? false;
-  }
-
-  static Future<void> setStepPermissionAsked() async {
-    final prefs = await SharedPreferences.getInstance();
-    await prefs.setBool(_stepPermissionAskedKey, true);
-  }
-
   // --- iOS 걸음수 연동 완료 상태 (health_service) ---
   // HealthKit은 READ 허용 여부를 앱에 알려주지 않으므로, 시스템 허용 화면을
   // 1회 이상 정상 표시했는지를 자체 플래그로 기록한다. false인 동안에는
