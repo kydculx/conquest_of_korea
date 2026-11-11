@@ -1377,6 +1377,16 @@ class GameStrings {
   /// 건강 앱 연동하기 버튼 라벨
   static String get linkHealthApp => 'linkHealthApp'.tr();
 
+  /// 건강 데이터 연동 고지 타이틀
+  static String get healthDataDisclosureTitle =>
+      'healthDataDisclosureTitle'.tr();
+
+  /// 건강 데이터 연동 고지 본문
+  static String get healthDataDisclosureBody => 'healthDataDisclosureBody'.tr();
+
+  /// 건강 데이터 연동 버튼 라벨
+  static String get healthDataConnect => 'healthDataConnect'.tr();
+
   /// 에러 다이얼로그 타이틀
   static String get errorTitle => 'errorTitle'.tr();
 

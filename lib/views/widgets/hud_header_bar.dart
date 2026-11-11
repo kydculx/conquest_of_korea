@@ -225,11 +225,11 @@ class UtcTimerHeaderBar extends StatelessWidget {
       final proceed = await showDialog<bool>(
         context: context,
         builder: (context) => TacticalDialog(
-          title: GameStrings.linkHealthApp,
+          title: GameStrings.healthDataDisclosureTitle,
           icon: Icons.directions_run_rounded,
           accentColor: Palette.neonGreen,
           content: Text(
-            GameStrings.onboardingStepsDesc,
+            GameStrings.healthDataDisclosureBody,
             style: TextStyle(
               color: GameColors.textSecondary,
               fontSize: 13,
@@ -253,7 +253,7 @@ class UtcTimerHeaderBar extends StatelessWidget {
                 ),
               ),
               child: Text(
-                GameStrings.confirm,
+                GameStrings.healthDataConnect,
                 style: const TextStyle(fontWeight: FontWeight.bold),
               ),
             ),
