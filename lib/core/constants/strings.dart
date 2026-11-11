@@ -806,6 +806,15 @@ class GameStrings {
   /// 마케팅 정보 수신동의 상세 본문 문구
   static String get agreeMarketingDetail => 'agreeMarketingDetail'.tr();
 
+  /// 위치 정보 수집 인앱 고지 타이틀
+  static String get locationDisclosureTitle => 'locationDisclosureTitle'.tr();
+
+  /// 위치 정보 수집 인앱 고지 본문
+  static String get locationDisclosureBody => 'locationDisclosureBody'.tr();
+
+  /// 위치 정보 수집 인앱 고지 동의 버튼 라벨
+  static String get locationDisclosureAgree => 'locationDisclosureAgree'.tr();
+
   /// 백그라운드 위치 권한 설정 팝업 타이틀
   static String get bgLocationSetupTitle => 'bgLocationSetupTitle'.tr();
 
