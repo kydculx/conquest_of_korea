@@ -611,5 +611,8 @@
   "dailyRecordStepEmpty": "No step records for this month.",
   "healthDataDisclosureTitle": "Connect your step count",
   "healthDataDisclosureBody": "We read your step count and the last 30 days of step history from Health Connect (Android) or Apple Health (iOS) in read-only mode.\n\n· Purpose: show your step count in the game, monthly movement records, and the home screen widget\n· We never use it for advertising, marketing, or selling to third parties.\n· You can revoke access at any time in your device settings.",
-  "healthDataConnect": "Connect"
+  "healthDataConnect": "Connect",
+  "locationDisclosureTitle": "Location data collection",
+  "locationDisclosureBody": "Dibs! Adventure collects location information to capture and sync territories in real time, even when the app is closed or you are using another app.\n\n· Data collected: device location (latitude/longitude)\n· Purpose: territory capture and synchronization, territory change notifications\n· Retention/deletion: deleted when you delete your account; you can revoke permission at any time in settings\n\nTap 'Agree and continue' below to proceed. You can still browse the app without agreeing, but background territory capture will be limited.",
+  "locationDisclosureAgree": "Agree and continue"
 }

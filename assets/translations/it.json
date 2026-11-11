@@ -611,5 +611,8 @@
   "dailyRecordStepEmpty": "Nessun record di passi per questo mese.",
   "healthDataDisclosureTitle": "Collega il conteggio dei passi",
   "healthDataDisclosureBody": "Leggiamo il conteggio dei passi e lo storico degli ultimi 30 giorni da Health Connect (Android) o Apple Salute (iOS) in sola lettura.\n\n· Finalità: mostrare i passi nel gioco, i record di movimento mensili e il widget della schermata Home.\n· Non li usiamo mai per pubblicità, marketing o vendita a terzi.\n· Puoi revocare l'accesso in qualsiasi momento nelle impostazioni del dispositivo.",
-  "healthDataConnect": "Collega"
+  "healthDataConnect": "Collega",
+  "locationDisclosureTitle": "Raccolta dei dati di localizzazione",
+  "locationDisclosureBody": "Dibs! Avventura raccoglie dati di localizzazione per acquisire e sincronizzare territori in tempo reale, anche quando l'app è chiusa o stai usando un'altra applicazione.\n\n· Dati raccolti: posizione del dispositivo (latitudine/longitudine)\n· Finalità: acquisizione e sincronizzazione dei territori, notifiche di variazione del territorio\n· Conservazione/eliminazione: eliminati quando elimini l'account; puoi revocare l'autorizzazione in qualsiasi momento nelle impostazioni\n\nTocca «Accetta e continua» per procedere. Puoi esplorare l'app senza accettare, ma l'acquisizione dei territori in background sarà limitata.",
+  "locationDisclosureAgree": "Accetta"
 }

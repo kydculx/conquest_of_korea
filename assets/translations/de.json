@@ -611,5 +611,8 @@
   "dailyRecordStepEmpty": "Keine Schrittdaten für diesen Monat.",
   "healthDataDisclosureTitle": "Schrittzahl verbinden",
   "healthDataDisclosureBody": "Wir lesen deine Schrittzahl und den Verlauf der letzten 30 Tage über Health Connect (Android) oder Apple Health (iOS) im schreibgeschützten Modus.\n\n· Zweck: Anzeige deiner Schritte im Spiel, der monatlichen Bewegungsaufzeichnungen und des Startbildschirm-Widgets.\n· Wir verwenden sie niemals für Werbung, Marketing oder den Verkauf an Dritte.\n· Du kannst die Berechtigung jederzeit in den Geräteeinstellungen widerrufen.",
-  "healthDataConnect": "Verbinden"
+  "healthDataConnect": "Verbinden",
+  "locationDisclosureTitle": "Erfassung von Standortdaten",
+  "locationDisclosureBody": "Dibs! Adventure erfasst Standortdaten, um Gebiete in Echtzeit zu erfassen und zu synchronisieren – auch wenn die App geschlossen ist oder du eine andere App verwendest.\n\n· Erfasste Daten: Gerätestandort (Breiten-/Längengrad)\n· Zweck: Gebietserfassung und -synchronisierung, Benachrichtigungen bei Gebietsänderungen\n· Aufbewahrung/Löschung: werden beim Löschen deines Kontos gelöscht; du kannst die Berechtigung jederzeit in den Einstellungen widerrufen\n\nTippe unten auf „Zustimmen und fortfahren“. Du kannst die App auch ohne Zustimmung erkunden, aber die Gebietserfassung im Hintergrund ist eingeschränkt.",
+  "locationDisclosureAgree": "Zustimmen"
 }

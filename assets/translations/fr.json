@@ -611,5 +611,8 @@
   "dailyRecordStepEmpty": "Aucun relevé de pas pour ce mois.",
   "healthDataDisclosureTitle": "Connecter votre nombre de pas",
   "healthDataDisclosureBody": "Nous lisons votre nombre de pas et l'historique des 30 derniers jours depuis Health Connect (Android) ou Apple Santé (iOS) en lecture seule.\n\n· Finalité : afficher vos pas dans le jeu, les relevés de déplacement mensuels et le widget de l'écran d'accueil.\n· Nous ne les utilisons jamais pour la publicité, le marketing ou la vente à des tiers.\n· Vous pouvez révoquer l'accès à tout moment dans les réglages de l'appareil.",
-  "healthDataConnect": "Connecter"
+  "healthDataConnect": "Connecter",
+  "locationDisclosureTitle": "Collecte de données de localisation",
+  "locationDisclosureBody": "Dibs! Adventure collecte des données de localisation pour capturer et synchroniser des territoires en temps réel, même lorsque l'app est fermée ou que vous utilisez une autre application.\n\n· Données collectées : localisation de l'appareil (latitude/longitude)\n· Finalité : capture et synchronisation de territoires, notifications de changement de territoire\n· Conservation/suppression : supprimées lors de la suppression du compte ; vous pouvez révoquer l'autorisation à tout moment dans les réglages\n\nAppuyez sur « Accepter et continuer » pour poursuivre. Vous pouvez explorer l'app sans accepter, mais la capture de territoires en arrière-plan sera limitée.",
+  "locationDisclosureAgree": "Accepter"
 }

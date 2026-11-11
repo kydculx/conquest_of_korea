@@ -611,5 +611,8 @@
   "dailyRecordStepEmpty": "この月の歩数記録はありません。",
   "healthDataDisclosureTitle": "歩数連携のご案内",
   "healthDataDisclosureBody": "Health Connect(Android)またはAppleヘルスケア(iOS)から、今日の歩数と直近30日間の記録を読み取り専用で取得します。\n\n・利用目的：ゲーム画面の歩数表示、「月間移動」の記録、ホーム画面ウィジェット\n・広告・マーケティング・第三者への販売には使用しません。\n・端末設定からいつでも権限を取り消せます。",
-  "healthDataConnect": "連携する"
+  "healthDataConnect": "連携する",
+  "locationDisclosureTitle": "位置情報の収集について",
+  "locationDisclosureBody": "「早い者勝ち！アドベンチャ」は、リアルタイムの領土確保のため、アプリ使用中だけでなく、画面がオフのときや他のアプリを使用している間も位置情報を収集します。\n\n・収集項目：端末の位置情報（緯度・経度）\n・利用目的：領土の占領・同期、領土変動の通知\n・保管/削除：退会時に削除、設定からいつでも権限を撤回可能\n\n続行するには下の「同意して続行」を押してください。同意しなくてもアプリは閲覧できますが、バックグラウンドでの領土確保は制限されます。",
+  "locationDisclosureAgree": "同意して続行"
 }

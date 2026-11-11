@@ -611,5 +611,8 @@
   "dailyRecordStepEmpty": "本月没有步数记录。",
   "healthDataDisclosureTitle": "步数连接说明",
   "healthDataDisclosureBody": "我们将以只读方式从 Health Connect(Android) 或 Apple 健康(iOS) 读取今日步数及最近 30 天的记录。\n\n· 用途：在游戏画面显示步数、显示“月度移动”记录、主屏幕小组件\n· 不用于广告、营销或向第三方出售。\n· 您可随时在设备设置中撤销权限。",
-  "healthDataConnect": "连接"
+  "healthDataConnect": "连接",
+  "locationDisclosureTitle": "位置信息收集说明",
+  "locationDisclosureBody": "《先到先得！冒险》为了实时获取领土，不仅在使用应用时，在屏幕关闭或使用其他应用期间也会收集位置信息。\n\n· 收集项目：设备位置（经纬度）\n· 用途：领土占领与同步、领土变动通知\n· 保存/删除：注销账户时删除，可随时在设置中撤销权限\n\n如要继续，请点击下方的“同意并继续”。即使不同意也可以浏览应用，但后台领土获取将受到限制。",
+  "locationDisclosureAgree": "同意并继续"
 }

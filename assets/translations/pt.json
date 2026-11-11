@@ -611,5 +611,8 @@
   "dailyRecordStepEmpty": "Nenhum registro de passos para este mês.",
   "healthDataDisclosureTitle": "Conectar sua contagem de passos",
   "healthDataDisclosureBody": "Lemos sua contagem de passos e o histórico dos últimos 30 dias do Health Connect (Android) ou Apple Saúde (iOS) no modo somente leitura.\n\n· Finalidade: exibir seus passos no jogo, os registros mensais de movimento e o widget da tela inicial.\n· Nunca usamos esses dados para publicidade, marketing ou venda a terceiros.\n· Você pode revogar o acesso a qualquer momento nas configurações do dispositivo.",
-  "healthDataConnect": "Conectar"
+  "healthDataConnect": "Conectar",
+  "locationDisclosureTitle": "Coleta de dados de localização",
+  "locationDisclosureBody": "Dibs! Adventure coleta informações de localização para capturar e sincronizar territórios em tempo real, mesmo quando o app está fechado ou você está usando outro aplicativo.\n\n· Dados coletados: localização do dispositivo (latitude/longitude)\n· Finalidade: captura e sincronização de territórios, notificações de mudanças de território\n· Retenção/exclusão: excluídos ao apagar sua conta; você pode revogar a permissão a qualquer momento nas configurações\n\nToque em “Aceitar e continuar” para prosseguir. Você pode explorar o app sem aceitar, mas a captura de territórios em segundo plano ficará limitada.",
+  "locationDisclosureAgree": "Aceitar"
 }
