@@ -57,6 +57,10 @@ class _GameScreenState extends State<GameScreen> with WidgetsBindingObserver {
   Timer? _locationWaitTimer;
   bool _awaitingLocationSettings = false;
 
+  /// 위치 권한 플로우(인앱 고지 → 런타임 권한 → 백그라운드 안내) 진행 중 여부.
+  /// 진행 중에는 온보딩(튜토리얼)을 표시하지 않아 권한 팝업과 겹치지 않게 합니다.
+  bool _locationFlowRunning = false;
+
   /// 위치 대기 타이머 시작 (수신 즉시 해제, 15초 초과 시 재시도 안내)
   void _startLocationWaitTimer() {
     _locationWaitTimer?.cancel();
@@ -92,25 +96,37 @@ class _GameScreenState extends State<GameScreen> with WidgetsBindingObserver {
   Future<void> _startLocationFlow() async {
     if (!mounted) return;
 
-    // 인앱 고지는 최초 1회만 노출합니다. (권한 거부 상태가 이어져도 반복 노출하지 않음)
-    final needsDisclosure =
-        !await PreferencesService.isLocationDisclosureAccepted();
-    if (!mounted) return;
+    _setLocationFlowRunning(true);
+    try {
+      // 인앱 고지는 최초 1회만 노출합니다. (권한 거부 상태가 이어져도 반복 노출하지 않음)
+      final needsDisclosure =
+          !await PreferencesService.isLocationDisclosureAccepted();
+      if (!mounted) return;
 
-    if (needsDisclosure) {
-      final accepted = await _showLocationDisclosure();
-      if (!accepted) {
-        if (mounted) {
-          setState(() {
-            _locationTimedOut = true;
-          });
+      if (needsDisclosure) {
+        final accepted = await _showLocationDisclosure();
+        if (!accepted) {
+          if (mounted) {
+            setState(() {
+              _locationTimedOut = true;
+            });
+          }
+          return;
         }
-        return;
+        await PreferencesService.setLocationDisclosureAccepted();
       }
-      await PreferencesService.setLocationDisclosureAccepted();
-    }
 
-    await _requestLocationAndStart();
+      await _requestLocationAndStart();
+    } finally {
+      _setLocationFlowRunning(false);
+    }
+  }
+
+  /// 위치 권한 플로우 진행 상태를 갱신합니다.
+  void _setLocationFlowRunning(bool running) {
+    if (_locationFlowRunning == running) return;
+    _locationFlowRunning = running;
+    if (mounted) setState(() {});
   }
 
   Future<void> _requestLocationAndStart() async {
@@ -624,21 +640,26 @@ class _GameScreenState extends State<GameScreen> with WidgetsBindingObserver {
           ),
 
           // 온보딩 가이드 오버레이 (첫 GPS 위치 수신 전에는 표시하지 않고, 수신 후 자동 표시)
+          // 위치 권한 플로우가 끝난 뒤에만 표시하여 권한 팝업과 겹치지 않게 합니다.
           Selector<LocationProvider, bool>(
             selector: (_, loc) => loc.currentLocation != null,
             builder: (context, gpsReceived, child) {
               if (!_showOnboarding || !gpsReceived) {
                 return const SizedBox.shrink();
               }
-              return OnboardingOverlay(
-                onFinish: () async {
-                  await PreferencesService.setSeenOnboarding();
-                  if (mounted) {
-                    setState(() {
-                      _showOnboarding = false;
-                    });
-                  }
-                },
+              return Visibility(
+                visible: !_locationFlowRunning && !_awaitingLocationSettings,
+                maintainState: true,
+                child: OnboardingOverlay(
+                  onFinish: () async {
+                    await PreferencesService.setSeenOnboarding();
+                    if (mounted) {
+                      setState(() {
+                        _showOnboarding = false;
+                      });
+                    }
+                  },
+                ),
               );
             },
           ),
