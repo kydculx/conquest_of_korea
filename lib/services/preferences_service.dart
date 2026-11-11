@@ -7,21 +7,20 @@ import 'package:shared_preferences/shared_preferences.dart';
 class PreferencesService {
   PreferencesService._();
 
-  // --- 위치 권한 안내 상태 (geo_service) ---
-  // 시스템 권한 다이얼로그는 1회만, 설정 화면 유도는 1회만 하여
-  // 매 실행마다 팝업이 반복되는 것을 방지합니다.
+  // --- 위치 권한 안내 상태 ---
+  // 인앱 고지 동의와 '항상 허용' 설정 안내는 각각 1회만 노출합니다.
 
-  static const _locationPermissionAskedKey = 'location_permission_asked';
+  static const _locationDisclosureAcceptedKey = 'location_disclosure_accepted';
   static const _locationSettingsGuidedKey = 'location_settings_guided';
 
-  static Future<bool> isLocationPermissionAsked() async {
+  static Future<bool> isLocationDisclosureAccepted() async {
     final prefs = await SharedPreferences.getInstance();
-    return prefs.getBool(_locationPermissionAskedKey) ?? false;
+    return prefs.getBool(_locationDisclosureAcceptedKey) ?? false;
   }
 
-  static Future<void> setLocationPermissionAsked() async {
+  static Future<void> setLocationDisclosureAccepted() async {
     final prefs = await SharedPreferences.getInstance();
-    await prefs.setBool(_locationPermissionAskedKey, true);
+    await prefs.setBool(_locationDisclosureAcceptedKey, true);
   }
 
   static Future<bool> isLocationSettingsGuided() async {
