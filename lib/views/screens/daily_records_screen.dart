@@ -8,12 +8,10 @@ import '../../core/constants/app_routes.dart';
 import '../../core/constants/colors.dart';
 import '../../core/constants/strings.dart';
 import '../../providers/auth_provider.dart';
-import '../../services/health_service.dart';
 import '../../services/supabase_service.dart';
 import '../widgets/tactical_app_bar.dart';
 
 const int _dailyTileGoal = 30;
-const int _dailyStepLap = 10000;
 
 /// 타일 수가 커져도 링이 과도하게 여러 바퀴 돌지 않도록,
 /// 자릿수에 따라 1바퀴당 타일 수를 30 → 300 → 3,000 → 30,000 …으로 키운다.
@@ -44,7 +42,6 @@ class _DailyRecordsScreenState extends State<DailyRecordsScreen> {
   late int _currentPage;
 
   final Map<String, _MonthRecords> _monthCache = {};
-  final Set<String> _backfilledMonths = {};
   String? _loadedUserId;
 
   @override
@@ -71,7 +68,6 @@ class _DailyRecordsScreenState extends State<DailyRecordsScreen> {
     if (!auth.isAuthenticated) {
       _loadedUserId = null;
       _monthCache.clear();
-      _backfilledMonths.clear();
       return;
     }
 
@@ -80,7 +76,6 @@ class _DailyRecordsScreenState extends State<DailyRecordsScreen> {
 
     _loadedUserId = userId;
     _monthCache.clear();
-    _backfilledMonths.clear();
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (!mounted || _loadedUserId != userId) return;
       _loadMonth(_months[_currentPage]);
@@ -120,39 +115,11 @@ class _DailyRecordsScreenState extends State<DailyRecordsScreen> {
 
     try {
       final supabase = context.read<SupabaseService>();
-      final results = await Future.wait([
-        supabase.fetchDailyMovedTilesMonth(userId, month),
-        supabase.fetchDailyStepsMonth(userId, month),
-      ]);
-
-      var stepRecords = results[1];
-      final monthKey = _monthKey(month);
-      if (!_backfilledMonths.contains(monthKey)) {
-        _backfilledMonths.add(monthKey);
-        final monthStart = DateTime(month.year, month.month, 1);
-        final monthEnd = DateTime(month.year, month.month + 1, 1);
-        final healthSteps = await HealthService.instance.getDailySteps(
-          monthStart,
-          monthEnd,
-        );
-        if (healthSteps.isNotEmpty) {
-          final startKey = _dateKey(monthStart);
-          final endKey = _dateKey(monthEnd);
-          healthSteps.removeWhere(
-            (key, _) =>
-                key.compareTo(startKey) < 0 || key.compareTo(endKey) >= 0,
-          );
-          if (healthSteps.isNotEmpty) {
-            await supabase.upsertDailyStepsBulk(userId, healthSteps);
-            stepRecords = {...stepRecords, ...healthSteps};
-          }
-        }
-      }
+      final records = await supabase.fetchDailyMovedTilesMonth(userId, month);
 
       if (!mounted || _loadedUserId != userId) return;
       setState(() {
-        state.records = results[0];
-        state.steps = stepRecords;
+        state.records = records;
         state.isLoading = false;
         state.loaded = true;
       });
@@ -302,7 +269,6 @@ class _DailyRecordsScreenState extends State<DailyRecordsScreen> {
               locale,
               month,
               state?.records ?? const {},
-              state?.steps ?? const {},
               isLoading: state == null || state.isLoading,
             ),
             if (state == null || state.isLoading)
@@ -328,8 +294,7 @@ class _DailyRecordsScreenState extends State<DailyRecordsScreen> {
   Widget _buildCalendarContent(
     String locale,
     DateTime month,
-    Map<String, int> records,
-    Map<String, int> steps, {
+    Map<String, int> records, {
     bool isLoading = false,
   }) {
     final total = _monthTotal(month, records);
@@ -362,9 +327,7 @@ class _DailyRecordsScreenState extends State<DailyRecordsScreen> {
                   const SizedBox(height: 18),
                   _buildWeekdayHeader(locale),
                   const SizedBox(height: 6),
-                  _buildCalendarGrid(locale, month, records, steps),
-                  const SizedBox(height: 18),
-                  _buildStepGraphCard(locale, month, steps),
+                  _buildCalendarGrid(locale, month, records),
                   if (!isLoading && total <= 0) ...[
                     const SizedBox(height: 14),
                     _buildEmptyNote(),
@@ -376,103 +339,6 @@ class _DailyRecordsScreenState extends State<DailyRecordsScreen> {
         );
       },
     );
-  }
-
-  Widget _buildStepGraphCard(
-    String locale,
-    DateTime month,
-    Map<String, int> steps,
-  ) {
-    final daysInMonth = DateTime.utc(month.year, month.month + 1, 0).day;
-    final values = List<int>.generate(daysInMonth, (index) {
-      final date = DateTime.utc(month.year, month.month, index + 1);
-      return _stepForDate(steps, date);
-    });
-    final total = values.fold<int>(0, (sum, value) => sum + value);
-    final recordedDays = values.where((value) => value > 0).length;
-    final average = recordedDays > 0 ? total / recordedDays : 0.0;
-    var maxSteps = 0;
-    for (final value in values) {
-      if (value > maxSteps) maxSteps = value;
-    }
-    final now = DateTime.now();
-    final isCurrentMonth = month.year == now.year && month.month == now.month;
-
-    return Container(
-      padding: const EdgeInsets.fromLTRB(16, 14, 16, 12),
-      decoration: BoxDecoration(
-        color: Colors.white.withValues(alpha: 0.025),
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: GameColors.borderLight),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
-          Row(
-            children: [
-              const Icon(
-                Icons.directions_walk_rounded,
-                color: Palette.neonGreen,
-                size: 18,
-              ),
-              const SizedBox(width: 8),
-              Text(
-                GameStrings.dailyRecordStepsTitle,
-                style: TextStyle(
-                  color: GameColors.textPrimary,
-                  fontSize: 13,
-                  fontWeight: FontWeight.w700,
-                ),
-              ),
-              const Spacer(),
-              Text(
-                GameStrings.stepsCount(total),
-                style: const TextStyle(
-                  color: Palette.neonGreen,
-                  fontSize: 13,
-                  fontWeight: FontWeight.w800,
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 4),
-          Text(
-            '${GameStrings.dailyRecordDailyAverage} · '
-            '${GameStrings.stepsCount(average.round())}',
-            style: TextStyle(
-              color: GameColors.textMuted,
-              fontSize: 10.5,
-              fontWeight: FontWeight.w500,
-            ),
-          ),
-          const SizedBox(height: 12),
-          if (maxSteps <= 0)
-            Padding(
-              padding: const EdgeInsets.symmetric(vertical: 18),
-              child: Text(
-                GameStrings.dailyRecordStepEmpty,
-                textAlign: TextAlign.center,
-                style: TextStyle(color: GameColors.textMuted, fontSize: 11.5),
-              ),
-            )
-          else
-            SizedBox(
-              height: 120,
-              child: _StepBarChart(
-                values: values,
-                maxValue: maxSteps,
-                todayDay: isCurrentMonth ? now.day : null,
-                month: month,
-                locale: locale,
-              ),
-            ),
-        ],
-      ),
-    );
-  }
-
-  int _stepForDate(Map<String, int> steps, DateTime date) {
-    return steps[_dateKey(date)] ?? 0;
   }
 
   Widget _buildMonthTotalCard(String locale, int total) {
@@ -606,7 +472,6 @@ class _DailyRecordsScreenState extends State<DailyRecordsScreen> {
     String locale,
     DateTime monthDate,
     Map<String, int> records,
-    Map<String, int> steps,
   ) {
     final year = monthDate.year;
     final month = monthDate.month;
@@ -634,13 +499,11 @@ class _DailyRecordsScreenState extends State<DailyRecordsScreen> {
 
         final date = DateTime.utc(year, month, dayNumber);
         final count = _recordForDate(records, date);
-        final stepCount = _stepForDate(steps, date);
         final isToday = _isSameDay(date, today);
 
         return _buildDayCell(
           date: date,
           count: count,
-          steps: stepCount,
           isToday: isToday,
           locale: locale,
         );
@@ -651,7 +514,6 @@ class _DailyRecordsScreenState extends State<DailyRecordsScreen> {
   Widget _buildDayCell({
     required DateTime date,
     required int? count,
-    required int steps,
     required bool isToday,
     required String locale,
   }) {
@@ -663,7 +525,7 @@ class _DailyRecordsScreenState extends State<DailyRecordsScreen> {
     final borderColor = isToday
         ? GameColors.accentNeon.withValues(alpha: 0.58)
         : GameColors.borderLight;
-    void onTap() => _showDayDetail(date, value, steps, locale);
+    void onTap() => _showDayDetail(date, value, locale);
 
     return Semantics(
       button: true,
@@ -671,8 +533,7 @@ class _DailyRecordsScreenState extends State<DailyRecordsScreen> {
       label:
           '${date.month}/${date.day} '
           '${isToday ? GameStrings.dailyRecordToday : ''} '
-          '$countLabel '
-          '${GameStrings.stepsCount(steps)}',
+          '$countLabel',
       onTap: onTap,
       child: GestureDetector(
         behavior: HitTestBehavior.opaque,
@@ -724,7 +585,6 @@ class _DailyRecordsScreenState extends State<DailyRecordsScreen> {
                   Center(
                     child: _TileRing(
                       count: value,
-                      steps: steps,
                       size: ringSize,
                       locale: locale,
                       achieved: value >= _dailyTileGoal,
@@ -854,7 +714,6 @@ class _DailyRecordsScreenState extends State<DailyRecordsScreen> {
   Future<void> _showDayDetail(
     DateTime date,
     int count,
-    int steps,
     String locale,
   ) async {
     final achieved = count >= _dailyTileGoal;
@@ -939,7 +798,6 @@ class _DailyRecordsScreenState extends State<DailyRecordsScreen> {
                 Center(
                   child: _TileRing(
                     count: count,
-                    steps: steps,
                     size: 132,
                     locale: locale,
                     achieved: achieved,
@@ -956,26 +814,6 @@ class _DailyRecordsScreenState extends State<DailyRecordsScreen> {
                     fontSize: 14,
                     fontWeight: FontWeight.w700,
                   ),
-                ),
-                const SizedBox(height: 6),
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    const Icon(
-                      Icons.directions_walk_rounded,
-                      color: Palette.neonGreen,
-                      size: 16,
-                    ),
-                    const SizedBox(width: 6),
-                    Text(
-                      GameStrings.stepsCount(steps),
-                      style: const TextStyle(
-                        color: Palette.neonGreen,
-                        fontSize: 12.5,
-                        fontWeight: FontWeight.w600,
-                      ),
-                    ),
-                  ],
                 ),
                 const SizedBox(height: 14),
                 Container(
@@ -1174,7 +1012,6 @@ class _DailyRecordsScreenState extends State<DailyRecordsScreen> {
 
 class _MonthRecords {
   Map<String, int> records = const <String, int>{};
-  Map<String, int> steps = const <String, int>{};
   bool isLoading = false;
   bool loaded = false;
   bool loadFailed = false;
@@ -1183,14 +1020,12 @@ class _MonthRecords {
 
 class _TileRing extends StatelessWidget {
   final int count;
-  final int steps;
   final double size;
   final String locale;
   final bool achieved;
 
   const _TileRing({
     required this.count,
-    required this.steps,
     required this.size,
     required this.locale,
     required this.achieved,
@@ -1203,14 +1038,9 @@ class _TileRing extends StatelessWidget {
         : achieved
         ? Palette.footprintMint
         : GameColors.textPrimary;
-    final double tileLap = _tileLapSizeFor(count);
-    final double tileTarget = count / tileLap;
-    final double stepTarget = steps / _dailyStepLap;
-    final double maxTarget = math.max(tileTarget, stepTarget).toDouble();
-    final double tileRatio = maxTarget > 0 ? tileTarget / maxTarget : 0.0;
-    final double stepRatio = maxTarget > 0 ? stepTarget / maxTarget : 0.0;
-    // 바퀴 수가 많아져도 애니메이션이 길어지지 않도록 최대 2.5초로 제한한다.
-    final double extraLaps = math.max(0.0, maxTarget - 1);
+    final double lapSize = _tileLapSizeFor(count);
+    final double target = count / lapSize;
+    final double extraLaps = math.max(0.0, target - 1);
     final Duration animationDuration = Duration(
       milliseconds: (1200 + math.min(2.5, extraLaps) * 500).round(),
     );
@@ -1219,21 +1049,16 @@ class _TileRing extends StatelessWidget {
       width: size,
       height: size,
       child: TweenAnimationBuilder<double>(
-        tween: Tween<double>(begin: 0.0, end: maxTarget),
+        tween: Tween<double>(begin: 0.0, end: target),
         duration: animationDuration,
         curve: Curves.easeInOutCubic,
-        builder: (context, animatedMax, child) {
-          final progress = animatedMax * tileRatio;
-          final stepProgress = animatedMax * stepRatio;
-          final countRatio = maxTarget > 0 ? animatedMax / maxTarget : 0.0;
+        builder: (context, animated, child) {
+          final double ratio = target > 0 ? animated / target : 0.0;
           final countLabel = NumberFormat.decimalPattern(
             locale,
-          ).format((count * countRatio).round());
+          ).format((count * ratio).round());
           return CustomPaint(
-            painter: _TileRingPainter(
-              progress: progress,
-              stepProgress: stepProgress,
-            ),
+            painter: _TileRingPainter(progress: animated),
             child: Center(
               child: Padding(
                 padding: EdgeInsets.all(size * 0.12),
@@ -1261,43 +1086,33 @@ class _TileRing extends StatelessWidget {
 
 class _TileRingPainter extends CustomPainter {
   final double progress;
-  final double stepProgress;
 
-  const _TileRingPainter({required this.progress, required this.stepProgress});
+  const _TileRingPainter({required this.progress});
 
   @override
   void paint(Canvas canvas, Size size) {
     final double strokeWidth = (size.width * 0.08).clamp(3.0, 9.0).toDouble();
     final center = Offset(size.width / 2, size.height / 2);
-    final double outerRadius = size.width / 2 - strokeWidth / 2;
-    final double gap = strokeWidth * 0.55;
-    final double innerRadius = outerRadius - strokeWidth - gap;
-    if (innerRadius <= 0) return;
+    final double radius = size.width / 2 - strokeWidth / 2;
+    if (radius <= 0) return;
 
     // 타일 링은 진행률/달성 여부와 관계없이 항상 주황 계열로 표시한다.
     const Color tileColor = Palette.softRed;
-    const Color stepHeadColor = Palette.tealOk;
 
-    final Paint outerTrackPaint = Paint()
-      ..color = stepHeadColor.withValues(alpha: 0.22)
-      ..style = PaintingStyle.stroke
-      ..strokeWidth = strokeWidth
-      ..strokeCap = StrokeCap.round;
-    final Paint innerTrackPaint = Paint()
+    final Paint trackPaint = Paint()
       ..color = tileColor.withValues(alpha: 0.22)
       ..style = PaintingStyle.stroke
       ..strokeWidth = strokeWidth
       ..strokeCap = StrokeCap.round;
 
-    canvas.drawCircle(center, outerRadius, outerTrackPaint);
-    canvas.drawCircle(center, innerRadius, innerTrackPaint);
+    canvas.drawCircle(center, radius, trackPaint);
 
     if (progress > 0) {
-      final Rect rect = Rect.fromCircle(center: center, radius: innerRadius);
+      final Rect rect = Rect.fromCircle(center: center, radius: radius);
       final double headAngle = -math.pi / 2 + math.pi * 2 * progress;
       final Offset head = Offset(
-        center.dx + innerRadius * math.cos(headAngle),
-        center.dy + innerRadius * math.sin(headAngle),
+        center.dx + radius * math.cos(headAngle),
+        center.dy + radius * math.sin(headAngle),
       );
       final Offset tangent = Offset(-math.sin(headAngle), math.cos(headAngle));
 
@@ -1310,26 +1125,6 @@ class _TileRingPainter extends CustomPainter {
       );
       // 링을 모두 그린 뒤 머리를 마지막에 얹어, 여러 바퀴가 겹쳐도 항상 보이게 한다.
       _drawHead(canvas, head, tangent, strokeWidth, tileColor);
-    }
-
-    if (stepProgress > 0) {
-      final Rect rect = Rect.fromCircle(center: center, radius: outerRadius);
-      final double headAngle = -math.pi / 2 + math.pi * 2 * stepProgress;
-      final Offset head = Offset(
-        center.dx + outerRadius * math.cos(headAngle),
-        center.dy + outerRadius * math.sin(headAngle),
-      );
-      final Offset tangent = Offset(-math.sin(headAngle), math.cos(headAngle));
-
-      _drawSolidArc(
-        canvas,
-        rect,
-        stepHeadColor,
-        stepProgress.clamp(0.0, 1.0),
-        strokeWidth,
-      );
-      // 링을 모두 그린 뒤 머리를 마지막에 얹어, 여러 바퀴가 겹쳐도 항상 보이게 한다.
-      _drawHead(canvas, head, tangent, strokeWidth, stepHeadColor);
     }
   }
 
@@ -1391,315 +1186,8 @@ class _TileRingPainter extends CustomPainter {
 
   @override
   bool shouldRepaint(covariant _TileRingPainter oldDelegate) {
-    return oldDelegate.progress != progress ||
-        oldDelegate.stepProgress != stepProgress;
+    return oldDelegate.progress != progress;
   }
-}
-
-class _StepBarChartPainter extends CustomPainter {
-  final List<int> values;
-  final int maxValue;
-  final int? todayDay;
-
-  const _StepBarChartPainter({
-    required this.values,
-    required this.maxValue,
-    required this.todayDay,
-  });
-
-  @override
-  void paint(Canvas canvas, Size size) {
-    if (values.isEmpty || maxValue <= 0) return;
-
-    const double labelHeight = 16;
-    const double topPadding = 6;
-    final double chartHeight = size.height - labelHeight - topPadding;
-    if (chartHeight <= 0) return;
-
-    final double slotWidth = size.width / values.length;
-    final double barWidth = (slotWidth * 0.62).clamp(2.0, 10.0).toDouble();
-
-    final gridPaint = Paint()
-      ..color = GameColors.borderLight.withValues(alpha: 0.45)
-      ..strokeWidth = 0.8;
-    for (final ratio in const [0.0, 0.5, 1.0]) {
-      final y = topPadding + chartHeight * (1 - ratio);
-      canvas.drawLine(Offset(0, y), Offset(size.width, y), gridPaint);
-    }
-
-    for (var i = 0; i < values.length; i++) {
-      final value = values[i];
-      final ratio = value / maxValue;
-      final barHeight = chartHeight * ratio;
-      if (barHeight <= 0) continue;
-
-      final left = i * slotWidth + (slotWidth - barWidth) / 2;
-      final top = topPadding + chartHeight - barHeight;
-      final rect = RRect.fromRectAndRadius(
-        Rect.fromLTWH(left, top, barWidth, barHeight),
-        Radius.circular(barWidth / 2),
-      );
-      final isToday = todayDay == i + 1;
-      final paint = Paint()
-        ..shader = LinearGradient(
-          begin: Alignment.bottomCenter,
-          end: Alignment.topCenter,
-          colors: isToday
-              ? [Palette.tealOk.withValues(alpha: 0.55), Palette.tealOk]
-              : [
-                  Palette.neonGreen.withValues(alpha: 0.3),
-                  Palette.neonGreen.withValues(alpha: 0.85),
-                ],
-        ).createShader(rect.outerRect);
-      canvas.drawRRect(rect, paint);
-    }
-
-    final labelDays = <int>{1, 5, 10, 15, 20, 25, values.length};
-    for (final day in labelDays) {
-      if (day < 1 || day > values.length) continue;
-      final textPainter = TextPainter(
-        text: TextSpan(
-          text: '$day',
-          style: TextStyle(
-            color: GameColors.textMuted,
-            fontSize: 9,
-            fontWeight: FontWeight.w500,
-          ),
-        ),
-        textDirection: TextDirection.ltr,
-      )..layout();
-      final centerX = (day - 0.5) * slotWidth;
-      textPainter.paint(
-        canvas,
-        Offset(centerX - textPainter.width / 2, size.height - labelHeight + 2),
-      );
-    }
-  }
-
-  @override
-  bool shouldRepaint(covariant _StepBarChartPainter oldDelegate) {
-    if (oldDelegate.maxValue != maxValue || oldDelegate.todayDay != todayDay) {
-      return true;
-    }
-    if (oldDelegate.values.length != values.length) return true;
-    for (var i = 0; i < values.length; i++) {
-      if (oldDelegate.values[i] != values[i]) return true;
-    }
-    return false;
-  }
-}
-
-class _StepBarChart extends StatefulWidget {
-  final List<int> values;
-  final int maxValue;
-  final int? todayDay;
-  final DateTime month;
-  final String locale;
-
-  const _StepBarChart({
-    required this.values,
-    required this.maxValue,
-    required this.todayDay,
-    required this.month,
-    required this.locale,
-  });
-
-  @override
-  State<_StepBarChart> createState() => _StepBarChartState();
-}
-
-class _StepBarChartState extends State<_StepBarChart> {
-  int? _selectedDay;
-
-  void _updateSelection(Offset localPosition, double width) {
-    if (widget.values.isEmpty || width <= 0) return;
-    final double clampedX = localPosition.dx.clamp(0.0, width - 0.001);
-    final int day = (clampedX / width * widget.values.length).floor() + 1;
-    final int safeDay = day.clamp(1, widget.values.length);
-    if (safeDay != _selectedDay) {
-      setState(() => _selectedDay = safeDay);
-    }
-  }
-
-  void _clearSelection() {
-    if (_selectedDay == null) return;
-    setState(() => _selectedDay = null);
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return LayoutBuilder(
-      builder: (context, constraints) {
-        final double width = constraints.maxWidth;
-        final int? selectedDay = _selectedDay;
-        return Listener(
-          onPointerUp: (_) => _clearSelection(),
-          onPointerCancel: (_) => _clearSelection(),
-          child: GestureDetector(
-            behavior: HitTestBehavior.opaque,
-            onLongPressStart: (details) =>
-                _updateSelection(details.localPosition, width),
-            onLongPressMoveUpdate: (details) =>
-                _updateSelection(details.localPosition, width),
-            onLongPressEnd: (_) => _clearSelection(),
-            child: Stack(
-              clipBehavior: Clip.none,
-              children: [
-                Positioned.fill(
-                  child: CustomPaint(
-                    painter: _StepBarChartPainter(
-                      values: widget.values,
-                      maxValue: widget.maxValue,
-                      todayDay: widget.todayDay,
-                    ),
-                  ),
-                ),
-                if (selectedDay != null) _buildTooltip(selectedDay, width),
-              ],
-            ),
-          ),
-        );
-      },
-    );
-  }
-
-  Widget _buildTooltip(int day, double width) {
-    const double desiredBubbleWidth = 142;
-    final double bubbleWidth = math.min(desiredBubbleWidth, width - 8);
-    final double barCenterX = (day - 0.5) * (width / widget.values.length);
-    final double maxLeft = math.max(4.0, width - bubbleWidth - 4.0);
-    final double bubbleLeft = (barCenterX - bubbleWidth / 2).clamp(
-      4.0,
-      maxLeft,
-    );
-    final double pointerMin = math.min(14.0, bubbleWidth / 2);
-    final double pointerMax = math.max(pointerMin, bubbleWidth - 14.0);
-    final double pointerX = (barCenterX - bubbleLeft).clamp(
-      pointerMin,
-      pointerMax,
-    );
-    final int steps = widget.values[day - 1];
-    final DateTime date = DateTime.utc(
-      widget.month.year,
-      widget.month.month,
-      day,
-    );
-    final String dateLabel = DateFormat.MMMd(widget.locale).format(date);
-
-    return Positioned(
-      left: bubbleLeft,
-      top: 0,
-      width: bubbleWidth,
-      child: _StepChartTooltip(
-        dateLabel: dateLabel,
-        steps: steps,
-        pointerX: pointerX,
-      ),
-    );
-  }
-}
-
-class _StepChartTooltip extends StatelessWidget {
-  final String dateLabel;
-  final int steps;
-  final double pointerX;
-
-  const _StepChartTooltip({
-    required this.dateLabel,
-    required this.steps,
-    required this.pointerX,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return CustomPaint(
-      painter: _StepTooltipPainter(pointerX: pointerX),
-      child: Padding(
-        padding: const EdgeInsets.fromLTRB(10, 7, 10, 13),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Text(
-              dateLabel,
-              maxLines: 1,
-              overflow: TextOverflow.ellipsis,
-              style: TextStyle(
-                color: GameColors.textMuted,
-                fontSize: 9.5,
-                fontWeight: FontWeight.w600,
-              ),
-            ),
-            const SizedBox(height: 2),
-            Text(
-              GameStrings.stepsCount(steps),
-              maxLines: 1,
-              overflow: TextOverflow.ellipsis,
-              style: const TextStyle(
-                color: Palette.neonGreen,
-                fontSize: 11.5,
-                fontWeight: FontWeight.w800,
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-}
-
-class _StepTooltipPainter extends CustomPainter {
-  final double pointerX;
-
-  const _StepTooltipPainter({required this.pointerX});
-
-  @override
-  void paint(Canvas canvas, Size size) {
-    const double pointerHeight = 6;
-    const double radius = 10;
-    final double bodyHeight = size.height - pointerHeight;
-    if (bodyHeight <= 0 || size.width <= 0) return;
-
-    final RRect body = RRect.fromRectAndRadius(
-      Rect.fromLTWH(0, 0, size.width, bodyHeight),
-      const Radius.circular(radius),
-    );
-    final double px = pointerX.clamp(radius, size.width - radius);
-    final Path pointer = Path()
-      ..moveTo(px - 6, bodyHeight)
-      ..lineTo(px, size.height)
-      ..lineTo(px + 6, bodyHeight)
-      ..close();
-
-    final shadowPath = Path()
-      ..addRRect(body)
-      ..addPath(pointer, Offset.zero);
-    final shadowPaint = Paint()
-      ..color = Colors.black.withValues(alpha: 0.35)
-      ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 4.0);
-    canvas.drawPath(shadowPath.shift(const Offset(0, 2)), shadowPaint);
-
-    final fillPaint = Paint()
-      ..color = GameColors.backgroundMedium.withValues(alpha: 0.96)
-      ..style = PaintingStyle.fill;
-    canvas.drawRRect(body, fillPaint);
-
-    final borderPaint = Paint()
-      ..color = Palette.neonGreen.withValues(alpha: 0.5)
-      ..style = PaintingStyle.stroke
-      ..strokeWidth = 1.0;
-    canvas.drawRRect(body, borderPaint);
-
-    canvas.drawPath(pointer, fillPaint);
-    final pointerBorder = Path()
-      ..moveTo(px - 6, bodyHeight)
-      ..lineTo(px, size.height)
-      ..lineTo(px + 6, bodyHeight);
-    canvas.drawPath(pointerBorder, borderPaint);
-  }
-
-  @override
-  bool shouldRepaint(covariant _StepTooltipPainter oldDelegate) =>
-      oldDelegate.pointerX != pointerX;
 }
 
 class _MonthArrowButton extends StatelessWidget {

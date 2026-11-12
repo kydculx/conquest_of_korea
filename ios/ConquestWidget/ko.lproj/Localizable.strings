@@ -3,5 +3,4 @@
 "territory" = "영토";
 "daily_moved" = "오늘 이동";
 "daily_moved_short" = "이동";
-"steps" = "걸음";
-"widget_description" = "영토·오늘 이동·걸음 수";
+"widget_description" = "영토·오늘 이동";

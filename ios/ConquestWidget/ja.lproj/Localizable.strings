@@ -3,5 +3,4 @@
 "territory" = "領土";
 "daily_moved" = "今日の移動";
 "daily_moved_short" = "移動";
-"steps" = "歩数";
-"widget_description" = "領土・今日の移動・歩数";
+"widget_description" = "領土・今日の移動";

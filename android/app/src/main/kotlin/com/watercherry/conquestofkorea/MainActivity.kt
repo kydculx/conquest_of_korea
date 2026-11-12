@@ -13,7 +13,6 @@ import io.flutter.plugin.common.MethodChannel
 
 class MainActivity : FlutterFragmentActivity() {
     private val BATTERY_CHANNEL = "com.watercherry.conquest_mobile/battery"
-    private val HEALTH_CHANNEL = "com.watercherry.conquest_mobile/health"
     private val NOTIFICATION_CHANNEL = "com.watercherry.conquest_mobile/notification"
 
     override fun configureFlutterEngine(flutterEngine: FlutterEngine) {
@@ -26,17 +25,6 @@ class MainActivity : FlutterFragmentActivity() {
                 "requestIgnoreBatteryOptimizations" -> {
                     requestIgnoreBatteryOptimizations()
                     result.success(true)
-                }
-                else -> {
-                    result.notImplemented()
-                }
-            }
-        }
-
-        MethodChannel(flutterEngine.dartExecutor.binaryMessenger, HEALTH_CHANNEL).setMethodCallHandler { call, result ->
-            when (call.method) {
-                "openHealthSettings" -> {
-                    result.success(openHealthSettings())
                 }
                 else -> {
                     result.notImplemented()
@@ -83,39 +71,6 @@ class MainActivity : FlutterFragmentActivity() {
                 startActivity(intent)
             }
         }
-    }
-
-    private fun openHealthSettings(): Boolean {
-        // 1. Health Connect 앱 권한 관리 화면 직접 이동 (Android 14+ 및 Health Connect 앱 지원)
-        try {
-            val intent = Intent("androidx.health.connect.client.action.MANAGE_HEALTH_PERMISSIONS").apply {
-                putExtra(Intent.EXTRA_PACKAGE_NAME, packageName)
-                addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
-            }
-            startActivity(intent)
-            return true
-        } catch (_: Exception) {}
-
-        // 2. Health Connect 메인 설정 화면 이동 시도
-        try {
-            val intent = Intent("androidx.health.ACTION_HEALTH_CONNECT_SETTINGS").apply {
-                addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
-            }
-            startActivity(intent)
-            return true
-        } catch (_: Exception) {}
-
-        // 3. 시스템 애플리케이션 상세 설정 화면으로 폴백
-        try {
-            val intent = Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS).apply {
-                data = Uri.fromParts("package", packageName, null)
-                addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
-            }
-            startActivity(intent)
-            return true
-        } catch (_: Exception) {}
-
-        return false
     }
 
     private fun areNotificationsEnabled(): Boolean {

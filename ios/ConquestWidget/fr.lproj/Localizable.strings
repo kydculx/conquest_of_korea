@@ -3,5 +3,4 @@
 "territory" = "Territoire";
 "daily_moved" = "Déplacements du jour";
 "daily_moved_short" = "Déplacements";
-"steps" = "Pas";
-"widget_description" = "Territoire, déplacements du jour, pas";
+"widget_description" = "Territoire, déplacements du jour";

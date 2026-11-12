@@ -36,10 +36,6 @@ class ConquestWidgetProvider : AppWidgetProvider() {
                 R.id.widget_daily_moved,
                 prefs.getInt("dailyMoved", 0).toString()
             )
-            views.setTextViewText(
-                R.id.widget_steps,
-                prefs.getInt("steps", 0).toString()
-            )
             val launchIntent = context.packageManager
                 .getLaunchIntentForPackage(context.packageName)
             val pendingIntent = launchIntent?.let {

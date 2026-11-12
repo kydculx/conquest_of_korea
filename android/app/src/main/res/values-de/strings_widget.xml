@@ -5,5 +5,4 @@
     <string name="widget_territory">Gebiet</string>
     <string name="widget_daily_moved">Heute bewegt</string>
     <string name="widget_daily_moved_short">Züge</string>
-    <string name="widget_steps">Schritte</string>
 </resources>

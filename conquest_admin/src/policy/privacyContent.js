@@ -1,7 +1,7 @@
 export const privacyContent = {
   "ko": {
     "title": "개인정보 처리방침",
-    "effective": "시행일자: 2026년 11월 7일",
+    "effective": "시행일자: 2026년 11월 12일",
     "sections": [
       {
         "title": "1. 개인정보의 처리 목적",
@@ -166,47 +166,13 @@ export const privacyContent = {
             "text": "서비스 이용 중 발생하는 모든 개인정보 관련 문의 및 피해 구제는 아래의 메일로 문의주시면 성실히 답변해 드리겠습니다.\n- 개인정보 담당 부서 및 이메일: **kydculx@gmail.com**\n- 침해 신고 관련 정부 기관: **개인정보침해신고센터 (privacy.kisa.or.kr)**"
           }
         ]
-      },
-      {
-        "title": "12. 건강 데이터(걸음 수)의 처리",
-        "blocks": [
-          {
-            "type": "ul",
-            "items": [
-              {
-                "text": "1. 수집 항목: 오늘의 누적 걸음 수 및 최근 30일 이내의 일자별 걸음 수",
-                "danger": false,
-                "indent": false
-              },
-              {
-                "text": "2. 수집 방법: Android의 Health Connect 또는 iOS의 Apple 건강(HealthKit)에서 사용자가 권한을 허용한 경우에만 읽기 전용으로 조회합니다. 앱은 건강 데이터를 Health Connect/Apple 건강에 기록하지 않습니다.",
-                "danger": false,
-                "indent": false
-              },
-              {
-                "text": "3. 이용 목적: 게임 화면의 오늘 걸음 수 표시, 월간 이동 화면의 일자별 걸음 수 달력·그래프, 홈 화면 위젯의 걸음 수 표시. 위 목적 외 광고·마케팅·프로파일링·제3자 판매에 사용하지 않습니다.",
-                "danger": false,
-                "indent": false
-              },
-              {
-                "text": "4. 보관 및 삭제: 걸음 수 기록은 Supabase의 daily_step_history에 사용자별 접근 제한을 적용하여 저장하며, 서비스 운영을 위해 권한을 부여받은 관리자 외에는 접근할 수 없습니다., 회원 탈퇴 시 즉시 삭제됩니다. 사용자는 기기 설정에서 언제든지 권한을 철회할 수 있고, 철회 시 이후 수집이 중단됩니다.",
-                "danger": false,
-                "indent": false
-              },
-              {
-                "text": "5. 제3자 제공: Supabase(클라우드 저장·처리 수탁) 외에 건강 데이터를 제3자에게 제공하지 않습니다. Health Connect 데이터는 광고 또는 데이터 브로커에 판매·공유되지 않습니다.",
-                "danger": false,
-                "indent": false
-              }
-            ]
-          }
-        ]
       }
+
     ]
   },
   "en": {
     "title": "Privacy Policy",
-    "effective": "Effective Date: November 7, 2026",
+    "effective": "Effective Date: November 12, 2026",
     "sections": [
       {
         "title": "1. Purpose of Processing Personal Information",
@@ -371,42 +337,8 @@ export const privacyContent = {
             "text": "For all inquiries regarding personal information and remedies for infringement during service use, please contact the email below:\n- Department & Email: **kydculx@gmail.com**\n- Government Agency for Infringement Reports: **Personal Information Infringement Report Center (privacy.kisa.or.kr)**"
           }
         ]
-      },
-      {
-        "title": "12. Processing of Health Data (Step Count)",
-        "blocks": [
-          {
-            "type": "ul",
-            "items": [
-              {
-                "text": "1. Items collected: today's cumulative step count and daily step counts for the last 30 days.",
-                "danger": false,
-                "indent": false
-              },
-              {
-                "text": "2. Collection method: read-only access from Health Connect (Android) or Apple Health (iOS) only when the user grants permission. The app does not write health data to Health Connect or Apple Health.",
-                "danger": false,
-                "indent": false
-              },
-              {
-                "text": "3. Purpose: to display today's step count in the game, the daily step calendar and graph in the 'Monthly Movement' screen, and step counts in the home screen widget. It is not used for advertising, marketing, profiling, or sale to third parties.",
-                "danger": false,
-                "indent": false
-              },
-              {
-                "text": "4. Retention and deletion: step records are stored in Supabase's daily_step_history table with per-user access controls; only authorized administrators for service operations may access them, and they are deleted immediately upon account deletion. Users can revoke permission at any time in their device settings; collection stops after revocation.",
-                "danger": false,
-                "indent": false
-              },
-              {
-                "text": "5. Third parties: health data is not provided to third parties other than Supabase (cloud storage and processing provider). Health Connect data is not sold or shared with advertisers or data brokers.",
-                "danger": false,
-                "indent": false
-              }
-            ]
-          }
-        ]
       }
+
     ]
   },
   "ja": {
@@ -576,42 +508,8 @@ export const privacyContent = {
             "text": "サービス利用中に発生するすべての個人情報に関するお問い合わせおよび被害救済は、下記のメールでお問い合わせいただければ誠実にお答えいたします。\n- 個人情報担当部署およびメール: **kydculx@gmail.com**\n- 侵害申告関連政府機関：**個人情報侵害申告センター（privacy.kisa.or.kr）**"
           }
         ]
-      },
-      {
-        "title": "12. 健康データ（歩数）の処理",
-        "blocks": [
-          {
-            "type": "ul",
-            "items": [
-              {
-                "text": "1. 収集項目: 今日の累積歩数と最近30日以内の日別歩数",
-                "danger": false,
-                "indent": false
-              },
-              {
-                "text": "2. 収集方法: Android の Health Connect または iOS の Apple ヘルスケア(HealthKit) でユーザーが権限を許可した場合にのみ読み取り専用で照会します。アプリは健康データをHealth Connect / Apple ヘルスケアに記録しません。",
-                "danger": false,
-                "indent": false
-              },
-              {
-                "text": "3. 利用目的: ゲーム画面の今日歩数表示、「月間移動」 画面の日付別歩数カレンダー・グラフ、ホーム画面ウィジェットの歩数表示。上記目的外広告・マーケティング・プロファイリング・第三者販売に使用しません。",
-                "danger": false,
-                "indent": false
-              },
-              {
-                "text": "4. 保管および削除: 歩数記録は、Supabase の daily_step_history にユーザーごとのアクセス制限を適用して保存され、サービス運営のために権限を付与された管理者以外はアクセスできません、会員脱退時に直ちに削除されます。ユーザーはデバイス設定からいつでも権限を撤回でき、撤回後に収集が中断されます。",
-                "danger": false,
-                "indent": false
-              },
-              {
-                "text": "5. 第三者提供: Supabase(クラウド保存・処理受託)以外に健康データを第三者に提供しません。 Health Connectデータは広告またはデータブローカーに販売・共有されません。",
-                "danger": false,
-                "indent": false
-              }
-            ]
-          }
-        ]
       }
+
     ]
   },
   "zh": {
@@ -781,42 +679,8 @@ export const privacyContent = {
             "text": "对于在使用服务时出现的所有与个人信息相关的咨询和损害赔偿，请通过下面的电子邮件与我们联系，我们将忠实地回复。\n- 个人信息部门和电子邮件：**kydculx@gmail.com**\n- 参与举报侵权行为的政府机构：**个人信息侵权举报中心（privacy.kisa.or.kr）**"
           }
         ]
-      },
-      {
-        "title": "12. 健康数据处理（计步）",
-        "blocks": [
-          {
-            "type": "ul",
-            "items": [
-              {
-                "text": "1. 采集项目：今日累计步数和近30天内每日步数",
-                "danger": false,
-                "indent": false
-              },
-              {
-                "text": "2. 收集方式：仅当用户在 Android 上的 Health Connect 或 iOS 上的 Apple 健康 (HealthKit) 中授予权限时才能只读查看。该应用程序不会将任何健康数据记录到 Health Connect/Apple 健康。",
-                "danger": false,
-                "indent": false
-              },
-              {
-                "text": "3. 使用目的：在游戏屏幕上显示今天的步数，在“月度移动”屏幕上显示每日步数日历/图表，在主屏幕小部件上显示步数。除上述目的外，不得用于广告、营销、分析或第三方销售。",
-                "danger": false,
-                "indent": false
-              },
-              {
-                "text": "4. 存储和删除：步数记录存储在Supabase的daily_step_history中，按用户限制访问，除为服务运营获得授权的管理员外不得访问，并在退出会员后立即删除。您可以随时在设备设置中撤销权限，这将停止未来的收集。",
-                "danger": false,
-                "indent": false
-              },
-              {
-                "text": "5. 向第三方提供：健康数据不会提供给 Supabase（云存储和处理）以外的第三方。 Health Connect 数据不会出售或与广告商或数据经纪人共享。",
-                "danger": false,
-                "indent": false
-              }
-            ]
-          }
-        ]
       }
+
     ]
   },
   "zh-TW": {
@@ -986,42 +850,8 @@ export const privacyContent = {
             "text": "對於在使用服務時出現的所有與個人資訊相關的諮詢和損害賠償，請透過下面的電子郵件與我們聯繫，我們將忠實地回覆。\n- 個人資訊部門與電子郵件：**kydculx@gmail.com**\n- 參與舉報侵權行為的政府機構：**個人資訊侵權行為檢舉中心（privacy.kisa.or.kr）**"
           }
         ]
-      },
-      {
-        "title": "12. 健康資料處理（計步）",
-        "blocks": [
-          {
-            "type": "ul",
-            "items": [
-              {
-                "text": "1. 採集項目：今日累計步數及近30天內每日步數",
-                "danger": false,
-                "indent": false
-              },
-              {
-                "text": "2. 收集方式：僅當使用者在 Android 上的 Health Connect 或 iOS 上的 Apple 健康 (HealthKit) 中授予權限時才能只讀查看。該應用程式不會將任何健康數據記錄到 Health Connect/Apple 健康。",
-                "danger": false,
-                "indent": false
-              },
-              {
-                "text": "3. 使用目的：在遊戲畫面上顯示今天的步數，在「每月移動」畫面上顯示每日步數日曆/圖表，在主畫面小工具上顯示步數。除上述目的外，不得用於廣告、行銷、分析或第三方銷售。",
-                "danger": false,
-                "indent": false
-              },
-              {
-                "text": "4. 儲存和刪除：步數記錄儲存在Supabase的daily_step_history中，按使用者限制存取，除為服務營運獲得授權的管理員外不得存取，並在退出會員後立即刪除。您可以隨時在裝置設定中撤銷權限，這將停止未來的收集。",
-                "danger": false,
-                "indent": false
-              },
-              {
-                "text": "5. 提供第三方：健康資料不會提供給 Supabase（雲端儲存和處理）以外的第三方。 Health Connect 資料不會出售或與廣告商或資料經紀人分享。",
-                "danger": false,
-                "indent": false
-              }
-            ]
-          }
-        ]
       }
+
     ]
   },
   "es": {
@@ -1191,42 +1021,8 @@ export const privacyContent = {
             "text": "Para todas las consultas relacionadas con información personal y reparación de daños que surjan al utilizar el servicio, contáctenos por correo electrónico a continuación y le responderemos fielmente.\n- Departamento de información personal y correo electrónico: **kydculx@gmail.com**\n- Agencia gubernamental involucrada en la denuncia de infracciones: **Centro de denuncia de infracciones de información personal (privacy.kisa.or.kr)**"
           }
         ]
-      },
-      {
-        "title": "12. Procesamiento de datos de salud (recuento de pasos)",
-        "blocks": [
-          {
-            "type": "ul",
-            "items": [
-              {
-                "text": "1. Elementos de la colección: recuento de pasos acumulados de hoy y recuento de pasos diarios en los últimos 30 días",
-                "danger": false,
-                "indent": false
-              },
-              {
-                "text": "2. Método de recopilación: vista de solo lectura solo si el usuario otorga permiso en Health Connect en Android o Apple Salud (HealthKit) en iOS. La aplicación no registra ningún dato de salud en Health Connect/Apple Salud.",
-                "danger": false,
-                "indent": false
-              },
-              {
-                "text": "3. Propósito de uso: Mostrar el recuento de pasos de hoy en la pantalla del juego, el calendario/gráfico del recuento de pasos diarios en la pantalla «Movimiento mensual» y el recuento de pasos en el widget de la pantalla de inicio. No se utiliza para publicidad, marketing, elaboración de perfiles o ventas a terceros distintos de los fines anteriores.",
-                "danger": false,
-                "indent": false
-              },
-              {
-                "text": "4. Almacenamiento y eliminación: los registros de recuento de pasos se almacenan en daily_step_history de Supabase con acceso restringido por usuario; solo los administradores autorizados para la operación del servicio pueden acceder a ellos y se eliminan inmediatamente al retirar la membresía. Puede revocar el permiso en cualquier momento en la configuración de su dispositivo, lo que detendrá futuras recopilaciones.",
-                "danger": false,
-                "indent": false
-              },
-              {
-                "text": "5. Suministro a terceros: Los datos de salud no se proporcionan a terceros distintos a Supabase (almacenamiento y procesamiento en la nube). Los datos de Health Connect no se venden ni se comparten con anunciantes ni intermediarios de datos.",
-                "danger": false,
-                "indent": false
-              }
-            ]
-          }
-        ]
       }
+
     ]
   },
   "fr": {
@@ -1396,42 +1192,8 @@ export const privacyContent = {
             "text": "Pour toutes les demandes relatives aux informations personnelles et à l'indemnisation des dommages survenant lors de l'utilisation du service, veuillez nous contacter par e-mail ci-dessous et nous vous répondrons fidèlement.\n- Service des informations personnelles et email : **kydculx@gmail.com**\n- Agence gouvernementale impliquée dans le signalement des violations : **Centre de signalement des violations d'informations personnelles (privacy.kisa.or.kr)**"
           }
         ]
-      },
-      {
-        "title": "12. Traitement des données de santé (nombre de pas)",
-        "blocks": [
-          {
-            "type": "ul",
-            "items": [
-              {
-                "text": "1. Éléments de collection : nombre de pas cumulés du jour et nombre de pas quotidiens au cours des 30 derniers jours",
-                "danger": false,
-                "indent": false
-              },
-              {
-                "text": "2. Méthode de collecte : vue en lecture seule uniquement si l'utilisateur accorde l'autorisation dans Health Connect sur Android ou Apple Santé (HealthKit) sur iOS. L'application n'enregistre aucune donnée de santé sur Health Connect/Apple Santé.",
-                "danger": false,
-                "indent": false
-              },
-              {
-                "text": "3. Objectif d'utilisation : affichage du nombre de pas du jour sur l'écran de jeu, du calendrier/graphique du nombre de pas quotidien sur l'écran « Déplacement mensuel » et de l'affichage du nombre de pas sur le widget de l'écran d'accueil. Il n'est pas utilisé à des fins de publicité, de marketing, de profilage ou de vente à des tiers autres que les fins ci-dessus.",
-                "danger": false,
-                "indent": false
-              },
-              {
-                "text": "4. Stockage et suppression : les enregistrements du nombre de pas sont stockés dans le daily_step_history de Supabase avec un accès limité par utilisateur ; seuls les administrateurs autorisés pour l'exploitation du service peuvent y accéder, et sont immédiatement supprimés lors du retrait de l'adhésion. Vous pouvez révoquer l'autorisation à tout moment dans les paramètres de votre appareil, ce qui arrêtera les futures collectes.",
-                "danger": false,
-                "indent": false
-              },
-              {
-                "text": "5. Mise à disposition à des tiers : Les données de santé ne sont pas fournies à des tiers autres que Supabase (stockage et traitement cloud). Les données Health Connect ne sont ni vendues ni partagées avec des annonceurs ou des courtiers en données.",
-                "danger": false,
-                "indent": false
-              }
-            ]
-          }
-        ]
       }
+
     ]
   },
   "de": {
@@ -1601,42 +1363,8 @@ export const privacyContent = {
             "text": "Für alle Anfragen zu personenbezogenen Daten und Schadensersatz, die bei der Nutzung des Dienstes auftreten, kontaktieren Sie uns bitte per E-Mail unten und wir werden Ihnen zuverlässig antworten.\n- Abteilung für persönliche Informationen und E-Mail: **kydculx@gmail.com**\n- An der Meldung von Verstößen beteiligte Regierungsbehörde: **Personal Information Infringement Reporting Center (privacy.kisa.or.kr)**"
           }
         ]
-      },
-      {
-        "title": "12. Verarbeitung von Gesundheitsdaten (Schrittzahl)",
-        "blocks": [
-          {
-            "type": "ul",
-            "items": [
-              {
-                "text": "1. Sammlungselemente: Die heutige kumulative Schrittzahl und die tägliche Schrittzahl innerhalb der letzten 30 Tage",
-                "danger": false,
-                "indent": false
-              },
-              {
-                "text": "2. Erfassungsmethode: Nur schreibgeschützte Ansicht, wenn der Benutzer die Berechtigung in Health Connect auf Android oder Apple Health (HealthKit) auf iOS erteilt. Die App protokolliert keine Gesundheitsdaten an Health Connect/Apple Health.",
-                "danger": false,
-                "indent": false
-              },
-              {
-                "text": "3. Verwendungszweck: Anzeige der heutigen Schrittzahl auf dem Spielbildschirm, des täglichen Schrittzahlkalenders/-diagramms auf dem „Monatliche Bewegung“-Bildschirm und der Schrittzahlanzeige auf dem Startbildschirm-Widget. Sie werden nicht für Werbung, Marketing, Profilerstellung oder den Verkauf an Dritte zu anderen als den oben genannten Zwecken verwendet.",
-                "danger": false,
-                "indent": false
-              },
-              {
-                "text": "4. Speicherung und Löschung: Schrittzahlaufzeichnungen werden in der daily_step_history von Supabase gespeichert, mit benutzerspezifischen Zugriffsbeschränkungen; nur autorisierte Administratoren für den Dienstbetrieb können darauf zugreifen, und werden bei Entzug der Mitgliedschaft sofort gelöscht. Sie können die Erlaubnis jederzeit in Ihren Geräteeinstellungen widerrufen, wodurch zukünftige Erfassungen gestoppt werden.",
-                "danger": false,
-                "indent": false
-              },
-              {
-                "text": "5. Weitergabe an Dritte: Gesundheitsdaten werden nicht an Dritte außer Supabase (Cloud-Speicherung und -Verarbeitung) weitergegeben. Health Connect-Daten werden nicht verkauft oder an Werbetreibende oder Datenbroker weitergegeben.",
-                "danger": false,
-                "indent": false
-              }
-            ]
-          }
-        ]
       }
+
     ]
   },
   "pt": {
@@ -1806,42 +1534,8 @@ export const privacyContent = {
             "text": "Para todas as dúvidas relacionadas a informações pessoais e reparação de danos que surjam durante a utilização do serviço, entre em contato conosco pelo e-mail abaixo e responderemos fielmente.\n- Departamento de informações pessoais e e-mail: **kydculx@gmail.com**\n- Agência governamental envolvida na denúncia de infrações: **Centro de denúncia de infrações de informações pessoais (privacy.kisa.or.kr)**"
           }
         ]
-      },
-      {
-        "title": "12. Processamento de dados de saúde (contagem de passos)",
-        "blocks": [
-          {
-            "type": "ul",
-            "items": [
-              {
-                "text": "1. Itens de coleção: contagem cumulativa de passos de hoje e contagem diária de passos nos últimos 30 dias",
-                "danger": false,
-                "indent": false
-              },
-              {
-                "text": "2. Método de coleta: visualização somente leitura se o usuário conceder permissão no Health Connect no Android ou Apple Saúde (HealthKit) no iOS. O aplicativo não registra nenhum dado de saúde no Health Connect/Apple Saúde.",
-                "danger": false,
-                "indent": false
-              },
-              {
-                "text": "3. Objetivo de uso: Exibição da contagem de passos de hoje na tela do jogo, calendário/gráfico de contagem de passos diários na tela “Movimento mensal” e exibição da contagem de passos no widget da tela inicial. Ele não é usado para publicidade, marketing, criação de perfil ou vendas de terceiros, exceto para os fins acima.",
-                "danger": false,
-                "indent": false
-              },
-              {
-                "text": "4. Armazenamento e exclusão: Os registros de contagem de passos são armazenados no daily_step_history do Supabase com acesso restrito por usuário; somente administradores autorizados para a operação do serviço podem acessá-los, e são imediatamente excluídos após a retirada da adesão. Você pode revogar a permissão a qualquer momento nas configurações do seu dispositivo, o que interromperá coletas futuras.",
-                "danger": false,
-                "indent": false
-              },
-              {
-                "text": "5. Fornecimento a terceiros: Os dados de saúde não são fornecidos a terceiros que não sejam a Supabase (armazenamento e processamento em nuvem). Os dados do Health Connect não são vendidos ou compartilhados com anunciantes ou corretores de dados.",
-                "danger": false,
-                "indent": false
-              }
-            ]
-          }
-        ]
       }
+
     ]
   },
   "it": {
@@ -2011,42 +1705,8 @@ export const privacyContent = {
             "text": "Per tutte le richieste relative alle informazioni personali e al risarcimento dei danni che si verificano durante l'utilizzo del servizio, ti preghiamo di contattarci tramite e-mail di seguito e risponderemo fedelmente.\n- Dipartimento dati personali ed e-mail: **kydculx@gmail.com**\n- Agenzia governativa coinvolta nella segnalazione di violazioni: **Centro di segnalazione delle violazioni delle informazioni personali (privacy.kisa.or.kr)**"
           }
         ]
-      },
-      {
-        "title": "12. Trattamento dei dati sanitari (contapassi)",
-        "blocks": [
-          {
-            "type": "ul",
-            "items": [
-              {
-                "text": "1. Elementi della raccolta: conteggio dei passi cumulativo odierno e conteggio dei passi giornalieri negli ultimi 30 giorni",
-                "danger": false,
-                "indent": false
-              },
-              {
-                "text": "2. Metodo di raccolta: lettura in sola lettura solo se l'utente concede l'autorizzazione in Health Connect su Android o Apple Salute (HealthKit) su iOS. L'app non registra alcun dato sanitario su Health Connect/Apple Salute.",
-                "danger": false,
-                "indent": false
-              },
-              {
-                "text": "3. Scopo d'uso: visualizzazione del conteggio dei passi di oggi sulla schermata di gioco, del calendario/grafico del conteggio dei passi giornaliero sulla schermata “Movimento mensile” e della visualizzazione del conteggio dei passi sul widget della schermata iniziale. Non vengono utilizzati per scopi pubblicitari, di marketing, di profilazione o di vendita a terzi diversi dagli scopi sopra indicati.",
-                "danger": false,
-                "indent": false
-              },
-              {
-                "text": "4. Archiviazione ed eliminazione: i record del conteggio dei passi vengono archiviati nella daily_step_history di Supabase con accesso limitato per utente; solo gli amministratori autorizzati per l'operazione del servizio possono accedervi e vengono immediatamente eliminati al momento del ritiro dell'iscrizione. Puoi revocare l'autorizzazione in qualsiasi momento nelle impostazioni del tuo dispositivo, il che interromperà le raccolte future.",
-                "danger": false,
-                "indent": false
-              },
-              {
-                "text": "5. Fornitura a terzi: i dati sanitari non vengono forniti a terzi diversi da Supabase (archiviazione ed elaborazione nel cloud). I dati di Health Connect non vengono venduti o condivisi con inserzionisti o intermediari di dati.",
-                "danger": false,
-                "indent": false
-              }
-            ]
-          }
-        ]
       }
+
     ]
   }
 };

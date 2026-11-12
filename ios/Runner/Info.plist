@@ -45,16 +45,11 @@
 		<string>kakaolink</string>
 		<string>kakaoplus</string>
 		<string>mailto</string>
-		<string>x-apple-health</string>
 	</array>
 	<key>LSRequiresIPhoneOS</key>
 	<true/>
 	<key>NSCameraUsageDescription</key>
 	<string>타일에 현장 사진을 촬영하고 등록하기 위해 카메라 권한이 필요합니다.</string>
-	<key>NSHealthShareUsageDescription</key>
-	<string>오늘의 실시간 걸음수를 측정하여 게임 내 이동 데이터 및 플레이어 성적에 반영하기 위해 건강 데이터 읽기 권한이 필요합니다.</string>
-	<key>NSHealthUpdateUsageDescription</key>
-	<string>게임 내 획득한 운동 기록을 건강 정보와 연동하여 업데이트하기 위해 건강 데이터 쓰기 권한이 필요합니다.</string>
 	<key>NSLocationAlwaysAndWhenInUseUsageDescription</key>
 	<string>지도 및 구역 확보 시스템 작동을 위해 위치 정보가 필요합니다.</string>
 	<key>NSLocationAlwaysUsageDescription</key>

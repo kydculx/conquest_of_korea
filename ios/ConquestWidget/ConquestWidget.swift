@@ -7,12 +7,11 @@ struct ConquestEntry: TimelineEntry {
     let date: Date
     let territory: Int
     let dailyMoved: Int
-    let steps: Int
 }
 
 struct ConquestProvider: TimelineProvider {
     func placeholder(in context: Context) -> ConquestEntry {
-        ConquestEntry(date: Date(), territory: 0, dailyMoved: 0, steps: 0)
+        ConquestEntry(date: Date(), territory: 0, dailyMoved: 0)
     }
 
     func getSnapshot(in context: Context, completion: @escaping (ConquestEntry) -> Void) {
@@ -28,8 +27,7 @@ struct ConquestProvider: TimelineProvider {
         return ConquestEntry(
             date: Date(),
             territory: defaults?.integer(forKey: "territory") ?? 0,
-            dailyMoved: defaults?.integer(forKey: "dailyMoved") ?? 0,
-            steps: defaults?.integer(forKey: "steps") ?? 0
+            dailyMoved: defaults?.integer(forKey: "dailyMoved") ?? 0
         )
     }
 }
@@ -42,7 +40,6 @@ private enum WidgetPalette {
     static let mint = Color(red: 0, green: 1, blue: 0.8)
     static let accent = Color(red: 0.56, green: 0.71, blue: 1)
     static let muted = Color(red: 0.58, green: 0.64, blue: 0.78)
-    static let divider = Color(red: 0.13, green: 0.19, blue: 0.36)
 }
 
 private struct WidgetGradientBackground: View {
@@ -80,7 +77,6 @@ struct ConquestWidgetEntryView: View {
             VStack(alignment: .leading, spacing: 1) {
                 compactRow(widgetText("territory"), entry.territory, accent: true)
                 compactRow(widgetText("daily_moved_short"), entry.dailyMoved, accent: false)
-                compactRow(widgetText("steps"), entry.steps, accent: false)
             }
         } else {
             VStack(alignment: .leading, spacing: 0) {
@@ -110,11 +106,6 @@ struct ConquestWidgetEntryView: View {
                 Spacer(minLength: 4)
                 HStack(alignment: .bottom, spacing: 0) {
                     bottomStat(widgetText("daily_moved"), entry.dailyMoved, color: .white)
-                    Rectangle()
-                        .fill(WidgetPalette.divider)
-                        .frame(width: 1, height: 24)
-                        .padding(.horizontal, 10)
-                    bottomStat(widgetText("steps"), entry.steps, color: WidgetPalette.mint)
                 }
             }
         }

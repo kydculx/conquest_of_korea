@@ -1,7 +1,5 @@
 "CFBundleDisplayName" = "Dibs! Avventura";
 "CFBundleName" = "Dibs! Avventura";
-"NSHealthShareUsageDescription" = "L'accesso ai dati sanitari è necessario per misurare i passi di oggi in tempo reale e applicarli ai movimenti e ai punteggi di gioco.";
-"NSHealthUpdateUsageDescription" = "L'accesso ai dati sanitari è necessario per sincronizzare e aggiornare con Apple Salute i record di allenamento ottenuti nel gioco.";
 "NSLocationAlwaysAndWhenInUseUsageDescription" = "L'accesso alla posizione è necessario per visualizzare la mappa e conquistare le aree.";
 "NSLocationAlwaysUsageDescription" = "L'accesso alla posizione in background è necessario per continuare a conquistare aree in tempo reale.";
 "NSLocationWhenInUseUsageDescription" = "L'accesso alla posizione è necessario per visualizzare la mappa e la tua posizione attuale.";

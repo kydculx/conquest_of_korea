@@ -11,7 +11,6 @@ enum OnboardingStep {
   myLocation,
   goldBar,
   timerBar,
-  stepsBar,
   patternBtn,
   rankingBtn,
   profileBtn,
@@ -77,10 +76,6 @@ class _OnboardingOverlayState extends State<OnboardingOverlay> {
       OnboardingStep.timerBar: _StepContent(
         title: GameStrings.onboardingTimerTitle,
         description: GameStrings.onboardingTimerDesc,
-      ),
-      OnboardingStep.stepsBar: _StepContent(
-        title: GameStrings.onboardingStepsTitle,
-        description: GameStrings.onboardingStepsDesc,
       ),
       OnboardingStep.patternBtn: _StepContent(
         title: GameStrings.onboardingPatternTitle,
@@ -207,15 +202,6 @@ class _OnboardingOverlayState extends State<OnboardingOverlay> {
 
       case OnboardingStep.timerBar:
         targetRect = _targetRectFor(OnboardingTargets.timerBar) ?? Rect.fromLTWH(20.0 + leftPadding, topOffset + 47.0, 130.0, 38.0);
-        cardTop = size.height - baseBottomMargin - 220.0;
-
-        lineStart = Offset(targetRect.left + targetRect.width / 2, targetRect.bottom + 4.0);
-        lineEnd = Offset(lineStart.dx.clamp(40.0, size.width - 40.0), cardTop - 2.0);
-        lineControl = Offset(lineStart.dx, lineEnd.dy - 30.0);
-        break;
-
-      case OnboardingStep.stepsBar:
-        targetRect = _targetRectFor(OnboardingTargets.stepsBar) ?? Rect.fromLTWH(20.0 + leftPadding, topOffset + 91.0, 120.0, 38.0);
         cardTop = size.height - baseBottomMargin - 220.0;
 
         lineStart = Offset(targetRect.left + targetRect.width / 2, targetRect.bottom + 4.0);

@@ -1380,22 +1380,6 @@ class GameStrings {
   static String get figurePatterns => 'figurePatterns'.tr();
   static String get patternCompletedBadge => 'patternCompletedBadge'.tr();
   static String get myAchievementSub => 'myAchievementSub'.tr();
-  static String stepsCount(int count) =>
-      'stepsCount'.tr(namedArgs: {'count': count.toString()});
-
-  /// 건강 앱 연동하기 버튼 라벨
-  static String get linkHealthApp => 'linkHealthApp'.tr();
-
-  /// 건강 데이터 연동 고지 타이틀
-  static String get healthDataDisclosureTitle =>
-      'healthDataDisclosureTitle'.tr();
-
-  /// 건강 데이터 연동 고지 본문
-  static String get healthDataDisclosureBody => 'healthDataDisclosureBody'.tr();
-
-  /// 건강 데이터 연동 버튼 라벨
-  static String get healthDataConnect => 'healthDataConnect'.tr();
-
   /// 에러 다이얼로그 타이틀
   static String get errorTitle => 'errorTitle'.tr();
 
@@ -1415,8 +1399,6 @@ class GameStrings {
   static String get onboardingGoldDesc => 'onboardingGoldDesc'.tr();
   static String get onboardingTimerTitle => 'onboardingTimerTitle'.tr();
   static String get onboardingTimerDesc => 'onboardingTimerDesc'.tr();
-  static String get onboardingStepsTitle => 'onboardingStepsTitle'.tr();
-  static String get onboardingStepsDesc => 'onboardingStepsDesc'.tr();
   static String get onboardingProfileTitle => 'onboardingProfileTitle'.tr();
   static String get onboardingProfileDesc => 'onboardingProfileDesc'.tr();
   static String get onboardingCalendarTitle => 'onboardingCalendarTitle'.tr();
@@ -1521,8 +1503,6 @@ class GameStrings {
       'dailyRecordGoalRemaining'.tr(namedArgs: {'count': count.toString()});
   static String get dailyRecordDetailEmpty =>
       'dailyRecordDetailEmpty'.tr();
-  static String get dailyRecordStepsTitle => 'dailyRecordStepsTitle'.tr();
-  static String get dailyRecordStepEmpty => 'dailyRecordStepEmpty'.tr();
 }
 
 class GameUrls {

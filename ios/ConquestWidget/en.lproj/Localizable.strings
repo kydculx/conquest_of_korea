@@ -3,5 +3,4 @@
 "territory" = "Territory";
 "daily_moved" = "Today's move";
 "daily_moved_short" = "Moves";
-"steps" = "Steps";
-"widget_description" = "Territory, today's moves, steps";
+"widget_description" = "Territory, today's moves";

@@ -34,7 +34,6 @@ import '../controllers/utc_countdown_controller.dart';
 import '../core/constants/game_config.dart';
 import '../core/constants/map_config.dart';
 import '../core/constants/strings.dart';
-import '../services/health_service.dart';
 
 /// 게임의 핵심 인게임 비즈니스 상태 및 점령 로직을 관리하고 UI에 변경을 전파하는 메인 프로바이더.
 ///
@@ -71,16 +70,6 @@ class GameProvider extends ChangeNotifier with WidgetsBindingObserver {
   // --- 상태 ---
   /// 인게임 알림 배너를 전담 관리하는 매니저
   late final GameAlertManager _alertManager;
-
-  /// 오늘의 누적 걸음수 데이터
-  int _todaySteps = 0;
-  int get todaySteps => _todaySteps;
-
-  /// 최근 일일 걸음수 DB 동기화 상태 캐시 (중복 업로드 방지)
-  String? _lastSyncedStepUserId;
-  DateTime? _lastSyncedStepDate;
-  int? _lastSyncedStepCount;
-  bool _isSyncingSteps = false;
 
   /// 사용자가 설정한 로컬 GPS 정확도 레벨 ('high', 'best', 'bestForNavigation', 'medium')
   String _gpsAccuracyLevel = 'high';
@@ -654,9 +643,6 @@ class GameProvider extends ChangeNotifier with WidgetsBindingObserver {
       _lastProcessedTileId = null;
       _pendingTileFocus = null;
       _pendingInvasionTileId = null;
-      _lastSyncedStepUserId = null;
-      _lastSyncedStepDate = null;
-      _lastSyncedStepCount = null;
     }
     notifyListeners();
   }
@@ -676,10 +662,6 @@ class GameProvider extends ChangeNotifier with WidgetsBindingObserver {
 
       // 타일 데이터 초기화 (GameTileProvider 위임)
       await _tileProvider.init();
-      // 초기 걸음수 로드 (비동기로 실행하여 초기화 흐름을 방해하지 않도록 처리)
-      updateStepsState().catchError((e) {
-        debugPrint('초기 걸음수 로드 실패: $e');
-      });
     } catch (e) {
       debugPrint('초기 데이터 로드 실패: $e');
     } finally {
@@ -691,78 +673,11 @@ class GameProvider extends ChangeNotifier with WidgetsBindingObserver {
     _startBackgroundPolling();
   }
 
-  // --- 걸음수 관리 ---
-  Timer? _stepsTimer;
-
-  /// 오늘 걸음수 수동/자동 비동기 업데이트 메서드
-  Future<void> updateStepsState() async {
-    try {
-      final steps = await HealthService.instance.getTodaySteps();
-      final denied = HealthService.instance.isDenied;
-      WidgetService.update(steps: steps);
-      if (_todaySteps != steps || _isStepDenied != denied) {
-        _todaySteps = steps;
-        _isStepDenied = denied;
-        notifyListeners();
-      }
-      await _syncDailySteps(steps);
-    } catch (e) {
-      debugPrint('⚠️ 걸음수 데이터 업데이트 중 에러: $e');
-    }
-  }
-
-  Future<void> _syncDailySteps(int steps) async {
-    final userId = _userId;
-    if (userId == null || !_isAuthenticated || steps <= 0) return;
-    if (_isSyncingSteps) return;
-
-    final now = DateTime.now();
-    final date = DateTime(now.year, now.month, now.day);
-    if (_lastSyncedStepUserId == userId &&
-        _lastSyncedStepDate == date &&
-        _lastSyncedStepCount == steps) {
-      return;
-    }
-
-    _isSyncingSteps = true;
-    try {
-      final success = await _supabase.upsertDailySteps(userId, date, steps);
-      if (!success) return;
-      _lastSyncedStepUserId = userId;
-      _lastSyncedStepDate = date;
-      _lastSyncedStepCount = steps;
-    } finally {
-      _isSyncingSteps = false;
-    }
-  }
-
-  /// 건강 앱 연동 거부 상태 (걸음수 캡슐 안내 표시용)
-  bool _isStepDenied = false;
-  bool get isStepDenied => _isStepDenied;
-
-  /// 건강 앱 연동 명시 재요청 (사용자 탭 시 1회만 호출)
-  Future<void> retryStepPermissions() async {
-    await HealthService.instance.requestStepPermissions();
-    await updateStepsState();
-  }
-
-  /// 시스템 설정에서 연동하고 돌아온 경우 거부 확정 해제 후 재확인
-  Future<void> refreshStepPermissions() async {
-    HealthService.instance.resetDenial();
-    await updateStepsState();
-  }
-
   // --- 백그라운드 폴링 ---
   void _startBackgroundPolling() {
     // [개편] 1초 주기 폴링 타이머 제거. 위치 변경에 따른 무거운 파이프라인은
     // [onLocationUpdated]의 타일 ID 변경 게이트가 담당한다. GPS 리스너가
     // 매 위치 업데이트마다 호출해주므로 별도 타이머가 필요 없다.
-    // 걸음수 동기화만 30초 주기로 유지.
-    _stepsTimer?.cancel();
-    _stepsTimer = Timer.periodic(
-      const Duration(seconds: 30),
-      (_) => updateStepsState(),
-    );
   }
 
   // --- 알림 탭 → 지도 포커스 ---
@@ -967,7 +882,6 @@ class GameProvider extends ChangeNotifier with WidgetsBindingObserver {
               WidgetService.update(
                 territory: updatedProfile.capturedTilesCount,
                 dailyMoved: localDailyMoved,
-                steps: todaySteps,
               );
             });
             notifyListeners();
@@ -1386,10 +1300,6 @@ class GameProvider extends ChangeNotifier with WidgetsBindingObserver {
         _goldManager.syncWithServer();
         _tileProvider.refreshTilesFromServer(); // 복귀 시 전체 점령 타일 1회 동기화
       }
-      // 앱이 다시 포그라운드로 올 때 걸음수 즉시 갱신
-      // (설정 화면에서 연동하고 복귀한 경우 거부 확정 해제 후 재확인)
-      HealthService.instance.resetDenial();
-      updateStepsState();
     } else if (state == AppLifecycleState.paused ||
         state == AppLifecycleState.inactive) {
       if (_isAuthenticated == true) {
@@ -1405,7 +1315,6 @@ class GameProvider extends ChangeNotifier with WidgetsBindingObserver {
     NotificationService().onForegroundMessageReceived = null;
     WidgetsBinding.instance.removeObserver(this);
     _goldManager.dispose();
-    _stepsTimer?.cancel();
     _utcCountdown.dispose();
     _satelliteController.dispose();
     _locationProvider?.removeListener(onLocationUpdated);

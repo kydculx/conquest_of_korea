@@ -5,7 +5,6 @@ class OnboardingTargets {
 
   static final GlobalKey goldBar = GlobalKey(debugLabel: 'onboarding_gold_bar');
   static final GlobalKey timerBar = GlobalKey(debugLabel: 'onboarding_timer_bar');
-  static final GlobalKey stepsBar = GlobalKey(debugLabel: 'onboarding_steps_bar');
   static final GlobalKey patternBtn =
       GlobalKey(debugLabel: 'onboarding_pattern_btn');
   static final GlobalKey rankingBtn =
