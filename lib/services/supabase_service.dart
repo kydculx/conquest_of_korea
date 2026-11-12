@@ -360,6 +360,37 @@ class SupabaseService {
   }) async {
     try {
       lastError = null;
+
+      // 패턴 업적은 DB에서 타일 중복을 원자적으로 차단합니다.
+      if (consumedTileIds != null && consumedTileIds.isNotEmpty) {
+        try {
+          final result = await _client.rpc(
+            'unlock_pattern_achievement',
+            params: {
+              'p_user_id': userId,
+              'p_achievement_id': achievementId,
+              'p_tile_ids': consumedTileIds,
+            },
+          );
+          return result == true;
+        } catch (rpcError) {
+          // 마이그레이션 미적용/함수 없음 등: 기존 경로로 폴백합니다.
+          debugPrint('⚠️ 패턴 해금 RPC 사용 불가, 기존 경로로 폴백: $rpcError');
+        }
+
+        // RPC 미적용 환경에서도 이미 사용 중인 타일은 저장하지 않습니다.
+        final existing = await _client
+            .from('user_achievement_tiles')
+            .select('tile_id')
+            .eq('user_id', userId)
+            .inFilter('tile_id', consumedTileIds)
+            .limit(1);
+        if ((existing as List).isNotEmpty) {
+          lastError = 'overlapping_pattern_tiles';
+          return false;
+        }
+      }
+
       final Map<String, dynamic> data = {
         'user_id': userId,
         'achievement_id': achievementId,

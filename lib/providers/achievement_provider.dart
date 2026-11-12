@@ -361,6 +361,7 @@ class AchievementProvider extends ChangeNotifier {
       if (_currentUserId != userId) return;
       _achievementTiles.clear();
       _achievementTiles.addAll(achTiles);
+      _validatePatternTileUniqueness();
 
       await loadPatternRegistry();
       if (_currentUserId != userId) return;
@@ -489,6 +490,48 @@ class AchievementProvider extends ChangeNotifier {
         _achievementTiles[recordId] = matched;
         completed.add(patternId);
         notifyListeners();
+      } else {
+        // 다른 기기/세션에서 먼저 완성되었거나 타일 충돌이 발생했을 수 있습니다.
+        // 서버 상태를 다시 읽어 소비 타일/완료 패턴을 동기화합니다.
+        await _reloadPatternState(userId);
+        completed
+          ..clear()
+          ..addAll(completedPatternIds());
+      }
+    }
+  }
+
+  /// 패턴 해금 충돌/실패 시 서버의 완료 패턴·소비 타일 상태를 다시 동기화합니다.
+  Future<void> _reloadPatternState(String userId) async {
+    try {
+      final unlocked = await _supabase.fetchUserAchievements(userId);
+      final consumed = await _supabase.fetchConsumedTileIds(userId);
+      final achTiles = await _supabase.fetchAchievementTiles(userId);
+      if (_currentUserId != userId) return;
+      _unlockedAchievementIds = unlocked;
+      _consumedTileIds
+        ..clear()
+        ..addAll(consumed);
+      _achievementTiles
+        ..clear()
+        ..addAll(achTiles);
+      notifyListeners();
+    } catch (e) {
+      debugPrint('⚠️ 패턴 상태 재동기화 실패: $e');
+    }
+  }
+
+  /// 로드된 패턴 타일이 여러 패턴에 중복 저장되어 있는지 진단합니다.
+  void _validatePatternTileUniqueness() {
+    final seen = <String, String>{};
+    for (final entry in _achievementTiles.entries) {
+      for (final tileId in entry.value) {
+        final previous = seen[tileId];
+        if (previous != null && previous != entry.key) {
+          debugPrint('⚠️ 패턴 타일 중복 감지: $tileId ($previous / ${entry.key})');
+        } else {
+          seen[tileId] = entry.key;
+        }
       }
     }
   }
