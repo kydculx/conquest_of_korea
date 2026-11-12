@@ -1,7 +1,7 @@
 class VersionConfig {
   /// 수동 관리할 앱 버전 명칭
-  static const String version = '1.1.5';
+  static const String version = '1.1.6';
 
   /// 수동 관리할 앱 빌드 번호
-  static const int buildNumber = 27;
+  static const int buildNumber = 28;
 }
