@@ -6,15 +6,6 @@
 -keep class io.flutter.** { *; }
 -keep class io.flutter.plugins.** { *; }
 
-# Kakao SDK 난독화 예외 지정
--keep class com.kakao.sdk.** { *; }
--keepclassmembers class * implements com.kakao.sdk.common.model.KeepToSdk { *; }
-
-# Health Connect 및 AndroidX Health Client 예외 지정
--keep class androidx.health.connect.client.** { *; }
--keep class androidx.health.platform.client.** { *; }
--dontwarn androidx.health.connect.client.**
-
 # Supabase / HTTP 통신 라이브러리 (OkHttp, Okio) 예외 지정
 -keepattributes Signature, InnerClasses, AnnotationList, EnclosingMethod
 -keep class okhttp3.** { *; }
