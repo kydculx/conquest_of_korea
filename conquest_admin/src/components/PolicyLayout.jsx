@@ -7,6 +7,19 @@ const ACCENT = {
   privacy: '#8b5cf6',
 };
 
+const UPDATED_LABELS = {
+  ko: '최종 업데이트: 2026년 09월',
+  en: 'Last updated: September 2026',
+  ja: '最終更新: 2026年9月',
+  zh: '最后更新: 2026年9月',
+  'zh-TW': '最後更新: 2026年9月',
+  es: 'Última actualización: septiembre de 2026',
+  fr: 'Dernière mise à jour : septembre 2026',
+  de: 'Zuletzt aktualisiert: September 2026',
+  pt: 'Última atualização: setembro de 2026',
+  it: 'Ultimo aggiornamento: settembre 2026',
+};
+
 function renderInline(text) {
   return text.split(/(\*\*[^*]+\*\*)/g).map((part, index) =>
     part.startsWith('**') && part.endsWith('**') ? (
@@ -166,6 +179,19 @@ export default function PolicyLayout({ doc, content, lang, onLangChange }) {
               </section>
             ))}
           </div>
+
+          <p
+            style={{
+              marginTop: '2.5rem',
+              paddingTop: '1.25rem',
+              borderTop: '1px solid #1f2937',
+              color: '#64748b',
+              fontSize: '0.85rem',
+              textAlign: 'right',
+            }}
+          >
+            {UPDATED_LABELS[locale.code] ?? UPDATED_LABELS.en}
+          </p>
         </article>
       </div>
     </div>
