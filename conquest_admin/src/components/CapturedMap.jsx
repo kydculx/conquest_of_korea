@@ -263,7 +263,7 @@ export default function CapturedMap() {
       attributionControl: true,
       minZoom: 2,
       maxZoom: 13,
-      scrollWheelZoom: false,
+      scrollWheelZoom: true,
       doubleClickZoom: false,
       boxZoom: false,
       keyboard: false,
