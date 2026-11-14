@@ -295,7 +295,6 @@ export default function LandingPage() {
         <div className="features-header" data-reveal>
           <span className="eyebrow">LIVE TERRITORY</span>
           <h2 className="section-title">지금 점령된 영토</h2>
-          <p className="territory-desc">플레이어들이 점령한 지역만 표시됩니다. 누가 점령했는지는 공개되지 않습니다.</p>
         </div>
         <div className="territory-panel" data-reveal>
           <LazyCapturedMap />
@@ -502,7 +501,6 @@ export default function LandingPage() {
         .system-text{font-size:.9rem;line-height:1.6;margin:0;color:#9fb0c9}
 
         .territory-section{position:relative;z-index:10;padding:7rem 2rem;background:linear-gradient(to bottom,#090d16,#05070f)}
-        .territory-desc{max-width:640px;margin:1rem auto 0;color:#9fb0c9;font-size:1rem;line-height:1.7}
         .territory-panel{position:relative;max-width:1100px;height:520px;margin:0 auto;border-radius:24px;overflow:hidden;border:1px solid rgba(255,255,255,.08);background:#0b0f19;box-shadow:0 24px 60px -20px rgba(0,0,0,.7)}
         .territory-map-wrap{position:relative;width:100%;height:100%}
         .territory-map{width:100%;height:100%;background:#0b0f19}
@@ -512,9 +510,19 @@ export default function LandingPage() {
         .territory-map .leaflet-control-zoom a{background:rgba(10,14,24,.82);color:#e2e8f0;border-color:rgba(255,255,255,.12)}
         .territory-map .leaflet-control-zoom a:hover{background:rgba(167,139,250,.18);color:#c4b5fd}
         .territory-legend{position:absolute;left:14px;bottom:14px;z-index:500;display:flex;align-items:center;gap:.5rem;background:rgba(10,14,24,.78);border:1px solid rgba(255,255,255,.12);backdrop-filter:blur(10px);padding:.45rem .8rem;border-radius:10px;font-size:.78rem;color:#cbd5e1}
-        .territory-dot{width:9px;height:9px;border-radius:50%;background:#a78bfa;box-shadow:0 0 10px rgba(167,139,250,.8)}
+        .territory-dot{width:9px;height:9px;border-radius:50%;background:linear-gradient(135deg,#00e5ff,#a78bfa,#f472b6,#34d399);box-shadow:0 0 10px rgba(167,139,250,.8)}
         .territory-count{position:absolute;right:14px;top:14px;z-index:500;background:rgba(10,14,24,.78);border:1px solid rgba(255,255,255,.12);backdrop-filter:blur(10px);padding:.45rem .8rem;border-radius:10px;font-size:.78rem;font-weight:700;color:#c4b5fd}
+        .territory-live{position:absolute;left:58px;top:14px;z-index:500;display:inline-flex;align-items:center;gap:.4rem;background:rgba(10,14,24,.78);border:1px solid rgba(255,255,255,.12);backdrop-filter:blur(10px);padding:.4rem .7rem;border-radius:10px;font-size:.7rem;font-weight:800;letter-spacing:.1em;color:#fecaca}
+        .territory-live-dot{width:7px;height:7px;border-radius:50%;background:#ef4444;box-shadow:0 0 10px rgba(239,68,68,.9);animation:territoryLivePulse 1.2s ease-in-out infinite alternate}
+        .territory-actions{position:absolute;right:14px;top:58px;z-index:500;display:flex;flex-direction:column;gap:8px}
+        .territory-action-btn{width:38px;height:38px;display:flex;align-items:center;justify-content:center;background:rgba(10,14,24,.82);border:1px solid rgba(255,255,255,.12);border-radius:10px;color:#e2e8f0;cursor:pointer;backdrop-filter:blur(10px);transition:background .2s,color .2s,border-color .2s}
+        .territory-action-btn:hover{background:rgba(167,139,250,.18);border-color:rgba(167,139,250,.35);color:#e9d5ff}
+        .territory-action-btn:disabled{opacity:.6;cursor:default}
+        .territory-action-btn.is-spinning svg{animation:territorySpin 1s linear infinite}
+        .territory-error{position:absolute;left:14px;right:14px;bottom:56px;z-index:600;padding:.5rem .8rem;border-radius:10px;background:rgba(127,29,29,.9);border:1px solid rgba(248,113,113,.4);color:#fecaca;font-size:.78rem;text-align:center}
         .territory-state{display:flex;align-items:center;justify-content:center;width:100%;height:100%;color:#64748b;font-size:.9rem;background:radial-gradient(circle at 50% 50%,rgba(167,139,250,.08),transparent 70%)}
+        @keyframes territorySpin{to{transform:rotate(360deg)}}
+        @keyframes territoryLivePulse{from{opacity:.55;transform:scale(.85)}to{opacity:1;transform:scale(1.15)}}
 
         .how-section{position:relative;z-index:10;max-width:1100px;margin:0 auto;padding:7rem 2rem}
         .how-header{text-align:center;margin-bottom:3.5rem}
