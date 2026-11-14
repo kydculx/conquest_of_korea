@@ -6,7 +6,7 @@ import { getHexCorners, hexToLatLng } from '../hexGrid';
 
 const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL;
 const SUPABASE_ANON_KEY = import.meta.env.VITE_SUPABASE_ANON_KEY;
-const CACHE_KEY = 'public-captured-tiles-v1';
+const CACHE_KEY = 'public-captured-tiles-v2';
 const CACHE_TTL = 5 * 60 * 1000;
 const KOREA_BOUNDS = L.latLngBounds([[33.0, 124.0], [39.0, 132.0]]);
 const DEFAULT_TILE_COLOR = '#00e5ff';
