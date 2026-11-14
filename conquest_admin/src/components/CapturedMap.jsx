@@ -126,22 +126,9 @@ const CapturedTilesLayer = L.Layer.extend({
     const zoom = map.getZoom();
     const bounds = map.getBounds().pad(0.05);
 
-    if (zoom < 9) {
-      const radius = zoom <= 5 ? 1 : zoom <= 7 ? 1.5 : 2;
-      ctx.fillStyle = 'rgba(56, 189, 248, 0.65)';
-      this._tiles.forEach((tile) => {
-        if (!bounds.contains(tile.center)) return;
-        const point = map.latLngToContainerPoint(tile.center);
-        ctx.beginPath();
-        ctx.arc(point.x, point.y, radius, 0, Math.PI * 2);
-        ctx.fill();
-      });
-      return;
-    }
-
-    ctx.fillStyle = 'rgba(56, 189, 248, 0.55)';
-    ctx.strokeStyle = 'rgba(125, 211, 252, 0.35)';
-    ctx.lineWidth = 1;
+    ctx.fillStyle = 'rgba(167, 139, 250, 0.5)';
+    ctx.strokeStyle = 'rgba(216, 180, 254, 0.85)';
+    ctx.lineWidth = zoom < 8 ? 0.8 : 1.5;
     ctx.beginPath();
 
     this._tiles.forEach((tile) => {
@@ -156,7 +143,7 @@ const CapturedTilesLayer = L.Layer.extend({
     });
 
     ctx.fill();
-    if (zoom >= 11) ctx.stroke();
+    ctx.stroke();
   }
 });
 
@@ -194,12 +181,12 @@ export default function CapturedMap() {
       doubleClickZoom: false,
       boxZoom: false,
       keyboard: false,
-      dragging: !L.Browser.mobile,
-      touchZoom: false
+      dragging: true,
+      touchZoom: true
     });
 
     L.tileLayer(
-      'https://{s}.basemaps.cartocdn.com/dark_nolabels/{z}/{x}/{y}{r}.png?key=cb1_2pao_1_f708f02cfdb298af5ba94a21',
+      'https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png?key=cb1_2pao_1_f708f02cfdb298af5ba94a21',
       {
         subdomains: 'abcd',
         maxZoom: 19,

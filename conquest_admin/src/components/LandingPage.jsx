@@ -291,6 +291,17 @@ export default function LandingPage() {
         </div>
       </section>
 
+      <section className="territory-section">
+        <div className="features-header" data-reveal>
+          <span className="eyebrow">LIVE TERRITORY</span>
+          <h2 className="section-title">지금 점령된 영토</h2>
+          <p className="territory-desc">플레이어들이 점령한 지역만 표시됩니다. 누가 점령했는지는 공개되지 않습니다.</p>
+        </div>
+        <div className="territory-panel" data-reveal>
+          <LazyCapturedMap />
+        </div>
+      </section>
+
       <section className="features-section">
         <div className="features-header" data-reveal>
           <span className="eyebrow">플레이 특징</span>
@@ -322,17 +333,6 @@ export default function LandingPage() {
               <p className="system-text">{s.text}</p>
             </div>
           ))}
-        </div>
-      </section>
-
-      <section className="territory-section">
-        <div className="features-header" data-reveal>
-          <span className="eyebrow">LIVE TERRITORY</span>
-          <h2 className="section-title">지금 점령된 영토</h2>
-          <p className="territory-desc">플레이어들이 점령한 지역만 표시됩니다. 누가 점령했는지는 공개되지 않습니다.</p>
-        </div>
-        <div className="territory-panel" data-reveal>
-          <LazyCapturedMap />
         </div>
       </section>
 
@@ -510,11 +510,11 @@ export default function LandingPage() {
         .territory-map .leaflet-control-attribution{background:rgba(5,7,15,.72);color:#64748b;font-size:10px}
         .territory-map .leaflet-control-attribution a{color:#94a3b8}
         .territory-map .leaflet-control-zoom a{background:rgba(10,14,24,.82);color:#e2e8f0;border-color:rgba(255,255,255,.12)}
-        .territory-map .leaflet-control-zoom a:hover{background:rgba(56,189,248,.16);color:#7dd3fc}
+        .territory-map .leaflet-control-zoom a:hover{background:rgba(167,139,250,.18);color:#c4b5fd}
         .territory-legend{position:absolute;left:14px;bottom:14px;z-index:500;display:flex;align-items:center;gap:.5rem;background:rgba(10,14,24,.78);border:1px solid rgba(255,255,255,.12);backdrop-filter:blur(10px);padding:.45rem .8rem;border-radius:10px;font-size:.78rem;color:#cbd5e1}
-        .territory-dot{width:9px;height:9px;border-radius:50%;background:#38bdf8;box-shadow:0 0 10px rgba(56,189,248,.8)}
-        .territory-count{position:absolute;right:14px;top:14px;z-index:500;background:rgba(10,14,24,.78);border:1px solid rgba(255,255,255,.12);backdrop-filter:blur(10px);padding:.45rem .8rem;border-radius:10px;font-size:.78rem;font-weight:700;color:#7dd3fc}
-        .territory-state{display:flex;align-items:center;justify-content:center;width:100%;height:100%;color:#64748b;font-size:.9rem;background:radial-gradient(circle at 50% 50%,rgba(56,189,248,.06),transparent 70%)}
+        .territory-dot{width:9px;height:9px;border-radius:50%;background:#a78bfa;box-shadow:0 0 10px rgba(167,139,250,.8)}
+        .territory-count{position:absolute;right:14px;top:14px;z-index:500;background:rgba(10,14,24,.78);border:1px solid rgba(255,255,255,.12);backdrop-filter:blur(10px);padding:.45rem .8rem;border-radius:10px;font-size:.78rem;font-weight:700;color:#c4b5fd}
+        .territory-state{display:flex;align-items:center;justify-content:center;width:100%;height:100%;color:#64748b;font-size:.9rem;background:radial-gradient(circle at 50% 50%,rgba(167,139,250,.08),transparent 70%)}
 
         .how-section{position:relative;z-index:10;max-width:1100px;margin:0 auto;padding:7rem 2rem}
         .how-header{text-align:center;margin-bottom:3.5rem}
