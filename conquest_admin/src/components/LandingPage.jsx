@@ -240,7 +240,7 @@ export default function LandingPage() {
               </div>
             </div>
 
-            <div className="hero-visual animate-fade-in">
+            <div className="hero-visual">
               <div className="hud-chip hud-gold">💰 +12 GOLD</div>
               <div className="hud-chip hud-tile">📍 새 타일 점령!</div>
               <div className="map-view-card">
@@ -409,7 +409,7 @@ export default function LandingPage() {
         .hero-section{--hp:0;position:relative;z-index:10;height:260vh}
         .hero-sticky{position:sticky;top:0;height:100vh;display:flex;flex-direction:column;justify-content:center;overflow:hidden}
         .hero-inner{max-width:1200px;width:100%;margin:0 auto;padding:5rem 2rem 0 2rem;display:grid;grid-template-columns:1.05fr .95fr;gap:4rem;align-items:center}
-        .hero-content{opacity:calc(1 - var(--hp)*2);transform:translateY(calc(var(--hp)*-90px))}
+        .hero-content{opacity:calc(1 - var(--hp)*2);transform:translateY(calc(var(--hp)*-90px));will-change:opacity,transform}
         .tag-badge{display:inline-flex;align-items:center;gap:.5rem;background:rgba(59,130,246,.08);border:1px solid rgba(59,130,246,.15);color:#60a5fa;padding:.5rem 1.1rem;border-radius:30px;font-size:.85rem;font-weight:700;width:fit-content;margin-bottom:1.5rem;box-shadow:inset 0 0 8px rgba(59,130,246,.1)}
         .glow-icon{animation:pulseGlowIcon 1.5s infinite alternate}
         .hero-title{font-size:clamp(3rem,6.5vw,5.4rem);font-weight:700;line-height:1.06;letter-spacing:-.04em;margin:0 0 1.8rem 0}
@@ -426,7 +426,7 @@ export default function LandingPage() {
         .badge-link:hover::after{left:130%}
         .badge-img{height:52px;display:block}
 
-        .hero-visual{position:relative;display:flex;justify-content:center;transform:translateY(calc(var(--hp)*-36px)) scale(calc(1 + var(--hp)*.08));transition:transform .1s linear}
+        .hero-visual{position:relative;display:flex;justify-content:center;opacity:clamp(0,calc((0.42 - var(--hp))*5.9),1);transform:translateY(calc(var(--hp)*-20px)) scale(calc(1 + var(--hp)*.03));will-change:opacity,transform}
         .map-view-card{position:relative;width:100%;max-width:260px;aspect-ratio:1284/2778;border-radius:26px;overflow:hidden;border:1px solid rgba(255,255,255,.1);background:#0b0f19;box-shadow:0 30px 60px -15px rgba(0,0,0,.85),0 0 50px rgba(56,189,248,.12);animation:mockupFloat 6s ease-in-out infinite}
         .map-grid-bg{position:absolute;inset:0;z-index:1;background-image:radial-gradient(rgba(56,189,248,.18) 1px,transparent 1px);background-size:22px 22px;mask-image:radial-gradient(circle at 50% 45%,#000,transparent 78%);-webkit-mask-image:radial-gradient(circle at 50% 45%,#000,transparent 78%);pointer-events:none}
         .map-shot-img{position:absolute;inset:0;width:100%;height:100%;object-fit:contain;opacity:0;z-index:1;will-change:opacity,transform;animation-name:shotCycle;animation-timing-function:linear;animation-iteration-count:infinite}
@@ -461,7 +461,7 @@ export default function LandingPage() {
         .cue-icon{animation:cueBob 1.6s ease-in-out infinite}
         @keyframes cueBob{0%,100%{transform:translateY(0)}50%{transform:translateY(6px)}}
 
-        .hero-mid{position:absolute;inset:0;z-index:5;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;padding:0 2rem;pointer-events:none;opacity:clamp(0,calc((var(--hp) - .42)*3.2),1)}
+        .hero-mid{position:absolute;inset:0;z-index:5;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;padding:0 2rem;pointer-events:none;opacity:clamp(0,calc((var(--hp) - .42)*3.2),1);will-change:opacity}
         .hero-mid::before{content:'';position:absolute;inset:0;background:radial-gradient(52% 46% at 50% 50%,rgba(5,7,15,.9),transparent 78%)}
         .hero-mid-line{position:relative;font-family:'Outfit',sans-serif;font-size:clamp(1.9rem,4.2vw,3.4rem);font-weight:700;letter-spacing:-.03em;color:#f1f5f9;margin:0;line-height:1.25;transform:translateY(calc((1 - var(--hp))*26px))}
         .hero-mid-accent{background:linear-gradient(135deg,#38bdf8,#a78bfa,#34d399);-webkit-background-clip:text;WebkitBackgroundClip:text;-webkit-text-fill-color:transparent;background-clip:text}
@@ -566,7 +566,7 @@ export default function LandingPage() {
           .hero-section{height:auto}
           .hero-sticky{position:static;height:auto;padding-bottom:3rem}
           .hero-content{opacity:1;transform:none}
-          .hero-visual{transform:none;transition:none}
+          .hero-visual{transform:none;transition:none;opacity:1}
           .scroll-cue{display:none}
           .hero-mid{display:none}
           .hero-inner{grid-template-columns:1fr;text-align:center;padding:4rem 1.5rem 0 1.5rem;gap:3rem}
