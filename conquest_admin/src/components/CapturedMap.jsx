@@ -111,14 +111,12 @@ async function fetchTiles(force = false) {
 
 async function loadPreparedTiles(force = false) {
   const rows = await fetchTiles(force);
-  return rows
-    .map(({ q, r, color }) => ({
-      q,
-      r,
-      color,
-      center: L.latLng(hexToLatLng(q, r))
-    }))
-    .filter((tile) => KOREA_BOUNDS.contains(tile.center));
+  return rows.map(({ q, r, color }) => ({
+    q,
+    r,
+    color,
+    center: L.latLng(hexToLatLng(q, r))
+  }));
 }
 
 const CapturedTilesLayer = L.Layer.extend({
@@ -139,12 +137,33 @@ const CapturedTilesLayer = L.Layer.extend({
     this._canvas = canvas;
     map.getPanes().overlayPane.appendChild(canvas);
     map.on('moveend zoomend resize', this._reset, this);
+    map.on('zoom', this._scheduleReset, this);
+    map.on('zoomanim', this._animateZoom, this);
     this._reset();
   },
 
   onRemove(map) {
     map.off('moveend zoomend resize', this._reset, this);
+    map.off('zoom', this._scheduleReset, this);
+    map.off('zoomanim', this._animateZoom, this);
+    if (this._raf) cancelAnimationFrame(this._raf);
     this._canvas.remove();
+  },
+
+  _animateZoom(event) {
+    const map = this._map;
+    const scale = map.getZoomScale(event.zoom);
+    const offset = map._latLngBoundsToNewLayerBounds(map.getBounds(), event.zoom, event.center).min;
+    L.DomUtil.setTransform(this._canvas, offset, scale);
+  },
+
+  _scheduleReset() {
+    if (this._raf) return;
+    this._raf = requestAnimationFrame(() => {
+      this._raf = 0;
+      if (this._map?._animatingZoom) return;
+      this._reset();
+    });
   },
 
   _reset() {
@@ -169,6 +188,21 @@ const CapturedTilesLayer = L.Layer.extend({
     const map = this._map;
     const zoom = map.getZoom();
     const bounds = map.getBounds().pad(0.05);
+
+    if (zoom < 7) {
+      const radius = zoom <= 3 ? 1.4 : zoom <= 5 ? 1.8 : 2.2;
+      this._groups.forEach((group, color) => {
+        ctx.fillStyle = hexToRgba(color, 0.9);
+        group.forEach((tile) => {
+          if (!bounds.contains(tile.center)) return;
+          const point = map.latLngToContainerPoint(tile.center);
+          ctx.beginPath();
+          ctx.arc(point.x, point.y, radius, 0, Math.PI * 2);
+          ctx.fill();
+        });
+      });
+      return;
+    }
 
     this._groups.forEach((group, color) => {
       ctx.fillStyle = hexToRgba(color, 0.45);
@@ -227,7 +261,7 @@ export default function CapturedMap() {
     const map = L.map(containerRef.current, {
       zoomControl: true,
       attributionControl: true,
-      minZoom: 3,
+      minZoom: 2,
       maxZoom: 13,
       scrollWheelZoom: false,
       doubleClickZoom: false,
@@ -246,7 +280,11 @@ export default function CapturedMap() {
       }
     ).addTo(map);
 
-    map.fitBounds(KOREA_BOUNDS, { padding: [24, 24], maxZoom: 8 });
+    const tileBounds = L.latLngBounds(tiles.map((tile) => tile.center));
+    map.fitBounds(tileBounds.isValid() ? tileBounds : KOREA_BOUNDS, {
+      padding: [24, 24],
+      maxZoom: 8
+    });
     mapRef.current = map;
     layerRef.current = new CapturedTilesLayer(tiles).addTo(map);
 
@@ -323,8 +361,6 @@ export default function CapturedMap() {
         <span className="territory-live-dot" />
         <span>LIVE</span>
       </div>
-      <div className="territory-count">{count.toLocaleString('ko-KR')} 타일</div>
-      <div className="territory-legend"><span className="territory-dot" />점령 지역</div>
       <div className="territory-actions">
         <button
           type="button"
