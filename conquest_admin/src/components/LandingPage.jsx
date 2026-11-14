@@ -61,6 +61,41 @@ function LiveFeed() {
   );
 }
 
+const CapturedMap = React.lazy(() => import('./CapturedMap'));
+
+function LazyCapturedMap() {
+  const ref = React.useRef(null);
+  const [visible, setVisible] = React.useState(
+    () => typeof window !== 'undefined' && !('IntersectionObserver' in window)
+  );
+
+  React.useEffect(() => {
+    const el = ref.current;
+    if (!el) return undefined;
+    if (!('IntersectionObserver' in window)) return undefined;
+    const io = new IntersectionObserver(([entry]) => {
+      if (entry.isIntersecting) {
+        setVisible(true);
+        io.disconnect();
+      }
+    }, { rootMargin: '300px' });
+    io.observe(el);
+    return () => io.disconnect();
+  }, []);
+
+  return (
+    <div ref={ref} className="territory-map-wrap">
+      {visible ? (
+        <React.Suspense fallback={<div className="territory-state">지도를 불러오는 중...</div>}>
+          <CapturedMap />
+        </React.Suspense>
+      ) : (
+        <div className="territory-state">지도를 불러오는 중...</div>
+      )}
+    </div>
+  );
+}
+
 export default function LandingPage() {
   const navigate = useNavigate();
   const heroRef = React.useRef(null);
@@ -290,6 +325,17 @@ export default function LandingPage() {
         </div>
       </section>
 
+      <section className="territory-section">
+        <div className="features-header" data-reveal>
+          <span className="eyebrow">LIVE TERRITORY</span>
+          <h2 className="section-title">지금 점령된 영토</h2>
+          <p className="territory-desc">플레이어들이 점령한 지역만 표시됩니다. 누가 점령했는지는 공개되지 않습니다.</p>
+        </div>
+        <div className="territory-panel" data-reveal>
+          <LazyCapturedMap />
+        </div>
+      </section>
+
       <section className="how-section">
         <div className="how-header" data-reveal>
           <span className="eyebrow">시작하는 방법</span>
@@ -455,6 +501,21 @@ export default function LandingPage() {
         .system-title{font-size:1.15rem;font-weight:700;margin:0 0 .6rem 0;color:#f1f5f9}
         .system-text{font-size:.9rem;line-height:1.6;margin:0;color:#9fb0c9}
 
+        .territory-section{position:relative;z-index:10;padding:7rem 2rem;background:linear-gradient(to bottom,#090d16,#05070f)}
+        .territory-desc{max-width:640px;margin:1rem auto 0;color:#9fb0c9;font-size:1rem;line-height:1.7}
+        .territory-panel{position:relative;max-width:1100px;height:520px;margin:0 auto;border-radius:24px;overflow:hidden;border:1px solid rgba(255,255,255,.08);background:#0b0f19;box-shadow:0 24px 60px -20px rgba(0,0,0,.7)}
+        .territory-map-wrap{position:relative;width:100%;height:100%}
+        .territory-map{width:100%;height:100%;background:#0b0f19}
+        .territory-map.leaflet-container{background:#0b0f19;font-family:inherit}
+        .territory-map .leaflet-control-attribution{background:rgba(5,7,15,.72);color:#64748b;font-size:10px}
+        .territory-map .leaflet-control-attribution a{color:#94a3b8}
+        .territory-map .leaflet-control-zoom a{background:rgba(10,14,24,.82);color:#e2e8f0;border-color:rgba(255,255,255,.12)}
+        .territory-map .leaflet-control-zoom a:hover{background:rgba(56,189,248,.16);color:#7dd3fc}
+        .territory-legend{position:absolute;left:14px;bottom:14px;z-index:500;display:flex;align-items:center;gap:.5rem;background:rgba(10,14,24,.78);border:1px solid rgba(255,255,255,.12);backdrop-filter:blur(10px);padding:.45rem .8rem;border-radius:10px;font-size:.78rem;color:#cbd5e1}
+        .territory-dot{width:9px;height:9px;border-radius:50%;background:#38bdf8;box-shadow:0 0 10px rgba(56,189,248,.8)}
+        .territory-count{position:absolute;right:14px;top:14px;z-index:500;background:rgba(10,14,24,.78);border:1px solid rgba(255,255,255,.12);backdrop-filter:blur(10px);padding:.45rem .8rem;border-radius:10px;font-size:.78rem;font-weight:700;color:#7dd3fc}
+        .territory-state{display:flex;align-items:center;justify-content:center;width:100%;height:100%;color:#64748b;font-size:.9rem;background:radial-gradient(circle at 50% 50%,rgba(56,189,248,.06),transparent 70%)}
+
         .how-section{position:relative;z-index:10;max-width:1100px;margin:0 auto;padding:7rem 2rem}
         .how-header{text-align:center;margin-bottom:3.5rem}
         .timeline{position:relative;display:grid;grid-template-columns:repeat(3,1fr);gap:2rem}
@@ -519,6 +580,8 @@ export default function LandingPage() {
           .timeline::before{display:none}
           .systems-grid{grid-template-columns:repeat(2,1fr)}
           .features-section,.systems-section{padding:5rem 1.5rem}
+          .territory-section{padding:5rem 1.5rem}
+          .territory-panel{height:380px}
           .cta-panel::after{display:none}
         }
 
