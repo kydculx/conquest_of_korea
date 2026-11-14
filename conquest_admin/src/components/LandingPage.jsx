@@ -18,19 +18,51 @@ import {
 } from 'lucide-react';
 
 const HERO_ROTATE_INTERVAL_SEC = 1.5;
+const asset = (path) => `${import.meta.env.BASE_URL}${path}`;
+const HERO_IMAGES = [
+  'screenshots/app-map.webp',
+  'screenshots/app-gallery.webp',
+  'screenshots/app-ranking.webp',
+  'screenshots/app-achievements.webp',
+  'screenshots/app-pattern.webp',
+  'screenshots/app-monthly.webp',
+  'screenshots/app-splash.webp'
+].map(asset);
+
+const LIVE_FEED = [
+  { emoji: '🎉', accent: '#38bdf8', region: '서울 강남구', action: '새 타일을 점령했다' },
+  { emoji: '🔥', accent: '#f472b6', region: '부산 해운대구', action: '영토가 빠르게 확장 중' },
+  { emoji: '🏃', accent: '#34d399', region: '한강 러닝 코스', action: '러너가 지도를 채우는 중' },
+  { emoji: '✨', accent: '#a78bfa', region: '제주 앞바다', action: '먼 바다 타일을 원격 점령' },
+  { emoji: '📸', accent: '#fbbf24', region: '경북 경주시', action: '점령지에 사진이 올라왔다' }
+];
+
+function LiveFeed() {
+  const [feedIdx, setFeedIdx] = React.useState(0);
+  React.useEffect(() => {
+    const timer = setInterval(() => setFeedIdx((i) => i + 1), 3200);
+    return () => clearInterval(timer);
+  }, []);
+
+  const currentFeed = LIVE_FEED[feedIdx % LIVE_FEED.length];
+  const previousFeed = LIVE_FEED[(feedIdx + LIVE_FEED.length - 1) % LIVE_FEED.length];
+
+  return (
+    <div className="live-feed">
+      <div key={`prev-${feedIdx}`} className="feed-toast feed-prev">
+        <span className="feed-dot" style={{ background: previousFeed.accent }} />
+        <span>{previousFeed.emoji} <b>{previousFeed.region}</b> {previousFeed.action}</span>
+      </div>
+      <div key={`cur-${feedIdx}`} className="feed-toast feed-current" style={{ '--fa': currentFeed.accent }}>
+        <span className="feed-dot" style={{ background: currentFeed.accent }} />
+        <span>{currentFeed.emoji} <b>{currentFeed.region}</b> {currentFeed.action}</span>
+      </div>
+    </div>
+  );
+}
 
 export default function LandingPage() {
   const navigate = useNavigate();
-  const screenshots = [
-    '/screenshot_splash.jpg',
-    '/screenshot_satellite.jpg',
-    '/screenshot_neon.jpg'
-  ];
-  const heroImages = [
-    '/screenshot_splash.jpg',
-    '/screenshot_neon.jpg',
-    '/screenshot_satellite.jpg'
-  ];
   const heroRef = React.useRef(null);
 
   React.useEffect(() => {
@@ -73,22 +105,6 @@ export default function LandingPage() {
     };
   }, []);
 
-  const [feedIdx, setFeedIdx] = React.useState(0);
-  React.useEffect(() => {
-    const timer = setInterval(() => setFeedIdx((i) => i + 1), 3200);
-    return () => clearInterval(timer);
-  }, []);
-
-  const liveFeed = [
-    { emoji: '🎉', accent: '#38bdf8', region: '서울 강남구', action: '새 타일을 점령했다' },
-    { emoji: '🔥', accent: '#f472b6', region: '부산 해운대구', action: '영토가 빠르게 확장 중' },
-    { emoji: '🏃', accent: '#34d399', region: '한강 러닝 코스', action: '러너가 지도를 채우는 중' },
-    { emoji: '✨', accent: '#a78bfa', region: '제주 앞바다', action: '먼 바다 타일을 원격 점령' },
-    { emoji: '📸', accent: '#fbbf24', region: '경북 경주시', action: '점령지에 사진이 올라왔다' }
-  ];
-  const currentFeed = liveFeed[feedIdx % liveFeed.length];
-  const previousFeed = liveFeed[(feedIdx + liveFeed.length - 1) % liveFeed.length];
-
   const spotlight = (e) => {
     const target = e.currentTarget;
     const rect = target.getBoundingClientRect();
@@ -111,22 +127,18 @@ export default function LandingPage() {
 
   const rows = [
     {
-      img: screenshots[0],
       items: [
         { icon: <Zap size={20} />, title: '🏃 러닝 & 조깅 페이스메이커', text: '달리는 매 순간이 내 영토로 바뀝니다. 내가 그은 러닝 루트가 지도 위 점령지가 되고, 매일의 운동이 게임처럼 즐거워집니다.' },
         { icon: <Navigation size={20} style={{ transform: 'rotate(45deg)' }} />, title: '🚌 출퇴근길 자동 영토 점령', text: '출퇴근 버스·지하철 이동이 자동으로 점령지가 됩니다. 앱을 켜두기만 하면 매일의 통근이 눈에 보이는 영토로 쌓입니다.' }
       ]
     },
     {
-      img: screenshots[1],
-      reverse: true,
       items: [
         { icon: <Palette size={20} />, title: '🎨 내 발자국으로 그리는 맵 아트', text: '점령한 타일을 이어 하트·글자 등 나만의 무늬를 완성하세요. 지도가 점점 나만의 작품으로 채워집니다.' },
         { icon: <Coins size={20} />, title: '🪙 골목 산책과 보물찾기', text: '안 가본 골목을 돌다 보면 숨겨진 골드가 나타납니다. 일상 속 작은 탐험이 보상이 되는 경험을 줍니다.' }
       ]
     },
     {
-      img: screenshots[2],
       items: [
         { icon: <MapPin size={20} />, title: '🛋️ 집 안에서 즐기는 원격 점령', text: '강 건너나 먼 곳, 날씨가 안 좋은 날엔 모아둔 골드로 원격 점령합니다. 직접 가지 않아도 내 영토는 계속 넓어집니다.' },
         { icon: <Camera size={20} />, title: '📸 내 주변 현장 촬영 및 갤러리 공유', text: '점령한 타일에서 찍은 사진이 지도 갤러리에 남습니다. 내 발자국이 남긴 풍경을 다른 플레이어와 나눌 수 있습니다.' }
@@ -142,10 +154,6 @@ export default function LandingPage() {
 
   return (
     <div className="premium-landing-root">
-      <link rel="preconnect" href="https://fonts.googleapis.com" />
-      <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="true" />
-      <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;800&family=Plus+Jakarta+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet" />
-
       <div className="stars" aria-hidden="true" />
       <div className="bg-glow-orb orb-1" />
       <div className="bg-glow-orb orb-2" />
@@ -155,7 +163,7 @@ export default function LandingPage() {
         <div className="header-container">
           <div className="logo-group">
             <div className="logo-glow-icon">
-              <img src="/app_icon.png" alt="Logo" style={{ width: '32px', height: '32px', objectFit: 'contain', borderRadius: '8px' }} />
+              <img src={asset('app_icon_64.png')} alt="Logo" width="32" height="32" decoding="async" style={{ width: '32px', height: '32px', objectFit: 'contain', borderRadius: '8px' }} />
             </div>
             <span className="logo-text">찜! 모험</span>
           </div>
@@ -189,10 +197,10 @@ export default function LandingPage() {
               </p>
               <div className="download-badges animate-slide-up-delay-2">
                 <a href="https://play.google.com/store/apps/details?id=com.watercherry.conquestofkorea" target="_blank" rel="noopener noreferrer" className="badge-link">
-                  <img src="https://upload.wikimedia.org/wikipedia/commons/7/78/Google_Play_Store_badge_EN.svg" alt="Get it on Google Play" className="badge-img" />
+                  <img src={asset('badge_google_play.svg')} alt="Get it on Google Play" className="badge-img" />
                 </a>
                 <a href="https://apps.apple.com/kr/app/%EC%B0%9C-%EB%8C%80%EB%AA%A8%ED%97%98/id6769717240" target="_blank" rel="noopener noreferrer" className="badge-link">
-                  <img src="https://upload.wikimedia.org/wikipedia/commons/3/3c/Download_on_the_App_Store_Badge.svg" alt="Download on the App Store" className="badge-img" />
+                  <img src={asset('badge_app_store.svg')} alt="Download on the App Store" className="badge-img" />
                 </a>
               </div>
             </div>
@@ -202,30 +210,26 @@ export default function LandingPage() {
               <div className="hud-chip hud-tile">📍 새 타일 점령!</div>
               <div className="map-view-card">
                 <div className="map-grid-bg" />
-                {heroImages.map((src, index) => (
+                {HERO_IMAGES.map((src, index) => (
                   <img
                     key={src}
                     src={src}
                     alt="게임 화면 미리보기"
                     className="map-shot-img"
+                    width="600"
+                    height="1298"
+                    loading={index === 0 ? 'eager' : 'lazy'}
+                    fetchPriority={index === 0 ? 'high' : 'low'}
+                    decoding="async"
                     style={{
                       animationDelay: `${index * HERO_ROTATE_INTERVAL_SEC}s`,
-                      animationDuration: `${HERO_ROTATE_INTERVAL_SEC * heroImages.length}s`
+                      animationDuration: `${HERO_ROTATE_INTERVAL_SEC * HERO_IMAGES.length}s`
                     }}
                   />
                 ))}
                 <div className="map-pin"><span className="pin-core" /></div>
               </div>
-              <div className="live-feed">
-                <div key={`prev-${feedIdx}`} className="feed-toast feed-prev">
-                  <span className="feed-dot" style={{ background: previousFeed.accent }} />
-                  <span>{previousFeed.emoji} <b>{previousFeed.region}</b> {previousFeed.action}</span>
-                </div>
-                <div key={`cur-${feedIdx}`} className="feed-toast feed-current" style={{ '--fa': currentFeed.accent }}>
-                  <span className="feed-dot" style={{ background: currentFeed.accent }} />
-                  <span>{currentFeed.emoji} <b>{currentFeed.region}</b> {currentFeed.action}</span>
-                </div>
-              </div>
+              <LiveFeed />
             </div>
           </div>
           <div className="scroll-cue">
@@ -309,10 +313,10 @@ export default function LandingPage() {
           <p className="cta-desc">가까운 길부터 시작되는 실시간 위치 기반 점령 게임.</p>
           <div className="download-badges center">
             <a href="https://play.google.com/store/apps/details?id=com.watercherry.conquestofkorea" target="_blank" rel="noopener noreferrer" className="badge-link">
-              <img src="https://upload.wikimedia.org/wikipedia/commons/7/78/Google_Play_Store_badge_EN.svg" alt="Get it on Google Play" className="badge-img" />
+              <img src={asset('badge_google_play.svg')} alt="Get it on Google Play" className="badge-img" />
             </a>
             <a href="https://apps.apple.com/kr/app/%EC%B0%9C-%EB%8C%80%EB%AA%A8%ED%98%98/id6769717240" target="_blank" rel="noopener noreferrer" className="badge-link">
-              <img src="https://upload.wikimedia.org/wikipedia/commons/3/3c/Download_on_the_App_Store_Badge.svg" alt="Download on the App Store" className="badge-img" />
+              <img src={asset('badge_app_store.svg')} alt="Download on the App Store" className="badge-img" />
             </a>
           </div>
         </div>
@@ -322,7 +326,7 @@ export default function LandingPage() {
         <div className="footer-container">
           <div className="footer-brand">
             <div className="logo-group">
-              <img src="/app_icon.png" alt="Logo" style={{ width: '24px', height: '24px', objectFit: 'contain', borderRadius: '4px' }} />
+              <img src={asset('app_icon_64.png')} alt="Logo" width="24" height="24" decoding="async" style={{ width: '24px', height: '24px', objectFit: 'contain', borderRadius: '4px' }} />
               <span className="brand-title">찜! 모험</span>
             </div>
             <p className="copy-text">&copy; {new Date().getFullYear()} 찜! 모험 Project. All rights reserved.</p>
@@ -380,13 +384,13 @@ export default function LandingPage() {
         .hero-visual{position:relative;display:flex;justify-content:center;transform:translateY(calc(var(--hp)*-36px)) scale(calc(1 + var(--hp)*.08));transition:transform .1s linear}
         .map-view-card{position:relative;width:100%;max-width:260px;aspect-ratio:1284/2778;border-radius:26px;overflow:hidden;border:1px solid rgba(255,255,255,.1);background:#0b0f19;box-shadow:0 30px 60px -15px rgba(0,0,0,.85),0 0 50px rgba(56,189,248,.12);animation:mockupFloat 6s ease-in-out infinite}
         .map-grid-bg{position:absolute;inset:0;z-index:1;background-image:radial-gradient(rgba(56,189,248,.18) 1px,transparent 1px);background-size:22px 22px;mask-image:radial-gradient(circle at 50% 45%,#000,transparent 78%);-webkit-mask-image:radial-gradient(circle at 50% 45%,#000,transparent 78%);pointer-events:none}
-        .map-shot-img{position:absolute;inset:0;width:100%;height:100%;object-fit:contain;opacity:0;z-index:1;animation-name:shotCycle;animation-timing-function:linear;animation-iteration-count:infinite}
+        .map-shot-img{position:absolute;inset:0;width:100%;height:100%;object-fit:contain;opacity:0;z-index:1;will-change:opacity,transform;animation-name:shotCycle;animation-timing-function:linear;animation-iteration-count:infinite}
         @keyframes shotCycle{
           0%{opacity:0;transform:scale(1.1)}
-          11.11%{opacity:1}
-          30%{opacity:1}
-          42.22%{opacity:0;transform:scale(1.02)}
-          42.23%,100%{opacity:0}
+          1%{opacity:1}
+          13%{opacity:1}
+          15.5%{opacity:0;transform:scale(1.02)}
+          15.51%,100%{opacity:0}
         }
         .map-live-chip{position:absolute;top:14px;left:14px;z-index:3;display:inline-flex;align-items:center;gap:.45rem;background:rgba(10,14,24,.7);border:1px solid rgba(255,255,255,.12);backdrop-filter:blur(10px);padding:.4rem .8rem;border-radius:12px;font-size:.76rem;font-weight:600;color:#e2e8f0}
         .live-dot{width:8px;height:8px;border-radius:50%;background:#34d399;box-shadow:0 0 10px #34d399;animation:pulseGlowIcon 1.4s infinite alternate}
@@ -491,6 +495,8 @@ export default function LandingPage() {
         @keyframes slideUp{from{opacity:0;transform:translateY(20px)}to{opacity:1;transform:translateY(0)}}
 
         @media (max-width:968px){
+          .bg-glow-orb{display:none}
+          .stars{animation:none}
           .hero-section{height:auto}
           .hero-sticky{position:static;height:auto;padding-bottom:3rem}
           .hero-content{opacity:1;transform:none}
