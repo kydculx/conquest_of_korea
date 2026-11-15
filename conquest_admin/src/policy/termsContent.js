@@ -84,7 +84,7 @@ export const termsContent = {
                 "indent": false
               },
               {
-                "text": "2. 서비스의 특성상 플레이어가 설정한 닉네임과 확보한 영토의 현황 등 게임 내에서 다른 플레이어에게 공개되도록 설정된 정보는 플레이어 간의 원활한 상호작용을 위해 제한적으로 노출될 수 있습니다.",
+                "text": "2. 서비스의 특성상 플레이어가 설정한 닉네임과 확보한 구역의 현황 등 게임 내에서 다른 플레이어에게 공개되도록 설정된 정보는 플레이어 간의 원활한 상호작용을 위해 제한적으로 노출될 수 있습니다.",
                 "danger": false,
                 "indent": false
               }
@@ -103,7 +103,7 @@ export const termsContent = {
             "type": "ul",
             "items": [
               {
-                "text": "1. 실시간 영토 점령 처리: 플레이어가 모바일 기기를 지참하고 특정 헥사곤 그리드 영역에 진입하였을 때 해당 위치의 위경도 좌표를 연산하여 해당 플레이어의 영토로 확보 및 기록하는 서비스.",
+                "text": "1. 실시간 구역 점령 처리: 플레이어가 모바일 기기를 지참하고 특정 헥사곤 그리드 영역에 진입하였을 때 해당 위치의 위경도 좌표를 연산하여 해당 플레이어의 구역으로 확보 및 기록하는 서비스.",
                 "danger": false,
                 "indent": false
               },
@@ -212,7 +212,7 @@ export const termsContent = {
                 "indent": false
               },
               {
-                "text": "2. 실제 현장에 방문하지 않고 GPS 위조 소프트웨어(GPS Spoofing), 에뮬레이터 위치 조작 도구 등을 사용하여 비정상적인 방법으로 가상의 위치 좌표를 전송해 영토를 획득하는 행위.",
+                "text": "2. 실제 현장에 방문하지 않고 GPS 위조 소프트웨어(GPS Spoofing), 에뮬레이터 위치 조작 도구 등을 사용하여 비정상적인 방법으로 가상의 위치 좌표를 전송해 구역을 획득하는 행위.",
                 "danger": true,
                 "indent": false
               },
@@ -222,7 +222,7 @@ export const termsContent = {
                 "indent": false
               },
               {
-                "text": "4. 게임 내의 오류나 버그를 의도적으로 악용하여 비정상적으로 골드(GP)를 획득하거나 비정상적인 영토 점령 상태를 유도하는 행위.",
+                "text": "4. 게임 내의 오류나 버그를 의도적으로 악용하여 비정상적으로 골드(GP)를 획득하거나 비정상적인 구역 점령 상태를 유도하는 행위.",
                 "danger": false,
                 "indent": false
               }
@@ -247,12 +247,12 @@ export const termsContent = {
                 "indent": true
               },
               {
-                "text": "나. 영토 몰수 및 초기화: 비정상적인 위치 조작이나 버그 악용을 통해 확보된 모든 영토는 사전 통지 없이 강제 회수되며 즉시 중립 영토로 전환 및 초기화됩니다.",
+                "text": "나. 구역 몰수 및 초기화: 비정상적인 위치 조작이나 버그 악용을 통해 확보된 모든 구역은 사전 통지 없이 강제 회수되며 즉시 중립 구역으로 전환 및 초기화됩니다.",
                 "danger": true,
                 "indent": true
               },
               {
-                "text": "다. 계정 이용 제한: 일정 기간 동안 게임 접속 및 영토 점령 등의 전체 서비스 이용을 정지합니다.",
+                "text": "다. 계정 이용 제한: 일정 기간 동안 게임 접속 및 구역 점령 등의 전체 서비스 이용을 정지합니다.",
                 "danger": false,
                 "indent": true
               },
@@ -302,22 +302,22 @@ export const termsContent = {
             "type": "ul",
             "items": [
               {
-                "text": "1. '골드(GP)'는 게임 서비스 내에서 영토 확보 및 특정 모드를 구동하기 위해 사용되는 무상의 가상 데이터 재화입니다.",
+                "text": "1. '골드(GP)'는 게임 서비스 내에서 구역 확보 및 특정 모드를 구동하기 위해 사용되는 무상의 가상 데이터 재화입니다.",
                 "danger": false,
                 "indent": false
               },
               {
-                "text": "2. 골드(GP)는 회원 가입 유지, 영토 점령 수 및 점령 지속 시간 등에 비례하여 시스템적으로 자동 누적 제공되며, 현실의 재화가 아닙니다.",
+                "text": "2. 골드(GP)는 회원 가입 유지, 구역 점령 수 및 점령 지속 시간 등에 비례하여 시스템적으로 자동 누적 제공되며, 현실의 재화가 아닙니다.",
                 "danger": false,
                 "indent": false
               },
               {
-                "text": "3. 플레이어는 골드(GP) 및 영토 등의 게임 내 데이터를 타인에게 유상으로 판매, 양도, 대여하거나 실제 현금으로 환전하는 모든 거래 행위를 할 수 없습니다.",
+                "text": "3. 플레이어는 골드(GP) 및 구역 등의 게임 내 데이터를 타인에게 유상으로 판매, 양도, 대여하거나 실제 현금으로 환전하는 모든 거래 행위를 할 수 없습니다.",
                 "danger": false,
                 "indent": false
               },
               {
-                "text": "4. 서비스 해지(회원 탈퇴) 시 플레이어가 보유 중이던 골드(GP)와 점령 영토 데이터는 전부 소멸하며 복구할 수 없습니다.",
+                "text": "4. 서비스 해지(회원 탈퇴) 시 플레이어가 보유 중이던 골드(GP)와 점령 구역 데이터는 전부 소멸하며 복구할 수 없습니다.",
                 "danger": false,
                 "indent": false
               }
@@ -362,12 +362,12 @@ export const termsContent = {
                 "indent": false
               },
               {
-                "text": "2. 회사는 플레이어 개개인의 단말기 성능, 기기 설정(위치 권한 미허용, 절전 모드 등), GPS 오차 또는 통신 상태 불량으로 인하여 발생한 영토 획득 판정 실패, 골드 누적 오류 및 데이터 지연에 대하여 책임을 지지 않습니다.",
+                "text": "2. 회사는 플레이어 개개인의 단말기 성능, 기기 설정(위치 권한 미허용, 절전 모드 등), GPS 오차 또는 통신 상태 불량으로 인하여 발생한 구역 획득 판정 실패, 골드 누적 오류 및 데이터 지연에 대하여 책임을 지지 않습니다.",
                 "danger": false,
                 "indent": false
               },
               {
-                "text": "3. 플레이어는 실제 야외 도보 및 이동을 통해 영토를 확보하는 위치기반 게임의 성격을 충분히 인지해야 하며, 주변 환경의 위험성에 대비하여 모든 안전 수칙을 스스로 준수해야 합니다. 회사는 플레이어 본인의 부주의로 발생한 어떠한 신체적 상해, 사고에 대해서도 책임을 지지 않습니다.",
+                "text": "3. 플레이어는 실제 야외 도보 및 이동을 통해 구역을 확보하는 위치기반 게임의 성격을 충분히 인지해야 하며, 주변 환경의 위험성에 대비하여 모든 안전 수칙을 스스로 준수해야 합니다. 회사는 플레이어 본인의 부주의로 발생한 어떠한 신체적 상해, 사고에 대해서도 책임을 지지 않습니다.",
                 "danger": false,
                 "indent": false
               }
@@ -387,7 +387,7 @@ export const termsContent = {
                 "indent": false
               },
               {
-                "text": "2. 회원 탈퇴 시 플레이어가 점령했던 모든 헥사곤 영토는 즉시 중립화 상태로 전환되어 다른 플레이어가 자유롭게 획득할 수 있게 되며, 보유하고 있던 모든 가상 재화와 전적 통계, 수집된 식별 데이터는 복구 불가능한 상태로 실서버 DB에서 즉시 완전 삭제(Cascade Delete)됩니다.",
+                "text": "2. 회원 탈퇴 시 플레이어가 점령했던 모든 헥사곤 구역은 즉시 중립화 상태로 전환되어 다른 플레이어가 자유롭게 획득할 수 있게 되며, 보유하고 있던 모든 가상 재화와 전적 통계, 수집된 식별 데이터는 복구 불가능한 상태로 실서버 DB에서 즉시 완전 삭제(Cascade Delete)됩니다.",
                 "danger": true,
                 "indent": false
               }
@@ -501,7 +501,7 @@ export const termsContent = {
                 "indent": false
               },
               {
-                "text": "2. Due to the nature of the Service, information set to be public (such as the nickname and captured territory status) may be exposed to other players to facilitate interactions within the game.",
+                "text": "2. Due to the nature of the Service, information set to be public (such as the nickname and captured zone status) may be exposed to other players to facilitate interactions within the game.",
                 "danger": false,
                 "indent": false
               }
@@ -520,7 +520,7 @@ export const termsContent = {
             "type": "ul",
             "items": [
               {
-                "text": "1. Real-time Territory Capture: A service that calculates latitude/longitude coordinates and records the area as the Player's territory when they enter a specific hexagon grid with their mobile device.",
+                "text": "1. Real-time Zone Capture: A service that calculates latitude/longitude coordinates and records it as the Player's zone when they enter a specific hexagon grid with their mobile device.",
                 "danger": false,
                 "indent": false
               },
@@ -629,7 +629,7 @@ export const termsContent = {
                 "indent": false
               },
               {
-                "text": "2. Transmitting false coordinates to capture territory using GPS spoofing software, emulator location tools, or other abnormal methods without physically visiting the site.",
+                "text": "2. Transmitting false coordinates to capture zone using GPS spoofing software, emulator location tools, or other abnormal methods without physically visiting the site.",
                 "danger": true,
                 "indent": false
               },
@@ -639,7 +639,7 @@ export const termsContent = {
                 "indent": false
               },
               {
-                "text": "4. Exploiting in-game errors or bugs intentionally to gain gold (GP) abnormally or generate abnormal territory capture states.",
+                "text": "4. Exploiting in-game errors or bugs intentionally to gain gold (GP) abnormally or generate abnormal zone capture states.",
                 "danger": false,
                 "indent": false
               }
@@ -664,12 +664,12 @@ export const termsContent = {
                 "indent": true
               },
               {
-                "text": "b. Territory Forfeiture & Reset: All territories captured through location manipulation or bug exploitation will be confiscated without prior notice and reset to neutral.",
+                "text": "b. Zone Forfeiture & Reset: All zones captured through location manipulation or bug exploitation will be confiscated without prior notice and reset to neutral.",
                 "danger": true,
                 "indent": true
               },
               {
-                "text": "c. Account Restriction: Suspending the usage of overall services, including game access and territory capture, for a certain period.",
+                "text": "c. Account Restriction: Suspending the usage of overall services, including game access and zone capture, for a certain period.",
                 "danger": false,
                 "indent": true
               },
@@ -719,22 +719,22 @@ export const termsContent = {
             "type": "ul",
             "items": [
               {
-                "text": "1. \"Gold (GP)\" is a free virtual data currency used to capture territories and run specific modes within the game service.",
+                "text": "1. \"Gold (GP)\" is a free virtual data currency used to capture zones and run specific modes within the game service.",
                 "danger": false,
                 "indent": false
               },
               {
-                "text": "2. Gold (GP) is automatically accumulated and provided by the system in proportion to the duration of account activation, the number of captured territories, and the duration of territory retention, and has no real-world monetary value.",
+                "text": "2. Gold (GP) is automatically accumulated and provided by the system in proportion to the duration of account activation, the number of captured zones, and the duration of zone retention, and has no real-world monetary value.",
                 "danger": false,
                 "indent": false
               },
               {
-                "text": "3. Players are strictly prohibited from selling, transferring, renting, or exchanging in-game data (including gold and territories) for real cash.",
+                "text": "3. Players are strictly prohibited from selling, transferring, renting, or exchanging in-game data (including gold and zones) for real cash.",
                 "danger": false,
                 "indent": false
               },
               {
-                "text": "4. Upon account deletion (withdrawal), all Gold (GP) and territory data held by the Player will be deleted permanently and cannot be recovered.",
+                "text": "4. Upon account deletion (withdrawal), all Gold (GP) and zone data held by the Player will be deleted permanently and cannot be recovered.",
                 "danger": false,
                 "indent": false
               }
@@ -779,7 +779,7 @@ export const termsContent = {
                 "indent": false
               },
               {
-                "text": "2. The Company is not responsible for failures in capturing territory, gold accumulation errors, or data delays caused by individual device specifications, settings (denied location permissions, power-saving mode, etc.), GPS accuracy, or poor communication networks.",
+                "text": "2. The Company is not responsible for failures in capturing zone, gold accumulation errors, or data delays caused by individual device specifications, settings (denied location permissions, power-saving mode, etc.), GPS accuracy, or poor communication networks.",
                 "danger": false,
                 "indent": false
               },
@@ -804,7 +804,7 @@ export const termsContent = {
                 "indent": false
               },
               {
-                "text": "2. Upon withdrawal, all hexagon territories captured by the Player will instantly turn neutral and become available for other players. All virtual currencies, game records, and collected identification data will be permanently and completely deleted (Cascade Delete) from the server database and cannot be recovered.",
+                "text": "2. Upon withdrawal, all hexagon zones captured by the Player will instantly turn neutral and become available for other players. All virtual currencies, game records, and collected identification data will be permanently and completely deleted (Cascade Delete) from the server database and cannot be recovered.",
                 "danger": true,
                 "indent": false
               }
@@ -918,7 +918,7 @@ export const termsContent = {
                 "indent": false
               },
               {
-                "text": "2. サービスの特性上、プレイヤーが設定したニックネームや確保した領土の現状など、ゲーム内で他のプレイヤーに公開されるように設定された情報は、プレイヤー間の円滑な相互作用のために制限的に公開されることがあります。",
+                "text": "2. サービスの特性上、プレイヤーが設定したニックネームや確保したゾーンの現状など、ゲーム内で他のプレイヤーに公開されるように設定された情報は、プレイヤー間の円滑な相互作用のために制限的に公開されることがあります。",
                 "danger": false,
                 "indent": false
               }
@@ -937,7 +937,7 @@ export const termsContent = {
             "type": "ul",
             "items": [
               {
-                "text": "1. リアルタイム領土占領処理: プレイヤーがモバイル機器を持参し、特定のヘキサゴングリッド領域に進入したとき、その位置の緯度経度座標を演算して当該プレイヤーの領土に確保および記録するサービス。",
+                "text": "1. リアルタイムゾーン占領処理: プレイヤーがモバイル機器を持参し、特定のヘキサゴングリッド領域に進入したとき、その位置の緯度経度座標を演算して当該プレイヤーのゾーンに確保および記録するサービス。",
                 "danger": false,
                 "indent": false
               },
@@ -1056,7 +1056,7 @@ export const termsContent = {
                 "indent": false
               },
               {
-                "text": "4. ゲーム内のエラーやバグを意図的に悪用して異常にゴールド（GP）を獲得したり、異常な領土占領状態を誘導する行為。",
+                "text": "4. ゲーム内のエラーやバグを意図的に悪用して異常にゴールド（GP）を獲得したり、異常なゾーン占領状態を誘導する行為。",
                 "danger": false,
                 "indent": false
               }
@@ -1081,12 +1081,12 @@ export const termsContent = {
                 "indent": true
               },
               {
-                "text": "私。領土の没収と初期化：異常な場所操作やバグの悪用によって確保されたすべての領土は事前の通知なしに強制的に回収され、直ちに中立領土に移行して初期化されます。",
+                "text": "私。ゾーンの没収と初期化：異常な場所操作やバグの悪用によって確保されたすべてのゾーンは事前の通知なしに強制的に回収され、直ちに中立ゾーンに移行して初期化されます。",
                 "danger": true,
                 "indent": true
               },
               {
-                "text": "だ。アカウント利用制限：一定期間、ゲームアクセスや領土占領などのフルサービス利用を停止します。",
+                "text": "だ。アカウント利用制限：一定期間、ゲームアクセスやゾーン占領などのフルサービス利用を停止します。",
                 "danger": false,
                 "indent": true
               },
@@ -1136,22 +1136,22 @@ export const termsContent = {
             "type": "ul",
             "items": [
               {
-                "text": "1. 'ゴールド(GP)'はゲームサービス内で領土確保と特定モードを駆動するために使用される無償の仮想データ財です。",
+                "text": "1. 'ゴールド(GP)'はゲームサービス内でゾーン確保と特定モードを駆動するために使用される無償の仮想データ財です。",
                 "danger": false,
                 "indent": false
               },
               {
-                "text": "2. ゴールド(GP)は会員加入維持、領土占領数及び占領持続時間等に比例してシステム的に自動累積提供され、現実の財貨ではありません。",
+                "text": "2. ゴールド(GP)は会員加入維持、ゾーン占領数及び占領持続時間等に比例してシステム的に自動累積提供され、現実の財貨ではありません。",
                 "danger": false,
                 "indent": false
               },
               {
-                "text": "3. プレイヤーは、ゴールド(GP)や領土などのゲーム内データを他人に有償で販売、譲渡、貸与したり、実際の現金に両替するすべての取引行為をすることはできません。",
+                "text": "3. プレイヤーは、ゴールド(GP)やゾーンなどのゲーム内データを他人に有償で販売、譲渡、貸与したり、実際の現金に両替するすべての取引行為をすることはできません。",
                 "danger": false,
                 "indent": false
               },
               {
-                "text": "4. サービス終了（会員脱退）時にプレイヤーが保有していたゴールド（GP）と占領領土データはすべて消滅して復旧できません。",
+                "text": "4. サービス終了（会員脱退）時にプレイヤーが保有していたゴールド（GP）と占領ゾーンデータはすべて消滅して復旧できません。",
                 "danger": false,
                 "indent": false
               }
@@ -1196,12 +1196,12 @@ export const termsContent = {
                 "indent": false
               },
               {
-                "text": "2. 会社は、プレイヤー個人の端末性能、機器設定（位置権限未許可、省電力モードなど）、GPS誤差または通信状態不良により発生した領土獲得判定失敗、ゴールド累積エラーおよびデータ遅延について責任を負いません。",
+                "text": "2. 会社は、プレイヤー個人の端末性能、機器設定（位置権限未許可、省電力モードなど）、GPS誤差または通信状態不良により発生したゾーン獲得判定失敗、ゴールド累積エラーおよびデータ遅延について責任を負いません。",
                 "danger": false,
                 "indent": false
               },
               {
-                "text": "3. プレイヤーは、実際の屋外の歩行と移動を通じて領土を確保する位置基盤ゲームの性格を十分に認識しなければならず、周辺環境の危険性に備えてすべての安全規則を自ら遵守しなければなりません。会社はプレイヤー本人の不注意で発生したいかなる身体的傷害、事故に対しても責任を負いません。",
+                "text": "3. プレイヤーは、実際の屋外の歩行と移動を通じてゾーンを確保する位置基盤ゲームの性格を十分に認識しなければならず、周辺環境の危険性に備えてすべての安全規則を自ら遵守しなければなりません。会社はプレイヤー本人の不注意で発生したいかなる身体的傷害、事故に対しても責任を負いません。",
                 "danger": false,
                 "indent": false
               }
@@ -1221,7 +1221,7 @@ export const termsContent = {
                 "indent": false
               },
               {
-                "text": "2. 会員脱退時にプレイヤーが占領したすべてのヘキサゴン領土は直ちに中立化状態に切り替わり、他のプレイヤーが自由に獲得できるようになり、保有していたすべての仮想財貨と全統計、収集された識別データは回復不可能な状態でシルサーバーDBから直ちに完全削除(Cascade Delete)されます。",
+                "text": "2. 会員脱退時にプレイヤーが占領したすべてのヘキサゴンゾーンは直ちに中立化状態に切り替わり、他のプレイヤーが自由に獲得できるようになり、保有していたすべての仮想財貨と全統計、収集された識別データは回復不可能な状態でシルサーバーDBから直ちに完全削除(Cascade Delete)されます。",
                 "danger": true,
                 "indent": false
               }
@@ -1463,7 +1463,7 @@ export const termsContent = {
                 "indent": false
               },
               {
-                "text": "2、在不实际访问站点的情况下，利用GPS欺骗、模拟器位置操纵工具等以非正常方式传输虚拟位置坐标来获取领土。",
+                "text": "2、在不实际访问站点的情况下，利用GPS欺骗、模拟器位置操纵工具等以非正常方式传输虚拟位置坐标来获取区域。",
                 "danger": true,
                 "indent": false
               },
@@ -1498,7 +1498,7 @@ export const termsContent = {
                 "indent": true
               },
               {
-                "text": "我。领土没收和重置：任何通过异常位置操纵或漏洞利用获得的领土将被强行收回，恕不另行通知，并立即转换为中立领土并重置。",
+                "text": "我。区域没收和重置：任何通过异常位置操纵或漏洞利用获得的区域将被强行收回，恕不另行通知，并立即转换为中立区域并重置。",
                 "danger": true,
                 "indent": true
               },
@@ -1553,22 +1553,22 @@ export const termsContent = {
             "type": "ul",
             "items": [
               {
-                "text": "1.“金币（GP）”是一种免费的虚拟数据货币，用于保护领土并在游戏服务中运行特定模式。",
+                "text": "1.“金币（GP）”是一种免费的虚拟数据货币，用于保护区域并在游戏服务中运行特定模式。",
                 "danger": false,
                 "indent": false
               },
               {
-                "text": "2、金币（GP）是根据会员保有量、占领领土数量、占领时长等比例自动累积提供的，并非真正的商品。",
+                "text": "2、金币（GP）是根据会员保有量、占领区域数量、占领时长等比例自动累积提供的，并非真正的商品。",
                 "danger": false,
                 "indent": false
               },
               {
-                "text": "3. 玩家不得从事任何涉及向他人出售、转让或出租游戏内数据（例如金币（GP）和领土）以收取费用或将其兑换成真实货币的交易。",
+                "text": "3. 玩家不得从事任何涉及向他人出售、转让或出租游戏内数据（例如金币（GP）和区域）以收取费用或将其兑换成真实货币的交易。",
                 "danger": false,
                 "indent": false
               },
               {
-                "text": "4.当服务终止（退会）时，玩家持有的所有金币（GP）和占领领土数据将丢失且无法恢复。",
+                "text": "4.当服务终止（退会）时，玩家持有的所有金币（GP）和占领区域数据将丢失且无法恢复。",
                 "danger": false,
                 "indent": false
               }
@@ -1618,7 +1618,7 @@ export const termsContent = {
                 "indent": false
               },
               {
-                "text": "3. 玩家必须充分了解定位游戏的性质，即通过实际的户外行走和移动来确保领土安全，并且必须自行遵守所有安全规则，为周围环境的危险做好准备。对于因玩家疏忽而造成的任何人身伤害或事故，公司不承担任何责任。",
+                "text": "3. 玩家必须充分了解定位游戏的性质，即通过实际的户外行走和移动来确保区域安全，并且必须自行遵守所有安全规则，为周围环境的危险做好准备。对于因玩家疏忽而造成的任何人身伤害或事故，公司不承担任何责任。",
                 "danger": false,
                 "indent": false
               }
@@ -1880,7 +1880,7 @@ export const termsContent = {
                 "indent": false
               },
               {
-                "text": "2.在不實際訪問站點的情況下，利用GPS欺騙、模擬器位置操縱工具等以非正常方式傳輸虛擬位置座標來獲取領土。",
+                "text": "2.在不實際訪問站點的情況下，利用GPS欺騙、模擬器位置操縱工具等以非正常方式傳輸虛擬位置座標來獲取區域。",
                 "danger": true,
                 "indent": false
               },
@@ -1915,7 +1915,7 @@ export const termsContent = {
                 "indent": true
               },
               {
-                "text": "我。領土沒收和重置：任何透過異常位置操縱或漏洞利用獲得的領土將被強行收回，恕不另行通知，並立即轉換為中立領土並重置。",
+                "text": "我。區域沒收和重置：任何透過異常位置操縱或漏洞利用獲得的區域將被強行收回，恕不另行通知，並立即轉換為中立區域並重置。",
                 "danger": true,
                 "indent": true
               },
@@ -1970,22 +1970,22 @@ export const termsContent = {
             "type": "ul",
             "items": [
               {
-                "text": "1.「金幣（GP）」是一種免費的虛擬資料貨幣，用於保護領土並在遊戲服務中運行特定模式。",
+                "text": "1.「金幣（GP）」是一種免費的虛擬資料貨幣，用於保護區域並在遊戲服務中運行特定模式。",
                 "danger": false,
                 "indent": false
               },
               {
-                "text": "2.金幣（GP）是根據會員保有量、佔領領土數量、佔領時長等比例自動累積提供的，並非真正的商品。",
+                "text": "2.金幣（GP）是根據會員保有量、佔領區域數量、佔領時長等比例自動累積提供的，並非真正的商品。",
                 "danger": false,
                 "indent": false
               },
               {
-                "text": "3. 玩家不得從事任何涉及向他人出售、轉讓或出租遊戲內資料（例如金幣（GP）和領土）以收取費用或將其兌換成真實貨幣的交易。",
+                "text": "3. 玩家不得從事任何涉及向他人出售、轉讓或出租遊戲內資料（例如金幣（GP）和區域）以收取費用或將其兌換成真實貨幣的交易。",
                 "danger": false,
                 "indent": false
               },
               {
-                "text": "4.當服務終止（退會）時，玩家持有的所有金幣（GP）和占領領土資料將遺失且無法恢復。",
+                "text": "4.當服務終止（退會）時，玩家持有的所有金幣（GP）和占領區域資料將遺失且無法恢復。",
                 "danger": false,
                 "indent": false
               }
@@ -2035,7 +2035,7 @@ export const termsContent = {
                 "indent": false
               },
               {
-                "text": "3. 玩家必須充分了解定位遊戲的性質，即透過實際的戶外行走和移動來確保領土安全，並且必須自行遵守所有安全規則，為周圍環境的危險做好準備。對於因玩家疏忽而造成的任何人身傷害或事故，本公司不承擔任何責任。",
+                "text": "3. 玩家必須充分了解定位遊戲的性質，即透過實際的戶外行走和移動來確保區域安全，並且必須自行遵守所有安全規則，為周圍環境的危險做好準備。對於因玩家疏忽而造成的任何人身傷害或事故，本公司不承擔任何責任。",
                 "danger": false,
                 "indent": false
               }
@@ -2169,7 +2169,7 @@ export const termsContent = {
                 "indent": false
               },
               {
-                "text": "2. Debido a la naturaleza del servicio, la información que está configurada para ser visible para otros jugadores dentro del juego, como el apodo establecido por el jugador y el estado del territorio asegurado, puede estar expuesta de forma limitada para garantizar una interacción fluida entre los jugadores.",
+                "text": "2. Debido a la naturaleza del servicio, la información que está configurada para ser visible para otros jugadores dentro del juego, como el apodo establecido por el jugador y el estado dla zona asegurado, puede estar expuesta de forma limitada para garantizar una interacción fluida entre los jugadores.",
                 "danger": false,
                 "indent": false
               }
@@ -2188,7 +2188,7 @@ export const termsContent = {
             "type": "ul",
             "items": [
               {
-                "text": "1. Procesamiento de captura de territorio en tiempo real: un servicio que calcula las coordenadas de latitud y longitud de la ubicación cuando un jugador ingresa a un área de cuadrícula hexagonal específica con un dispositivo móvil y lo asegura y registra como el territorio del jugador.",
+                "text": "1. Procesamiento de captura de zona en tiempo real: un servicio que calcula las coordenadas de latitud y longitud de la ubicación cuando un jugador ingresa a un área de cuadrícula hexagonal específica con un dispositivo móvil y lo asegura y registra como la zona del jugador.",
                 "danger": false,
                 "indent": false
               },
@@ -2297,7 +2297,7 @@ export const termsContent = {
                 "indent": false
               },
               {
-                "text": "2. Adquirir territorio mediante la transmisión de coordenadas de ubicación virtual de forma anormal utilizando GPS Spoofing, herramientas de manipulación de ubicación del emulador, etc., sin visitar realmente el sitio.",
+                "text": "2. Adquirir zona mediante la transmisión de coordenadas de ubicación virtual de forma anormal utilizando GPS Spoofing, herramientas de manipulación de ubicación del emulador, etc., sin visitar realmente el sitio.",
                 "danger": true,
                 "indent": false
               },
@@ -2307,7 +2307,7 @@ export const termsContent = {
                 "indent": false
               },
               {
-                "text": "4. Explotar intencionalmente errores o errores en el juego para adquirir oro (GP) de manera anormal o inducir un estado de ocupación de territorio anormal.",
+                "text": "4. Explotar intencionalmente errores o errores en el juego para adquirir oro (GP) de manera anormal o inducir un estado de ocupación de zona anormal.",
                 "danger": false,
                 "indent": false
               }
@@ -2332,12 +2332,12 @@ export const termsContent = {
                 "indent": true
               },
               {
-                "text": "a mí. Confiscación y restablecimiento de territorio: cualquier territorio adquirido mediante manipulación anormal de ubicación o explotación de errores será recuperado por la fuerza sin previo aviso y se convertirá inmediatamente en territorio neutral y se restablecerá.",
+                "text": "a mí. Confiscación y restablecimiento de zona: cualquier zona adquirido mediante manipulación anormal de ubicación o explotación de errores será recuperado por la fuerza sin previo aviso y se convertirá inmediatamente en zona neutral y se restablecerá.",
                 "danger": true,
                 "indent": true
               },
               {
-                "text": "todo. Restricción en el uso de la cuenta: El uso de todos los servicios, incluido el acceso al juego y la ocupación del territorio, se suspende por un período de tiempo determinado.",
+                "text": "todo. Restricción en el uso de la cuenta: El uso de todos los servicios, incluido el acceso al juego y la ocupación dla zona, se suspende por un período de tiempo determinado.",
                 "danger": false,
                 "indent": true
               },
@@ -2387,22 +2387,22 @@ export const termsContent = {
             "type": "ul",
             "items": [
               {
-                "text": "1. 'Oro (GP)' es una moneda de datos virtual gratuita que se utiliza para asegurar territorio y ejecutar modos específicos dentro del servicio de juego.",
+                "text": "1. 'Oro (GP)' es una moneda de datos virtual gratuita que se utiliza para asegurar zona y ejecutar modos específicos dentro del servicio de juego.",
                 "danger": false,
                 "indent": false
               },
               {
-                "text": "2. El oro (GP) se proporciona de forma automática y acumulativa en proporción al mantenimiento de la membresía, la cantidad de territorio ocupado y la duración de la ocupación, etc., y no es un bien real.",
+                "text": "2. El oro (GP) se proporciona de forma automática y acumulativa en proporción al mantenimiento de la membresía, la cantidad de zona ocupado y la duración de la ocupación, etc., y no es un bien real.",
                 "danger": false,
                 "indent": false
               },
               {
-                "text": "3. Los jugadores no pueden participar en ninguna transacción que implique vender, transferir o alquilar datos del juego, como oro (GP) y territorio, a otros por una tarifa o intercambiarlos por dinero real.",
+                "text": "3. Los jugadores no pueden participar en ninguna transacción que implique vender, transferir o alquilar datos del juego, como oro (GP) y zona, a otros por una tarifa o intercambiarlos por dinero real.",
                 "danger": false,
                 "indent": false
               },
               {
-                "text": "4. Cuando finalice el servicio (retirada de la membresía), todo el oro (GP) y los datos del territorio ocupado que posea el jugador se perderán y no podrán recuperarse.",
+                "text": "4. Cuando finalice el servicio (retirada de la membresía), todo el oro (GP) y los datos dla zona ocupado que posea el jugador se perderán y no podrán recuperarse.",
                 "danger": false,
                 "indent": false
               }
@@ -2447,12 +2447,12 @@ export const termsContent = {
                 "indent": false
               },
               {
-                "text": "2. La empresa no es responsable de fallos en la decisión de adquisición de territorio, errores de acumulación de oro o retrasos en los datos causados por el rendimiento del terminal de cada jugador, la configuración del dispositivo (permiso de ubicación no permitido, modo de ahorro de energía, etc.), error de GPS o estado de comunicación deficiente.",
+                "text": "2. La empresa no es responsable de fallos en la decisión de adquisición de zona, errores de acumulación de oro o retrasos en los datos causados por el rendimiento del terminal de cada jugador, la configuración del dispositivo (permiso de ubicación no permitido, modo de ahorro de energía, etc.), error de GPS o estado de comunicación deficiente.",
                 "danger": false,
                 "indent": false
               },
               {
-                "text": "3. Los jugadores deben ser plenamente conscientes de la naturaleza del juego basado en la ubicación, que implica asegurar el territorio mediante caminatas y movimientos al aire libre, y deben seguir todas las reglas de seguridad por su cuenta en preparación para los peligros del entorno circundante. La empresa no es responsable de ninguna lesión física o accidente causado por la negligencia del jugador.",
+                "text": "3. Los jugadores deben ser plenamente conscientes de la naturaleza del juego basado en la ubicación, que implica asegurar la zona mediante caminatas y movimientos al aire libre, y deben seguir todas las reglas de seguridad por su cuenta en preparación para los peligros del entorno circundante. La empresa no es responsable de ninguna lesión física o accidente causado por la negligencia del jugador.",
                 "danger": false,
                 "indent": false
               }
@@ -2472,7 +2472,7 @@ export const termsContent = {
                 "indent": false
               },
               {
-                "text": "2. Cuando un miembro se retira, todo el territorio hexagonal ocupado por el jugador se convierte inmediatamente en un estado neutralizado y puede ser adquirido libremente por otros jugadores. Todos los bienes virtuales, estadísticas históricas y datos de identificación recopilados se eliminan inmediata y completamente (Cascade Delete) de la base de datos del servidor real en un estado irrecuperable.",
+                "text": "2. Cuando un miembro se retira, todo la zona hexagonal ocupado por el jugador se convierte inmediatamente en un estado neutralizado y puede ser adquirido libremente por otros jugadores. Todos los bienes virtuales, estadísticas históricas y datos de identificación recopilados se eliminan inmediata y completamente (Cascade Delete) de la base de datos del servidor real en un estado irrecuperable.",
                 "danger": true,
                 "indent": false
               }
@@ -2586,7 +2586,7 @@ export const termsContent = {
                 "indent": false
               },
               {
-                "text": "2. En raison de la nature du service, les informations définies pour être visibles par les autres joueurs du jeu, telles que le surnom défini par le joueur et le statut du territoire sécurisé, peuvent être exposées dans une mesure limitée pour garantir une interaction fluide entre les joueurs.",
+                "text": "2. En raison de la nature du service, les informations définies pour être visibles par les autres joueurs du jeu, telles que le surnom défini par le joueur et le statut de la zone sécurisé, peuvent être exposées dans une mesure limitée pour garantir une interaction fluide entre les joueurs.",
                 "danger": false,
                 "indent": false
               }
@@ -2605,7 +2605,7 @@ export const termsContent = {
             "type": "ul",
             "items": [
               {
-                "text": "1. Traitement de capture de territoire en temps réel : un service qui calcule les coordonnées de latitude et de longitude de l'emplacement lorsqu'un joueur entre dans une zone de grille hexagonale spécifique avec un appareil mobile et le sécurise et l'enregistre en tant que territoire du joueur.",
+                "text": "1. Traitement de capture de zone en temps réel : un service qui calcule les coordonnées de latitude et de longitude de l'emplacement lorsqu'un joueur entre dans une zone de grille hexagonale spécifique avec un appareil mobile et le sécurise et l'enregistre en tant que zone du joueur.",
                 "danger": false,
                 "indent": false
               },
@@ -2714,7 +2714,7 @@ export const termsContent = {
                 "indent": false
               },
               {
-                "text": "2. Acquérir un territoire en transmettant des coordonnées de localisation virtuelles de manière anormale à l'aide de GPS Spoofing, d'outils de manipulation de localisation d'émulateur, etc., sans réellement visiter le site.",
+                "text": "2. Acquérir un zone en transmettant des coordonnées de localisation virtuelles de manière anormale à l'aide de GPS Spoofing, d'outils de manipulation de localisation d'émulateur, etc., sans réellement visiter le site.",
                 "danger": true,
                 "indent": false
               },
@@ -2724,7 +2724,7 @@ export const termsContent = {
                 "indent": false
               },
               {
-                "text": "4. Exploiter intentionnellement des erreurs ou des bugs du jeu pour acquérir anormalement de l'or (GP) ou induire un état d'occupation de territoire anormal.",
+                "text": "4. Exploiter intentionnellement des erreurs ou des bugs du jeu pour acquérir anormalement de l'or (GP) ou induire un état d'occupation de zone anormal.",
                 "danger": false,
                 "indent": false
               }
@@ -2749,12 +2749,12 @@ export const termsContent = {
                 "indent": true
               },
               {
-                "text": "moi. Confiscation et réinitialisation du territoire : tout territoire acquis grâce à une manipulation anormale de l'emplacement ou à l'exploitation d'un bug sera repris de force sans préavis et immédiatement converti en territoire neutre et réinitialisé.",
+                "text": "moi. Confiscation et réinitialisation de la zone : tout zone acquis grâce à une manipulation anormale de l'emplacement ou à l'exploitation d'un bug sera repris de force sans préavis et immédiatement converti en zone neutre et réinitialisé.",
                 "danger": true,
                 "indent": true
               },
               {
-                "text": "tous. Restriction d'utilisation du compte : L'utilisation de tous les services, y compris l'accès au jeu et l'occupation du territoire, est suspendue pendant une certaine période.",
+                "text": "tous. Restriction d'utilisation du compte : L'utilisation de tous les services, y compris l'accès au jeu et l'occupation de la zone, est suspendue pendant une certaine période.",
                 "danger": false,
                 "indent": true
               },
@@ -2804,22 +2804,22 @@ export const termsContent = {
             "type": "ul",
             "items": [
               {
-                "text": "1. « Gold (GP) » est une monnaie de données virtuelle gratuite utilisée pour sécuriser le territoire et exécuter des modes spécifiques au sein du service de jeu.",
+                "text": "1. « Gold (GP) » est une monnaie de données virtuelle gratuite utilisée pour sécuriser la zone et exécuter des modes spécifiques au sein du service de jeu.",
                 "danger": false,
                 "indent": false
               },
               {
-                "text": "2. L'or (GP) est fourni automatiquement et cumulativement proportionnellement au maintien de l'adhésion, au nombre de territoires occupés et à la durée de l'occupation, etc., et n'est pas un bien réel.",
+                "text": "2. L'or (GP) est fourni automatiquement et cumulativement proportionnellement au maintien de l'adhésion, au nombre de zones occupés et à la durée de l'occupation, etc., et n'est pas un bien réel.",
                 "danger": false,
                 "indent": false
               },
               {
-                "text": "3. Les joueurs ne peuvent s'engager dans aucune transaction impliquant la vente, le transfert ou la location de données de jeu, telles que l'or (GP) et le territoire, à des tiers moyennant des frais ou leur échange contre de l'argent réel.",
+                "text": "3. Les joueurs ne peuvent s'engager dans aucune transaction impliquant la vente, le transfert ou la location de données de jeu, telles que l'or (GP) et la zone, à des tiers moyennant des frais ou leur échange contre de l'argent réel.",
                 "danger": false,
                 "indent": false
               },
               {
-                "text": "4. Lorsque le service prend fin (retrait de l'adhésion), toutes les données d'or (GP) et de territoire occupé détenues par le joueur seront perdues et ne pourront pas être récupérées.",
+                "text": "4. Lorsque le service prend fin (retrait de l'adhésion), toutes les données d'or (GP) et de zone occupé détenues par le joueur seront perdues et ne pourront pas être récupérées.",
                 "danger": false,
                 "indent": false
               }
@@ -2864,12 +2864,12 @@ export const termsContent = {
                 "indent": false
               },
               {
-                "text": "2. La société n'est pas responsable de l'échec de la décision d'acquisition de territoire, de l'erreur d'accumulation d'or ou du retard des données causé par les performances du terminal de chaque joueur, les paramètres de l'appareil (autorisation de localisation non autorisée, mode d'économie d'énergie, etc.), l'erreur GPS ou un mauvais état de communication.",
+                "text": "2. La société n'est pas responsable de l'échec de la décision d'acquisition de zone, de l'erreur d'accumulation d'or ou du retard des données causé par les performances du terminal de chaque joueur, les paramètres de l'appareil (autorisation de localisation non autorisée, mode d'économie d'énergie, etc.), l'erreur GPS ou un mauvais état de communication.",
                 "danger": false,
                 "indent": false
               },
               {
-                "text": "3. Les joueurs doivent être pleinement conscients de la nature du jeu géolocalisé, qui implique de sécuriser un territoire par de véritables marches et mouvements en plein air, et doivent suivre eux-mêmes toutes les règles de sécurité en se préparant aux dangers de l'environnement. La société n'est pas responsable des blessures physiques ou des accidents causés par la négligence du joueur.",
+                "text": "3. Les joueurs doivent être pleinement conscients de la nature du jeu géolocalisé, qui implique de sécuriser un zone par de véritables marches et mouvements en plein air, et doivent suivre eux-mêmes toutes les règles de sécurité en se préparant aux dangers de l'environnement. La société n'est pas responsable des blessures physiques ou des accidents causés par la négligence du joueur.",
                 "danger": false,
                 "indent": false
               }
@@ -2889,7 +2889,7 @@ export const termsContent = {
                 "indent": false
               },
               {
-                "text": "2. Lorsqu'un membre se retire, tout le territoire hexagonal occupé par le joueur est immédiatement converti en un état neutralisé et peut être librement acquis par d'autres joueurs. Tous les biens virtuels, statistiques historiques et données d'identification collectées sont immédiatement et complètement supprimés (Cascade Delete) de la base de données du serveur réel dans un état irrécupérable.",
+                "text": "2. Lorsqu'un membre se retire, tout la zone hexagonal occupé par le joueur est immédiatement converti en un état neutralisé et peut être librement acquis par d'autres joueurs. Tous les biens virtuels, statistiques historiques et données d'identification collectées sont immédiatement et complètement supprimés (Cascade Delete) de la base de données du serveur réel dans un état irrécupérable.",
                 "danger": true,
                 "indent": false
               }
@@ -3003,7 +3003,7 @@ export const termsContent = {
                 "indent": false
               },
               {
-                "text": "2. Aufgrund der Art des Dienstes können Informationen, die für andere Spieler im Spiel sichtbar sein sollen, wie z. B. der vom Spieler festgelegte Spitzname und der Status des gesicherten Gebiets, in begrenztem Umfang offengelegt werden, um eine reibungslose Interaktion zwischen den Spielern zu gewährleisten.",
+                "text": "2. Aufgrund der Art des Dienstes können Informationen, die für andere Spieler im Spiel sichtbar sein sollen, wie z. B. der vom Spieler festgelegte Spitzname und der Status des gesicherten Zonen, in begrenztem Umfang offengelegt werden, um eine reibungslose Interaktion zwischen den Spielern zu gewährleisten.",
                 "danger": false,
                 "indent": false
               }
@@ -3022,7 +3022,7 @@ export const termsContent = {
             "type": "ul",
             "items": [
               {
-                "text": "1. Verarbeitung der Gebietserfassung in Echtzeit: Ein Dienst, der die Breiten- und Längenkoordinaten des Standorts berechnet, wenn ein Spieler mit einem mobilen Gerät einen bestimmten sechseckigen Gitterbereich betritt, und diesen als Territorium des Spielers sichert und aufzeichnet.",
+                "text": "1. Verarbeitung der Zonenerfassung in Echtzeit: Ein Dienst, der die Breiten- und Längenkoordinaten des Standorts berechnet, wenn ein Spieler mit einem mobilen Gerät einen bestimmten sechseckigen Gitterbereich betritt, und diesen als Zone des Spielers sichert und aufzeichnet.",
                 "danger": false,
                 "indent": false
               },
@@ -3131,7 +3131,7 @@ export const termsContent = {
                 "indent": false
               },
               {
-                "text": "2. Gebietserwerb durch ungewöhnliche Übertragung virtueller Standortkoordinaten mithilfe von GPS-Spoofing, Emulator-Standortmanipulationstools usw., ohne die Site tatsächlich zu besuchen.",
+                "text": "2. Zonenerwerb durch ungewöhnliche Übertragung virtueller Standortkoordinaten mithilfe von GPS-Spoofing, Emulator-Standortmanipulationstools usw., ohne die Site tatsächlich zu besuchen.",
                 "danger": true,
                 "indent": false
               },
@@ -3141,7 +3141,7 @@ export const termsContent = {
                 "indent": false
               },
               {
-                "text": "4. Vorsätzliches Ausnutzen von Fehlern oder Bugs im Spiel, um auf ungewöhnliche Weise Gold (GP) zu erwerben oder einen abnormalen Gebietsbesetzungszustand herbeizuführen.",
+                "text": "4. Vorsätzliches Ausnutzen von Fehlern oder Bugs im Spiel, um auf ungewöhnliche Weise Gold (GP) zu erwerben oder einen abnormalen Zonenbesetzungszustand herbeizuführen.",
                 "danger": false,
                 "indent": false
               }
@@ -3166,12 +3166,12 @@ export const termsContent = {
                 "indent": true
               },
               {
-                "text": "Mich. Beschlagnahmung und Zurücksetzung von Gebieten: Jedes Gebiet, das durch abnormale Standortmanipulation oder Ausnutzung von Fehlern erworben wurde, wird ohne vorherige Ankündigung gewaltsam zurückerobert und sofort in neutrales Gebiet umgewandelt und zurückgesetzt.",
+                "text": "Mich. Beschlagnahmung und Zurücksetzung von Zonenn: Jedes Zone, das durch abnormale Standortmanipulation oder Ausnutzung von Fehlern erworben wurde, wird ohne vorherige Ankündigung gewaltsam zurückerobert und sofort in neutrales Zone umgewandelt und zurückgesetzt.",
                 "danger": true,
                 "indent": true
               },
               {
-                "text": "alle. Beschränkung der Kontonutzung: Die Nutzung aller Dienste, einschließlich Spielzugang und Gebietsbesetzung, wird für einen bestimmten Zeitraum ausgesetzt.",
+                "text": "alle. Beschränkung der Kontonutzung: Die Nutzung aller Dienste, einschließlich Spielzugang und Zonenbesetzung, wird für einen bestimmten Zeitraum ausgesetzt.",
                 "danger": false,
                 "indent": true
               },
@@ -3221,22 +3221,22 @@ export const termsContent = {
             "type": "ul",
             "items": [
               {
-                "text": "1. „Gold (GP)“ ist eine kostenlose virtuelle Datenwährung, die zur Sicherung von Territorien und zum Ausführen bestimmter Modi innerhalb des Spieldienstes verwendet wird.",
+                "text": "1. „Gold (GP)“ ist eine kostenlose virtuelle Datenwährung, die zur Sicherung von Zonen und zum Ausführen bestimmter Modi innerhalb des Spieldienstes verwendet wird.",
                 "danger": false,
                 "indent": false
               },
               {
-                "text": "2. Gold (GP) wird automatisch und kumulativ im Verhältnis zum Mitgliedererhalt, der Anzahl der besetzten Gebiete, der Besatzungsdauer usw. bereitgestellt und ist kein wirkliches Gut.",
+                "text": "2. Gold (GP) wird automatisch und kumulativ im Verhältnis zum Mitgliedererhalt, der Anzahl der besetzten Zonen, der Besatzungsdauer usw. bereitgestellt und ist kein wirkliches Gut.",
                 "danger": false,
                 "indent": false
               },
               {
-                "text": "3. Spieler dürfen sich nicht an Transaktionen beteiligen, die den Verkauf, die Übertragung oder die Vermietung von Spieldaten wie Gold (GP) und Territorium an andere gegen eine Gebühr oder den Umtausch gegen echtes Geld beinhalten.",
+                "text": "3. Spieler dürfen sich nicht an Transaktionen beteiligen, die den Verkauf, die Übertragung oder die Vermietung von Spieldaten wie Gold (GP) und Zone an andere gegen eine Gebühr oder den Umtausch gegen echtes Geld beinhalten.",
                 "danger": false,
                 "indent": false
               },
               {
-                "text": "4. Wenn der Dienst beendet wird (Entzug der Mitgliedschaft), gehen alle vom Spieler gespeicherten Gold- (GP) und besetzten Gebietsdaten verloren und können nicht wiederhergestellt werden.",
+                "text": "4. Wenn der Dienst beendet wird (Entzug der Mitgliedschaft), gehen alle vom Spieler gespeicherten Gold- (GP) und besetzten Zonendaten verloren und können nicht wiederhergestellt werden.",
                 "danger": false,
                 "indent": false
               }
@@ -3281,12 +3281,12 @@ export const termsContent = {
                 "indent": false
               },
               {
-                "text": "2. Das Unternehmen ist nicht verantwortlich für Fehler bei der Gebietserwerbsentscheidung, Fehler bei der Goldakkumulation oder Datenverzögerungen, die durch die Terminalleistung jedes Spielers, Geräteeinstellungen (Standortberechtigung nicht zulässig, Energiesparmodus usw.), GPS-Fehler oder schlechten Kommunikationsstatus verursacht werden.",
+                "text": "2. Das Unternehmen ist nicht verantwortlich für Fehler bei der Zonenerwerbsentscheidung, Fehler bei der Goldakkumulation oder Datenverzögerungen, die durch die Terminalleistung jedes Spielers, Geräteeinstellungen (Standortberechtigung nicht zulässig, Energiesparmodus usw.), GPS-Fehler oder schlechten Kommunikationsstatus verursacht werden.",
                 "danger": false,
                 "indent": false
               },
               {
-                "text": "3. Die Spieler müssen sich der Natur des ortsbezogenen Spiels voll bewusst sein, bei dem es um die Sicherung des Territoriums durch tatsächliches Gehen und Bewegen im Freien geht, und sie müssen alle Sicherheitsregeln befolgen, um sich auf die Gefahren der Umgebung vorzubereiten. Das Unternehmen haftet nicht für Körperverletzungen oder Unfälle, die durch Fahrlässigkeit des Spielers verursacht werden.",
+                "text": "3. Die Spieler müssen sich der Natur des ortsbezogenen Spiels voll bewusst sein, bei dem es um die Sicherung der Zone durch tatsächliches Gehen und Bewegen im Freien geht, und sie müssen alle Sicherheitsregeln befolgen, um sich auf die Gefahren der Umgebung vorzubereiten. Das Unternehmen haftet nicht für Körperverletzungen oder Unfälle, die durch Fahrlässigkeit des Spielers verursacht werden.",
                 "danger": false,
                 "indent": false
               }
@@ -3420,7 +3420,7 @@ export const termsContent = {
                 "indent": false
               },
               {
-                "text": "2. Devido à natureza do serviço, as informações definidas para serem visíveis para outros jogadores no jogo, como o apelido definido pelo jogador e o status do território protegido, podem ser expostas de forma limitada para garantir uma interação tranquila entre os jogadores.",
+                "text": "2. Devido à natureza do serviço, as informações definidas para serem visíveis para outros jogadores no jogo, como o apelido definido pelo jogador e o status da zona protegido, podem ser expostas de forma limitada para garantir uma interação tranquila entre os jogadores.",
                 "danger": false,
                 "indent": false
               }
@@ -3439,7 +3439,7 @@ export const termsContent = {
             "type": "ul",
             "items": [
               {
-                "text": "1. Processamento de captura de território em tempo real: Um serviço que calcula as coordenadas de latitude e longitude do local quando um jogador entra em uma área específica da grade hexagonal com um dispositivo móvel e o protege e registra como o território do jogador.",
+                "text": "1. Processamento de captura de zona em tempo real: Um serviço que calcula as coordenadas de latitude e longitude do local quando um jogador entra em uma área específica da grade hexagonal com um dispositivo móvel e o protege e registra como a zona do jogador.",
                 "danger": false,
                 "indent": false
               },
@@ -3548,7 +3548,7 @@ export const termsContent = {
                 "indent": false
               },
               {
-                "text": "2. Adquirir território através da transmissão de coordenadas de localização virtual de forma anormal usando GPS Spoofing, ferramentas de manipulação de localização de emulador, etc., sem realmente visitar o site.",
+                "text": "2. Adquirir zona através da transmissão de coordenadas de localização virtual de forma anormal usando GPS Spoofing, ferramentas de manipulação de localização de emulador, etc., sem realmente visitar o site.",
                 "danger": true,
                 "indent": false
               },
@@ -3558,7 +3558,7 @@ export const termsContent = {
                 "indent": false
               },
               {
-                "text": "4. Explorar intencionalmente erros ou bugs no jogo para adquirir ouro de forma anormal (GP) ou induzir um estado de ocupação de território anormal.",
+                "text": "4. Explorar intencionalmente erros ou bugs no jogo para adquirir ouro de forma anormal (GP) ou induzir um estado de ocupação de zona anormal.",
                 "danger": false,
                 "indent": false
               }
@@ -3583,12 +3583,12 @@ export const termsContent = {
                 "indent": true
               },
               {
-                "text": "meu. Confisco e redefinição de território: Qualquer território adquirido através de manipulação anormal de localização ou exploração de bugs será retomado à força sem aviso prévio e imediatamente convertido em território neutro e redefinido.",
+                "text": "meu. Confisco e redefinição de zona: Qualquer zona adquirido através de manipulação anormal de localização ou exploração de bugs será retomado à força sem aviso prévio e imediatamente convertido em zona neutro e redefinido.",
                 "danger": true,
                 "indent": true
               },
               {
-                "text": "todos. Restrição ao uso da conta: A utilização de todos os serviços, incluindo acesso ao jogo e ocupação de território, fica suspensa por determinado período de tempo.",
+                "text": "todos. Restrição ao uso da conta: A utilização de todos os serviços, incluindo acesso ao jogo e ocupação de zona, fica suspensa por determinado período de tempo.",
                 "danger": false,
                 "indent": true
               },
@@ -3638,22 +3638,22 @@ export const termsContent = {
             "type": "ul",
             "items": [
               {
-                "text": "1. ‘Gold (GP)’ é uma moeda virtual gratuita de dados usada para proteger território e executar modos específicos dentro do serviço de jogo.",
+                "text": "1. ‘Gold (GP)’ é uma moeda virtual gratuita de dados usada para proteger zona e executar modos específicos dentro do serviço de jogo.",
                 "danger": false,
                 "indent": false
               },
               {
-                "text": "2. O ouro (GP) é fornecido automática e cumulativamente em proporção à manutenção da adesão, ao número de território ocupado e à duração da ocupação, etc., e não é um bem real.",
+                "text": "2. O ouro (GP) é fornecido automática e cumulativamente em proporção à manutenção da adesão, ao número de zona ocupado e à duração da ocupação, etc., e não é um bem real.",
                 "danger": false,
                 "indent": false
               },
               {
-                "text": "3. Os jogadores não podem se envolver em nenhuma transação que envolva a venda, transferência ou aluguel de dados do jogo, como ouro (GP) e território, a terceiros mediante o pagamento de uma taxa ou trocando-os por dinheiro real.",
+                "text": "3. Os jogadores não podem se envolver em nenhuma transação que envolva a venda, transferência ou aluguel de dados do jogo, como ouro (GP) e zona, a terceiros mediante o pagamento de uma taxa ou trocando-os por dinheiro real.",
                 "danger": false,
                 "indent": false
               },
               {
-                "text": "4. Quando o serviço for encerrado (retirada da adesão), todos os dados de ouro (GP) e território ocupado mantidos pelo jogador serão perdidos e não poderão ser recuperados.",
+                "text": "4. Quando o serviço for encerrado (retirada da adesão), todos os dados de ouro (GP) e zona ocupado mantidos pelo jogador serão perdidos e não poderão ser recuperados.",
                 "danger": false,
                 "indent": false
               }
@@ -3698,12 +3698,12 @@ export const termsContent = {
                 "indent": false
               },
               {
-                "text": "2. A empresa não é responsável por falha na decisão de aquisição de território, erro de acumulação de ouro ou atraso de dados causado pelo desempenho do terminal de cada jogador, configurações do dispositivo (permissão de localização não permitida, modo de economia de energia, etc.), erro GPS ou mau status de comunicação.",
+                "text": "2. A empresa não é responsável por falha na decisão de aquisição de zona, erro de acumulação de ouro ou atraso de dados causado pelo desempenho do terminal de cada jogador, configurações do dispositivo (permissão de localização não permitida, modo de economia de energia, etc.), erro GPS ou mau status de comunicação.",
                 "danger": false,
                 "indent": false
               },
               {
-                "text": "3. Os jogadores devem estar plenamente conscientes da natureza do jogo baseado em localização, que envolve a proteção do território através de caminhadas e movimentos reais ao ar livre, e devem seguir todas as regras de segurança por conta própria, em preparação para os perigos do ambiente circundante. A empresa não se responsabiliza por quaisquer lesões físicas ou acidentes causados por negligência do jogador.",
+                "text": "3. Os jogadores devem estar plenamente conscientes da natureza do jogo baseado em localização, que envolve a proteção da zona através de caminhadas e movimentos reais ao ar livre, e devem seguir todas as regras de segurança por conta própria, em preparação para os perigos do ambiente circundante. A empresa não se responsabiliza por quaisquer lesões físicas ou acidentes causados por negligência do jogador.",
                 "danger": false,
                 "indent": false
               }
@@ -3723,7 +3723,7 @@ export const termsContent = {
                 "indent": false
               },
               {
-                "text": "2. Quando um membro se retira, todo o território hexagonal ocupado pelo jogador é imediatamente convertido para um estado neutralizado e pode ser adquirido livremente por outros jogadores. Todos os bens virtuais, estatísticas históricas e dados de identificação coletados são imediata e completamente excluídos (Cascade Delete) do banco de dados do servidor real em um estado irrecuperável.",
+                "text": "2. Quando um membro se retira, todo a zona hexagonal ocupado pelo jogador é imediatamente convertido para um estado neutralizado e pode ser adquirido livremente por outros jogadores. Todos os bens virtuais, estatísticas históricas e dados de identificação coletados são imediata e completamente excluídos (Cascade Delete) do banco de dados do servidor real em um estado irrecuperável.",
                 "danger": true,
                 "indent": false
               }
@@ -3837,7 +3837,7 @@ export const termsContent = {
                 "indent": false
               },
               {
-                "text": "2. A causa della natura del servizio, le informazioni impostate per essere visibili ad altri giocatori all'interno del gioco, come il nickname impostato dal giocatore e lo stato del territorio protetto, potrebbero essere esposte in misura limitata per garantire un'interazione fluida tra i giocatori.",
+                "text": "2. A causa della natura del servizio, le informazioni impostate per essere visibili ad altri giocatori all'interno del gioco, come il nickname impostato dal giocatore e lo stato della zona protetto, potrebbero essere esposte in misura limitata per garantire un'interazione fluida tra i giocatori.",
                 "danger": false,
                 "indent": false
               }
@@ -3856,7 +3856,7 @@ export const termsContent = {
             "type": "ul",
             "items": [
               {
-                "text": "1. Elaborazione dell'acquisizione del territorio in tempo reale: un servizio che calcola le coordinate di latitudine e longitudine della posizione quando un giocatore entra in un'area specifica della griglia esagonale con un dispositivo mobile e la protegge e registra come territorio del giocatore.",
+                "text": "1. Elaborazione dell'acquisizione della zona in tempo reale: un servizio che calcola le coordinate di latitudine e longitudine della posizione quando un giocatore entra in una zona specifica della griglia esagonale con un dispositivo mobile e la protegge e registra come zona del giocatore.",
                 "danger": false,
                 "indent": false
               },
@@ -3965,7 +3965,7 @@ export const termsContent = {
                 "indent": false
               },
               {
-                "text": "2. Acquisizione del territorio trasmettendo le coordinate della posizione virtuale in modo anomalo utilizzando GPS Spoofing, strumenti di manipolazione della posizione dell'emulatore, ecc., senza visitare effettivamente il sito.",
+                "text": "2. Acquisizione della zona trasmettendo le coordinate della posizione virtuale in modo anomalo utilizzando GPS Spoofing, strumenti di manipolazione della posizione dell'emulatore, ecc., senza visitare effettivamente il sito.",
                 "danger": true,
                 "indent": false
               },
@@ -3975,7 +3975,7 @@ export const termsContent = {
                 "indent": false
               },
               {
-                "text": "4. Sfruttare intenzionalmente errori o bug nel gioco per acquisire oro in modo anomalo (GP) o indurre uno stato di occupazione anormale del territorio.",
+                "text": "4. Sfruttare intenzionalmente errori o bug nel gioco per acquisire oro in modo anomalo (GP) o indurre uno stato di occupazione anormale della zona.",
                 "danger": false,
                 "indent": false
               }
@@ -4000,12 +4000,12 @@ export const termsContent = {
                 "indent": true
               },
               {
-                "text": "Me. Confisca e ripristino del territorio: qualsiasi territorio acquisito attraverso la manipolazione anomala della posizione o lo sfruttamento di bug verrà recuperato con la forza senza preavviso e immediatamente convertito in territorio neutrale e ripristinato.",
+                "text": "Me. Confisca e ripristino della zona: qualsiasi zona acquisita attraverso la manipolazione anomala della posizione o lo sfruttamento di bug verrà recuperato con la forza senza preavviso e immediatamente convertito in zona neutrale e ripristinato.",
                 "danger": true,
                 "indent": true
               },
               {
-                "text": "Tutto. Limitazione sull'utilizzo dell'account: l'utilizzo di tutti i servizi, compreso l'accesso al gioco e l'occupazione del territorio, è sospeso per un certo periodo di tempo.",
+                "text": "Tutto. Limitazione sull'utilizzo dell'account: l'utilizzo di tutti i servizi, compreso l'accesso al gioco e l'occupazione della zona, è sospeso per un certo periodo di tempo.",
                 "danger": false,
                 "indent": true
               },
@@ -4055,22 +4055,22 @@ export const termsContent = {
             "type": "ul",
             "items": [
               {
-                "text": "1. \"Gold (GP)\" è una valuta dati virtuale gratuita utilizzata per proteggere il territorio ed eseguire modalità specifiche all'interno del servizio di gioco.",
+                "text": "1. \"Gold (GP)\" è una valuta dati virtuale gratuita utilizzata per proteggere la zona ed eseguire modalità specifiche all'interno del servizio di gioco.",
                 "danger": false,
                 "indent": false
               },
               {
-                "text": "2. L'oro (GP) viene fornito automaticamente e cumulativamente in proporzione al mantenimento dell'appartenenza, al numero di territorio occupato, alla durata dell'occupazione, ecc., e non è un vero bene.",
+                "text": "2. L'oro (GP) viene fornito automaticamente e cumulativamente in proporzione al mantenimento dell'appartenenza, al numero delle zone occupate, alla durata dell'occupazione, ecc., e non è un vero bene.",
                 "danger": false,
                 "indent": false
               },
               {
-                "text": "3. I giocatori non possono intraprendere alcuna transazione che implichi la vendita, il trasferimento o l'affitto di dati di gioco, come oro (GP) e territorio, ad altri a pagamento o scambiandoli con denaro reale.",
+                "text": "3. I giocatori non possono intraprendere alcuna transazione che implichi la vendita, il trasferimento o l'affitto di dati di gioco, come oro (GP) e zone, ad altri a pagamento o scambiandoli con denaro reale.",
                 "danger": false,
                 "indent": false
               },
               {
-                "text": "4. Al termine del servizio (ritiro dell'abbonamento), tutto l'oro (GP) e i dati dei territori occupati detenuti dal giocatore andranno persi e non potranno essere recuperati.",
+                "text": "4. Al termine del servizio (ritiro dell'abbonamento), tutto l'oro (GP) e i dati dele zone occupati detenuti dal giocatore andranno persi e non potranno essere recuperati.",
                 "danger": false,
                 "indent": false
               }
@@ -4115,12 +4115,12 @@ export const termsContent = {
                 "indent": false
               },
               {
-                "text": "2. La società non è responsabile per la mancata decisione di acquisizione del territorio, errore di accumulo di oro o ritardo dei dati causato dalle prestazioni del terminale di ciascun giocatore, dalle impostazioni del dispositivo (autorizzazione alla posizione non consentita, modalità di risparmio energetico, ecc.), errore GPS o stato di comunicazione scadente.",
+                "text": "2. La società non è responsabile per la mancata decisione di acquisizione della zona, errore di accumulo di oro o ritardo dei dati causato dalle prestazioni del terminale di ciascun giocatore, dalle impostazioni del dispositivo (autorizzazione alla posizione non consentita, modalità di risparmio energetico, ecc.), errore GPS o stato di comunicazione scadente.",
                 "danger": false,
                 "indent": false
               },
               {
-                "text": "3. I giocatori devono essere pienamente consapevoli della natura del gioco basato sulla posizione, che prevede la protezione del territorio attraverso camminate e movimenti reali all'aperto, e devono seguire autonomamente tutte le regole di sicurezza in preparazione ai pericoli dell'ambiente circostante. La società non è responsabile per eventuali lesioni fisiche o incidenti causati dalla negligenza del giocatore.",
+                "text": "3. I giocatori devono essere pienamente consapevoli della natura del gioco basato sulla posizione, che prevede la protezione della zona attraverso camminate e movimenti reali all'aperto, e devono seguire autonomamente tutte le regole di sicurezza in preparazione ai pericoli dell'ambiente circostante. La società non è responsabile per eventuali lesioni fisiche o incidenti causati dalla negligenza del giocatore.",
                 "danger": false,
                 "indent": false
               }
@@ -4140,7 +4140,7 @@ export const termsContent = {
                 "indent": false
               },
               {
-                "text": "2. Quando un membro si ritira, tutto il territorio esagonale occupato dal giocatore viene immediatamente convertito in uno stato neutralizzato e può essere acquisito liberamente da altri giocatori. Tutti i beni virtuali, le statistiche storiche e i dati identificativi raccolti vengono immediatamente e completamente cancellati (Cascade Delete) dal DB del server reale in uno stato irrecuperabile.",
+                "text": "2. Quando un membro si ritira, tutto la zona esagonale occupato dal giocatore viene immediatamente convertito in uno stato neutralizzato e può essere acquisito liberamente da altri giocatori. Tutti i beni virtuali, le statistiche storiche e i dati identificativi raccolti vengono immediatamente e completamente cancellati (Cascade Delete) dal DB del server reale in uno stato irrecuperabile.",
                 "danger": true,
                 "indent": false
               }

@@ -8,7 +8,7 @@ export const privacyContent = {
         "blocks": [
           {
             "type": "p",
-            "text": "본 서비스는 회원 가입 및 계정 관리, 위치기반 서비스 제공(실시간 영토 점령 연산 및 본진 기지 좌표 계산), 인게임 랭킹 산출, 실시간 영토 변동 푸시 알림 발송 및 플레이어 민원 처리를 목적으로 최소한의 개인정보를 처리합니다."
+            "text": "본 서비스는 회원 가입 및 계정 관리, 위치기반 서비스 제공(실시간 구역 점령 연산 및 본진 기지 좌표 계산), 인게임 랭킹 산출, 실시간 구역 변동 푸시 알림 발송 및 플레이어 민원 처리를 목적으로 최소한의 개인정보를 처리합니다."
           }
         ]
       },
@@ -41,7 +41,7 @@ export const privacyContent = {
           },
           {
             "type": "p",
-            "text": "백그라운드 위치: 앱이 화면에 표시되지 않거나 사용 중이 아닐 때도 실시간 영토 확보·동기화를 위해 위치 정보를 수집합니다. 사용자가 백그라운드 위치 권한을 허용한 경우에만 수집하며, 앱 내 고지와 시스템 권한 화면을 통해 동의를 받습니다. 수집된 위치는 영토 점령·동기화 외 목적으로 사용하지 않습니다."
+            "text": "백그라운드 위치: 앱이 화면에 표시되지 않거나 사용 중이 아닐 때도 실시간 구역 확보·동기화를 위해 위치 정보를 수집합니다. 사용자가 백그라운드 위치 권한을 허용한 경우에만 수집하며, 앱 내 고지와 시스템 권한 화면을 통해 동의를 받습니다. 수집된 위치는 구역 점령·동기화 외 목적으로 사용하지 않습니다."
           }
         ]
       },
@@ -50,7 +50,7 @@ export const privacyContent = {
         "blocks": [
           {
             "type": "p",
-            "text": "회원의 개인정보 및 영토 데이터는 회원 탈퇴 시 실서버 데이터베이스에서 즉시 100% 영구 삭제(Cascade Delete) 및 영토 중립화 처리됩니다."
+            "text": "회원의 개인정보 및 구역 데이터는 회원 탈퇴 시 실서버 데이터베이스에서 즉시 100% 영구 삭제(Cascade Delete) 및 구역 중립화 처리됩니다."
           }
         ]
       },
@@ -79,7 +79,7 @@ export const privacyContent = {
                 "indent": false
               },
               {
-                "text": "**Firebase Cloud Messaging (Google LLC):** 영토 변동 및 서비스 중요 이벤트 관련 실시간 푸시 알림 발송 처리 위탁 (보유기간: 푸시 발송 완료 시 즉시 파기)",
+                "text": "**Firebase Cloud Messaging (Google LLC):** 구역 변동 및 서비스 중요 이벤트 관련 실시간 푸시 알림 발송 처리 위탁 (보유기간: 푸시 발송 완료 시 즉시 파기)",
                 "danger": false,
                 "indent": false
               }
@@ -99,7 +99,7 @@ export const privacyContent = {
                 "indent": false
               },
               {
-                "text": "2. 탈퇴 및 삭제 요청이 접수되는 즉시, 플레이어의 개인 식별 데이터, 보유 골드 재화, 활동 전적 통계 및 확보했던 지도 내 영토 데이터는 실서버 데이터베이스에서 영구적으로 즉시 완전 삭제(Cascade Delete) 및 중립화되어 재사용이나 복구가 절대 불가능합니다.",
+                "text": "2. 탈퇴 및 삭제 요청이 접수되는 즉시, 플레이어의 개인 식별 데이터, 보유 골드 재화, 활동 전적 통계 및 확보했던 지도 내 구역 데이터는 실서버 데이터베이스에서 영구적으로 즉시 완전 삭제(Cascade Delete) 및 중립화되어 재사용이나 복구가 절대 불가능합니다.",
                 "danger": true,
                 "indent": false
               }
@@ -179,7 +179,7 @@ export const privacyContent = {
         "blocks": [
           {
             "type": "p",
-            "text": "This Service processes the minimum amount of personal information for the purposes of member registration and account management, providing location-based services (calculating real-time territory captures and base coordinates), compiling in-game rankings, sending real-time push notifications of territory changes, and handling Player inquiries."
+            "text": "This Service processes the minimum amount of personal information for the purposes of member registration and account management, providing location-based services (calculating real-time zone captures and base coordinates), compiling in-game rankings, sending real-time push notifications of zone changes, and handling Player inquiries."
           }
         ]
       },
@@ -212,7 +212,7 @@ export const privacyContent = {
           },
           {
             "type": "p",
-            "text": "Background location: The app collects location information to capture and sync territories in real time even when the app is not visible or in use. Collection occurs only when the user grants background location permission, and consent is obtained through the in-app disclosure and the system permission screen. Collected location is not used for any purpose other than territory capture and synchronization."
+            "text": "Background location: The app collects location information to capture and sync zones in real time even when the app is not visible or in use. Collection occurs only when the user grants background location permission, and consent is obtained through the in-app disclosure and the system permission screen. Collected location is not used for any purpose other than zone capture and synchronization."
           }
         ]
       },
@@ -221,7 +221,7 @@ export const privacyContent = {
         "blocks": [
           {
             "type": "p",
-            "text": "The Member's personal information and territory data will be permanently and completely deleted (Cascade Delete) from the production server database immediately upon account withdrawal, and the captured territories will be neutralized."
+            "text": "The Member's personal information and zone data will be permanently and completely deleted (Cascade Delete) from the production server database immediately upon account withdrawal, and the captured zones will be neutralized."
           }
         ]
       },
@@ -250,7 +250,7 @@ export const privacyContent = {
                 "indent": false
               },
               {
-                "text": "**Firebase Cloud Messaging (Google LLC):** Consignment of sending real-time push notifications for territory modifications and important service events (Retention period: Destroyed immediately upon push notification completion).",
+                "text": "**Firebase Cloud Messaging (Google LLC):** Consignment of sending real-time push notifications for zone modifications and important service events (Retention period: Destroyed immediately upon push notification completion).",
                 "danger": false,
                 "indent": false
               }
@@ -270,7 +270,7 @@ export const privacyContent = {
                 "indent": false
               },
               {
-                "text": "2. Immediately upon receipt of the withdrawal and erasure request, the Player's personally identifiable data, virtual currencies, statistics, and captured territories on the map will be permanently deleted (Cascade Delete) and neutralized from the production database, and cannot be recovered or reused.",
+                "text": "2. Immediately upon receipt of the withdrawal and erasure request, the Player's personally identifiable data, virtual currencies, statistics, and captured zones on the map will be permanently deleted (Cascade Delete) and neutralized from the production database, and cannot be recovered or reused.",
                 "danger": true,
                 "indent": false
               }
@@ -350,7 +350,7 @@ export const privacyContent = {
         "blocks": [
           {
             "type": "p",
-            "text": "本サービスは、会員登録及びアカウント管理、位置基盤サービス提供（リアルタイム領土占領演算及び本拠地座標計算）、インゲームランキング算出、リアルタイム領土変動プッシュ通知発送及びプレイヤー苦情処理 を目的に最小限の個人情報を処理します。"
+            "text": "本サービスは、会員登録及びアカウント管理、位置基盤サービス提供（リアルタイムゾーン占領演算及び本拠地座標計算）、インゲームランキング算出、リアルタイムゾーン変動プッシュ通知発送及びプレイヤー苦情処理 を目的に最小限の個人情報を処理します。"
           }
         ]
       },
@@ -383,7 +383,7 @@ export const privacyContent = {
           },
           {
             "type": "p",
-            "text": "バックグラウンド位置：アプリが画面に表示されない場合や使用中でない場合でも、リアルタイムの領土確保・同期のために位置情報を収集します。ユーザーがバックグラウンドロケーションの権限を許可した場合にのみ収集し、アプリ内の告知とシステムの権限画面で同意を得ます。収集された位置は、領土占領・同期化以外の目的には使用しません。"
+            "text": "バックグラウンド位置：アプリが画面に表示されない場合や使用中でない場合でも、リアルタイムのゾーン確保・同期のために位置情報を収集します。ユーザーがバックグラウンドロケーションの権限を許可した場合にのみ収集し、アプリ内の告知とシステムの権限画面で同意を得ます。収集された位置は、ゾーン占領・同期化以外の目的には使用しません。"
           }
         ]
       },
@@ -392,7 +392,7 @@ export const privacyContent = {
         "blocks": [
           {
             "type": "p",
-            "text": "会員の個人情報および領土データは、会員脱退時にシルサーバーデータベースから直ちに100%永久削除(Cascade Delete)および領土中立化処理されます。"
+            "text": "会員の個人情報およびゾーンデータは、会員脱退時にシルサーバーデータベースから直ちに100%永久削除(Cascade Delete)およびゾーン中立化処理されます。"
           }
         ]
       },
@@ -421,7 +421,7 @@ export const privacyContent = {
                 "indent": false
               },
               {
-                "text": "**Firebase Cloud Messaging (Google LLC):** 領土変動およびサービス 重要イベント関連リアルタイムプッシュ通知発送処理委託（保有期間：プッシュ発送完了時に直ちに破棄）",
+                "text": "**Firebase Cloud Messaging (Google LLC):** ゾーン変動およびサービス 重要イベント関連リアルタイムプッシュ通知発送処理委託（保有期間：プッシュ発送完了時に直ちに破棄）",
                 "danger": false,
                 "indent": false
               }
@@ -441,7 +441,7 @@ export const privacyContent = {
                 "indent": false
               },
               {
-                "text": "2. 退会および削除要求が受け付けられるとすぐに、プレイヤーの個人識別データ、保有金財貨、活動全統計および確保した地図内の領土データは、シルサーバーデータベースから永久的に直ちに完全削除(Cascade Delete)および中立化され、再使用や復旧が絶対不可能です。",
+                "text": "2. 退会および削除要求が受け付けられるとすぐに、プレイヤーの個人識別データ、保有金財貨、活動全統計および確保した地図内のゾーンデータは、シルサーバーデータベースから永久的に直ちに完全削除(Cascade Delete)および中立化され、再使用や復旧が絶対不可能です。",
                 "danger": true,
                 "indent": false
               }
@@ -521,7 +521,7 @@ export const privacyContent = {
         "blocks": [
           {
             "type": "p",
-            "text": "该服务处理最低限度的个人信息，用于会员注册和账户管理、基于位置的服务提供（实时领土占领计算和基地坐标计算）、计算游戏内排名、发送实时领土变更推送通知以及处理玩家投诉。"
+            "text": "该服务处理最低限度的个人信息，用于会员注册和账户管理、基于位置的服务提供（实时区域占领计算和基地坐标计算）、计算游戏内排名、发送实时区域变更推送通知以及处理玩家投诉。"
           }
         ]
       },
@@ -554,7 +554,7 @@ export const privacyContent = {
           },
           {
             "type": "p",
-            "text": "后台位置：即使不在屏幕上或未使用时，该应用程序也会收集位置信息以实现实时领土获取与同步。仅当用户授予后台位置权限时才会收集，并通过应用内通知和系统权限屏幕获得同意。收集的位置不用于领土占领和同步之外的任何目的。"
+            "text": "后台位置：即使不在屏幕上或未使用时，该应用程序也会收集位置信息以实现实时区域获取与同步。仅当用户授予后台位置权限时才会收集，并通过应用内通知和系统权限屏幕获得同意。收集的位置不用于区域占领和同步之外的任何目的。"
           }
         ]
       },
@@ -612,7 +612,7 @@ export const privacyContent = {
                 "indent": false
               },
               {
-                "text": "2. 一旦收到注销或删除请求，玩家的个人身份数据、持有的金币、活动统计数据和安全地图领土数据将立即永久删除（Cascade Delete）并从真实服务器数据库中消除，绝对不可能再使用或恢复。",
+                "text": "2. 一旦收到注销或删除请求，玩家的个人身份数据、持有的金币、活动统计数据和安全地图区域数据将立即永久删除（Cascade Delete）并从真实服务器数据库中消除，绝对不可能再使用或恢复。",
                 "danger": true,
                 "indent": false
               }
@@ -692,7 +692,7 @@ export const privacyContent = {
         "blocks": [
           {
             "type": "p",
-            "text": "該服務處理最低限度的個人信息，用於會員註冊和帳戶管理、基於位置的服務提供（實時領土佔領計算和基地坐標計算）、計算遊戲內排名、發送實時領土變更推送通知以及處理玩家投訴。"
+            "text": "該服務處理最低限度的個人信息，用於會員註冊和帳戶管理、基於位置的服務提供（實時區域佔領計算和基地坐標計算）、計算遊戲內排名、發送實時區域變更推送通知以及處理玩家投訴。"
           }
         ]
       },
@@ -725,7 +725,7 @@ export const privacyContent = {
           },
           {
             "type": "p",
-            "text": "後台位置：即使不在螢幕上或未使用時，應用程式也會收集位置資訊以實現即時區域安全性和同步。僅當使用者授予後台位置權限時才會收集，並透過應用程式內通知和系統權限畫面獲得同意。收集的位置不用於領土佔領和同步之外的任何目的。"
+            "text": "後台位置：即使不在螢幕上或未使用時，應用程式也會收集位置資訊以實現即時區域安全性和同步。僅當使用者授予後台位置權限時才會收集，並透過應用程式內通知和系統權限畫面獲得同意。收集的位置不用於區域佔領和同步之外的任何目的。"
           }
         ]
       },
@@ -783,7 +783,7 @@ export const privacyContent = {
                 "indent": false
               },
               {
-                "text": "2. 一旦收到註銷或刪除請求，玩家的個人識別資料、持有的金幣、活動統計資料和安全地圖領土資料將立即永久刪除（Cascade Delete）並從真實伺服器資料庫中消除，絕對不可能再使用或恢復。",
+                "text": "2. 一旦收到註銷或刪除請求，玩家的個人識別資料、持有的金幣、活動統計資料和安全地圖區域資料將立即永久刪除（Cascade Delete）並從真實伺服器資料庫中消除，絕對不可能再使用或恢復。",
                 "danger": true,
                 "indent": false
               }
@@ -863,7 +863,7 @@ export const privacyContent = {
         "blocks": [
           {
             "type": "p",
-            "text": "Este servicio procesa una cantidad mínima de información personal para fines de registro de membresía y administración de cuentas, prestación de servicios basados en la ubicación (cálculo de ocupación del territorio en tiempo real y cálculo de coordenadas de la base), cálculo de clasificaciones en el juego, envío de notificaciones automáticas de cambios de territorio en tiempo real y manejo de quejas de los jugadores."
+            "text": "Este servicio procesa una cantidad mínima de información personal para fines de registro de membresía y administración de cuentas, prestación de servicios basados en la ubicación (cálculo de ocupación dla zona en tiempo real y cálculo de coordenadas de la base), cálculo de clasificaciones en el juego, envío de notificaciones automáticas de cambios de zona en tiempo real y manejo de quejas de los jugadores."
           }
         ]
       },
@@ -896,7 +896,7 @@ export const privacyContent = {
           },
           {
             "type": "p",
-            "text": "Ubicación en segundo plano: la aplicación recopila información de ubicación para la captura y sincronización del territorio en tiempo real, incluso cuando no está en la pantalla o en uso. Se recopila solo cuando el usuario otorga permiso de ubicación en segundo plano y el consentimiento se obtiene a través de un aviso en la aplicación y una pantalla de permiso del sistema. Los datos de ubicación recopilados no se utilizan para ningún otro propósito que la captura y sincronización del territorio."
+            "text": "Ubicación en segundo plano: la aplicación recopila información de ubicación para la captura y sincronización dla zona en tiempo real, incluso cuando no está en la pantalla o en uso. Se recopila solo cuando el usuario otorga permiso de ubicación en segundo plano y el consentimiento se obtiene a través de un aviso en la aplicación y una pantalla de permiso del sistema. Los datos de ubicación recopilados no se utilizan para ningún otro propósito que la captura y sincronización dla zona."
           }
         ]
       },
@@ -905,7 +905,7 @@ export const privacyContent = {
         "blocks": [
           {
             "type": "p",
-            "text": "Cuando un miembro retira su membresía, la información personal y los datos territoriales del miembro se eliminarán permanentemente (Cascade Delete) y el territorio se neutralizará inmediatamente de la base de datos del servidor real."
+            "text": "Cuando un miembro retira su membresía, la información personal y los datos territoriales del miembro se eliminarán permanentemente (Cascade Delete) y la zona se neutralizará inmediatamente de la base de datos del servidor real."
           }
         ]
       },
@@ -934,7 +934,7 @@ export const privacyContent = {
                 "indent": false
               },
               {
-                "text": "**Firebase Cloud Messaging (Google LLC):** Encomendar el procesamiento del envío de notificaciones push en tiempo real relacionadas con cambios de territorio y eventos de servicio importantes (Período de retención: destrucción inmediata al finalizar el envío push)",
+                "text": "**Firebase Cloud Messaging (Google LLC):** Encomendar el procesamiento del envío de notificaciones push en tiempo real relacionadas con cambios de zona y eventos de servicio importantes (Período de retención: destrucción inmediata al finalizar el envío push)",
                 "danger": false,
                 "indent": false
               }
@@ -954,7 +954,7 @@ export const privacyContent = {
                 "indent": false
               },
               {
-                "text": "2. Tan pronto como se recibe una solicitud de retiro o eliminación, los datos de identificación personal del jugador, el oro retenido, las estadísticas de actividad y los datos del territorio del mapa seguro se eliminan inmediata y permanentemente (Cascade Delete) y se neutralizan de la base de datos del servidor real, lo que hace que la reutilización o recuperación sea absolutamente imposible.",
+                "text": "2. Tan pronto como se recibe una solicitud de retiro o eliminación, los datos de identificación personal del jugador, el oro retenido, las estadísticas de actividad y los datos dla zona del mapa seguro se eliminan inmediata y permanentemente (Cascade Delete) y se neutralizan de la base de datos del servidor real, lo que hace que la reutilización o recuperación sea absolutamente imposible.",
                 "danger": true,
                 "indent": false
               }
@@ -1034,7 +1034,7 @@ export const privacyContent = {
         "blocks": [
           {
             "type": "p",
-            "text": "Ce service traite une quantité minimale d'informations personnelles à des fins d'enregistrement des membres et de gestion des comptes, de fourniture de services basés sur la localisation (calcul de l'occupation du territoire en temps réel et calcul des coordonnées de la base d'origine), du calcul des classements en jeu, de l'envoi de notifications push de changement de territoire en temps réel et du traitement des plaintes des joueurs."
+            "text": "Ce service traite une quantité minimale d'informations personnelles à des fins d'enregistrement des membres et de gestion des comptes, de fourniture de services basés sur la localisation (calcul de l'occupation de la zone en temps réel et calcul des coordonnées de la base d'origine), du calcul des classements en jeu, de l'envoi de notifications push de changement de zone en temps réel et du traitement des plaintes des joueurs."
           }
         ]
       },
@@ -1067,7 +1067,7 @@ export const privacyContent = {
           },
           {
             "type": "p",
-            "text": "Localisation en arrière-plan : l'application collecte des informations de localisation pour la capture et la synchronisation du territoire en temps réel, même lorsqu'elle n'est pas à l'écran ou en cours d'utilisation. Elles sont collectées uniquement lorsque l'utilisateur accorde l'autorisation de localisation en arrière-plan et que le consentement est obtenu via une notification dans l'application et un écran d'autorisation du système. Les données de localisation collectées ne sont utilisées à aucune autre fin que la capture et la synchronisation du territoire."
+            "text": "Localisation en arrière-plan : l'application collecte des informations de localisation pour la capture et la synchronisation de la zone en temps réel, même lorsqu'elle n'est pas à l'écran ou en cours d'utilisation. Elles sont collectées uniquement lorsque l'utilisateur accorde l'autorisation de localisation en arrière-plan et que le consentement est obtenu via une notification dans l'application et un écran d'autorisation du système. Les données de localisation collectées ne sont utilisées à aucune autre fin que la capture et la synchronisation de la zone."
           }
         ]
       },
@@ -1076,7 +1076,7 @@ export const privacyContent = {
         "blocks": [
           {
             "type": "p",
-            "text": "Lorsqu'un membre se retire de son adhésion, les informations personnelles et les données territoriales du membre seront supprimées définitivement à 100 % (Cascade Delete) et le territoire neutralisé immédiatement de la base de données du serveur réel."
+            "text": "Lorsqu'un membre se retire de son adhésion, les informations personnelles et les données territoriales du membre seront supprimées définitivement à 100 % (Cascade Delete) et la zone neutralisé immédiatement de la base de données du serveur réel."
           }
         ]
       },
@@ -1105,7 +1105,7 @@ export const privacyContent = {
                 "indent": false
               },
               {
-                "text": "**Firebase Cloud Messaging (Google LLC) :** Confier le traitement de l'envoi des notifications push en temps réel liées aux changements de territoire et aux événements importants de service (Durée de conservation : Destruction immédiate dès la fin de l'envoi push)",
+                "text": "**Firebase Cloud Messaging (Google LLC) :** Confier le traitement de l'envoi des notifications push en temps réel liées aux changements de zone et aux événements importants de service (Durée de conservation : Destruction immédiate dès la fin de l'envoi push)",
                 "danger": false,
                 "indent": false
               }
@@ -1125,7 +1125,7 @@ export const privacyContent = {
                 "indent": false
               },
               {
-                "text": "2. Dès qu'une demande de retrait ou de suppression est reçue, les données d'identification personnelles du joueur, l'or détenu, les statistiques d'activité et les données du territoire cartographique sécurisé sont immédiatement et définitivement supprimées (Cascade Delete) et neutralisées de la base de données du serveur réel, rendant la réutilisation ou la récupération absolument impossible.",
+                "text": "2. Dès qu'une demande de retrait ou de suppression est reçue, les données d'identification personnelles du joueur, l'or détenu, les statistiques d'activité et les données de la zone cartographique sécurisé sont immédiatement et définitivement supprimées (Cascade Delete) et neutralisées de la base de données du serveur réel, rendant la réutilisation ou la récupération absolument impossible.",
                 "danger": true,
                 "indent": false
               }
@@ -1205,7 +1205,7 @@ export const privacyContent = {
         "blocks": [
           {
             "type": "p",
-            "text": "Dieser Dienst verarbeitet eine Mindestmenge an personenbezogenen Daten für die Zwecke der Mitgliedschaftsregistrierung und Kontoverwaltung, der standortbasierten Dienstbereitstellung (Berechnung der Gebietsbelegung in Echtzeit und Berechnung der Koordinaten der Heimatbasis), der Berechnung von Ranglisten im Spiel, dem Versenden von Push-Benachrichtigungen über Gebietsänderungen in Echtzeit und der Bearbeitung von Spielerbeschwerden."
+            "text": "Dieser Dienst verarbeitet eine Mindestmenge an personenbezogenen Daten für die Zwecke der Mitgliedschaftsregistrierung und Kontoverwaltung, der standortbasierten Dienstbereitstellung (Berechnung der Zonenbelegung in Echtzeit und Berechnung der Koordinaten der Heimatbasis), der Berechnung von Ranglisten im Spiel, dem Versenden von Push-Benachrichtigungen über Zonenänderungen in Echtzeit und der Bearbeitung von Spielerbeschwerden."
           }
         ]
       },
@@ -1238,7 +1238,7 @@ export const privacyContent = {
           },
           {
             "type": "p",
-            "text": "Hintergrundstandort: Die App sammelt Standortinformationen für die Gebietserfassung und -synchronisierung in Echtzeit, auch wenn sie nicht auf dem Bildschirm angezeigt oder verwendet wird. Sie werden nur erfasst, wenn der Benutzer im Hintergrund eine Ortungserlaubnis erteilt und die Einwilligung über einen In-App-Hinweis und einen Systemberechtigungsbildschirm eingeholt wird. Die erfassten Standortdaten werden zu keinem anderen Zweck als der Gebietserfassung und -synchronisierung verwendet."
+            "text": "Hintergrundstandort: Die App sammelt Standortinformationen für die Zonenerfassung und -synchronisierung in Echtzeit, auch wenn sie nicht auf dem Bildschirm angezeigt oder verwendet wird. Sie werden nur erfasst, wenn der Benutzer im Hintergrund eine Ortungserlaubnis erteilt und die Einwilligung über einen In-App-Hinweis und einen Systemberechtigungsbildschirm eingeholt wird. Die erfassten Standortdaten werden zu keinem anderen Zweck als der Zonenerfassung und -synchronisierung verwendet."
           }
         ]
       },
@@ -1247,7 +1247,7 @@ export const privacyContent = {
         "blocks": [
           {
             "type": "p",
-            "text": "Wenn ein Mitglied die Mitgliedschaft widerruft, werden die persönlichen Daten und Gebietsdaten des Mitglieds zu 100 % dauerhaft gelöscht (Cascade Delete) und das Gebiet sofort aus der Datenbank des echten Servers neutralisiert."
+            "text": "Wenn ein Mitglied die Mitgliedschaft widerruft, werden die persönlichen Daten und Zonendaten des Mitglieds zu 100 % dauerhaft gelöscht (Cascade Delete) und die Zone sofort aus der Datenbank des echten Servers neutralisiert."
           }
         ]
       },
@@ -1276,7 +1276,7 @@ export const privacyContent = {
                 "indent": false
               },
               {
-                "text": "**Firebase Cloud Messaging (Google LLC):** Betrauen Sie die Verarbeitung des Sendens von Echtzeit-Push-Benachrichtigungen im Zusammenhang mit Gebietsänderungen und wichtigen Serviceereignissen (Aufbewahrungsfrist: Sofortige Zerstörung nach Abschluss des Push-Versands)",
+                "text": "**Firebase Cloud Messaging (Google LLC):** Betrauen Sie die Verarbeitung des Sendens von Echtzeit-Push-Benachrichtigungen im Zusammenhang mit Zonenänderungen und wichtigen Serviceereignissen (Aufbewahrungsfrist: Sofortige Zerstörung nach Abschluss des Push-Versands)",
                 "danger": false,
                 "indent": false
               }
@@ -1376,7 +1376,7 @@ export const privacyContent = {
         "blocks": [
           {
             "type": "p",
-            "text": "Este serviço processa uma quantidade mínima de informações pessoais para fins de registro de membros e gerenciamento de contas, prestação de serviços baseados em localização (cálculo de ocupação de território em tempo real e cálculo de coordenadas de base), cálculo de classificações no jogo, envio de notificações push de alteração de território em tempo real e tratamento de reclamações de jogadores."
+            "text": "Este serviço processa uma quantidade mínima de informações pessoais para fins de registro de membros e gerenciamento de contas, prestação de serviços baseados em localização (cálculo de ocupação de zona em tempo real e cálculo de coordenadas de base), cálculo de classificações no jogo, envio de notificações push de alteração de zona em tempo real e tratamento de reclamações de jogadores."
           }
         ]
       },
@@ -1409,7 +1409,7 @@ export const privacyContent = {
           },
           {
             "type": "p",
-            "text": "Localização em segundo plano: o aplicativo coleta informações de localização para a captura e sincronização do território em tempo real, mesmo quando não está na tela ou em uso. Esses dados são coletados somente quando o usuário concede permissão de localização em segundo plano, e o consentimento é obtido por meio de um aviso no aplicativo e uma tela de permissão do sistema. Os dados de localização coletados não são utilizados para nenhum outro propósito além da captura e sincronização do território."
+            "text": "Localização em segundo plano: o aplicativo coleta informações de localização para a captura e sincronização da zona em tempo real, mesmo quando não está na tela ou em uso. Esses dados são coletados somente quando o usuário concede permissão de localização em segundo plano, e o consentimento é obtido por meio de um aviso no aplicativo e uma tela de permissão do sistema. Os dados de localização coletados não são utilizados para nenhum outro propósito além da captura e sincronização da zona."
           }
         ]
       },
@@ -1418,7 +1418,7 @@ export const privacyContent = {
         "blocks": [
           {
             "type": "p",
-            "text": "Quando um membro cancela a adesão, as informações pessoais e os dados territoriais do membro serão 100% excluídos permanentemente (Cascade Delete) e o território neutralizado imediatamente do banco de dados do servidor real."
+            "text": "Quando um membro cancela a adesão, as informações pessoais e os dados territoriais do membro serão 100% excluídos permanentemente (Cascade Delete) e a zona neutralizado imediatamente do banco de dados do servidor real."
           }
         ]
       },
@@ -1467,7 +1467,7 @@ export const privacyContent = {
                 "indent": false
               },
               {
-                "text": "2. Assim que um pedido de retirada ou exclusão for recebido, os dados de identificação pessoal do jogador, o ouro mantido, as estatísticas de atividade e os dados seguros do território do mapa são imediata e permanentemente excluídos (Cascade Delete) e neutralizados do banco de dados do servidor real, tornando a reutilização ou recuperação absolutamente impossível.",
+                "text": "2. Assim que um pedido de retirada ou exclusão for recebido, os dados de identificação pessoal do jogador, o ouro mantido, as estatísticas de atividade e os dados seguros da zona do mapa são imediata e permanentemente excluídos (Cascade Delete) e neutralizados do banco de dados do servidor real, tornando a reutilização ou recuperação absolutamente impossível.",
                 "danger": true,
                 "indent": false
               }
@@ -1547,7 +1547,7 @@ export const privacyContent = {
         "blocks": [
           {
             "type": "p",
-            "text": "Questo servizio elabora una quantità minima di informazioni personali ai fini della registrazione dell'iscrizione e della gestione dell'account, della fornitura di servizi basati sulla posizione (calcolo dell'occupazione del territorio in tempo reale e calcolo delle coordinate della base di partenza), calcolo delle classifiche di gioco, invio di notifiche push di modifica del territorio in tempo reale e gestione dei reclami dei giocatori."
+            "text": "Questo servizio elabora una quantità minima di informazioni personali ai fini della registrazione dell'iscrizione e della gestione dell'account, della fornitura di servizi basati sulla posizione (calcolo dell'occupazione della zona in tempo reale e calcolo delle coordinate della base di partenza), calcolo delle classifiche di gioco, invio di notifiche push di modifica della zona in tempo reale e gestione dei reclami dei giocatori."
           }
         ]
       },
@@ -1580,7 +1580,7 @@ export const privacyContent = {
           },
           {
             "type": "p",
-            "text": "Posizione in background: l'app raccoglie informazioni sulla posizione per la sicurezza e la sincronizzazione del territorio in tempo reale anche quando non è sullo schermo o non è in uso. Vengono raccolti solo quando l'utente concede l'autorizzazione alla posizione in background e il consenso viene ottenuto tramite un avviso in-app e una schermata di autorizzazione del sistema. Le posizioni raccolte non vengono utilizzate per scopi diversi dall'occupazione e dalla sincronizzazione del territorio."
+            "text": "Posizione in background: l'app raccoglie informazioni sulla posizione per la sicurezza e la sincronizzazione della zona in tempo reale anche quando non è sullo schermo o non è in uso. Vengono raccolti solo quando l'utente concede l'autorizzazione alla posizione in background e il consenso viene ottenuto tramite un avviso in-app e una schermata di autorizzazione del sistema. Le posizioni raccolte non vengono utilizzate per scopi diversi dall'occupazione e dalla sincronizzazione della zona."
           }
         ]
       },
@@ -1589,7 +1589,7 @@ export const privacyContent = {
         "blocks": [
           {
             "type": "p",
-            "text": "Quando un membro ritira l'iscrizione, le informazioni personali del membro e i dati del territorio verranno eliminati definitivamente al 100% (Cascade Delete) e il territorio verrà immediatamente neutralizzato dal database del server reale."
+            "text": "Quando un membro ritira l'iscrizione, le informazioni personali del membro e i dati della zona verranno eliminati definitivamente al 100% (Cascade Delete) e la zona verrà immediatamente neutralizzato dal database del server reale."
           }
         ]
       },
@@ -1618,7 +1618,7 @@ export const privacyContent = {
                 "indent": false
               },
               {
-                "text": "**Firebase Cloud Messaging (Google LLC):** Affidare l'elaborazione dell'invio di notifiche push in tempo reale relative a modifiche del territorio ed eventi importanti del servizio (Periodo di conservazione: distruzione immediata al completamento dell'invio push)",
+                "text": "**Firebase Cloud Messaging (Google LLC):** Affidare l'elaborazione dell'invio di notifiche push in tempo reale relative a modifiche della zona ed eventi importanti del servizio (Periodo di conservazione: distruzione immediata al completamento dell'invio push)",
                 "danger": false,
                 "indent": false
               }
@@ -1638,7 +1638,7 @@ export const privacyContent = {
                 "indent": false
               },
               {
-                "text": "2. Non appena viene ricevuta una richiesta di ritiro o cancellazione, i dati identificativi personali del giocatore, l'oro detenuto, le statistiche di attività e i dati del territorio della mappa protetta vengono immediatamente e permanentemente cancellati (Cascade Delete) e neutralizzati dal database del server reale, rendendo assolutamente impossibile il riutilizzo o il recupero.",
+                "text": "2. Non appena viene ricevuta una richiesta di ritiro o cancellazione, i dati identificativi personali del giocatore, l'oro detenuto, le statistiche di attività e i dati della zona della mappa protetta vengono immediatamente e permanentemente cancellati (Cascade Delete) e neutralizzati dal database del server reale, rendendo assolutamente impossibile il riutilizzo o il recupero.",
                 "danger": true,
                 "indent": false
               }
