@@ -132,42 +132,49 @@ const CapturedTilesLayer = L.Layer.extend({
 
   onAdd(map) {
     this._map = map;
+    this._zoom = map.getZoom();
+    this._center = map.getCenter();
     const canvas = L.DomUtil.create('canvas', 'leaflet-zoom-animated');
     canvas.style.pointerEvents = 'none';
     this._canvas = canvas;
     map.getPanes().overlayPane.appendChild(canvas);
     map.on('moveend zoomend resize', this._reset, this);
-    map.on('zoom', this._scheduleReset, this);
-    map.on('zoomanim', this._animateZoom, this);
+    map.on('zoom', this._onZoom, this);
+    map.on('zoomanim', this._onAnimZoom, this);
     this._reset();
   },
 
   onRemove(map) {
     map.off('moveend zoomend resize', this._reset, this);
-    map.off('zoom', this._scheduleReset, this);
-    map.off('zoomanim', this._animateZoom, this);
+    map.off('zoom', this._onZoom, this);
+    map.off('zoomanim', this._onAnimZoom, this);
     if (this._raf) cancelAnimationFrame(this._raf);
     this._canvas.remove();
   },
 
-  _animateZoom(event) {
-    const map = this._map;
-    const scale = map.getZoomScale(event.zoom);
-    const offset = map._latLngBoundsToNewLayerBounds(map.getBounds(), event.zoom, event.center).min;
-    L.DomUtil.setTransform(this._canvas, offset, scale);
+  _onZoom() {
+    this._updateTransform(this._map.getCenter(), this._map.getZoom());
   },
 
-  _scheduleReset() {
-    if (this._raf) return;
-    this._raf = requestAnimationFrame(() => {
-      this._raf = 0;
-      if (this._map?._animatingZoom) return;
-      this._reset();
-    });
+  _onAnimZoom(event) {
+    this._updateTransform(event.center, event.zoom);
+  },
+
+  _updateTransform(center, zoom) {
+    const map = this._map;
+    const scale = map.getZoomScale(zoom, this._zoom);
+    const viewHalf = map.getSize().multiplyBy(0.5);
+    const currentCenterPoint = map.project(this._center, zoom);
+    const destCenterPoint = map.project(center, zoom);
+    const centerOffset = destCenterPoint.subtract(currentCenterPoint);
+    const topLeftOffset = viewHalf.multiplyBy(-1).add(centerOffset).add(map._getMapPanePos());
+    L.DomUtil.setTransform(this._canvas, topLeftOffset, scale);
   },
 
   _reset() {
     const map = this._map;
+    this._zoom = map.getZoom();
+    this._center = map.getCenter();
     const size = map.getSize();
     const dpr = window.devicePixelRatio || 1;
     const topLeft = map.containerPointToLayerPoint([0, 0]);
@@ -189,17 +196,22 @@ const CapturedTilesLayer = L.Layer.extend({
     const zoom = map.getZoom();
     const bounds = map.getBounds().pad(0.05);
 
-    if (zoom < 7) {
-      const radius = zoom <= 3 ? 1.4 : zoom <= 5 ? 1.8 : 2.2;
+    if (zoom < 5) {
+      const radius = zoom <= 2 ? 1 : zoom <= 3 ? 1.2 : 1.4;
       this._groups.forEach((group, color) => {
         ctx.fillStyle = hexToRgba(color, 0.9);
+        ctx.beginPath();
+        const seen = new Set();
         group.forEach((tile) => {
           if (!bounds.contains(tile.center)) return;
           const point = map.latLngToContainerPoint(tile.center);
-          ctx.beginPath();
+          const key = `${Math.round(point.x)},${Math.round(point.y)}`;
+          if (seen.has(key)) return;
+          seen.add(key);
+          ctx.moveTo(point.x + radius, point.y);
           ctx.arc(point.x, point.y, radius, 0, Math.PI * 2);
-          ctx.fill();
         });
+        ctx.fill();
       });
       return;
     }
@@ -207,7 +219,7 @@ const CapturedTilesLayer = L.Layer.extend({
     this._groups.forEach((group, color) => {
       ctx.fillStyle = hexToRgba(color, 0.45);
       ctx.strokeStyle = hexToRgba(color, 0.95);
-      ctx.lineWidth = zoom < 8 ? 0.8 : 1.5;
+      ctx.lineWidth = zoom < 10 ? 0.5 : 1;
       ctx.beginPath();
 
       group.forEach((tile) => {
