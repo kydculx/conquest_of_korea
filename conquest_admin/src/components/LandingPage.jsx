@@ -30,10 +30,10 @@ const HERO_IMAGES = [
 ].map(asset);
 
 const LIVE_FEED = [
-  { emoji: '🎉', accent: '#38bdf8', region: '서울 강남구', action: '새 타일을 점령했다' },
+  { emoji: '🎉', accent: '#38bdf8', region: '서울 강남구', action: '새 구역을 점령했다' },
   { emoji: '🔥', accent: '#f472b6', region: '부산 해운대구', action: '영토가 빠르게 확장 중' },
   { emoji: '🏃', accent: '#34d399', region: '한강 러닝 코스', action: '러너가 지도를 채우는 중' },
-  { emoji: '✨', accent: '#a78bfa', region: '제주 앞바다', action: '먼 바다 타일을 원격 점령' },
+  { emoji: '✨', accent: '#a78bfa', region: '제주 앞바다', action: '먼 바다 구역을 원격 점령' },
   { emoji: '📸', accent: '#fbbf24', region: '경북 경주시', action: '점령지에 사진이 올라왔다' }
 ];
 
@@ -157,7 +157,7 @@ export default function LandingPage() {
   const steps = [
     { no: '01', icon: <Smartphone size={22} />, title: '앱 설치 후 위치 권한을 켜세요', desc: '스마트폰 하나면 준비 끝. 이동 경로를 지도 위에 그대로 옮깁니다.' },
     { no: '02', icon: <MapPin size={22} />, title: '움직일수록 영토가 늘어납니다', desc: '러닝, 출퇴근, 산책까지 모든 이동이 실시간으로 내 점령지가 됩니다.' },
-    { no: '03', icon: <Sparkles size={22} />, title: '나만의 지도를 완성하세요', desc: '점령 타일로 맵 아트를 그리고, 사진을 남기고, 기록을 비교해보세요.' }
+    { no: '03', icon: <Sparkles size={22} />, title: '나만의 지도를 완성하세요', desc: '점령 구역으로 맵 아트를 그리고, 사진을 남기고, 기록을 비교해보세요.' }
   ];
 
   const rows = [
@@ -169,21 +169,21 @@ export default function LandingPage() {
     },
     {
       items: [
-        { icon: <Palette size={20} />, title: '🎨 내 발자국으로 그리는 맵 아트', text: '점령한 타일을 이어 하트·글자 등 나만의 무늬를 완성하세요. 지도가 점점 나만의 작품으로 채워집니다.' },
+        { icon: <Palette size={20} />, title: '🎨 내 발자국으로 그리는 맵 아트', text: '점령한 구역을 이어 하트·글자 등 나만의 무늬를 완성하세요. 지도가 점점 나만의 작품으로 채워집니다.' },
         { icon: <Coins size={20} />, title: '🪙 골목 산책과 보물찾기', text: '안 가본 골목을 돌다 보면 숨겨진 골드가 나타납니다. 일상 속 작은 탐험이 보상이 되는 경험을 줍니다.' }
       ]
     },
     {
       items: [
         { icon: <MapPin size={20} />, title: '🛋️ 집 안에서 즐기는 원격 점령', text: '강 건너나 먼 곳, 날씨가 안 좋은 날엔 모아둔 골드로 원격 점령합니다. 직접 가지 않아도 내 영토는 계속 넓어집니다.' },
-        { icon: <Camera size={20} />, title: '📸 내 주변 현장 촬영 및 갤러리 공유', text: '점령한 타일에서 찍은 사진이 지도 갤러리에 남습니다. 내 발자국이 남긴 풍경을 다른 플레이어와 나눌 수 있습니다.' }
+        { icon: <Camera size={20} />, title: '📸 내 주변 현장 촬영 및 갤러리 공유', text: '점령한 구역에서 찍은 사진이 지도 갤러리에 남습니다. 내 발자국이 남긴 풍경을 다른 플레이어와 나눌 수 있습니다.' }
       ]
     }
   ];
 
   const systems = [
     { icon: <Trophy size={22} />, title: '전 세계 랭킹', text: '내 점령 면적은 전 세계 랭킹에 기록됩니다. 동네를 넘어 전 세계 플레이어와 기록을 겨룰 수 있습니다.' },
-    { icon: <Layers size={22} />, title: '헥스 타일 정복', text: '지도는 육각 타일로 이루어져 있습니다. 한 칸씩 방문해 채우며 전 세계를 내 영토로 만들어가세요.' },
+    { icon: <Layers size={22} />, title: '헥스 구역 정복', text: '지도는 육각 구역으로 이루어져 있습니다. 한 칸씩 방문해 채우며 전 세계를 내 영토로 만들어가세요.' },
     { icon: <Award size={22} />, title: '골드 & 업적', text: '이동과 탐험으로 골드를 모으고, 다양한 업적을 달성하며 성장의 보상을 얻으세요.' }
   ];
 
@@ -242,7 +242,7 @@ export default function LandingPage() {
 
             <div className="hero-visual">
               <div className="hud-chip hud-gold">💰 +12 GOLD</div>
-              <div className="hud-chip hud-tile">📍 새 타일 점령!</div>
+              <div className="hud-chip hud-tile">📍 새 구역 점령!</div>
               <div className="map-view-card">
                 <div className="map-grid-bg" />
                 {HERO_IMAGES.map((src, index) => (

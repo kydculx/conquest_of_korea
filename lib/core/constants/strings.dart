@@ -90,7 +90,7 @@ class GameStrings {
   /// 랭킹 라벨
   static String get rank => 'rank'.tr();
 
-  /// 영토(타일) 소유 개수 라벨
+  /// 영토(구역) 소유 개수 라벨
   static String get territoryCount => 'territoryCount'.tr();
 
   /// 누적 점령 횟수 라벨
@@ -235,7 +235,7 @@ class GameStrings {
   /// 소속 팀 명칭 라벨
   static String get myTeam => 'myTeam'.tr();
 
-  /// 점령한 타일 개수 표시 라벨
+  /// 점령한 구역 개수 표시 라벨
   static String get capturedTiles => 'capturedTiles'.tr();
 
   /// 작전 설정 메뉴 타이틀
@@ -367,7 +367,7 @@ class GameStrings {
   /// 랭킹 헤더 순위 라벨
   static String get rankingHeaderRank => 'rankingHeaderRank'.tr();
 
-  /// 랭킹 헤더 구역수 라벨
+  /// 랭킹 헤더 구역 수 라벨
   static String get rankingHeaderCapturedTiles =>
       'rankingHeaderCapturedTiles'.tr();
 
@@ -390,7 +390,7 @@ class GameStrings {
       'rankingDescTotalMovedTiles'.tr();
   static String get rankingDailyUtcNote => 'rankingDailyUtcNote'.tr();
 
-  /// 타일 단위 매핑 함수
+  /// 구역 단위 매핑 함수
   static String tileUnit(int count) =>
       'tileUnit'.tr(namedArgs: {'count': count.toString()});
 
@@ -571,7 +571,7 @@ class GameStrings {
   /// 본진 설정 화면 타이틀
   static String get baseSetupTitle => 'baseSetupTitle'.tr();
 
-  /// 지정한 본진 타일 정보 안내 포맷팅 함수
+  /// 지정한 본진 구역 정보 안내 포맷팅 함수
   static String baseSetupDescription(String tileId) =>
       'baseSetupDescription'.tr(namedArgs: {'tileId': tileId});
 
@@ -590,7 +590,7 @@ class GameStrings {
   /// 기지 이전 최종 확인 타이틀
   static String get rebaseConfirmTitle => 'rebaseConfirmTitle'.tr();
 
-  /// 이전 대상 기지 타일 상세 안내 포맷팅 함수
+  /// 이전 대상 기지 구역 상세 안내 포맷팅 함수
   static String rebaseConfirmContent({
     required String tileId,
     required String cost,
@@ -599,7 +599,7 @@ class GameStrings {
     namedArgs: {'tileId': tileId, 'cost': cost, 'currentGold': currentGold},
   );
 
-  /// 최초 1회 이전 대상 기지 타일 상세 안내 포맷팅 함수
+  /// 최초 1회 이전 대상 기지 구역 상세 안내 포맷팅 함수
   static String rebaseConfirmContentFirst({
     required String tileId,
     required String currentGold,
@@ -630,7 +630,7 @@ class GameStrings {
         namedArgs: {'tileId': tileId, 'seconds': seconds},
       );
 
-  /// 원격 모드 타겟 타일 선택 대기 안내 문구
+  /// 원격 모드 타겟 구역 선택 대기 안내 문구
   static String get satelliteSelectTile => 'satelliteSelectTile'.tr();
 
   /// 원격 모드 타겟 고정(조준) 상태 라벨
@@ -647,10 +647,10 @@ class GameStrings {
   static String satDurationTime(String seconds) =>
       'satDurationTime'.tr(namedArgs: {'seconds': seconds});
 
-  /// 이미 아군이 원격으로 점령한 타일 안내 문구
+  /// 이미 아군이 원격으로 점령한 구역 안내 문구
   static String get satAlreadyCaptured => 'satAlreadyCaptured'.tr();
 
-  /// 원격 모드 지정 타일 조준 포맷팅 함수
+  /// 원격 모드 지정 구역 조준 포맷팅 함수
   static String satLockOnTile(String tileId) =>
       'satLockOnTile'.tr(namedArgs: {'tileId': tileId});
 
@@ -962,10 +962,10 @@ class GameStrings {
   /// 온보딩 사진 촬영 상세 설명
   static String get onboardingPhotoDesc => 'onboardingPhotoDesc'.tr();
 
-  /// 타일 사진 갤러리 타이틀
+  /// 구역 사진 갤러리 타이틀
   static String get tileGalleryTitle => 'tileGalleryTitle'.tr();
 
-  /// 타일 내 사진 없음
+  /// 구역 내 사진 없음
   static String get noPhotosInTile => 'noPhotosInTile'.tr();
 
   /// 사진 등록 액션
@@ -1004,7 +1004,7 @@ class GameStrings {
   /// 사진 삭제 실패
   static String get photoDeleteFail => 'photoDeleteFail'.tr();
 
-  /// 동일 타일 사진 촬영 1회 제한 경고
+  /// 동일 구역 사진 촬영 1회 제한 경고
   static String get photoLimitReached => 'photoLimitReached'.tr();
 
   /// 사진 업로드 시 코멘트 힌트
@@ -1290,7 +1290,7 @@ class GameStrings {
   static String get unlocked => 'unlocked'.tr();
   static String get locked => 'locked'.tr();
 
-  // 1. 누적 점령 타일
+  // 1. 누적 점령 구역
   static String get achCapT1Title => 'achCapT1Title'.tr();
   static String get achCapT1Desc => 'achCapT1Desc'.tr();
   static String get achCapT2Title => 'achCapT2Title'.tr();
@@ -1300,7 +1300,7 @@ class GameStrings {
   static String get achCapT4Title => 'achCapT4Title'.tr();
   static String get achCapT4Desc => 'achCapT4Desc'.tr();
 
-  // 2. 적 진영 점령 타일
+  // 2. 적 진영 점령 구역
   static String get achInvT1Title => 'achInvT1Title'.tr();
   static String get achInvT1Desc => 'achInvT1Desc'.tr();
   static String get achInvT2Title => 'achInvT2Title'.tr();
@@ -1310,7 +1310,7 @@ class GameStrings {
   static String get achInvT4Title => 'achInvT4Title'.tr();
   static String get achInvT4Desc => 'achInvT4Desc'.tr();
 
-  // 3. 누적 이동 타일 수
+  // 3. 누적 이동 구역 수
   static String get achMovT1Title => 'achMovT1Title'.tr();
   static String get achMovT1Desc => 'achMovT1Desc'.tr();
   static String get achMovT2Title => 'achMovT2Title'.tr();
@@ -1320,7 +1320,7 @@ class GameStrings {
   static String get achMovT4Title => 'achMovT4Title'.tr();
   static String get achMovT4Desc => 'achMovT4Desc'.tr();
 
-  // 4. 일일 최고 이동 타일 수
+  // 4. 일일 최고 이동 구역 수
   static String get achDmovT1Title => 'achDmovT1Title'.tr();
   static String get achDmovT1Desc => 'achDmovT1Desc'.tr();
   static String get achDmovT2Title => 'achDmovT2Title'.tr();
@@ -1442,7 +1442,7 @@ class GameStrings {
   static String footprintRecordTime(String time) =>
       'footprintRecordTime'.tr(namedArgs: {'time': time});
 
-  /// 패턴 타일 탐색 성공
+  /// 패턴 구역 탐색 성공
   static String get patternTileScanSuccess => 'patternTileScanSuccess'.tr();
 
   /// 이미 매칭에 완성해 사용한 도감 헥사곤 영역
@@ -1459,7 +1459,7 @@ class GameStrings {
   static String patternConqueror(String char) =>
       'patternConqueror'.tr(namedArgs: {'char': char});
 
-  /// 타일 몇개로 완성
+  /// 구역 몇개로 완성
   static String patternTilesCountCompleted(String count) =>
       'patternTilesCountCompleted'.tr(namedArgs: {'count': count});
 

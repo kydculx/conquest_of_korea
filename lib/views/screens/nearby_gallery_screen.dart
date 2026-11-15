@@ -9,7 +9,7 @@ import '../../services/photo_service.dart';
 import '../widgets/tactical_app_bar.dart';
 import '../widgets/tile_photo_viewer_dialog.dart';
 
-/// 현재 위치에서 가까운 순서대로 전체 타일 사진을 격자 형태로 보여주는 갤러리 화면.
+/// 현재 위치에서 가까운 순서대로 전체 구역 사진을 격자 형태로 보여주는 갤러리 화면.
 /// 하단 스크롤 시 다음 페이지를 추가로 로드합니다.
 class NearbyGalleryScreen extends StatefulWidget {
   final LatLng currentLocation;

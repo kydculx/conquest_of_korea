@@ -253,7 +253,7 @@ class PlayerComponent extends PositionComponent {
           fontWeight: FontWeight.bold,
           fontFamily: 'Fredoka',
           shadows: [
-            // 밝은 배경 맵 타일 위에서도 또렷이 분리되는 다크 섀도 드롭
+            // 밝은 배경 맵 구역 위에서도 또렷이 분리되는 다크 섀도 드롭
             Shadow(
               color: Palette.charcoal.withValues(alpha: 0.85),
               offset: const Offset(0.5, 0.5),

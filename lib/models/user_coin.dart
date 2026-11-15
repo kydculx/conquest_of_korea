@@ -3,7 +3,7 @@ class UserCoin {
   /// 동전의 소유 플레이어 ID
   final String userId;
 
-  /// 동전이 위치한 헥사곤 타일 ID
+  /// 동전이 위치한 헥사곤 구역 ID
   final String tileId;
 
   /// 헥사곤 격자 좌표 q

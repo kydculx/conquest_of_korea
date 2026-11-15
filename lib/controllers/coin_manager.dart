@@ -101,7 +101,7 @@ class CoinManager {
     }
   }
 
-  /// 플레이어가 현재 위치한 타일에 동전이 있으면 획득 처리합니다 (낙관적 업데이트 + 실패 시 롤백).
+  /// 플레이어가 현재 위치한 구역에 동전이 있으면 획득 처리합니다 (낙관적 업데이트 + 실패 시 롤백).
   Future<void> checkCoinCollection(String tileId) async {
     final myId = _userId;
     if (myId == null) return;
@@ -112,7 +112,7 @@ class CoinManager {
     if (coinIndex == -1) return;
 
     final targetCoin = _coins[coinIndex];
-    debugPrint('🪙 동전 발견! 타일 ID: ${targetCoin.tileId}. 획득 시도 중...');
+    debugPrint('🪙 동전 발견! 구역 ID: ${targetCoin.tileId}. 획득 시도 중...');
 
     final originalCoins = List<UserCoin>.from(_coins);
     final updatedCoins = List<UserCoin>.from(_coins);
@@ -152,7 +152,7 @@ class CoinManager {
     }
   }
 
-  /// 본진(또는 현재 위치) 중심 반경 내 타일 후보군에서 10개의 동전을 선정해 재생성합니다.
+  /// 본진(또는 현재 위치) 중심 반경 내 구역 후보군에서 10개의 동전을 선정해 재생성합니다.
   Future<void> _regenerateCoins(
     String userId,
     String todayStr,

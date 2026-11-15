@@ -22,13 +22,13 @@ class TacticalPathRenderer {
   /// BFS 경로 산출 연산 캐시
   List<Map<String, int>>? _cachedPath;
 
-  /// 캐시 기준이 되는 본부 기지 타일 ID
+  /// 캐시 기준이 되는 본부 기지 구역 ID
   String? _cachedHQTileId;
 
   /// 캐시 기준이 되는 점령 영토 맵
   Map<String, HexTile>? _cachedCapturedTiles;
 
-  /// 본진에서 타겟 타일까지의 최단 연결 경로를 렌더링합니다.
+  /// 본진에서 타겟 구역까지의 최단 연결 경로를 렌더링합니다.
   void draw(
     Canvas canvas,
     Color themeColor,
@@ -86,7 +86,7 @@ class TacticalPathRenderer {
     }
   }
 
-  /// BFS(너비 우선 탐색)로 본진 → 조준 타일 최단 연결 경로를 산출합니다 (캐싱 적용).
+  /// BFS(너비 우선 탐색)로 본진 → 조준 구역 최단 연결 경로를 산출합니다 (캐싱 적용).
   List<Map<String, int>>? _findShortestPathToHQ() {
     final hqId = game.currentHQTileId;
     if (hqId == null) {

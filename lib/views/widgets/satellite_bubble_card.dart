@@ -8,7 +8,7 @@ import '../../providers/game_provider.dart';
 import '../../services/hex_service.dart';
 import 'tile_photo_viewer_dialog.dart';
 
-/// 위성 조준 타일 정보 말풍선 본체 위젯 (Cozy 버블 테두리 + BackdropBlur 배경)
+/// 위성 조준 구역 정보 말풍선 본체 위젯 (Cozy 버블 테두리 + BackdropBlur 배경)
 class BubbleBody extends StatefulWidget {
   final Color themeColor;
   final bool isError;
@@ -155,7 +155,7 @@ class BubbleBodyState extends State<BubbleBody> {
                       const SizedBox(width: 20), // 우측 닫기(X) 버튼 영역 겹침 방지 여백 강제 확보
                     ],
                   ),
-                  // [신규] All-in-One 타일 상세 정보 그리드 패널 (보안 해제 상태 연동)
+                  // [신규] All-in-One 구역 상세 정보 그리드 패널 (보안 해제 상태 연동)
                   const SizedBox(height: 8),
                   if (widget.isRevealed) ...[
                     Wrap(
@@ -556,7 +556,7 @@ class BubbleBodyState extends State<BubbleBody> {
     );
   }
 
-  /// 닉네임과 테마색/타일색을 연동하여 '누구 님의 구역입니다.' 형태의 미려한 RichText 및 일반 상태 텍스트를 분기 렌더링합니다.
+  /// 닉네임과 테마색/구역색을 연동하여 '누구 님의 구역입니다.' 형태의 미려한 RichText 및 일반 상태 텍스트를 분기 렌더링합니다.
   Widget _buildDetailsText(BuildContext context) {
     final defaultStyle = GoogleFonts.fredoka(
       color: GameColors.textPrimary,
@@ -565,7 +565,7 @@ class BubbleBodyState extends State<BubbleBody> {
       letterSpacing: 0.4,
     );
 
-    // 1. 본인 소유의 타일인 경우 -> 동기적으로 내 닉네임을 내 타일 테마색(GameColors.myTileColor)으로 물들여 표시
+    // 1. 본인 소유의 구역인 경우 -> 동기적으로 내 닉네임을 내 구역 테마색(GameColors.myTileColor)으로 물들여 표시
     if (widget.isMine) {
       final nameColor = GameColors.myTileColor;
       return RichText(

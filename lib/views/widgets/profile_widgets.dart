@@ -175,7 +175,7 @@ class ProfileMenuCard extends StatelessWidget {
   }
 }
 
-/// 개별 설정 메뉴 아이템 타일 위젯
+/// 개별 설정 메뉴 아이템 구역 위젯
 class ProfileMenuItem extends StatelessWidget {
   final IconData icon;
   final String title;

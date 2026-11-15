@@ -9,14 +9,14 @@ import '../conquest_game.dart';
 import 'tactical_path_renderer.dart';
 import 'scan_crosshair.dart';
 
-/// 위성 스캔 모드에서 사용자가 선택한 타일의 조준선 프리뷰를 렌더링하는 컴포넌트
+/// 위성 스캔 모드에서 사용자가 선택한 구역의 조준선 프리뷰를 렌더링하는 컴포넌트
 /// 위성 궤도 정밀 조준 스캔 및 위성 원격 점령 모드에서 조준선, 본부로부터의 연결 경로 안내선, 점령 완료 시 보간 화살표 이동 애니메이션을 그리는 Flame 컴포넌트
 class ScanTargetMarker extends PositionComponent
     with HasGameReference<ConquestGame> {
-  /// 스캔 조준된 대상 타일의 H3 q축 좌표값
+  /// 스캔 조준된 대상 구역의 H3 q축 좌표값
   final int q;
 
-  /// 스캔 조준된 대상 타일의 H3 r축 좌표값
+  /// 스캔 조준된 대상 구역의 H3 r축 좌표값
   final int r;
 
   /// 대상 헥사곤 거점의 지리적 위경도(LatLng) 꼭짓점 좌표 리스트
@@ -37,7 +37,7 @@ class ScanTargetMarker extends PositionComponent
   /// ScanTargetMarker 생성자로 조준 대상 좌표를 설정받고 렌더링 우선순위(Priority)를 조율합니다.
   ScanTargetMarker({required this.q, required this.r})
     : _latLngCorners = HexService.getHexCorners(q, r) {
-    priority = 18; // 플레이어(20)보다는 아래, 일반 타일(0)이나 메인기지(15)보다는 위
+    priority = 18; // 플레이어(20)보다는 아래, 일반 구역(0)이나 메인기지(15)보다는 위
   }
 
   @override
@@ -81,7 +81,7 @@ class ScanTargetMarker extends PositionComponent
 
     final gameSize = game.size;
 
-    // [개선] 목적지 타일 자체의 화면 노출 여부를 판단
+    // [개선] 목적지 구역 자체의 화면 노출 여부를 판단
     final isTargetVisible = _screenCorners.any(
       (c) =>
           c.dx >= -100 &&
@@ -110,7 +110,7 @@ class ScanTargetMarker extends PositionComponent
     }
     final double radius = radSum / _screenCorners.length;
 
-    // 아기자기한 둥글기 수준 및 타일 간 갭 생성
+    // 아기자기한 둥글기 수준 및 구역 간 갭 생성
     final double cornerRadius = math.min(6.5, radius * 0.22);
     const double padding = 1.2;
 
@@ -159,12 +159,12 @@ class ScanTargetMarker extends PositionComponent
     }
     path.close();
 
-    // 2. 목적지 타일 애니메이션 그리기 (화면에 보일 때만 드로잉)
+    // 2. 목적지 구역 애니메이션 그리기 (화면에 보일 때만 드로잉)
     if (isTargetVisible) {
       _drawDestinationBorder(canvas, path, themeColor);
     }
 
-    // 3. 본진에서 타겟 타일까지의 연결 경로(점선/화살표) 그리기
+    // 3. 본진에서 타겟 구역까지의 연결 경로(점선/화살표) 그리기
     if (game.mapController != null) {
       _pathRenderer.draw(
         canvas,
@@ -182,9 +182,9 @@ class ScanTargetMarker extends PositionComponent
     }
   }
 
-  /// 목적지 헥사곤 타일 내부 맥동 및 글로우 테두리 렌더링
+  /// 목적지 헥사곤 구역 내부 맥동 및 글로우 테두리 렌더링
   void _drawDestinationBorder(Canvas canvas, Path path, Color themeColor) {
-    // 비행 완료 후 실제 타일 채우기 점령 상태에 진입했는지 여부
+    // 비행 완료 후 실제 구역 채우기 점령 상태에 진입했는지 여부
     final bool isActuallyCapturingTile =
         game.isSatelliteCapturing &&
         game.satelliteCapturePhase == SatelliteCapturePhase.capturing;
@@ -212,7 +212,7 @@ class ScanTargetMarker extends PositionComponent
       canvas.drawPath(path, borderPaint);
     } else {
       // 점령 전(화살표 이동 중이거나 단순 조준 프리뷰 상태인 경우)
-      // 위성 점령 실행 중(이동 중)에는 목적지 타일에 은은한 점선 테두리와 비콘 수신 펄스 링 신호 효과를 그립니다.
+      // 위성 점령 실행 중(이동 중)에는 목적지 구역에 은은한 점선 테두리와 비콘 수신 펄스 링 신호 효과를 그립니다.
       if (game.isSatelliteCapturing) {
         final Color beaconColor = themeColor;
 

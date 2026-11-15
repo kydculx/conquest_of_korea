@@ -232,7 +232,7 @@ class _SignupScreenState extends State<SignupScreen> {
     final authProvider = context.read<AuthProvider>();
     final colorHex = GameColors.myTileColorHex;
 
-    // 현재 GPS 기준 현재타일을 구하여 내 기지로 지정
+    // 현재 GPS 기준 현재구역을 구하여 내 기지로 지정
     final loc = context.read<LocationProvider>();
     final currentLocation = loc.currentLocation;
 

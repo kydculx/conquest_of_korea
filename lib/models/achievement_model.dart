@@ -44,25 +44,25 @@ class Achievement {
 
   /// 8개 카테고리, 각 4단계로 구성된 총 28종의 정적 마스터 업적 데이터 리스트
   static final List<Achievement> masterAchievements = [
-    // 1. 누적 점령 타일
+    // 1. 누적 점령 구역
     const Achievement(id: 'ACH_CAP_T1', titleKey: 'achCapT1Title', descriptionKey: 'achCapT1Desc', category: AchievementCategory.capturedTiles, threshold: 10, tier: 1),
     const Achievement(id: 'ACH_CAP_T2', titleKey: 'achCapT2Title', descriptionKey: 'achCapT2Desc', category: AchievementCategory.capturedTiles, threshold: 100, tier: 2),
     const Achievement(id: 'ACH_CAP_T3', titleKey: 'achCapT3Title', descriptionKey: 'achCapT3Desc', category: AchievementCategory.capturedTiles, threshold: 500, tier: 3),
     const Achievement(id: 'ACH_CAP_T4', titleKey: 'achCapT4Title', descriptionKey: 'achCapT4Desc', category: AchievementCategory.capturedTiles, threshold: 2000, tier: 4),
 
-    // 2. 적 진영 점령 타일
+    // 2. 적 진영 점령 구역
     const Achievement(id: 'ACH_INV_T1', titleKey: 'achInvT1Title', descriptionKey: 'achInvT1Desc', category: AchievementCategory.enemyCapturedTiles, threshold: 5, tier: 1),
     const Achievement(id: 'ACH_INV_T2', titleKey: 'achInvT2Title', descriptionKey: 'achInvT2Desc', category: AchievementCategory.enemyCapturedTiles, threshold: 30, tier: 2),
     const Achievement(id: 'ACH_INV_T3', titleKey: 'achInvT3Title', descriptionKey: 'achInvT3Desc', category: AchievementCategory.enemyCapturedTiles, threshold: 150, tier: 3),
     const Achievement(id: 'ACH_INV_T4', titleKey: 'achInvT4Title', descriptionKey: 'achInvT4Desc', category: AchievementCategory.enemyCapturedTiles, threshold: 500, tier: 4),
 
-    // 3. 누적 이동 타일 수
+    // 3. 누적 이동 구역 수
     const Achievement(id: 'ACH_MOV_T1', titleKey: 'achMovT1Title', descriptionKey: 'achMovT1Desc', category: AchievementCategory.totalMovedTiles, threshold: 50, tier: 1),
     const Achievement(id: 'ACH_MOV_T2', titleKey: 'achMovT2Title', descriptionKey: 'achMovT2Desc', category: AchievementCategory.totalMovedTiles, threshold: 500, tier: 2),
     const Achievement(id: 'ACH_MOV_T3', titleKey: 'achMovT3Title', descriptionKey: 'achMovT3Desc', category: AchievementCategory.totalMovedTiles, threshold: 3000, tier: 3),
     const Achievement(id: 'ACH_MOV_T4', titleKey: 'achMovT4Title', descriptionKey: 'achMovT4Desc', category: AchievementCategory.totalMovedTiles, threshold: 10000, tier: 4),
 
-    // 4. 일일 최고 이동 타일 수
+    // 4. 일일 최고 이동 구역 수
     const Achievement(id: 'ACH_DMOV_T1', titleKey: 'achDmovT1Title', descriptionKey: 'achDmovT1Desc', category: AchievementCategory.dailyMovedTiles, threshold: 30, tier: 1),
     const Achievement(id: 'ACH_DMOV_T2', titleKey: 'achDmovT2Title', descriptionKey: 'achDmovT2Desc', category: AchievementCategory.dailyMovedTiles, threshold: 100, tier: 2),
     const Achievement(id: 'ACH_DMOV_T3', titleKey: 'achDmovT3Title', descriptionKey: 'achDmovT3Desc', category: AchievementCategory.dailyMovedTiles, threshold: 300, tier: 3),

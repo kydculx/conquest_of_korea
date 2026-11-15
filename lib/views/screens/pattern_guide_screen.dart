@@ -18,7 +18,7 @@ class HexPatternPainter extends CustomPainter {
   void paint(Canvas canvas, Size size) {
     if (tiles.isEmpty) return;
 
-    // 1. 모든 타일의 논리적 2D 데카르트 좌표 계산 및 실제 경계(Bounding Box) 수집
+    // 1. 모든 구역의 논리적 2D 데카르트 좌표 계산 및 실제 경계(Bounding Box) 수집
     final List<math.Point<double>> points = [];
     double minX = 999999;
     double maxX = -999999;
@@ -38,7 +38,7 @@ class HexPatternPainter extends CustomPainter {
       if (y > maxY) maxY = y;
     }
 
-    // 2. 실제 타일들이 차지하는 2D 영역의 폭과 높이 산출 (최소 1.0 방어)
+    // 2. 실제 구역들이 차지하는 2D 영역의 폭과 높이 산출 (최소 1.0 방어)
     final double contentWidth = math.max(1.0, maxX - minX);
     final double contentHeight = math.max(1.0, maxY - minY);
 
@@ -51,21 +51,21 @@ class HexPatternPainter extends CustomPainter {
     final double scaleX = viewWidth / (contentWidth + 2.5);
     final double scaleY = viewHeight / (contentHeight + 2.5);
 
-    // 타일이 화면 밖으로 나가지 않도록 두 축 중 최소 스케일을 취하고,
-    // 타일이 지나치게 커져서 상하좌우를 넘지 않도록 최대 반지름 18.0으로 제한
+    // 구역이 화면 밖으로 나가지 않도록 두 축 중 최소 스케일을 취하고,
+    // 구역이 지나치게 커져서 상하좌우를 넘지 않도록 최대 반지름 18.0으로 제한
     final double hexRadius = math.min(
       18.0,
       math.max(6.0, math.min(scaleX, scaleY)),
     );
 
-    // 4. 실제 칠해진 타일들의 바운딩 박스 중심을 캔버스 중앙에 매칭하여 정중앙 배치
+    // 4. 실제 칠해진 구역들의 바운딩 박스 중심을 캔버스 중앙에 매칭하여 정중앙 배치
     final double layoutCenterX = (minX + maxX) / 2;
     final double layoutCenterY = (minY + maxY) / 2;
     final double canvasCenterX = size.width / 2;
     final double canvasCenterY = size.height / 2;
 
     // 5. 드로잉 스타일 브러시 설정
-    // 일반 패턴 타일 네온 민트 그라데이션
+    // 일반 패턴 구역 네온 민트 그라데이션
     final Paint fillPaint = Paint()
       ..style = PaintingStyle.fill
       ..shader = const LinearGradient(

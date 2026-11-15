@@ -2,7 +2,7 @@ import 'dart:math' as math;
 import 'package:latlong2/latlong.dart';
 import '../core/constants/game_config.dart';
 
-/// 지리 좌표(위도, 경도)와 지도상의 타일 시스템(Hex Grid) 간의 변환 및 헥사곤 좌표 연산을 담당하는 서비스 클래스
+/// 지리 좌표(위도, 경도)와 지도상의 구역 시스템(Hex Grid) 간의 변환 및 헥사곤 좌표 연산을 담당하는 서비스 클래스
 /// Flat-top 헥사곤 그리드 알고리즘을 준수합니다.
 class HexService {
   /// 그리드 변환 시 기준점으로 삼는 기준 위도 (서울 중심부)
@@ -14,11 +14,11 @@ class HexService {
   /// Web Mercator 투영에 사용하는 지구 반경 (m)
   static const double _earthRadius = 6378137.0;
 
-  /// 기준점(서울)에서의 Mercator 축척. 기존 그리드와 같은 타일 크기를 유지합니다.
+  /// 기준점(서울)에서의 Mercator 축척. 기존 그리드와 같은 구역 크기를 유지합니다.
   static const double _originLatRad = originLat * math.pi / 180;
   static final double _mercatorScale = math.cos(_originLatRad);
 
-  /// 헥사곤 그리드 BFS 탐색 시 사용할 6방향 인접 타일 좌표 오프셋
+  /// 헥사곤 그리드 BFS 탐색 시 사용할 6방향 인접 구역 좌표 오프셋
   static const hexDirections = [
     [1, 0],
     [1, -1],
@@ -111,7 +111,7 @@ class HexService {
     return _metersToLatLng(meters[0], meters[1]);
   }
 
-  /// 특정 타일(q, r)의 외곽 테두리를 형성하는 6개 꼭짓점의 위도/경도 좌표 목록을 계산하여 반환합니다.
+  /// 특정 구역(q, r)의 외곽 테두리를 형성하는 6개 꼭짓점의 위도/경도 좌표 목록을 계산하여 반환합니다.
   ///
   /// 꼭짓점은 Mercator 평면에서 정육각형으로 배치한 뒤 위경도로 역변환합니다.
   static List<LatLng> getHexCorners(
@@ -166,7 +166,7 @@ class HexService {
     return ((x1 - x2).abs() + (y1 - y2).abs() + (z1 - z2).abs()) ~/ 2;
   }
 
-  /// 출발 타일(q1, r1)에서 도착 타일(q2, r2)까지 헥사곤 그리드 상을 잇는 최단 선형 경로에 포함된 모든 헥사곤 타일 좌표 리스트를 계산합니다.
+  /// 출발 구역(q1, r1)에서 도착 구역(q2, r2)까지 헥사곤 그리드 상을 잇는 최단 선형 경로에 포함된 모든 헥사곤 구역 좌표 리스트를 계산합니다.
   static List<Map<String, int>> hexLine(int q1, int r1, int q2, int r2) {
     final int dist = hexDistance(q1, r1, q2, r2);
     if (dist == 0) {
@@ -195,7 +195,7 @@ class HexService {
     return results;
   }
 
-  /// 헥사 좌표 (q, r)를 기반으로 타일 ID 문자열('hex_q_r')을 생성합니다.
+  /// 헥사 좌표 (q, r)를 기반으로 구역 ID 문자열('hex_q_r')을 생성합니다.
   /// [hexSize]가 제공되고 기본 크기(lodSize0=100)가 아닌 경우 'hex_{sizeInt}_{q}_{r}' 형식으로 생성합니다.
   static String tileId(int q, int r, {double? hexSize}) {
     if (hexSize != null && hexSize != GameConfig.lodSize0) {
@@ -204,7 +204,7 @@ class HexService {
     return 'hex_${q}_$r';
   }
 
-  /// 타일 ID 문자열(예: 'hex_q_r' 또는 'hex_size_q_r')을 분석 파싱하여 정수형 q, r 좌표 및 줌 스케일 크기 정보를 안전하게 추출합니다.
+  /// 구역 ID 문자열(예: 'hex_q_r' 또는 'hex_size_q_r')을 분석 파싱하여 정수형 q, r 좌표 및 줌 스케일 크기 정보를 안전하게 추출합니다.
   /// 파싱 실패 시 null을 반환하여 강력한 가드 처리를 제공합니다.
   static Map<String, dynamic>? parseTileId(String id) {
     final parts = id.split('_');

@@ -183,7 +183,7 @@ class AuthService {
     }
   }
 
-  /// 특정 현지 날짜의 이동 타일 수를 조회합니다.
+  /// 특정 현지 날짜의 이동 구역 수를 조회합니다.
   Future<int> getLocalDailyMovedTiles(String userId, DateTime date) async {
     try {
       final year = date.year.toString().padLeft(4, '0');
@@ -197,7 +197,7 @@ class AuthService {
           .maybeSingle();
       return (response?['moved_tiles_count'] as num?)?.toInt() ?? 0;
     } catch (e) {
-      debugPrint('⚠️ 위젯용 현지 이동 타일 조회 실패: $e');
+      debugPrint('⚠️ 위젯용 현지 이동 구역 조회 실패: $e');
       return 0;
     }
   }
@@ -207,7 +207,7 @@ class AuthService {
     await _client.from('profiles').upsert(profile.toInsertJson());
   }
 
-  /// 사용자 프로필 정보를 업데이트하고 기 점령 영토의 타일 컬러도 동일 색상으로 동기화 갱신합니다.
+  /// 사용자 프로필 정보를 업데이트하고 기 점령 영토의 구역 컬러도 동일 색상으로 동기화 갱신합니다.
   Future<void> updateProfile(UserProfile profile) async {
     await _client.from('profiles').upsert(profile.toUpdateJson());
 
@@ -216,9 +216,9 @@ class AuthService {
           .from('captured_tiles')
           .update({'color_hex': profile.colorHex})
           .eq('user_id', profile.id);
-      debugPrint('🎨 사용자의 모든 타일 색상이 ${profile.colorHex}로 동기화되었습니다.');
+      debugPrint('🎨 사용자의 모든 구역 색상이 ${profile.colorHex}로 동기화되었습니다.');
     } catch (e) {
-      debugPrint('⚠️ 타일 색상 동기화 중 오류 발생 (무시 가능): $e');
+      debugPrint('⚠️ 구역 색상 동기화 중 오류 발생 (무시 가능): $e');
     }
   }
 
@@ -268,7 +268,7 @@ class AuthService {
 
     AnalyticsService.logAccountDelete();
 
-    // [추가] 해당 사용자가 촬영하여 등록한 모든 타일 사진 갤러리 물리 파일 및 DB 레코드 영구 삭제
+    // [추가] 해당 사용자가 촬영하여 등록한 모든 구역 사진 갤러리 물리 파일 및 DB 레코드 영구 삭제
     try {
       final List<Map<String, dynamic>> photos = await _client
           .from('tile_photos')
@@ -299,12 +299,12 @@ class AuthService {
       debugPrint('⚠️ 탈퇴 회원 사진 갤러리 데이터 삭제 실패: $e');
     }
 
-    // 1. 해당 사용자가 점령한 타일 데이터(captured_tiles) 영구 삭제
+    // 1. 해당 사용자가 점령한 구역 데이터(captured_tiles) 영구 삭제
     try {
       await _client.from('captured_tiles').delete().eq('user_id', user.id);
-      debugPrint('🗺️ 탈퇴 회원의 점령 타일 데이터가 정상 삭제되었습니다.');
+      debugPrint('🗺️ 탈퇴 회원의 점령 구역 데이터가 정상 삭제되었습니다.');
     } catch (e) {
-      debugPrint('⚠️ 점령 타일 삭제 중 오류 발생: $e');
+      debugPrint('⚠️ 점령 구역 삭제 중 오류 발생: $e');
     }
 
     // [추가] 해당 사용자의 업적 이력(user_achievements) 영구 삭제

@@ -4,7 +4,7 @@ import '../../core/constants/strings.dart';
 import '../../providers/game_provider.dart';
 import '../../core/constants/colors.dart';
 
-/// [신규] 발자취 모드에서 선택된 타일의 발자취 정밀 세부 정보를 보여주는 플로팅 정보 카드 위젯
+/// [신규] 발자취 모드에서 선택된 구역의 발자취 정밀 세부 정보를 보여주는 플로팅 정보 카드 위젯
 class FootprintInfoBubble extends StatelessWidget {
   const FootprintInfoBubble({super.key});
 

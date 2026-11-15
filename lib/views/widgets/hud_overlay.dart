@@ -131,7 +131,7 @@ class HudOverlay extends StatelessWidget {
           ),
         ),
 
-        // [하단 좌측 - 현재 타일 사진첩 갤러리/카메라 버튼] 본진 버튼 바로 위에 배치 (42x42)
+        // [하단 좌측 - 현재 구역 사진첩 갤러리/카메라 버튼] 본진 버튼 바로 위에 배치 (42x42)
         Positioned(
           bottom: baseBottomMargin + bottomPadding + 17.0 + (42.0 + 10.0) * 2,
           left: 20.0 + leftPadding,
@@ -231,7 +231,7 @@ class HudOverlay extends StatelessWidget {
           },
         ),
 
-        // [발자취 세부 정보 카드] 발자취 모드 상의 선택된 타일 정보 고정 노출 오버레이
+        // [발자취 세부 정보 카드] 발자취 모드 상의 선택된 구역 정보 고정 노출 오버레이
         Selector<GameProvider, String?>(
           selector: (_, provider) => provider.selectedFootprintTileId,
           builder: (context, selectedFootprintTileId, child) {

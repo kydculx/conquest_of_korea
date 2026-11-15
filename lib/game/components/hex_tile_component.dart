@@ -15,36 +15,36 @@ class HexTileComponent extends PositionComponent
   final int q;
   final int r;
 
-  /// 타일의 지리적 고정 중심 좌표
+  /// 구역의 지리적 고정 중심 좌표
   final LatLng centerLatLng;
 
-  /// 타일의 지리적 고정 6개 꼭짓점 좌표 목록
+  /// 구역의 지리적 고정 6개 꼭짓점 좌표 목록
   final List<LatLng> cornerLatLngs;
 
   /// 이 헥사곤이 현재 렌더링되고 있는 줌 레벨 스케일의 LOD 픽셀 크기
   final double hexSize;
 
-  /// 타일이 점령되었을 때 칠해질 플레이어의 진영 색상 (Hex)
+  /// 구역이 점령되었을 때 칠해질 플레이어의 진영 색상 (Hex)
   String? colorHex;
 
   /// [신규] 어드민 맵 에디터가 부여한 속성 색상 (Hex).
   ///
-  /// 점령 여부와 무관하게 타일 외곽선으로만 표시되며, null이면 외곽선을 그리지 않는다.
+  /// 점령 여부와 무관하게 구역 외곽선으로만 표시되며, null이면 외곽선을 그리지 않는다.
   String? adminColorHex;
 
-  /// 현재 이 타일이 플레이어(물리/위성)에 의해 점령 시도 중인지 여부
+  /// 현재 이 구역이 플레이어(물리/위성)에 의해 점령 시도 중인지 여부
   bool isCapturing;
 
   /// 점령 시도의 진행 진척도 (0.0 ~ 1.0)
   double progress;
 
-  /// 현재 이 타일을 점령 시도 중인 플레이어의 진영 색상 (Hex)
+  /// 현재 이 구역을 점령 시도 중인 플레이어의 진영 색상 (Hex)
   String? capturingColorHex;
 
-  /// 이 타일에 동전이 있는지 여부
+  /// 이 구역에 동전이 있는지 여부
   bool hasCoin;
 
-  /// 알림으로 찾은 타일을 깜빡이며 강조할 종료 시각 (null이면 강조 없음)
+  /// 알림으로 찾은 구역을 깜빡이며 강조할 종료 시각 (null이면 강조 없음)
   DateTime? highlightUntil;
 
   /// 로컬 꼭짓점 6개의 픽셀 상대 좌표 리스트 (중심 (0, 0) 기준)
@@ -56,7 +56,7 @@ class HexTileComponent extends PositionComponent
   /// 마지막으로 꼭짓점 및 패스를 연산 완료한 시점의 카메라 회전 각도(라디안) 캐시
   double lastCalculatedRotation = -999.0;
 
-  /// 타일 내부 영역을 채울 때 사용하는 Paint 객체
+  /// 구역 내부 영역을 채울 때 사용하는 Paint 객체
   late Paint _fillPaint;
 
   /// 점령 진행 중일 때 외곽선 애니메이션을 드로잉하는 Paint 객체
@@ -164,7 +164,7 @@ class HexTileComponent extends PositionComponent
     // 0. 수명 주기 가드: 제거 중이거나 마운트가 덜 된 컴포넌트는 드로잉 즉시 강제 중지하여 잔상 차단
     if (isRemoving || !isMounted) return;
 
-    // 1. 초고속 프러스텀 컬링 (중심점 위치와 픽셀 반지름 기준으로 화면 경계 밖 타일 1차 스킵)
+    // 1. 초고속 프러스텀 컬링 (중심점 위치와 픽셀 반지름 기준으로 화면 경계 밖 구역 1차 스킵)
     final gameSize = game.size;
     final rVal = _tileRadius > 0 ? _tileRadius + 20.0 : 60.0;
     final isVisible =
@@ -216,9 +216,9 @@ class HexTileComponent extends PositionComponent
           ? radSum / localCorners.length
           : 0.0;
 
-      // 둥근 모서리 벌집 타일(Rounded Hexagon Path) 로컬 좌표계 그리기 패스 생성
+      // 둥근 모서리 벌집 구역(Rounded Hexagon Path) 로컬 좌표계 그리기 패스 생성
       final double cornerRadius = math.min(8.0, _tileRadius * 0.26);
-      const double padding = 2.2; // 타일 간 보드게임형 갭
+      const double padding = 2.2; // 구역 간 보드게임형 갭
 
       // 1) 패딩이 수축 적용된 로컬 꼭짓점 계산
       final List<Offset> insetCorners = [];
@@ -280,7 +280,7 @@ class HexTileComponent extends PositionComponent
 
     if (localCorners.isEmpty || _cachedPath == null) return;
 
-    // 3. 점령된 타일 채우기 (로컬 중심 (0, 0) 기준 그라데이션 및 드로잉)
+    // 3. 점령된 구역 채우기 (로컬 중심 (0, 0) 기준 그라데이션 및 드로잉)
     if (colorHex != null) {
       final Color baseColor = _parseColor(colorHex) ?? GameColors.transparent;
       final double gradientRadius = _tileRadius * 1.1;
@@ -349,8 +349,8 @@ class HexTileComponent extends PositionComponent
     }
 
     // 4.5 [신규] 어드민 속성 외곽선 — 점령/중립 여부와 무관하게 속성 색상이 항상 보인다.
-    //      점령된 타일: 점령 채우기 위에 외곽선 오버레이
-    //      중립 어드민 타일: 채우기 없이 외곽선만 표시되어 정적 지형(랜드마크 등)으로 인식
+    //      점령된 구역: 점령 채우기 위에 외곽선 오버레이
+    //      중립 어드민 구역: 채우기 없이 외곽선만 표시되어 정적 지형(랜드마크 등)으로 인식
     if (adminColorHex != null) {
       final Color adminColor =
           _parseColor(adminColorHex) ?? GameColors.transparent;
@@ -371,7 +371,7 @@ class HexTileComponent extends PositionComponent
       canvas.drawPath(_cachedPath!, adminBorderPaint);
     }
 
-    // 4.6 알림으로 찾은 타일 강조 — 지정 시간 동안 경고색으로 깜빡인다.
+    // 4.6 알림으로 찾은 구역 강조 — 지정 시간 동안 경고색으로 깜빡인다.
     final DateTime? highlightEnd = highlightUntil;
     if (highlightEnd != null) {
       final DateTime now = DateTime.now();

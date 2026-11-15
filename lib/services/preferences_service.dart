@@ -108,7 +108,7 @@ class PreferencesService {
     await prefs.setString(_lastSatelliteCaptureTimeKey, v);
   }
 
-  // --- 편법 방지 방문 타일 기록 (game_provider) ---
+  // --- 편법 방지 방문 구역 기록 (game_provider) ---
 
   static const _lastTileIdKey = 'conquest_last_visited_tile_id';
   static const _secondLastTileIdKey = 'conquest_second_last_visited_tile_id';
@@ -175,7 +175,7 @@ class PreferencesService {
   /// 로그아웃/계정 전환 시 이전 계정에 종속된 로컬 기록을 제거합니다.
   ///
   /// 권한 안내, 온보딩, 지도 회전, GPS 정확도처럼 기기 자체에 속하는 설정은
-  /// 유지하고, 마지막 방문 타일·동전 생성일·위성 쿨타임·알림 설정만 비웁니다.
+  /// 유지하고, 마지막 방문 구역·동전 생성일·위성 쿨타임·알림 설정만 비웁니다.
   static Future<void> clearUserSessionData() async {
     final prefs = await SharedPreferences.getInstance();
     await prefs.remove(_lastSatelliteCaptureTimeKey);

@@ -13,7 +13,7 @@ import '../../services/hex_service.dart';
 class CompletedPatternList extends StatelessWidget {
   const CompletedPatternList({super.key});
 
-  /// 주어진 타일 ID 리스트의 지리적 중심 위경도(LatLng)를 계산합니다.
+  /// 주어진 구역 ID 리스트의 지리적 중심 위경도(LatLng)를 계산합니다.
   LatLng _calculateCenter(List<String> tileIds) {
     if (tileIds.isEmpty) return const LatLng(37.5665, 126.9780); // 서울 시청 fallback
 
@@ -39,7 +39,7 @@ class CompletedPatternList extends StatelessWidget {
   Widget build(BuildContext context) {
     return Consumer2<AchievementProvider, GameProvider>(
       builder: (context, achievementProvider, gameProvider, _) {
-        // 완성 패턴 ID별 이름·타일 목록 (단어 칩 표시용)
+        // 완성 패턴 ID별 이름·구역 목록 (단어 칩 표시용)
         final completedIds = achievementProvider.completedPatternIds().toList();
         final completedPatterns = <_PatternItem>[];
         for (final patternId in completedIds) {

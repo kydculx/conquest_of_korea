@@ -23,7 +23,7 @@ class MapModeToggleButton extends StatelessWidget {
 
         switch (mapMode) {
           case MapMode.normal:
-            // 일반 모드: 내 영토(타일) 색상 기반 동적 그라데이션 및 나침반 아이콘
+            // 일반 모드: 내 영토(구역) 색상 기반 동적 그라데이션 및 나침반 아이콘
             final baseColor = GameColors.myTileColor;
             final hsl = HSLColor.fromColor(baseColor);
             final darkColor = hsl.withLightness((hsl.lightness - 0.25).clamp(0.0, 1.0)).toColor();

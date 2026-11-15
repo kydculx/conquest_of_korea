@@ -24,7 +24,7 @@ class AchievementProvider extends ChangeNotifier {
   // 패턴별 상대 좌표 목록 캐시 (key: 패턴 ID, value: [ {q: 0, r: 0}, ... ])
   final Map<String, List<Map<String, int>>> _loadedPatterns = {};
 
-  // 패턴별 메타데이터 캐시 (요구 타일 수, 바운딩 박스 편차 등)
+  // 패턴별 메타데이터 캐시 (요구 구역 수, 바운딩 박스 편차 등)
   final Map<String, Map<String, dynamic>> _patternMeta = {};
 
   // 패턴 ID → 표시 이름 registry (DB가 원천)
@@ -52,10 +52,10 @@ class AchievementProvider extends ChangeNotifier {
     return patternCategoryFigure;
   }
 
-  // 이미 업적 해금에 소비 완료된 영토 타일 ID 목록 캐시
+  // 이미 업적 해금에 소비 완료된 영토 구역 ID 목록 캐시
   final Set<String> _consumedTileIds = {};
 
-  // 업적별 소비(완성) 완료된 타일 ID 맵핑 캐시 (key: achievement_id, value: [tile_id, ...])
+  // 업적별 소비(완성) 완료된 구역 ID 맵핑 캐시 (key: achievement_id, value: [tile_id, ...])
   final Map<String, List<String>> _achievementTiles = {};
 
   /// 최근 해금된 업적 정보를 실시간 중계하는 브로드캐스트 스트림
@@ -87,7 +87,7 @@ class AchievementProvider extends ChangeNotifier {
     }
   }
 
-  /// 타일 좌표 목록을 패턴 캐시에 적재하고 메타데이터를 갱신한다.
+  /// 구역 좌표 목록을 패턴 캐시에 적재하고 메타데이터를 갱신한다.
   void _cachePatternTiles(String patternId, List<dynamic> tilesJson) {
     final List<Map<String, int>> tiles = [];
     int minQ = 999999;
@@ -145,7 +145,7 @@ class AchievementProvider extends ChangeNotifier {
   /// 등록된 패턴 ID 목록
   Iterable<String> get patternIds => _patternNames.keys;
 
-  /// 특정 타일(startTileId)을 출발점으로 삼아 인접한 현재 플레이어 소유의 영토 타일들을 BFS로 수집하여 단일 클러스터 셋을 반환합니다.
+  /// 특정 구역(startTileId)을 출발점으로 삼아 인접한 현재 플레이어 소유의 영토 구역들을 BFS로 수집하여 단일 클러스터 셋을 반환합니다.
   Set<String> _extractCluster(
     String startTileId,
     Map<String, HexTile> capturedTiles,
@@ -181,7 +181,7 @@ class AchievementProvider extends ChangeNotifier {
     return cluster;
   }
 
-  /// 앵커 좌표 역산 및 해시 맵 검색 최적화 기술을 사용하여 플레이어가 소유한 특정 타일 또는 구역 내에 지정 패턴이 만족하는지 판정합니다.
+  /// 앵커 좌표 역산 및 해시 맵 검색 최적화 기술을 사용하여 플레이어가 소유한 특정 구역 또는 구역 내에 지정 패턴이 만족하는지 판정합니다.
   List<String>? _checkPatternMatch(
     String char,
     Map<String, HexTile> capturedTiles,
@@ -201,7 +201,7 @@ class AchievementProvider extends ChangeNotifier {
     final List<Map<String, int>> targetTiles = [];
 
     if (newlyCapturedTileId != null && capturedTiles.containsKey(newlyCapturedTileId)) {
-      // 최적화: 최근 점령된 타일이 포함된 연결된 점령지 덩어리(Cluster)만 BFS로 추출하여 한정 탐색
+      // 최적화: 최근 점령된 구역이 포함된 연결된 점령지 덩어리(Cluster)만 BFS로 추출하여 한정 탐색
       final Set<String> clusterIds = _extractCluster(newlyCapturedTileId, capturedTiles, userId);
       if (clusterIds.length < reqCount) return null;
 
@@ -230,7 +230,7 @@ class AchievementProvider extends ChangeNotifier {
         return null;
       }
     } else {
-      // 폴백: 최근 캡처 타일 ID가 누락되었을 경우 플레이어가 점령한 전체 타일 중 이미 소비되지 않은 타일들을 대상으로 1회 일괄 검증
+      // 폴백: 최근 캡처 구역 ID가 누락되었을 경우 플레이어가 점령한 전체 구역 중 이미 소비되지 않은 구역들을 대상으로 1회 일괄 검증
       final myTiles = capturedTiles.values
           .where((t) => t.userId == userId && !_consumedTileIds.contains(t.id))
           .toList();
@@ -301,10 +301,10 @@ class AchievementProvider extends ChangeNotifier {
   /// 해금 완료된 업적 ID 목록 반환
   List<String> get unlockedAchievementIds => List.unmodifiable(_unlockedAchievementIds);
 
-  /// 업적 해금에 소비된 타일 ID 목록 반환
+  /// 업적 해금에 소비된 구역 ID 목록 반환
   Set<String> get consumedTileIds => Set.unmodifiable(_consumedTileIds);
 
-  /// 업적별로 소비된 타일 ID 맵핑 데이터 반환
+  /// 업적별로 소비된 구역 ID 맵핑 데이터 반환
   Map<String, List<String>> get achievementTiles => Map.unmodifiable(_achievementTiles);
 
   /// 업적 데이터베이스 로딩 여부
@@ -372,7 +372,7 @@ class AchievementProvider extends ChangeNotifier {
         _userUniquePhotoTilesCount = 0;
       }
     } catch (e) {
-      debugPrint('⚠️ 해금 업적 및 소비 타일 조회 실패: $e');
+      debugPrint('⚠️ 해금 업적 및 소비 구역 조회 실패: $e');
     } finally {
       _isLoading = false;
       notifyListeners();
@@ -421,7 +421,7 @@ class AchievementProvider extends ChangeNotifier {
     return maxRing;
   }
 
-  /// 플레이어의 최신 프로필 상태 및 실시간 점령 타일 데이터를 기준으로 미획득 업적의 임계값 충족 여부를 일괄 판정합니다.
+  /// 플레이어의 최신 프로필 상태 및 실시간 점령 구역 데이터를 기준으로 미획득 업적의 임계값 충족 여부를 일괄 판정합니다.
   Future<void> checkAndUnlock({
     Map<String, HexTile>? capturedTiles,
     String? newlyCapturedTileId,
@@ -460,7 +460,7 @@ class AchievementProvider extends ChangeNotifier {
 
   /// 미완성 등록 패턴을 전부 판정하고, 새로 완성된 것은 완성 기록으로 저장한다.
   ///
-  /// 완성 기록은 기존과 같은 `ACH_PATTERN_` 접두 행 + 소비 타일로 유지하여
+  /// 완성 기록은 기존과 같은 `ACH_PATTERN_` 접두 행 + 소비 구역으로 유지하여
   /// 도감 버튼·이동·소비 규칙이 그대로 동작한다. 개수형 업적은 행 개수로 판정한다.
   Future<void> _detectPatternCompletions(
     Map<String, HexTile> capturedTiles,
@@ -491,8 +491,8 @@ class AchievementProvider extends ChangeNotifier {
         completed.add(patternId);
         notifyListeners();
       } else {
-        // 다른 기기/세션에서 먼저 완성되었거나 타일 충돌이 발생했을 수 있습니다.
-        // 서버 상태를 다시 읽어 소비 타일/완료 패턴을 동기화합니다.
+        // 다른 기기/세션에서 먼저 완성되었거나 구역 충돌이 발생했을 수 있습니다.
+        // 서버 상태를 다시 읽어 소비 구역/완료 패턴을 동기화합니다.
         await _reloadPatternState(userId);
         completed
           ..clear()
@@ -501,7 +501,7 @@ class AchievementProvider extends ChangeNotifier {
     }
   }
 
-  /// 패턴 해금 충돌/실패 시 서버의 완료 패턴·소비 타일 상태를 다시 동기화합니다.
+  /// 패턴 해금 충돌/실패 시 서버의 완료 패턴·소비 구역 상태를 다시 동기화합니다.
   Future<void> _reloadPatternState(String userId) async {
     try {
       final unlocked = await _supabase.fetchUserAchievements(userId);
@@ -521,14 +521,14 @@ class AchievementProvider extends ChangeNotifier {
     }
   }
 
-  /// 로드된 패턴 타일이 여러 패턴에 중복 저장되어 있는지 진단합니다.
+  /// 로드된 패턴 구역이 여러 패턴에 중복 저장되어 있는지 진단합니다.
   void _validatePatternTileUniqueness() {
     final seen = <String, String>{};
     for (final entry in _achievementTiles.entries) {
       for (final tileId in entry.value) {
         final previous = seen[tileId];
         if (previous != null && previous != entry.key) {
-          debugPrint('⚠️ 패턴 타일 중복 감지: $tileId ($previous / ${entry.key})');
+          debugPrint('⚠️ 패턴 구역 중복 감지: $tileId ($previous / ${entry.key})');
         } else {
           seen[tileId] = entry.key;
         }
@@ -571,7 +571,7 @@ class AchievementProvider extends ChangeNotifier {
       );
     }
 
-    // 본부 요새화 레벨 1회 한정 연산 (타일 정보가 넘어왔을 때만 연산 가동)
+    // 본부 요새화 레벨 1회 한정 연산 (구역 정보가 넘어왔을 때만 연산 가동)
     final hqLevel = capturedTiles != null
         ? getHQFortificationLevel(profile.mainBaseTileId, userId, capturedTiles)
         : 0;
@@ -599,7 +599,7 @@ class AchievementProvider extends ChangeNotifier {
           shouldUnlock = profile.satelliteScanCount >= ach.threshold;
           break;
         case AchievementCategory.hqFortification:
-          // 타일 정보가 넘어왔을 때만 본부 요새화 링 판정을 가동
+          // 구역 정보가 넘어왔을 때만 본부 요새화 링 판정을 가동
           if (capturedTiles != null) {
             shouldUnlock = hqLevel >= ach.threshold;
           }

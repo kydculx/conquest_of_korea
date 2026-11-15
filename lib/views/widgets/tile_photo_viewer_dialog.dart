@@ -9,7 +9,7 @@ import '../../providers/auth_provider.dart';
 import '../../providers/achievement_provider.dart';
 import 'tactical_dialog.dart';
 
-/// [신규] 특정 헥사곤 타일 내부 사진첩 갤러리를 전술풍 카드 스타일로 부드럽게 감상하고,
+/// [신규] 특정 헥사곤 구역 내부 사진첩 갤러리를 전술풍 카드 스타일로 부드럽게 감상하고,
 /// 현장 카메라 사진 촬영 및 업로드 파이프라인을 중계해주는 전용 갤러리 팝업 위젯
 class TilePhotoViewerDialog extends StatefulWidget {
   final String tileId;
@@ -44,7 +44,7 @@ class _TilePhotoViewerDialogState extends State<TilePhotoViewerDialog> {
         });
       }
     } catch (e) {
-      debugPrint('❌ 타일 사진 로딩 오류: $e');
+      debugPrint('❌ 구역 사진 로딩 오류: $e');
     } finally {
       if (mounted) {
         setState(() {

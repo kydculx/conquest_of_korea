@@ -1,7 +1,7 @@
 import '../core/constants/game_config.dart';
 import '../services/hex_service.dart';
 
-/// 특정 플레이어 관점에서의 H3 헥사곤 타일 점령 소유 상태를 구분하는 열거형
+/// 특정 플레이어 관점에서의 H3 헥사곤 구역 점령 소유 상태를 구분하는 열거형
 enum TileStatus {
   /// 로그인된 본인 플레이어가 점령한 상태
   mine,
@@ -13,30 +13,30 @@ enum TileStatus {
   enemy,
 }
 
-/// 지도상의 개별 헥사곤 영토 타일의 데이터를 표현하는 모델 클래스
+/// 지도상의 개별 헥사곤 영토 구역의 데이터를 표현하는 모델 클래스
 class HexTile {
-  /// H3 인덱스 기반의 타일 고유 식별자 ID
+  /// H3 인덱스 기반의 구역 고유 식별자 ID
   final String id;
 
-  /// 헥사곤 타일 좌표계 축 1 (Q축)
+  /// 헥사곤 구역 좌표계 축 1 (Q축)
   final int q;
 
-  /// 헥사곤 타일 좌표계 축 2 (R축)
+  /// 헥사곤 구역 좌표계 축 2 (R축)
   final int r;
 
-  /// 타일을 점령한 플레이어(사용자)의 UUID 식별자 (중립 시 null)
+  /// 구역을 점령한 플레이어(사용자)의 UUID 식별자 (중립 시 null)
   final String? userId;
 
-  /// 타일을 지배하는 플레이어의 고유 헥사 네온 컬러 코드 (중립 시 null)
+  /// 구역을 지배하는 플레이어의 고유 헥사 네온 컬러 코드 (중립 시 null)
   final String? colorHex;
 
-  /// 타일이 최종 점령(소유권 이전)된 일시 (UTC 기준)
+  /// 구역이 최종 점령(소유권 이전)된 일시 (UTC 기준)
   final DateTime capturedAt;
 
-  /// 이 타일이 전체 게임 생애 주기 동안 총 몇 번 점령되었는지의 빈도수
+  /// 이 구역이 전체 게임 생애 주기 동안 총 몇 번 점령되었는지의 빈도수
   final int captureCount;
 
-  /// 헥사곤 타일의 테두리를 그리는 6개의 꼭짓점 위경도 좌표 쌍 목록 (q, r에 근거하여 온디맨드 역산)
+  /// 헥사곤 구역의 테두리를 그리는 6개의 꼭짓점 위경도 좌표 쌍 목록 (q, r에 근거하여 온디맨드 역산)
   List<List<double>> get bounds => HexService.getHexCorners(
     q,
     r,
@@ -110,11 +110,11 @@ class HexTile {
     );
   }
 
-  /// 타일 점령 후 타 침공으로부터 보호(쉴드)를 받는 만료 시각을 게터로 반환합니다.
+  /// 구역 점령 후 타 침공으로부터 보호(쉴드)를 받는 만료 시각을 게터로 반환합니다.
   DateTime get shieldExpiration => capturedAt.add(
     const Duration(seconds: GameConfig.tileShieldDurationSeconds),
   );
 
-  /// 현재 시간 기준으로 해당 타일의 보호 쉴드 효과가 지속되는지 여부를 판단합니다.
+  /// 현재 시간 기준으로 해당 구역의 보호 쉴드 효과가 지속되는지 여부를 판단합니다.
   bool get isShieldActive => DateTime.now().toUtc().isBefore(shieldExpiration);
 }

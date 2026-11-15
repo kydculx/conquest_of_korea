@@ -219,7 +219,7 @@ class _TermsAgreementScreenState extends State<TermsAgreementScreen> {
                 ),
                 const SizedBox(height: 30),
 
-                // 전체 동의 타일
+                // 전체 동의 구역
                 Container(
                   decoration: BoxDecoration(
                     color: GameColors.tacticalGray.withValues(alpha: 0.65),

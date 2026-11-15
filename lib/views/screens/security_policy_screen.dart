@@ -101,7 +101,7 @@ class SecurityPolicyScreen extends StatelessWidget {
     );
   }
 
-  /// 개별 정책 항목 타일을 빌드하고 탭 시 상세 바텀시트를 호출합니다.
+  /// 개별 정책 항목 구역을 빌드하고 탭 시 상세 바텀시트를 호출합니다.
   Widget _buildPolicyItem({
     required BuildContext context,
     required String title,

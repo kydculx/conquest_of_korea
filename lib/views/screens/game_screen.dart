@@ -443,7 +443,7 @@ class _GameScreenState extends State<GameScreen> with WidgetsBindingObserver {
       });
     }
 
-    // [신규] 어드민이 정의한 타일 타입과 영역 내 속성을 함께 전달하여
+    // [신규] 어드민이 정의한 구역 타입과 영역 내 속성을 함께 전달하여
     // 정적 지형(랜드마크 / 차단 구역) 색상이 점령 색상보다 우선 적용되도록 한다.
     final tileProvider = Provider.of<GameTileProvider>(context, listen: false);
     final adminTileTypes = Map<int, TileType>.from(tileProvider.tileTypes);

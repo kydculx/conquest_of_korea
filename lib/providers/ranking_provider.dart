@@ -8,10 +8,10 @@ class RankingType {
   /// 점령 영토 수 기준 랭킹 키
   static const String capturedTiles = 'captured_tiles_count';
 
-  /// 일일 타일 이동 횟수 기준 랭킹 키
+  /// 일일 구역 이동 횟수 기준 랭킹 키
   static const String dailyMovedTiles = 'daily_moved_tiles_count';
 
-  /// 누적 타일 이동 횟수 기준 랭킹 키
+  /// 누적 구역 이동 횟수 기준 랭킹 키
   static const String totalMovedTiles = 'total_moved_tiles_count';
 }
 

@@ -7,10 +7,10 @@ import '../../core/constants/colors.dart';
 /// 플레이어의 본부 기지(HQ) 지리적 좌표 상에 홈(Home) 모양 아이콘 마커를 렌더링하여 본부를 시각화하는 Flame 컴포넌트
 class HQBaseMarker extends PositionComponent
     with HasGameReference<ConquestGame> {
-  /// 본부 기지 타일의 H3 q축 좌표값
+  /// 본부 기지 구역의 H3 q축 좌표값
   final int q;
 
-  /// 본부 기지 타일의 H3 r축 좌표값
+  /// 본부 기지 구역의 H3 r축 좌표값
   final int r;
 
   /// 본부 기지 플레이어의 식별 색상 코드 (Hex)
@@ -21,7 +21,7 @@ class HQBaseMarker extends PositionComponent
 
   /// HQBaseMarker 생성자로 H3 좌표 및 진영 색상을 설정받고 렌더링 레이어 우선순위(Priority)를 조율합니다.
   HQBaseMarker({required this.q, required this.r, this.colorHex}) {
-    priority = 15; // 플레이어(20)보다는 아래, 일반 타일(0)보다는 위
+    priority = 15; // 플레이어(20)보다는 아래, 일반 구역(0)보다는 위
   }
 
   /// 본부 기지 플레이어의 테마 식별 색상 정보를 외부에서 갱신합니다.

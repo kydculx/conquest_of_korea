@@ -127,7 +127,7 @@ class _GameMapWidgetState extends State<GameMapWidget>
     // [최적화] 맵 회전 모드 또는 내 위치 추적 상태 변경 시, 지도의 회전 및 투영 상태를 즉각 동기화 반영
     _onLocationProviderChanged();
 
-    // 알림 탭 등으로 요청된 타일 포커스가 있으면 처리한다.
+    // 알림 탭 등으로 요청된 구역 포커스가 있으면 처리한다.
     _tryApplyPendingTileFocus();
   }
 
@@ -307,7 +307,7 @@ class _GameMapWidgetState extends State<GameMapWidget>
     ]);
   }
 
-  /// 대기 중인 타일 포커스 요청을 지도가 준비된 시점에 적용합니다.
+  /// 대기 중인 구역 포커스 요청을 지도가 준비된 시점에 적용합니다.
   void _tryApplyPendingTileFocus() {
     if (!mounted || !_mapReady) return;
 
@@ -322,7 +322,7 @@ class _GameMapWidgetState extends State<GameMapWidget>
     unawaited(_applyTileFocus(request));
   }
 
-  /// 요청된 타일로 카메라를 이동하고, 도착 후 지정 시간 동안 타일을 강조합니다.
+  /// 요청된 구역으로 카메라를 이동하고, 도착 후 지정 시간 동안 구역을 강조합니다.
   Future<void> _applyTileFocus(TileFocusRequest request) async {
     final seq = ++_focusRequestSeq;
     _gameProvider?.setFollowingUser(false);
@@ -353,7 +353,7 @@ class _GameMapWidgetState extends State<GameMapWidget>
     try {
       await Future.wait<void>([moveFuture, loadFuture]);
     } catch (e) {
-      debugPrint('⚠️ 타일 포커스 처리 실패: $e');
+      debugPrint('⚠️ 구역 포커스 처리 실패: $e');
     }
 
     if (!mounted || seq != _focusRequestSeq) return;
@@ -437,7 +437,7 @@ class _GameMapWidgetState extends State<GameMapWidget>
                 final tileId = HexService.tileId(hex['q']!, hex['r']!);
 
                 if (gameProvider.isFootprintMode) {
-                  // 현재 LOD 격자 안에서 탭 지점과 가장 가까운 실제 발자취 타일 선택
+                  // 현재 LOD 격자 안에서 탭 지점과 가장 가까운 실제 발자취 구역 선택
                   final footprintTileId = widget.game.findFootprintTileIdNear(
                     point,
                     _mapController.camera.zoom,
@@ -449,7 +449,7 @@ class _GameMapWidgetState extends State<GameMapWidget>
                 }
 
                 if (gameProvider.showCompletedPatterns) {
-                  // 현재 LOD 격자 안에 소비 완료된 패턴 타일이 있는지 확인
+                  // 현재 LOD 격자 안에 소비 완료된 패턴 구역이 있는지 확인
                   final hasConsumedPatternTile =
                       widget.game.hasConsumedPatternTileNear(
                     point,
@@ -514,7 +514,7 @@ class _GameMapWidgetState extends State<GameMapWidget>
                 if (event is MapEventMoveEnd) {
                   final centerLatLng = _mapController.camera.center;
                   final hex = HexService.latLngToHex(centerLatLng);
-                  // 화면 중심 기준으로 지정된 반경 영역의 타일을 REST로 실시간 동적 로드 (이동 가드 내장)
+                  // 화면 중심 기준으로 지정된 반경 영역의 구역을 REST로 실시간 동적 로드 (이동 가드 내장)
                   final tileProvider = Provider.of<GameTileProvider>(
                     context,
                     listen: false,
@@ -569,7 +569,7 @@ class _GameMapWidgetState extends State<GameMapWidget>
               },
             ),
             children: [
-              // 배경 지도 타일 (Selector로 감싸 스타일 변경 시에만 리빌드 격리)
+              // 배경 지도 구역 (Selector로 감싸 스타일 변경 시에만 리빌드 격리)
               Selector<GameProvider, (bool, MapStyle)>(
                 selector: (_, provider) =>
                     (provider.showMap, provider.currentMapStyle),
@@ -597,7 +597,7 @@ class _GameMapWidgetState extends State<GameMapWidget>
                 },
               ),
 
-              // [신규] 갤러리 보유 타일 기본 카메라 아이콘 마커 레이어
+              // [신규] 갤러리 보유 구역 기본 카메라 아이콘 마커 레이어
               Selector<GameProvider, (Set<String>, bool, bool)>(
                 selector: (_, provider) => (
                   provider.photoTileIds,
@@ -611,7 +611,7 @@ class _GameMapWidgetState extends State<GameMapWidget>
                     return const SizedBox.shrink();
                   }
 
-                  // 줌 레벨과 관계없이 사진이 있는 타일은 항상 아이콘을 노출한다.
+                  // 줌 레벨과 관계없이 사진이 있는 구역은 항상 아이콘을 노출한다.
                   final markers = photoTileIds
                       .map((tileId) {
                     final parsed = HexService.parseTileId(tileId);

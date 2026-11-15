@@ -1,7 +1,7 @@
 import 'dart:math' as math;
 import 'package:flutter/material.dart';
 
-/// 스캔 모드 선택 타일 중앙에 부드럽고 둥근 젤리 타겟 락온 커서를 드로잉합니다.
+/// 스캔 모드 선택 구역 중앙에 부드럽고 둥근 젤리 타겟 락온 커서를 드로잉합니다.
 void drawScanCrosshair(
   Canvas canvas,
   double cx,

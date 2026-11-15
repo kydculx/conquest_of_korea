@@ -37,12 +37,12 @@ import '../core/constants/strings.dart';
 
 /// 게임의 핵심 인게임 비즈니스 상태 및 점령 로직을 관리하고 UI에 변경을 전파하는 메인 프로바이더.
 ///
-/// 타일 데이터 저장소는 [GameTileProvider]로 분리되었으며,
+/// 구역 데이터 저장소는 [GameTileProvider]로 분리되었으며,
 /// 본 클래스는 점령/위성/맵 상태/알림/재화 등 컨트롤러 간 오케스트레이션을 담당합니다.
 class GameProvider extends ChangeNotifier with WidgetsBindingObserver {
   final SupabaseService _supabase;
 
-  /// 타일 데이터 저장 및 실시간 동기화를 전담하는 프로바이더
+  /// 구역 데이터 저장 및 실시간 동기화를 전담하는 프로바이더
   final GameTileProvider _tileProvider;
 
   /// 영토 점령 과정을 제어하는 컨트롤러
@@ -58,8 +58,8 @@ class GameProvider extends ChangeNotifier with WidgetsBindingObserver {
   late final GoldManager _goldManager;
 
   // --- 백그라운드 타이머 ---
-  /// 마지막으로 무거운 위치 파이프라인을 실행한 타일 ID.
-  /// 사용자가 같은 타일 안에 머무르는 동안에는 네트워크 호출이 발생하지 않도록 게이트 역할을 한다.
+  /// 마지막으로 무거운 위치 파이프라인을 실행한 구역 ID.
+  /// 사용자가 같은 구역 안에 머무르는 동안에는 네트워크 호출이 발생하지 않도록 게이트 역할을 한다.
   String? _lastProcessedTileId;
 
   /// UTC 자정 카운트다운을 전담 관리하는 컨트롤러
@@ -75,7 +75,7 @@ class GameProvider extends ChangeNotifier with WidgetsBindingObserver {
   String _gpsAccuracyLevel = 'high';
   String get gpsAccuracyLevel => _gpsAccuracyLevel;
 
-  /// 타일 ID별 등록된 사진 데이터 목록 캐시
+  /// 구역 ID별 등록된 사진 데이터 목록 캐시
   final Map<String, List<Map<String, dynamic>>> _tilePhotosCache = {};
   Map<String, List<Map<String, dynamic>>> get tilePhotosCache =>
       _tilePhotosCache;
@@ -92,7 +92,7 @@ class GameProvider extends ChangeNotifier with WidgetsBindingObserver {
   void requestMapMove(LatLng destination) =>
       _mapView.requestMapMove(destination);
 
-  /// 알림 탭으로 지도에서 보여줄 타일 요청 (지도 위젯이 마운트되면 소비)
+  /// 알림 탭으로 지도에서 보여줄 구역 요청 (지도 위젯이 마운트되면 소비)
   TileFocusRequest? _pendingTileFocus;
   TileFocusRequest? get pendingTileFocus => _pendingTileFocus;
 
@@ -101,17 +101,17 @@ class GameProvider extends ChangeNotifier with WidgetsBindingObserver {
     _pendingTileFocus = null;
   }
 
-  /// 알림 탭 처리 후 지도 포커스를 적용하기 전까지 보관하는 타일 ID
+  /// 알림 탭 처리 후 지도 포커스를 적용하기 전까지 보관하는 구역 ID
   String? _pendingInvasionTileId;
 
   /// 프로바이더 해제 이후 비동기 콜백이 실행되는 것을 막는 가드
   bool _isDisposed = false;
 
-  // --- 타일 선택 상태 (위성 스캔 / 발자국) ---
-  /// 위성 스캔 대상 및 발자국 조회 타일 선택 상태를 전담 관리하는 컨트롤러
+  // --- 구역 선택 상태 (위성 스캔 / 발자국) ---
+  /// 위성 스캔 대상 및 발자국 조회 구역 선택 상태를 전담 관리하는 컨트롤러
   late final TileSelectionController _tileSelection;
 
-  // --- 편법 방지용 최근 방문한 2개 타일 ID 캐시 ---
+  // --- 편법 방지용 최근 방문한 2개 구역 ID 캐시 ---
   String? _lastTileId;
   String? _secondLastTileId;
 
@@ -135,7 +135,7 @@ class GameProvider extends ChangeNotifier with WidgetsBindingObserver {
   /// 플레이어의 프로필 객체
   UserProfile? get _profile => _authProvider?.profile;
 
-  /// 플레이어 메인 기지 타일 ID
+  /// 플레이어 메인 기지 구역 ID
   String? get _userMainBaseTileId => _profile?.mainBaseTileId;
 
   // --- Public Getters (Tile — GameTileProvider 위임) ---
@@ -247,13 +247,13 @@ class GameProvider extends ChangeNotifier with WidgetsBindingObserver {
     return true;
   }
 
-  /// 현재 GPS 위치에 대응하는 점령 타일 정보를 반환합니다.
+  /// 현재 GPS 위치에 대응하는 점령 구역 정보를 반환합니다.
   HexTile? get currentTile => _tileProvider.currentTile(_locationProvider!);
 
-  /// 사진(갤러리)이 등록된 전체 타일 ID 목록 게터 (시각 표시용)
+  /// 사진(갤러리)이 등록된 전체 구역 ID 목록 게터 (시각 표시용)
   Set<String> get photoTileIds => _tileProvider.photoTileIds;
 
-  /// 현재 위치한 타일이 이미 자신이 지배 중인 타일인지 여부
+  /// 현재 위치한 구역이 이미 자신이 지배 중인 구역인지 여부
   bool get isAlreadyCapturedByMe {
     final loc = _locationProvider;
     if (loc == null) return false;
@@ -454,7 +454,7 @@ class GameProvider extends ChangeNotifier with WidgetsBindingObserver {
     }
   }
 
-  /// 특정 타일 ID에 등록된 사진첩 데이터를 Supabase에서 로드하고 캐시를 갱신합니다.
+  /// 특정 구역 ID에 등록된 사진첩 데이터를 Supabase에서 로드하고 캐시를 갱신합니다.
   Future<List<Map<String, dynamic>>> loadPhotosForTile(String tileId) async {
     final userId = _userId;
     final photos = await PhotoService().fetchPhotosForTile(tileId);
@@ -465,7 +465,7 @@ class GameProvider extends ChangeNotifier with WidgetsBindingObserver {
     return photos;
   }
 
-  /// 현재 밟고 있는 타일에 사진첩 등록을 수행하고 연동 캐시를 리로드합니다.
+  /// 현재 밟고 있는 구역에 사진첩 등록을 수행하고 연동 캐시를 리로드합니다.
   /// 성공 시 null을 반환하며, 실패 시 에러 사유 문자열을 반환합니다.
   Future<String?> uploadPhotoForTile(
     String tileId,
@@ -521,7 +521,7 @@ class GameProvider extends ChangeNotifier with WidgetsBindingObserver {
     }
   }
 
-  /// 지정된 타일의 특정 사진첩 데이터를 삭제하고 연동 캐시를 리로드합니다.
+  /// 지정된 구역의 특정 사진첩 데이터를 삭제하고 연동 캐시를 리로드합니다.
   /// 성공 시 null을 반환하며, 실패 시 에러 사유 문자열을 반환합니다.
   Future<String?> deletePhotoForTile(
     String tileId,
@@ -570,7 +570,7 @@ class GameProvider extends ChangeNotifier with WidgetsBindingObserver {
   String? _lastNotifSyncUserId;
   bool? _lastNotifMaster;
 
-  /// 마지막으로 발자취/사진 타일 목록을 로드한 사용자 ID.
+  /// 마지막으로 발자취/사진 구역 목록을 로드한 사용자 ID.
   /// 프로필 로딩 완료 시점(세션 토큰 준비 후)에 한 번만 로드하기 위한 가드.
   String? _lastTileDataUserId;
 
@@ -589,12 +589,12 @@ class GameProvider extends ChangeNotifier with WidgetsBindingObserver {
         }
 
         // 프로필 조회가 성공한 시점 = Supabase 세션 토큰이 서버에 반영된 시점.
-        // 이때 발자취와 사진 타일 목록을 로드해야 로그인 직후 빈 응답을 피할 수 있다.
+        // 이때 발자취와 사진 구역 목록을 로드해야 로그인 직후 빈 응답을 피할 수 있다.
         final p = auth.profile!;
         if (_lastTileDataUserId != p.id) {
           _lastTileDataUserId = p.id;
           _tileProvider.loadUserSessionData(p.id).catchError((e) {
-            debugPrint('⚠️ 로그인 후 발자취/사진 타일 로드 실패: $e');
+            debugPrint('⚠️ 로그인 후 발자취/사진 구역 로드 실패: $e');
           });
         }
 
@@ -632,7 +632,7 @@ class GameProvider extends ChangeNotifier with WidgetsBindingObserver {
       _lastNotifMaster = null;
       _lastTileDataUserId = null;
 
-      // 로그아웃/계정 전환 시 이전 계정의 지도·타일·재화·알림 상태를 모두 비운다.
+      // 로그아웃/계정 전환 시 이전 계정의 지도·구역·재화·알림 상태를 모두 비운다.
       _tileProvider.reset();
       _tilePhotosCache.clear();
       _alertManager.clear();
@@ -660,7 +660,7 @@ class GameProvider extends ChangeNotifier with WidgetsBindingObserver {
           await PreferencesService.getLastSatelliteCaptureTime();
       _satelliteController.loadLastCaptureTime(lastSatCapTimeStr);
 
-      // 타일 데이터 초기화 (GameTileProvider 위임)
+      // 구역 데이터 초기화 (GameTileProvider 위임)
       await _tileProvider.init();
     } catch (e) {
       debugPrint('초기 데이터 로드 실패: $e');
@@ -676,13 +676,13 @@ class GameProvider extends ChangeNotifier with WidgetsBindingObserver {
   // --- 백그라운드 폴링 ---
   void _startBackgroundPolling() {
     // [개편] 1초 주기 폴링 타이머 제거. 위치 변경에 따른 무거운 파이프라인은
-    // [onLocationUpdated]의 타일 ID 변경 게이트가 담당한다. GPS 리스너가
+    // [onLocationUpdated]의 구역 ID 변경 게이트가 담당한다. GPS 리스너가
     // 매 위치 업데이트마다 호출해주므로 별도 타이머가 필요 없다.
   }
 
   // --- 알림 탭 → 지도 포커스 ---
 
-  /// 알림 탭 데이터를 해석해 영토 변경 알림이면 해당 타일로 지도를 이동시킵니다.
+  /// 알림 탭 데이터를 해석해 영토 변경 알림이면 해당 구역으로 지도를 이동시킵니다.
   void _onNotificationOpened(Map<String, dynamic> data) {
     if (data['type'] != 'territory_attack') return;
 
@@ -708,7 +708,7 @@ class GameProvider extends ChangeNotifier with WidgetsBindingObserver {
     });
   }
 
-  /// 특정 타일을 지도 중앙에 배치하고 지정 시간 동안 깜빡이며 강조합니다.
+  /// 특정 구역을 지도 중앙에 배치하고 지정 시간 동안 깜빡이며 강조합니다.
   void focusTile(
     String tileId, {
     Duration highlightDuration = const Duration(seconds: 5),
@@ -735,7 +735,7 @@ class GameProvider extends ChangeNotifier with WidgetsBindingObserver {
     notifyListeners();
   }
 
-  /// 지도 포커스 전에 대상 타일 데이터가 로컬 캐시에 있도록 보장합니다.
+  /// 지도 포커스 전에 대상 구역 데이터가 로컬 캐시에 있도록 보장합니다.
   Future<void> ensureTileLoaded(String tileId) async {
     if (_isDisposed) return;
 
@@ -753,7 +753,7 @@ class GameProvider extends ChangeNotifier with WidgetsBindingObserver {
     await _tileProvider.fetchAndUpdateTile(tileId);
     if (_isDisposed) return;
 
-    // 주변 타일은 화면에 보이는 범위를 채우기 위해 백그라운드로 함께 갱신한다.
+    // 주변 구역은 화면에 보이는 범위를 채우기 위해 백그라운드로 함께 갱신한다.
     unawaited(_tileProvider.updateTilesInArea(q, r, force: true));
   }
 
@@ -794,13 +794,13 @@ class GameProvider extends ChangeNotifier with WidgetsBindingObserver {
 
   /// GPS 위치 변경 시 전체 처리 파이프라인을 실행하는 진입점입니다.
   ///
-  /// [개편] 무거운 네트워크 호출 파이프라인(동전 처리 → 주변 타일 갱신 → 이동/발자국
-  /// 기록 → 서버 타일 상태 폴링 → 업적 검사)은 **현재 타일 ID가 직전 처리 타일과
-  /// 달라진 경우에만** 실행된다. GPS 리스너가 초당 호출되지만 같은 타일 안에서는
+  /// [개편] 무거운 네트워크 호출 파이프라인(동전 처리 → 주변 구역 갱신 → 이동/발자국
+  /// 기록 → 서버 구역 상태 폴링 → 업적 검사)은 **현재 구역 ID가 직전 처리 구역과
+  /// 달라진 경우에만** 실행된다. GPS 리스너가 초당 호출되지만 같은 구역 안에서는
   /// 네트워크가 발생하지 않는다. 점령 진행 체크는 게이트 외부에서 항상 실행된다(로컬
   /// 로직만, 네트워크 없음).
   ///
-  /// 트레이드오프: 사용자가 정지해 있는 동안에는 다른 플레이어가 현재 타일을 침공해도
+  /// 트레이드오프: 사용자가 정지해 있는 동안에는 다른 플레이어가 현재 구역을 침공해도
   /// 감지하지 못한다. 서버측 FCM 푸시 알림이 보완한다.
   void onLocationUpdated() {
     if (!isInitialized) return;
@@ -819,7 +819,7 @@ class GameProvider extends ChangeNotifier with WidgetsBindingObserver {
     final hex = HexService.latLngToHex(loc.currentLocation!);
     final tileId = HexService.tileId(hex['q']!, hex['r']!);
 
-    // [신규] 타일 ID 변경 게이트: 같은 타일에 머무는 동안에는 무거운 파이프라인 스킵
+    // [신규] 구역 ID 변경 게이트: 같은 구역에 머무는 동안에는 무거운 파이프라인 스킵
     if (_lastProcessedTileId != tileId) {
       _processCoinsForCurrentTile(tileId);
       _refreshNearbyTiles(hex['q']!, hex['r']!);
@@ -833,20 +833,20 @@ class GameProvider extends ChangeNotifier with WidgetsBindingObserver {
     _captureController.checkCaptureStatus(loc.currentLocation);
   }
 
-  /// 현재 타일 기준으로 동전 동기화 및 획득 여부를 확인합니다.
+  /// 현재 구역 기준으로 동전 동기화 및 획득 여부를 확인합니다.
   void _processCoinsForCurrentTile(String tileId) {
     _coinManager.checkAndSyncCoins();
     _coinManager.checkCoinCollection(tileId);
   }
 
-  /// 내 주변 2km 범위의 타일 실시간 갱신 트리거 작동
+  /// 내 주변 2km 범위의 구역 실시간 갱신 트리거 작동
   void _refreshNearbyTiles(int q, int r) {
     _tileProvider.updateTilesInArea(q, r);
   }
 
-  /// 편법 방지용 최근 방문 타일 카운팅과 발자취 기록을 수행합니다.
+  /// 편법 방지용 최근 방문 구역 카운팅과 발자취 기록을 수행합니다.
   void _recordMovementAndFootprint(AuthProvider auth, String tileId) {
-    // [보완] 현재 밟고 있는 타일의 발자취 기록을 매번 확인 시도 (내부 캐시 조건으로 중복 저장 원천 차단됨)
+    // [보완] 현재 밟고 있는 구역의 발자취 기록을 매번 확인 시도 (내부 캐시 조건으로 중복 저장 원천 차단됨)
     _tileProvider.addFootprint(auth.profile!.id, tileId, DateTime.now());
 
     if (_lastTileId == null) {
@@ -888,7 +888,7 @@ class GameProvider extends ChangeNotifier with WidgetsBindingObserver {
           }
             })
             .catchError((e) {
-          debugPrint('⚠️ 타일 이동 횟수 DB 증가 실패: $e');
+          debugPrint('⚠️ 구역 이동 횟수 DB 증가 실패: $e');
         });
       } else {
         final String oldLastTileId = _lastTileId!;
@@ -901,7 +901,7 @@ class GameProvider extends ChangeNotifier with WidgetsBindingObserver {
     }
   }
 
-  /// 주기 throttling에 따라 현재 위치 타일의 서버 상태를 조회하고 점령 판정을 수행합니다.
+  /// 주기 throttling에 따라 현재 위치 구역의 서버 상태를 조회하고 점령 판정을 수행합니다.
   /// 본진(메인 베이스)에 있으면 캡처가 불가하므로 조회를 생략합니다.
   void _pollCurrentTileStatusIfNeeded(
     LocationProvider loc,
@@ -929,7 +929,7 @@ class GameProvider extends ChangeNotifier with WidgetsBindingObserver {
         _processCaptureDecision(tileId, status);
           })
           .catchError((e) {
-        debugPrint('⚠️ 위치 기반 타일 상태 서버 조회 실패: $e');
+        debugPrint('⚠️ 위치 기반 구역 상태 서버 조회 실패: $e');
       });
     }
   }
@@ -961,7 +961,7 @@ class GameProvider extends ChangeNotifier with WidgetsBindingObserver {
           if (serverTile != null) {
             _tileProvider.updateTile(tileId, serverTile);
           } else {
-            // ★ 서버에 타일이 없더라도 로컬 캐시에 내 타일이 있으면 보존
+            // ★ 서버에 구역이 없더라도 로컬 캐시에 내 구역이 있으면 보존
             // (네트워크 오류·DB 지연으로 서버 상태를 신뢰할 수 없는 케이스 방어)
             final localTile = _tileProvider.tileById(tileId);
             if (localTile?.userId != _userId) {
@@ -970,13 +970,13 @@ class GameProvider extends ChangeNotifier with WidgetsBindingObserver {
           }
           notifyListeners();
         } catch (e) {
-          debugPrint('자동 점령 전 서버 타일 정보 패치 실패: $e');
+          debugPrint('자동 점령 전 서버 구역 정보 패치 실패: $e');
         }
 
-        // ★ 서버 fetch 결과 로컬에 내 타일이 남아있으면 점령 재시작하지 않음
+        // ★ 서버 fetch 결과 로컬에 내 구역이 남아있으면 점령 재시작하지 않음
         final currentTile = _tileProvider.tileById(tileId);
         if (currentTile?.userId == _userId) {
-          debugPrint('자동 점령 스킵 - 이미 내 타일: $tileId');
+          debugPrint('자동 점령 스킵 - 이미 내 구역: $tileId');
           return;
         }
 
@@ -1034,7 +1034,7 @@ class GameProvider extends ChangeNotifier with WidgetsBindingObserver {
       }
       notifyListeners();
     } catch (e) {
-      debugPrint('점령 시작 전 서버 타일 정보 패치 실패 (로컬 데이터로 대체 진행): $e');
+      debugPrint('점령 시작 전 서버 구역 정보 패치 실패 (로컬 데이터로 대체 진행): $e');
     }
 
     final int currentCaptureCount =
@@ -1241,7 +1241,7 @@ class GameProvider extends ChangeNotifier with WidgetsBindingObserver {
             });
           })
           .catchError((e) {
-            debugPrint('⚠️ 상대 타일 정보 백엔드 저장 실패: $e');
+            debugPrint('⚠️ 상대 구역 정보 백엔드 저장 실패: $e');
             _goldManager.setGold(previousGold);
             _tileProvider.removeRevealedTile(tileId);
             notifyListeners();
@@ -1298,7 +1298,7 @@ class GameProvider extends ChangeNotifier with WidgetsBindingObserver {
     if (state == AppLifecycleState.resumed) {
       if (_isAuthenticated == true) {
         _goldManager.syncWithServer();
-        _tileProvider.refreshTilesFromServer(); // 복귀 시 전체 점령 타일 1회 동기화
+        _tileProvider.refreshTilesFromServer(); // 복귀 시 전체 점령 구역 1회 동기화
       }
     } else if (state == AppLifecycleState.paused ||
         state == AppLifecycleState.inactive) {

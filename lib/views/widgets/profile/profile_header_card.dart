@@ -6,7 +6,7 @@ import '../../../providers/auth_provider.dart';
 import '../../../providers/game_provider.dart';
 import '../profile_widgets.dart';
 
-/// 프로필 화면 상단 카드: 아이콘, 닉네임(수정 버튼), 이메일, 점령 타일 수를 표시합니다.
+/// 프로필 화면 상단 카드: 아이콘, 닉네임(수정 버튼), 이메일, 점령 구역 수를 표시합니다.
 class ProfileHeaderCard extends StatelessWidget {
   final AuthProvider auth;
   final GameProvider game;

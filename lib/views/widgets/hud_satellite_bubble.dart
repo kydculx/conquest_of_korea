@@ -7,7 +7,7 @@ import '../../providers/game_provider.dart';
 import '../../providers/auth_provider.dart';
 import 'satellite_bubble_card.dart';
 
-/// 선택된 위성 조준 타일 위에 실시간으로 위치가 갱신되는 말풍선 위젯.
+/// 선택된 위성 조준 구역 위에 실시간으로 위치가 갱신되는 말풍선 위젯.
 class SatelliteMapBubble extends StatefulWidget {
   const SatelliteMapBubble({super.key});
 
@@ -52,7 +52,7 @@ class SatelliteMapBubbleState extends State<SatelliteMapBubble> {
         game.isSatelliteCapturing &&
         game.satelliteCapturingTileId == selectedId;
 
-    // --- All-In-One 타일 기본 정보 파싱 ---
+    // --- All-In-One 구역 기본 정보 파싱 ---
     final parts = selectedId.split('_');
     final int q = parts.length == 3 ? (int.tryParse(parts[1]) ?? 0) : 0;
     final int r = parts.length == 3 ? (int.tryParse(parts[2]) ?? 0) : 0;
@@ -62,7 +62,7 @@ class SatelliteMapBubbleState extends State<SatelliteMapBubble> {
     final bool isShieldActive = existingTile?.isShieldActive ?? false;
     final DateTime? shieldExpiration = existingTile?.shieldExpiration;
 
-    // 내 소유 및 빈 타일 판별
+    // 내 소유 및 빈 구역 판별
     final myId = auth.user?.id;
     final String myNickname = auth.profile?.nickname ?? '';
     final bool isMine = existingTile != null && existingTile.userId == myId;
@@ -157,7 +157,7 @@ class SatelliteMapBubbleState extends State<SatelliteMapBubble> {
           detailsText = GameStrings.satAlreadyCapturedByMe(myNickname);
           showActionButton = false;
         } else {
-          // 상대 타일인 경우
+          // 상대 구역인 경우
           if (!isConnected) {
             themeColor = GameColors.error;
             isError = true;
@@ -168,7 +168,7 @@ class SatelliteMapBubbleState extends State<SatelliteMapBubble> {
             isError = true;
             detailsText = GameStrings.satOtherPlayerTerritory;
 
-            // 상대 타일이고 보안 판독 전인 경우 -> [동네 엿보기] 유료 버튼 바인딩
+            // 상대 구역이고 보안 판독 전인 경우 -> [동네 엿보기] 유료 버튼 바인딩
             if (!isRevealed) {
               themeColor = Palette.orangeWarm;
               final dist = game.getTileDistance(selectedId);

@@ -108,7 +108,7 @@ void main() async {
             update: (_, auth, ach) => ach!..setAuthProvider(auth),
           ),
 
-          // Game Tile Provider — 타일 데이터 저장소 (GameProvider에서 분리)
+          // Game Tile Provider — 구역 데이터 저장소 (GameProvider에서 분리)
           ChangeNotifierProxyProvider2<SupabaseService, AuthProvider,
               GameTileProvider>(
             create: (ctx) =>

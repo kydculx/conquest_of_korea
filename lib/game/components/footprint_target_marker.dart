@@ -6,7 +6,7 @@ import '../../services/hex_service.dart';
 import '../conquest_game.dart';
 import '../../core/constants/colors.dart';
 
-/// [신규] 발자취 모드에서 선택한 타일의 네온 청록색 하이라이팅 조준 마커 컴포넌트
+/// [신규] 발자취 모드에서 선택한 구역의 네온 청록색 하이라이팅 조준 마커 컴포넌트
 class FootprintTargetMarker extends PositionComponent
     with HasGameReference<ConquestGame> {
   final int q;

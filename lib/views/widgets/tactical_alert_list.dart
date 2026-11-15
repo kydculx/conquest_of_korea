@@ -7,7 +7,7 @@ import 'alert_widget.dart';
 class TacticalAlertList extends StatefulWidget {
   final List<GameAlert> alerts;
 
-  /// 타일 ID가 포함된 알림을 눌렀을 때 실행할 콜백
+  /// 구역 ID가 포함된 알림을 눌렀을 때 실행할 콜백
   final void Function(GameAlert alert)? onAlertTap;
 
   const TacticalAlertList({super.key, required this.alerts, this.onAlertTap});

@@ -9,7 +9,7 @@ import '../core/constants/game_config.dart';
 import '../core/constants/strings.dart';
 import '../models/alert_model.dart';
 
-/// 플레이어가 특정 헥사곤 타일 영역에 물리적으로 머물며 점령을 시도하는 프로세스를 감시 및 제어하는 컨트롤러 클래스
+/// 플레이어가 특정 헥사곤 구역 영역에 물리적으로 머물며 점령을 시도하는 프로세스를 감시 및 제어하는 컨트롤러 클래스
 class CaptureController {
   /// DB 처리를 위한 Supabase 서비스 인스턴스
   final SupabaseService _supabase;
@@ -27,7 +27,7 @@ class CaptureController {
   /// 상태 변경 시 화면 갱신을 지시하는 콜백
   final VoidCallback onStateChanged;
 
-  /// 현재 점령 작전을 수행 중인 대상 타일 ID
+  /// 현재 점령 작전을 수행 중인 대상 구역 ID
   String? _capturingTileId;
 
   /// 점령을 시도하고 있는 플레이어 ID
@@ -45,13 +45,13 @@ class CaptureController {
   /// 점령 완료에 소요되는 총 시간
   Duration? _targetDuration;
 
-  /// 점령 성공 시 설정될 타일의 누적 점령 횟수 목표치
+  /// 점령 성공 시 설정될 구역의 누적 점령 횟수 목표치
   int _targetCaptureCount = 1;
 
   /// 물리적 영토 점령 진행 진척도 (0.0 ~ 1.0)
   double _captureProgress = 0.0;
 
-  /// 점령 시작 시점에 해당 타일이 상대방 소유였는지 여부
+  /// 점령 시작 시점에 해당 구역이 상대방 소유였는지 여부
   bool _wasEnemyTile = false;
 
   /// 점령 상태(진행도 및 경계 이탈)를 주기적으로 갱신하기 위한 타이머
@@ -64,7 +64,7 @@ class CaptureController {
   /// 다시 반영하지 못하도록 한다.
   int _generation = 0;
 
-  /// 현재 물리 점령을 시도 중인 타일 ID를 반환합니다.
+  /// 현재 물리 점령을 시도 중인 구역 ID를 반환합니다.
   String? get capturingTileId => _capturingTileId;
 
   /// 점령 중인 플레이어의 테마 식별 색상 코드
@@ -85,7 +85,7 @@ class CaptureController {
     this.onPreCapture,
   }) : _supabase = supabase;
 
-  /// 플레이어가 획득하고자 하는 특정 타일에 진입하여 점령을 개시하고 주기 감시 타이머를 시작합니다.
+  /// 플레이어가 획득하고자 하는 특정 구역에 진입하여 점령을 개시하고 주기 감시 타이머를 시작합니다.
   void startCapture({
     required String tileId,
     required LatLng location,
@@ -118,7 +118,7 @@ class CaptureController {
   void checkCaptureStatus([LatLng? currentLocation]) {
     if (_capturingTileId == null || _isSaving) return;
 
-    // [신규] 실시간 GPS 위치가 공급되었고, 그 위치의 타일ID가 시작 시 타일ID와 다르면 점령 즉시 취소!
+    // [신규] 실시간 GPS 위치가 공급되었고, 그 위치의 구역ID가 시작 시 구역ID와 다르면 점령 즉시 취소!
     if (currentLocation != null) {
       final currentHex = HexService.latLngToHex(currentLocation);
       final currentTileId = HexService.tileId(currentHex['q']!, currentHex['r']!);
@@ -171,7 +171,7 @@ class CaptureController {
     onStateChanged();
   }
 
-  /// 점령이 완료된 타일 정보(위치, 경계 좌표, 소유자 색상 등)를 직렬화하여 Supabase DB에 적재합니다.
+  /// 점령이 완료된 구역 정보(위치, 경계 좌표, 소유자 색상 등)를 직렬화하여 Supabase DB에 적재합니다.
   Future<void> _saveCapture(LatLng? currentLocation) async {
     if (_isSaving) return;
     final int generation = _generation;
@@ -179,7 +179,7 @@ class CaptureController {
     _captureTimer?.cancel();
     _vibrate(500);
 
-    // [신규] 최종 저장 시점에도 현재 실시간 위치의 타일ID가 시작 시 타일ID와 동일한지 크로스 검증!
+    // [신규] 최종 저장 시점에도 현재 실시간 위치의 구역ID가 시작 시 구역ID와 동일한지 크로스 검증!
     if (currentLocation != null) {
       final currentHex = HexService.latLngToHex(currentLocation);
       final currentTileId = HexService.tileId(currentHex['q']!, currentHex['r']!);

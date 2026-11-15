@@ -16,7 +16,7 @@ enum OnboardingStep {
   profileBtn,
   calendarBtn,
   achievementBtn,
-  photoBtn, // 📸 타일 사진 촬영 안내 단계
+  photoBtn, // 📸 구역 사진 촬영 안내 단계
   hqBtn,
   mapFollowBtn,
   mapModeToggleBtn,

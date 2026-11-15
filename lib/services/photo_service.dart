@@ -4,7 +4,7 @@ import 'package:image_picker/image_picker.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:image/image.dart' as img;
 
-/// 타일별 사진 촬영 및 갤러리 업로드/조회 트랜잭션을 전담 처리하는 서비스 클래스
+/// 구역별 사진 촬영 및 갤러리 업로드/조회 트랜잭션을 전담 처리하는 서비스 클래스
 class PhotoService {
   final SupabaseClient _client = Supabase.instance.client;
   final ImagePicker _picker = ImagePicker();
@@ -145,7 +145,7 @@ class PhotoService {
             .select();
 
         if (response.isNotEmpty) {
-          debugPrint('📡 타일 사진 DB 등록 성공 (Tile: $tileId)');
+          debugPrint('📡 구역 사진 DB 등록 성공 (Tile: $tileId)');
 
           // [추가] profiles 테이블의 누적 사진 업로드 횟수(photo_upload_count) 1 증가 처리
           try {
@@ -169,7 +169,7 @@ class PhotoService {
           return response.first;
         }
       } catch (dbErr, stack) {
-        debugPrint('❌ [PhotoService] DB 타일 사진 메타데이터 등록 실패: $dbErr');
+        debugPrint('❌ [PhotoService] DB 구역 사진 메타데이터 등록 실패: $dbErr');
         debugPrint('$stack');
         rethrow;
       }
@@ -180,7 +180,7 @@ class PhotoService {
     return null;
   }
 
-  /// 특정 타일 ID에 등록된 모든 갤러리 사진 목록을 최신순으로 정렬해 읽어옵니다.
+  /// 특정 구역 ID에 등록된 모든 갤러리 사진 목록을 최신순으로 정렬해 읽어옵니다.
   Future<List<Map<String, dynamic>>> fetchPhotosForTile(String tileId) async {
     try {
       final List<Map<String, dynamic>> data = await _client
@@ -191,12 +191,12 @@ class PhotoService {
 
       return data;
     } catch (e) {
-      debugPrint('❌ 타일 사진 목록 조회 실패 ($tileId): $e');
+      debugPrint('❌ 구역 사진 목록 조회 실패 ($tileId): $e');
       return [];
     }
   }
 
-  /// 전체 타일 사진 목록을 최신순으로 페이지 단위로 읽어옵니다.
+  /// 전체 구역 사진 목록을 최신순으로 페이지 단위로 읽어옵니다.
   /// [from]부터 [to]까지의 구간을 조회하며, 빈 목록 반환 시 마지막 페이지입니다.
   Future<List<Map<String, dynamic>>> fetchRecentPhotos({
     required int from,
@@ -237,7 +237,7 @@ class PhotoService {
       // 2. DB 메타데이터 행 삭제
       await _client.from('tile_photos').delete().eq('id', photoId);
 
-      debugPrint('🗑️ [PhotoService] 타일 사진 삭제 성공 (ID: $photoId, Path: $storagePath)');
+      debugPrint('🗑️ [PhotoService] 구역 사진 삭제 성공 (ID: $photoId, Path: $storagePath)');
       return true;
     } catch (e) {
       debugPrint('❌ [PhotoService] 사진 삭제 프로세스 실패: $e');

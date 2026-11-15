@@ -77,13 +77,13 @@ class MapViewController {
     _notifyListeners();
   }
 
-  /// 외부 요청으로 특정 타일을 보여줄 때 GPS 추적이 카메라를 되돌리지 않도록
+  /// 외부 요청으로 특정 구역을 보여줄 때 GPS 추적이 카메라를 되돌리지 않도록
   /// 추적 상태만 조용히 해제합니다.
   void disableFollowingQuiet() {
     _isFollowingUser = false;
   }
 
-  /// 외부 요청으로 특정 타일을 보여줄 때 나침반 회전 모드를 조용히 해제합니다.
+  /// 외부 요청으로 특정 구역을 보여줄 때 나침반 회전 모드를 조용히 해제합니다.
   void disableRotationModeQuiet() {
     if (!_isMapRotationMode) return;
     _isMapRotationMode = false;
@@ -92,7 +92,7 @@ class MapViewController {
     });
   }
 
-  /// 발자취/패턴 모드에서도 강조 타일이 보이도록 일반 모드로 조용히 전환합니다.
+  /// 발자취/패턴 모드에서도 강조 구역이 보이도록 일반 모드로 조용히 전환합니다.
   void showNormalModeQuiet() {
     _mapMode = MapMode.normal;
   }

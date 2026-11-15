@@ -14,10 +14,10 @@ enum SatelliteCapturePhase {
   /// 대기 상태
   none,
 
-  /// 본진에서 대상 타일까지 빔 화살표가 날아가는 상태
+  /// 본진에서 대상 구역까지 빔 화살표가 날아가는 상태
   flying,
 
-  /// 빔 도착 후 타일을 점령(오렌지 게이지 누적) 중인 상태
+  /// 빔 도착 후 구역을 점령(오렌지 게이지 누적) 중인 상태
   capturing,
 }
 
@@ -37,7 +37,7 @@ class SatelliteCaptureController {
 
   // --- 데이터 접근자 (순환 의존성 방지를 위해 GameProvider에서 주입) ---
 
-  /// 현재 점령된 타일 맵을 반환하는 접근자
+  /// 현재 점령된 구역 맵을 반환하는 접근자
   final Map<String, HexTile> Function() getCapturedTiles;
 
   /// 현재 로그인된 플레이어의 ID를 반환하는 접근자
@@ -46,7 +46,7 @@ class SatelliteCaptureController {
   /// 현재 로그인된 플레이어의 테마 색상 Hex 코드를 반환하는 접근자
   final String? Function() getColorHex;
 
-  /// 현재 로그인된 플레이어의 본진 타일 ID를 반환하는 접근자
+  /// 현재 로그인된 플레이어의 본진 구역 ID를 반환하는 접근자
   final String? Function() getMainBaseTileId;
 
   /// 현재 보유 골드를 반환하는 접근자
@@ -75,13 +75,13 @@ class SatelliteCaptureController {
   /// 현재 위성 점령의 상태 단계
   SatelliteCapturePhase _phase = SatelliteCapturePhase.none;
 
-  /// 현재 위성 점령을 시도 중인 대상 타일 ID
+  /// 현재 위성 점령을 시도 중인 대상 구역 ID
   String? _capturingTileId;
 
   /// 위성 빔 비행 진행률 (0.0 ~ 1.0)
   double _travelProgress = 0.0;
 
-  /// 위성 원격 타일 점령 진행률 (0.0 ~ 1.0)
+  /// 위성 원격 구역 점령 진행률 (0.0 ~ 1.0)
   double _captureProgress = 0.0;
 
   /// 위성 점령 주기 업데이트 타이머
@@ -93,7 +93,7 @@ class SatelliteCaptureController {
   /// 위성 빔 비행 완료에 소요되는 총 시간
   Duration? _travelDuration;
 
-  /// 위성 타일 점령 완료에 소요되는 총 시간
+  /// 위성 구역 점령 완료에 소요되는 총 시간
   Duration? _captureDuration;
 
   /// 마지막으로 성공한 위성 점령 일시
@@ -130,7 +130,7 @@ class SatelliteCaptureController {
   /// 현재 위성 점령의 상태 단계
   SatelliteCapturePhase get phase => _phase;
 
-  /// 현재 위성 점령 진행 중인 타일 ID
+  /// 현재 위성 점령 진행 중인 구역 ID
   String? get capturingTileId => _capturingTileId;
 
   /// 위성 빔 비행 진행률 (0.0 ~ 1.0)
@@ -187,7 +187,7 @@ class SatelliteCaptureController {
     }
   }
 
-  /// 지정한 대상 헥사곤 타일에 대한 위성 연결 점령 타이머를 구동하여 점령을 실행합니다.
+  /// 지정한 대상 헥사곤 구역에 대한 위성 연결 점령 타이머를 구동하여 점령을 실행합니다.
   void executeCapture(String tileId) {
     if (tileId.isEmpty || _isSaving) return;
 
@@ -199,7 +199,7 @@ class SatelliteCaptureController {
 
     final capturedTiles = getCapturedTiles();
 
-    // 빈 타일 여부 검증 (이미 누군가가 점령했다면 불가능)
+    // 빈 구역 여부 검증 (이미 누군가가 점령했다면 불가능)
     final existingTile = capturedTiles[tileId];
     final isTileEmpty =
         existingTile == null ||
@@ -450,7 +450,7 @@ class SatelliteCaptureController {
 
   // --- 경로 탐색 메서드 ---
 
-  /// 본진 기지에서 시작하여 플레이어가 소유한 타일망을 통해서만 이동하여 대상 타일까지 도달하는 최단 BFS 경로를 탐색합니다.
+  /// 본진 기지에서 시작하여 플레이어가 소유한 구역망을 통해서만 이동하여 대상 구역까지 도달하는 최단 BFS 경로를 탐색합니다.
   List<String>? _findShortestPathToHQ(String targetTileId) {
     final mainBaseId = getMainBaseTileId();
     final myId = getUserId();
@@ -475,7 +475,7 @@ class SatelliteCaptureController {
     final hqR = int.tryParse(partsBase[2]);
     if (hqQ == null || hqR == null) return null;
 
-    // BFS 큐: 각 원소는 경로의 타일 ID 리스트
+    // BFS 큐: 각 원소는 경로의 구역 ID 리스트
     final queue = Queue<List<String>>()..add([mainBaseId]);
     final visited = <String>{mainBaseId};
 
@@ -500,7 +500,7 @@ class SatelliteCaptureController {
 
         if (visited.contains(neighborId)) continue;
 
-        // 대상 타일에 도달하면 즉시 경로 추가
+        // 대상 구역에 도달하면 즉시 경로 추가
         if (neighborId == targetTileId) {
           queue.add(List<String>.from(path)..add(neighborId));
           visited.add(neighborId);
@@ -521,7 +521,7 @@ class SatelliteCaptureController {
     return null;
   }
 
-  /// 대상 타일과 유저의 본진에서 출발하는 영토망을 따르는 최단 경로(점선 홉 수)를 계산하여 반환합니다.
+  /// 대상 구역과 유저의 본진에서 출발하는 영토망을 따르는 최단 경로(점선 홉 수)를 계산하여 반환합니다.
   int getTileDistance(String targetTileId) {
     final path = _findShortestPathToHQ(targetTileId);
     if (path != null && path.length >= 2) {
@@ -543,7 +543,7 @@ class SatelliteCaptureController {
     return HexService.hexDistance(bq, br, tq, tr);
   }
 
-  /// 본진 기지를 시발점으로 하여 플레이어가 지배 중인 타일 그리드를 거쳐 대상 영토까지
+  /// 본진 기지를 시발점으로 하여 플레이어가 지배 중인 구역 그리드를 거쳐 대상 영토까지
   /// 끊어짐 없이 헥사 결합되어 연결되는지 BFS로 무결성을 검증합니다.
   bool checkConnectivity(String targetTileId) {
     final mainBaseId = getMainBaseTileId();
@@ -553,19 +553,19 @@ class SatelliteCaptureController {
       return false;
     }
 
-    // 대상 타일이 이미 내 소유이면 위성 점령이 불필요하므로 false
+    // 대상 구역이 이미 내 소유이면 위성 점령이 불필요하므로 false
     final existingTile = capturedTiles[targetTileId];
     if (existingTile != null && existingTile.userId == myId) {
       return false;
     }
 
-    // 내 점령지 타일 ID 셋 구성
+    // 내 점령지 구역 ID 셋 구성
     final myTiles = capturedTiles.values
         .where((t) => t.userId == myId)
         .map((t) => t.id)
         .toSet();
 
-    // 본진 타일은 소유 여부와 관계없이 BFS 탐색을 위한 연결 통로로 강제 포함
+    // 본진 구역은 소유 여부와 관계없이 BFS 탐색을 위한 연결 통로로 강제 포함
     final effectiveMyTiles = {...myTiles, mainBaseId};
 
     // BFS 탐색을 통한 연결성 검증
@@ -601,20 +601,20 @@ class SatelliteCaptureController {
     return false;
   }
 
-  /// 내 영토와 대상 타일 간의 헥사곤 거리를 산출하여 위성 점령 완료에 소요될 지연 시간(초)을 계산합니다.
+  /// 내 영토와 대상 구역 간의 헥사곤 거리를 산출하여 위성 점령 완료에 소요될 지연 시간(초)을 계산합니다.
   int getCaptureDurationSeconds(String tileId) {
     final dist = getTileDistance(tileId);
     return dist + 1; // 점령 고유 소요시간 1초
   }
 
-  /// 내 영토와 대상 타일 간의 거리를 기준으로 하여, 위성 점령의 총 시간 중 '이동(비행) 시간'이 차지하는 비율을 산출합니다.
+  /// 내 영토와 대상 구역 간의 거리를 기준으로 하여, 위성 점령의 총 시간 중 '이동(비행) 시간'이 차지하는 비율을 산출합니다.
   double getTravelRatio(String tileId) {
     final dist = getTileDistance(tileId).toDouble();
     final total = dist + 1.0; // 점령 고유 소요시간 1초
     return total > 0.0 ? (dist / total) : 0.8;
   }
 
-  /// 지정한 타일이 본진 기지이거나 본진을 직간접으로 둘러싼 인접 1링(Ring) 범위에 포함되는지 확인합니다.
+  /// 지정한 구역이 본진 기지이거나 본진을 직간접으로 둘러싼 인접 1링(Ring) 범위에 포함되는지 확인합니다.
   bool isHQOr1Ring(String tileId) {
     final mainBaseId = getMainBaseTileId();
     if (mainBaseId == null || mainBaseId.isEmpty) return false;

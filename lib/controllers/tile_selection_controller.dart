@@ -2,13 +2,13 @@ import 'package:flutter/foundation.dart';
 import 'package:latlong2/latlong.dart';
 import '../services/hex_service.dart';
 
-/// 위성 조회(스캔) 대상 타일과 발자국 조회 타일의 선택 상태를 전담 관리하는 컨트롤러.
-/// GameProvider로부터 타일 선택 상태 책임을 분리합니다.
+/// 위성 조회(스캔) 대상 구역과 발자국 조회 구역의 선택 상태를 전담 관리하는 컨트롤러.
+/// GameProvider로부터 구역 선택 상태 책임을 분리합니다.
 class TileSelectionController {
   final VoidCallback _notifyListeners;
   final bool Function() _isAuthenticated;
 
-  /// 스캔 타일 선택 직후 서버 최신 정보 패치가 필요할 때 호출되는 콜백
+  /// 스캔 구역 선택 직후 서버 최신 정보 패치가 필요할 때 호출되는 콜백
   final void Function(String tileId)? onScanTileSelected;
 
   // --- 위성 스캔 상태 ---
@@ -33,14 +33,14 @@ class TileSelectionController {
   })  : _notifyListeners = notifyListeners,
         _isAuthenticated = isAuthenticated;
 
-  /// 스캔 모드 토글 (모드 전환 시 선택 중인 타일 해제)
+  /// 스캔 모드 토글 (모드 전환 시 선택 중인 구역 해제)
   void toggleScanMode() {
     _isScanMode = !_isScanMode;
     _selectedScanTileId = null;
     _notifyListeners();
   }
 
-  /// 스캔 대상 타일 선택/해제. 선택 즉시 서버 최신 정보 패치를 요청합니다.
+  /// 스캔 대상 구역 선택/해제. 선택 즉시 서버 최신 정보 패치를 요청합니다.
   void selectScanTile(String tileId) {
     if (!_isAuthenticated()) return;
 
@@ -56,7 +56,7 @@ class TileSelectionController {
     }
   }
 
-  /// 발자국 조회 대상 타일 선택/해제
+  /// 발자국 조회 대상 구역 선택/해제
   void selectFootprintTile(String tileId) {
     if (_selectedFootprintTileId == tileId) {
       _selectedFootprintTileId = null;
@@ -94,7 +94,7 @@ class TileSelectionController {
     _selectedScanTileLatLng = null;
   }
 
-  /// 'hex_{q}_{r}' 형식 타일 ID의 중심 좌표를 반환합니다. 파싱 실패 시 null.
+  /// 'hex_{q}_{r}' 형식 구역 ID의 중심 좌표를 반환합니다. 파싱 실패 시 null.
   static LatLng? parseTileCenter(String tileId) {
     final parts = tileId.split('_');
     if (parts.length == 3) {

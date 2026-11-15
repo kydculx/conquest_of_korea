@@ -35,25 +35,25 @@ class SupabaseService {
   SupabaseClient get _client => Supabase.instance.client;
   SupabaseClient get client => _client;
 
-  /// 데이터베이스에 저장된 모든 점령 완료 타일 목록을 비동기 조회하여 반환합니다.
+  /// 데이터베이스에 저장된 모든 점령 완료 구역 목록을 비동기 조회하여 반환합니다.
   Future<List<HexTile>> fetchAllCapturedTiles() async {
-    debugPrint('🔍 점령 타일 데이터 요청 중...');
+    debugPrint('🔍 점령 구역 데이터 요청 중...');
     final response = await _client.from('captured_tiles').select('*');
     final tiles = (response as List)
         .map((e) => HexTile.fromJson(e as Map<String, dynamic>))
         .toList();
-    debugPrint('📦 ${tiles.length}개 타일 수신 완료');
+    debugPrint('📦 ${tiles.length}개 구역 수신 완료');
     return tiles;
   }
 
 
-  /// 특정 사각형 영역 범위(minQ ~ maxQ, minR ~ maxR) 내의 점령 타일 목록을 비동기 조회하여 반환합니다.
+  /// 특정 사각형 영역 범위(minQ ~ maxQ, minR ~ maxR) 내의 점령 구역 목록을 비동기 조회하여 반환합니다.
   ///
-  /// PostgREST 기본 1000행 제한에 걸리면 응답에서 빠진 타일이 로컬 삭제 대상으로
+  /// PostgREST 기본 1000행 제한에 걸리면 응답에서 빠진 구역이 로컬 삭제 대상으로
   /// 오인돼 깜빡임이 생기므로, 짧은 페이지가 나올 때까지 range로 전부 수집합니다.
   Future<List<HexTile>> fetchCapturedTilesInArea(
       int minQ, int maxQ, int minR, int maxR) async {
-    debugPrint('🔍 주변 ($minQ~$maxQ, $minR~$maxR) 타일 데이터 요청 중...');
+    debugPrint('🔍 주변 ($minQ~$maxQ, $minR~$maxR) 구역 데이터 요청 중...');
     const int pageSize = 1000;
     final List<HexTile> all = [];
     int from = 0;
@@ -74,7 +74,7 @@ class SupabaseService {
       if (page.length < pageSize) break;
       from += pageSize;
     }
-    debugPrint('📦 ${all.length}개 주변 타일 수신 완료');
+    debugPrint('📦 ${all.length}개 주변 구역 수신 완료');
     return all;
   }
 
@@ -104,10 +104,10 @@ class SupabaseService {
     }
   }
 
-  /// 지정한 타일 ID의 최신 소유 상황을 서버 데이터베이스로부터 확인하여 타일 소유 상태 [TileStatus]로 반환합니다.
+  /// 지정한 구역 ID의 최신 소유 상황을 서버 데이터베이스로부터 확인하여 구역 소유 상태 [TileStatus]로 반환합니다.
   ///
   /// 네트워크 오류 등은 예외로 전파한다. 호출부가 실패를 '빈 땅'으로 오인해
-  /// 로컬 타일을 삭제하는 일을 막기 위해서다 (없음 판단은 null 응답 때만).
+  /// 로컬 구역을 삭제하는 일을 막기 위해서다 (없음 판단은 null 응답 때만).
   Future<TileStatus> checkTileStatusFromServer(
     String tileId,
     String currentUserId,
@@ -153,7 +153,7 @@ class SupabaseService {
     }
   }
 
-  /// 특정 타일 ID에 대한 상세 점령 정보를 단일 레코드로 조회하여 반환합니다. 점령되지 않은 중립 타일일 시 null을 반환합니다.
+  /// 특정 구역 ID에 대한 상세 점령 정보를 단일 레코드로 조회하여 반환합니다. 점령되지 않은 중립 구역일 시 null을 반환합니다.
   ///
   /// 네트워크 오류 등은 예외로 전파한다. null은 서버에 행이 없을 때만 반환한다.
   Future<HexTile?> fetchTile(String tileId) async {
@@ -235,22 +235,22 @@ class SupabaseService {
     }
   }
 
-  /// 에이전트의 타일 이동 횟수(일일/누적)를 1씩 증가시키는 RPC 트랜잭션 함수를 호출합니다.
+  /// 에이전트의 구역 이동 횟수(일일/누적)를 1씩 증가시키는 RPC 트랜잭션 함수를 호출합니다.
   Future<bool> incrementMovedTiles(String userId) async {
     try {
       lastError = null;
       final params = {'p_user_id': userId};
-      debugPrint('🏹 RPC 타일 이동 수 증가 전송 중: $userId');
+      debugPrint('🏹 RPC 구역 이동 수 증가 전송 중: $userId');
       final response = await _client.rpc('increment_moved_tiles', params: params);
       return response as bool? ?? false;
     } catch (e) {
       lastError = e.toString();
-      debugPrint('❌ RPC 타일 이동 수 증가 전송 실패: $e');
+      debugPrint('❌ RPC 구역 이동 수 증가 전송 실패: $e');
       return false;
     }
   }
 
-  /// 타일 이동 시 랭킹 카운터와 현지 날짜 일일 기록을 함께 갱신합니다.
+  /// 구역 이동 시 랭킹 카운터와 현지 날짜 일일 기록을 함께 갱신합니다.
   Future<bool> incrementMovedTilesForRecord(
     String userId,
     DateTime localDate,
@@ -267,12 +267,12 @@ class SupabaseService {
       return response as bool? ?? false;
     } catch (e) {
       lastError = e.toString();
-      debugPrint('❌ RPC 이동 타일·현지 날짜 기록 실패: $e');
+      debugPrint('❌ RPC 이동 구역·현지 날짜 기록 실패: $e');
       return false;
     }
   }
 
-  /// 특정 현지 날짜의 이동 타일 수를 조회합니다.
+  /// 특정 현지 날짜의 이동 구역 수를 조회합니다.
   Future<int> fetchDailyMovedTilesForDate(
     String userId,
     DateTime date,
@@ -287,14 +287,14 @@ class SupabaseService {
       return (response?['moved_tiles_count'] as num?)?.toInt() ?? 0;
     } catch (e) {
       lastError = e.toString();
-      debugPrint('⚠️ 현지 날짜 이동 타일 조회 실패: $e');
+      debugPrint('⚠️ 현지 날짜 이동 구역 조회 실패: $e');
       return 0;
     }
   }
 
-  /// 특정 월의 일별 이동 타일 수를 조회합니다.
+  /// 특정 월의 일별 이동 구역 수를 조회합니다.
   ///
-  /// 이동 타일 이력 테이블이 아직 적용되지 않은 서버에서는 예외를
+  /// 이동 구역 이력 테이블이 아직 적용되지 않은 서버에서는 예외를
   /// 호출자에게 전달해 화면이 기능 비활성 상태를 표시할 수 있게 한다.
   Future<Map<String, int>> fetchDailyMovedTilesMonth(
     String userId,
@@ -323,7 +323,7 @@ class SupabaseService {
       return result;
     } catch (e) {
       lastError = e.toString();
-      debugPrint('⚠️ 월별 이동 타일 조회 실패: $e');
+      debugPrint('⚠️ 월별 이동 구역 조회 실패: $e');
       rethrow;
     }
   }
@@ -361,7 +361,7 @@ class SupabaseService {
     try {
       lastError = null;
 
-      // 패턴 업적은 DB에서 타일 중복을 원자적으로 차단합니다.
+      // 패턴 업적은 DB에서 구역 중복을 원자적으로 차단합니다.
       if (consumedTileIds != null && consumedTileIds.isNotEmpty) {
         try {
           final result = await _client.rpc(
@@ -378,7 +378,7 @@ class SupabaseService {
           debugPrint('⚠️ 패턴 해금 RPC 사용 불가, 기존 경로로 폴백: $rpcError');
         }
 
-        // RPC 미적용 환경에서도 이미 사용 중인 타일은 저장하지 않습니다.
+        // RPC 미적용 환경에서도 이미 사용 중인 구역은 저장하지 않습니다.
         final existing = await _client
             .from('user_achievement_tiles')
             .select('tile_id')
@@ -399,7 +399,7 @@ class SupabaseService {
       // 1. 업적 해금 기본 정보 인서트
       await _client.from('user_achievements').insert(data);
 
-      // 2. 소비된 타일 정보 인서트 (있는 경우)
+      // 2. 소비된 구역 정보 인서트 (있는 경우)
       if (consumedTileIds != null && consumedTileIds.isNotEmpty) {
         try {
           final List<Map<String, dynamic>> tileData = consumedTileIds.map((tileId) => {
@@ -409,7 +409,7 @@ class SupabaseService {
           }).toList();
           await _client.from('user_achievement_tiles').insert(tileData);
         } catch (tileErr) {
-          // 타일 인서트 실패 시 트랜잭션 수동 롤백을 위해 user_achievements 데이터 제거
+          // 구역 인서트 실패 시 트랜잭션 수동 롤백을 위해 user_achievements 데이터 제거
           await _client
               .from('user_achievements')
               .delete()
@@ -428,7 +428,7 @@ class SupabaseService {
     }
   }
 
-  /// 특정 플레이어가 달성한 전체 패턴 업적에서 소비 완료 잠금된 타일 ID 리스트를 조회하여 반환합니다.
+  /// 특정 플레이어가 달성한 전체 패턴 업적에서 소비 완료 잠금된 구역 ID 리스트를 조회하여 반환합니다.
   Future<List<String>> fetchConsumedTileIds(String userId) async {
     try {
       final response = await _client
@@ -440,12 +440,12 @@ class SupabaseService {
           .map((e) => e['tile_id'] as String)
           .toList();
     } catch (e) {
-      debugPrint('❌ 소비 타일 목록 조회 실패: $e');
+      debugPrint('❌ 소비 구역 목록 조회 실패: $e');
       return [];
     }
   }
 
-  /// 특정 플레이어가 획득한 업적별 타일 맵핑 정보 (`achievement_id` -> `List<tile_id>`)를 조회하여 반환합니다.
+  /// 특정 플레이어가 획득한 업적별 구역 맵핑 정보 (`achievement_id` -> `List<tile_id>`)를 조회하여 반환합니다.
   Future<Map<String, List<String>>> fetchAchievementTiles(String userId) async {
     try {
       final response = await _client
@@ -461,12 +461,12 @@ class SupabaseService {
       }
       return resultMap;
     } catch (e) {
-      debugPrint('❌ 업적별 타일 맵핑 조회 실패: $e');
+      debugPrint('❌ 업적별 구역 맵핑 조회 실패: $e');
       return {};
     }
   }
 
-  /// 특정 플레이어가 각기 다른 타일(구역)에서 찍어서 올린 사진의 고유 개수를 카운트하여 반환합니다.
+  /// 특정 플레이어가 각기 다른 구역(구역)에서 찍어서 올린 사진의 고유 개수를 카운트하여 반환합니다.
   Future<int> fetchUserUniquePhotoTilesCount(String userId) async {
     try {
       final response = await _client
@@ -479,12 +479,12 @@ class SupabaseService {
           .toSet();
       return uniqueTiles.length;
     } catch (e) {
-      debugPrint('❌ 유저 사진 고유 타일 수 조회 실패: $e');
+      debugPrint('❌ 유저 사진 고유 구역 수 조회 실패: $e');
       return 0;
     }
   }
 
-  /// [신규] 사진이 하나 이상 등록되어 있는 모든 영토 타일 ID 목록을 비동기 조회하여 반환합니다.
+  /// [신규] 사진이 하나 이상 등록되어 있는 모든 영토 구역 ID 목록을 비동기 조회하여 반환합니다.
   Future<Set<String>> fetchPhotoTileIds() async {
     try {
       final response = await _client
@@ -495,7 +495,7 @@ class SupabaseService {
           .toSet();
       return tileIds;
     } catch (e) {
-      debugPrint('❌ 사진 등록 타일 ID 목록 조회 실패: $e');
+      debugPrint('❌ 사진 등록 구역 ID 목록 조회 실패: $e');
       return {};
     }
   }
@@ -668,10 +668,10 @@ class SupabaseService {
   }
 
   // ============================================================
-  // 8. 어드민 맵 에디터 — 타일 속성 (map_tile_types / map_tile_attributes)
+  // 8. 어드민 맵 에디터 — 구역 속성 (map_tile_types / map_tile_attributes)
   // ============================================================
 
-  /// 어드민이 정의한 모든 타일 타입 목록을 조회합니다.
+  /// 어드민이 정의한 모든 구역 타입 목록을 조회합니다.
   ///
   /// 0번(기본) 타입이 누락된 경우 자동 보정하여 반환합니다.
   Future<List<TileType>> fetchTileTypes() async {
@@ -692,14 +692,14 @@ class SupabaseService {
             id: 0,
             name: '기본',
             colorHex: '#334155',
-            description: '기본 타일',
+            description: '기본 구역',
             isBlocked: false,
           ),
         );
       }
       return list;
     } catch (e) {
-      debugPrint('⚠️ 타일 타입 조회 실패, 기본 프리셋 반환: $e');
+      debugPrint('⚠️ 구역 타입 조회 실패, 기본 프리셋 반환: $e');
       return const [
         TileType(id: 0, name: '기본', colorHex: '#334155'),
         TileType(id: 1, name: '랜드마크', colorHex: '#a855f7'),
@@ -708,7 +708,7 @@ class SupabaseService {
   }
 
   /// 지정한 사각형 헥사 좌표 범위(minQ ~ maxQ, minR ~ maxR) 내의
-  /// 어드민 부여 타일 속성 목록을 조회합니다.
+  /// 어드민 부여 구역 속성 목록을 조회합니다.
   Future<List<TileAttribute>> fetchTileAttributesInArea(
     int minQ,
     int maxQ,
@@ -727,7 +727,7 @@ class SupabaseService {
           .map((e) => TileAttribute.fromJson(_toMap(e)))
           .toList();
     } catch (e) {
-      debugPrint('⚠️ 타일 속성 영역 조회 실패: $e');
+      debugPrint('⚠️ 구역 속성 영역 조회 실패: $e');
       return [];
     }
   }

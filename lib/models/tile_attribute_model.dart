@@ -1,10 +1,10 @@
-/// 어드민 맵 에디터에서 정의한 타일 속성(랜드마크 / 차단 구역 등) 관련 데이터 모델.
+/// 어드민 맵 에디터에서 정의한 구역 속성(랜드마크 / 차단 구역 등) 관련 데이터 모델.
 ///
 /// - [TileType]: `map_tile_types` 테이블의 한 행 (이름, 색상, 차단 여부 등)
-/// - [TileAttribute]: `map_tile_attributes` 테이블의 한 행 (특정 헥사 타일에 부여된 속성)
+/// - [TileAttribute]: `map_tile_attributes` 테이블의 한 행 (특정 헥사 구역에 부여된 속성)
 library;
 
-/// 어드민이 정의한 타일 타입 (예: 기본=0, 랜드마크=1).
+/// 어드민이 정의한 구역 타입 (예: 기본=0, 랜드마크=1).
 ///
 /// DB 스키마: `public.map_tile_types`
 ///   id          int          PK
@@ -57,7 +57,7 @@ class TileType {
       };
 }
 
-/// 어드민이 특정 헥사 타일에 부여한 속성.
+/// 어드민이 특정 헥사 구역에 부여한 속성.
 ///
 /// DB 스키마: `public.map_tile_attributes`
 ///   id         text        PK  ("q_r" 형식, 예: "5_3")
@@ -94,7 +94,7 @@ class TileAttribute {
     this.updatedAt,
   });
 
-  /// 어드민 ID(`"5_3"`)를 모바일 타일 ID 포맷(`"hex_5_3"`)으로 변환합니다.
+  /// 어드민 ID(`"5_3"`)를 모바일 구역 ID 포맷(`"hex_5_3"`)으로 변환합니다.
   ///
   /// 이미 `hex_` 접두사가 붙어있으면 그대로 반환합니다.
   static String normalizeId(String rawId) {
@@ -102,7 +102,7 @@ class TileAttribute {
     return 'hex_$rawId';
   }
 
-  /// 인스턴스의 정규화된 모바일 타일 ID (`"hex_q_r"`).
+  /// 인스턴스의 정규화된 모바일 구역 ID (`"hex_q_r"`).
   String get normalizedId => normalizeId(id);
 
   /// Supabase 응답(Map)으로부터 [TileAttribute] 인스턴스를 생성합니다.

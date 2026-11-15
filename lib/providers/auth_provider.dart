@@ -105,7 +105,7 @@ class AuthProvider extends ChangeNotifier {
         final user = _user;
         if (user == null) return;
         // 계정이 직접 교체된 경우(로그아웃 이벤트 없이 세션 교체) 이전 계정의
-        // 마지막 방문 타일·동전 날짜·알림 설정 등 로컬 기록을 먼저 제거한다.
+        // 마지막 방문 구역·동전 날짜·알림 설정 등 로컬 기록을 먼저 제거한다.
         if (previousUserId != null && previousUserId != user.id) {
           unawaited(PreferencesService.clearUserSessionData());
         }

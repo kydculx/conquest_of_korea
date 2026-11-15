@@ -198,7 +198,7 @@ class LanguageSettingsScreen extends StatelessWidget {
     );
   }
 
-  /// 개별 언어 선택 항목 타일을 빌드합니다.
+  /// 개별 언어 선택 항목 구역을 빌드합니다.
   Widget _buildLanguageItem({
     required BuildContext context,
     required String title,

@@ -35,7 +35,7 @@ class GameAlert {
   /// 알림이 발생 및 등록된 시각
   final DateTime createdAt;
 
-  /// 알림을 눌렀을 때 지도에서 함께 보여줄 타일 ID (없으면 null)
+  /// 알림을 눌렀을 때 지도에서 함께 보여줄 구역 ID (없으면 null)
   final String? tileId;
 
   /// GameAlert 생성자

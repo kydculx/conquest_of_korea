@@ -13,7 +13,7 @@ import '../screens/nearby_gallery_screen.dart';
 import 'tactical_press_button.dart';
 import 'tactical_dialog.dart';
 
-/// [신규] 플레이어가 밟고 서 있는 현재 타일의 사진첩 갤러리를 확인하고
+/// [신규] 플레이어가 밟고 서 있는 현재 구역의 사진첩 갤러리를 확인하고
 /// 즉시 현장 사진을 촬영해 등록할 수 있게 하는 카메라 솜사탕 젤리 액션 버튼
 class TilePhotoActionButton extends StatelessWidget {
   final double size;

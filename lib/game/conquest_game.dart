@@ -18,8 +18,8 @@ import '../core/constants/colors.dart';
 import 'components/footprint_target_marker.dart';
 import '../core/constants/game_config.dart';
 
-/// Flame 게임 엔진을 상속받아 인게임 지도상에 헥사곤 타일 영역, 플레이어의 물리 위치 마커, 본부 기지(HQ), 위성 조준 마커 등을 렌더링하고 업데이트를 감시하는 커스텀 게임 엔진 클래스
-/// 줌 레벨별 동적 LOD(Level of Detail) 타일 규격 계층화 및 실시간 영토 병합(Clustering) 시스템을 이식받아 60 FPS 드래그 및 전국구 줌아웃 성능을 완벽 보장합니다.
+/// Flame 게임 엔진을 상속받아 인게임 지도상에 헥사곤 구역 영역, 플레이어의 물리 위치 마커, 본부 기지(HQ), 위성 조준 마커 등을 렌더링하고 업데이트를 감시하는 커스텀 게임 엔진 클래스
+/// 줌 레벨별 동적 LOD(Level of Detail) 구역 규격 계층화 및 실시간 영토 병합(Clustering) 시스템을 이식받아 60 FPS 드래그 및 전국구 줌아웃 성능을 완벽 보장합니다.
 class ConquestGame extends FlameGame {
   /// 60 FPS 제한을 위한 프레임 스로틀링 누적 타임 (초 단위)
   double _frameTimeAccumulator = 0.0;
@@ -33,16 +33,16 @@ class ConquestGame extends FlameGame {
   /// 화면 좌표와 지도 좌표 간 변환(투영)을 수행하는 FlutterMap 지도 컨트롤러 캐시 객체
   MapController? _mapController;
 
-  /// 마지막으로 전달받은 서버 기준 점령 타일 목록 캐시
+  /// 마지막으로 전달받은 서버 기준 점령 구역 목록 캐시
   Map<String, HexTile> _lastCapturedTiles = {};
 
-  /// 최근에 빌드 완료된 LOD 병합 영토 타일 맵 캐시
+  /// 최근에 빌드 완료된 LOD 병합 영토 구역 맵 캐시
   Map<String, HexTile> _lastClusteredTiles = {};
 
-  /// [신규] 어드민이 정의한 타일 타입 캐시 (Key: 타입 ID).
+  /// [신규] 어드민이 정의한 구역 타입 캐시 (Key: 타입 ID).
   Map<int, TileType> _tileTypes = {};
 
-  /// [신규] 어드민이 부여한 타일 속성 캐시 (Key: 모바일 정규화 타일 ID "hex_q_r").
+  /// [신규] 어드민이 부여한 구역 속성 캐시 (Key: 모바일 정규화 구역 ID "hex_q_r").
   Map<String, TileAttribute> _tileAttributes = {};
 
   /// 현재 활성화된 동전 목록 캐시
@@ -57,7 +57,7 @@ class ConquestGame extends FlameGame {
   /// 줌 레벨별 LOD / 클러스터링 / 좌표 캐싱 헬퍼
   final TileClusterHelper _clusterHelper = TileClusterHelper();
 
-  /// 렌더링에 사용 중인 Flame 개별 컴포넌트 맵 (Key: 타일 ID, Value: 헥사곤 컴포넌트)
+  /// 렌더링에 사용 중인 Flame 개별 컴포넌트 맵 (Key: 구역 ID, Value: 헥사곤 컴포넌트)
   final Map<String, HexTileComponent> _tileMap = {};
 
   /// 본부 기지(HQ) 아이콘 및 링 반경 연출을 시각화하는 마커 컴포넌트
@@ -69,13 +69,13 @@ class ConquestGame extends FlameGame {
   /// 발자취 선택 시 네온 청록색 하이라이팅 조준마커 컴포넌트
   FootprintTargetMarker? _footprintTargetMarker;
 
-  /// 알림으로 찾은 타일을 깜빡이며 강조할 대상 타일 ID
+  /// 알림으로 찾은 구역을 깜빡이며 강조할 대상 구역 ID
   String? _highlightedTileId;
 
-  /// 타일 강조 표시 종료 시각
+  /// 구역 강조 표시 종료 시각
   DateTime? _highlightUntil;
 
-  /// 현재 설정된 플레이어의 본부 기지(HQ) 타일 ID
+  /// 현재 설정된 플레이어의 본부 기지(HQ) 구역 ID
   String? _currentHQTileId;
 
   /// 최근에 점령 시도에 사용된 테마 식별 색상 코드
@@ -84,7 +84,7 @@ class ConquestGame extends FlameGame {
   /// 현재 위성 궤도 스캔 조준 장치 활성화 여부 상태 캐시
   bool _isScanMode = false;
 
-  /// 이미 매칭 완료하여 해금한 패턴의 소비 타일들을 맵 상에 하이라이트할지 여부
+  /// 이미 매칭 완료하여 해금한 패턴의 소비 구역들을 맵 상에 하이라이트할지 여부
   bool _showCompletedPatterns = false;
 
   /// 발자취 오버레이 토글 상태
@@ -93,27 +93,27 @@ class ConquestGame extends FlameGame {
   /// 플레이어의 발자취 데이터 맵 캐시
   Map<String, FootprintTile> _footprints = {};
 
-  /// 현재 LOD 규격으로 병합된 발자취 타일 캐시.
+  /// 현재 LOD 규격으로 병합된 발자취 구역 캐시.
   /// 카메라 이동(팬) 중에는 재병합을 생략하여 프레임 부하를 차단합니다.
   Map<String, HexTile> _footprintClusterCache = {};
 
   /// [_footprintClusterCache]가 마지막으로 빌드된 LOD 규격 (null: 캐시 없음)
   double? _footprintClusterHexSize;
 
-  /// 현재 LOD 규격으로 병합된 완료 패턴 타일 캐시.
+  /// 현재 LOD 규격으로 병합된 완료 패턴 구역 캐시.
   /// 카메라 이동(팬) 중에는 재병합을 생략하여 프레임 부하를 차단합니다.
   Map<String, HexTile> _patternClusterCache = {};
 
   /// [_patternClusterCache]가 마지막으로 빌드된 LOD 규격 (null: 캐시 없음)
   double? _patternClusterHexSize;
 
-  /// 해금된 패턴 업적에 소비된 타일 ID 목록 캐시
+  /// 해금된 패턴 업적에 소비된 구역 ID 목록 캐시
   Set<String> _consumedTileIds = {};
 
   /// 현재 로그인된 플레이어의 ID 정보 캐시
   String? _currentUserId;
 
-  /// 현재 위성 원격 타일 점령이 진행 중인지 여부 상태 캐시
+  /// 현재 위성 원격 구역 점령이 진행 중인지 여부 상태 캐시
   bool _isSatelliteCapturing = false;
 
   /// 현재 위성 점령의 상태 단계
@@ -125,13 +125,13 @@ class ConquestGame extends FlameGame {
   /// 현재 위성 점령의 게이지 진행률 (0.0 ~ 1.0)
   double _satelliteCaptureProgress = 0.0;
 
-  /// 위성 점령을 개시한 대상 타일 ID 캐시
+  /// 위성 점령을 개시한 대상 구역 ID 캐시
   String? _satelliteCapturingTileId;
 
   /// 투영을 담당하는 내부 맵 컨트롤러 반환
   MapController? get mapController => _mapController;
 
-  /// 타일 렌더링 색상(fill)을 결정합니다.
+  /// 구역 렌더링 색상(fill)을 결정합니다.
   ///
   /// 어드민 속성 색상은 [resolveAdminBorderColorHex]로 별도 해소되며,
   /// 본 메서드는 점령/중립 상태에 따른 fill만 반환합니다 (어드민은 외곽선 전용).
@@ -139,7 +139,7 @@ class ConquestGame extends FlameGame {
     if (tileData.userId == 'footprint_marker') return tileData.colorHex;
     if (tileData.userId == 'pattern_consumed') return '#0066FF';
 
-    // 동전 마커 또는 중립 타일 (어드민 속성은 별도 외곽선으로 표시)
+    // 동전 마커 또는 중립 구역 (어드민 속성은 별도 외곽선으로 표시)
     if (tileData.userId == 'coin_marker' ||
         tileData.userId == 'none' ||
         tileData.userId == null) {
@@ -155,9 +155,9 @@ class ConquestGame extends FlameGame {
 
   /// [신규] 어드민 부여 속성에 대응하는 외곽선 색상 코드를 반환합니다.
   ///
-  /// 동전이 표시되는 타일은 어드민 외곽선을 그리지 않습니다 (기존 동작 보존).
+  /// 동전이 표시되는 구역은 어드민 외곽선을 그리지 않습니다 (기존 동작 보존).
   String? resolveAdminBorderColorHex(String tileId) {
-    // 동전 표시 타일은 어드민 외곽선 적용 제외 (기존 동작 유지)
+    // 동전 표시 구역은 어드민 외곽선 적용 제외 (기존 동작 유지)
     final hasCoin = _coins.any((c) => c.tileId == tileId && !c.isCollected);
     if (hasCoin) return null;
 
@@ -173,7 +173,7 @@ class ConquestGame extends FlameGame {
     return type.colorHex;
   }
 
-  /// 본부 기지가 설치된 타일 ID 반환
+  /// 본부 기지가 설치된 구역 ID 반환
   String? get currentHQTileId => _currentHQTileId;
 
   /// 현재 사용자 ID 반환
@@ -194,7 +194,7 @@ class ConquestGame extends FlameGame {
   /// 위성 점령의 퍼센트 수치 반환
   double get satelliteCaptureProgress => _satelliteCaptureProgress;
 
-  /// 위성 점령 중인 목적지 타일 ID 반환
+  /// 위성 점령 중인 목적지 구역 ID 반환
   String? get satelliteCapturingTileId => _satelliteCapturingTileId;
 
   /// 위성 궤도 조준경 모드 사용 여부
@@ -227,16 +227,16 @@ class ConquestGame extends FlameGame {
   /// 이전 프레임의 지도 뷰포트 크기 캐시 (동기화 감시용)
   Size? _prevCameraSize;
 
-  /// 마지막으로 실제 타일 재계산에 적용한 카메라 중심좌표 캐시 (중복 연산 차단용)
+  /// 마지막으로 실제 구역 재계산에 적용한 카메라 중심좌표 캐시 (중복 연산 차단용)
   LatLng? _appliedCameraCenter;
 
-  /// 마지막으로 실제 타일 재계산에 적용한 카메라 줌 레벨 캐시 (중복 연산 차단용)
+  /// 마지막으로 실제 구역 재계산에 적용한 카메라 줌 레벨 캐시 (중복 연산 차단용)
   double? _appliedCameraZoom;
 
-  /// 마지막으로 실제 타일 재계산에 적용한 카메라 회전각 캐시 (중복 연산 차단용)
+  /// 마지막으로 실제 구역 재계산에 적용한 카메라 회전각 캐시 (중복 연산 차단용)
   double? _appliedCameraRotation;
 
-  /// 마지막으로 실제 타일 재계산에 적용한 카메라 뷰포트 크기 캐시 (중복 연산 차단용)
+  /// 마지막으로 실제 구역 재계산에 적용한 카메라 뷰포트 크기 캐시 (중복 연산 차단용)
   Size? _appliedCameraSize;
 
   /// 프레임 갱신 주기를 제어하기 위해 누적 보관하는 델타 타임 합산 값
@@ -255,7 +255,7 @@ class ConquestGame extends FlameGame {
     }
   }
 
-  /// Flame 게임 루프의 매 프레임 업데이트 콜백. 지도의 미세한 카메라 변경을 실시간 감시하여 타일 매핑 분리를 방지합니다.
+  /// Flame 게임 루프의 매 프레임 업데이트 콜백. 지도의 미세한 카메라 변경을 실시간 감시하여 구역 매핑 분리를 방지합니다.
   @override
   void update(double dt) {
     _frameTimeAccumulator += dt;
@@ -335,7 +335,7 @@ class ConquestGame extends FlameGame {
     }
   }
 
-  /// 특정 타일을 지정 시간 동안 깜빡이며 강조합니다.
+  /// 특정 구역을 지정 시간 동안 깜빡이며 강조합니다.
   void highlightTile(
     String tileId, {
     Duration duration = const Duration(seconds: 5),
@@ -343,7 +343,7 @@ class ConquestGame extends FlameGame {
     _highlightedTileId = tileId;
     _highlightUntil = DateTime.now().add(duration);
 
-    // 이전에 강조하던 타일은 즉시 해제하고 대상 타일만 남긴다.
+    // 이전에 강조하던 구역은 즉시 해제하고 대상 구역만 남긴다.
     for (final entry in _tileMap.entries) {
       entry.value.highlightUntil = entry.key == tileId ? _highlightUntil : null;
     }
@@ -356,9 +356,9 @@ class ConquestGame extends FlameGame {
     return until;
   }
 
-  /// 공통 렌더링 로직: 카메라 점프 가드 + LOD 체크 + 클러스터 리빌드 + Frustum Culling + 타일 생성/업데이트
-  /// [capturedTilesSource]: 클러스터링에 사용할 타일 데이터 소스
-  /// [capturingTileId], [satelliteCapturingTileId]: 점령 중인 타일은 culling에서 제외
+  /// 공통 렌더링 로직: 카메라 점프 가드 + LOD 체크 + 클러스터 리빌드 + Frustum Culling + 구역 생성/업데이트
+  /// [capturedTilesSource]: 클러스터링에 사용할 구역 데이터 소스
+  /// [capturingTileId], [satelliteCapturingTileId]: 점령 중인 구역은 culling에서 제외
   void _renderVisibleTiles(
     Map<String, HexTile> capturedTilesSource, {
     String? capturingTileId,
@@ -385,7 +385,7 @@ class ConquestGame extends FlameGame {
     final double dynamicHexSize = _clusterHelper.getHexSizeForZoom(currentZoom);
 
     // 줌 레벨(LOD) 스케일이 실제로 바뀌었을 경우 기존 컴포넌트들을 강제로 일괄 파기하여 무대 청소
-    // (발자취 모드에서 점령 타일 데이터가 비어 있어도 매 프레임 컴포넌트가 재생성되지 않도록 LOD 변화만 감지)
+    // (발자취 모드에서 점령 구역 데이터가 비어 있어도 매 프레임 컴포넌트가 재생성되지 않도록 LOD 변화만 감지)
     if (_lastLodLevel != currentLod) {
       final toRemove = _tileMap.values.toList();
       removeAll(toRemove);
@@ -406,11 +406,11 @@ class ConquestGame extends FlameGame {
     final double minLng = sw.longitude - marginLng;
     final double maxLng = ne.longitude + marginLng;
 
-    // 1. 뷰포트 내 가식 영역에 포함되는 타일 데이터 선별 (O(K) 1차원 루프로 줌아웃 CPU 랙 원천 해결)
+    // 1. 뷰포트 내 가식 영역에 포함되는 구역 데이터 선별 (O(K) 1차원 루프로 줌아웃 CPU 랙 원천 해결)
     final Set<String> visibleIds = {};
     final List<HexTile> visibleTiles = [];
 
-    // 일반 모드에서만 점령 타일 LOD 병합/렌더링 수행.
+    // 일반 모드에서만 점령 구역 LOD 병합/렌더링 수행.
     // 발자취·패턴 도감 모드에서는 일반 점령지를 그리지 않으므로 O(N) 병합 연산을 생략한다.
     if (!_showFootprints && !_showCompletedPatterns) {
       _lastClusteredTiles = _clusterHelper.rebuildClusteredTiles(
@@ -430,7 +430,7 @@ class ConquestGame extends FlameGame {
         final double lng = centerLatLng.longitude;
 
         if (lat >= minLat && lat <= maxLat && lng >= minLng && lng <= maxLng) {
-          // [적군 영토 은폐 가드] 1순위 초고속 필터: 투영 및 지리 연산 전에 적군 타일을 선결 거름으로써 CPU 부하 99% 제거
+          // [적군 영토 은폐 가드] 1순위 초고속 필터: 투영 및 지리 연산 전에 적군 구역을 선결 거름으로써 CPU 부하 99% 제거
           if (dynamicHexSize >= GameConfig.lodSize3 &&
               tile.userId != _currentUserId) {
             return;
@@ -441,7 +441,7 @@ class ConquestGame extends FlameGame {
       });
     }
 
-    // 발자취 모드 활성화 시 내 발자취 타일들을 현재 LOD 규격으로 실시간 병합한 뒤
+    // 발자취 모드 활성화 시 내 발자취 구역들을 현재 LOD 규격으로 실시간 병합한 뒤
     // 가식 영역 체크 후 강제 렌더링 목록에 주입
     if (_showFootprints) {
       final clusteredFootprints = _getClusteredFootprints(dynamicHexSize);
@@ -463,7 +463,7 @@ class ConquestGame extends FlameGame {
       });
     }
 
-    // 패턴 뷰 모드 활성화 시 완료한 패턴 타일들을 현재 LOD 규격으로 병합한 뒤
+    // 패턴 뷰 모드 활성화 시 완료한 패턴 구역들을 현재 LOD 규격으로 병합한 뒤
     // 가식 영역 체크 후 강제 렌더링 목록에 주입
     if (_showCompletedPatterns) {
       final clusteredPatterns = _getClusteredPatternTiles(dynamicHexSize);
@@ -485,7 +485,7 @@ class ConquestGame extends FlameGame {
       });
     }
 
-    // 미획득 상태의 동전이 위치한 타일들을 가식 영역 체크 후 강제 렌더링 목록에 주입 (중립 구역 동전 시각화 보장, 발자취 및 패턴 모드 시 생략)
+    // 미획득 상태의 동전이 위치한 구역들을 가식 영역 체크 후 강제 렌더링 목록에 주입 (중립 구역 동전 시각화 보장, 발자취 및 패턴 모드 시 생략)
     if (!_showFootprints && !_showCompletedPatterns) {
       for (final coin in _coins) {
         if (coin.isCollected) continue;
@@ -519,12 +519,12 @@ class ConquestGame extends FlameGame {
       }
     }
 
-    // [신규] 어드민이 부여한 속성 타일을 가식 영역 체크 후 렌더링 목록에 주입.
+    // [신규] 어드민이 부여한 속성 구역을 가식 영역 체크 후 렌더링 목록에 주입.
     // 점령 여부와 무관하게 외곽선만 표시되어 정적 지형(랜드마크 / 차단 구역) 표시를 보장한다.
     // 발자취·패턴 도감 모드에서는 일반 점령지를 생략하므로 어드민 외곽선도 함께 생략한다.
     if (!_showFootprints && !_showCompletedPatterns) {
       _tileAttributes.forEach((tileId, attr) {
-        // 이미 다른 모드(점령/동전)에 의해 추가된 타일은 스킵
+        // 이미 다른 모드(점령/동전)에 의해 추가된 구역은 스킵
         if (visibleIds.contains(tileId)) return;
         // 기본(0번) 타입은 색상 외곽선 의미가 없으므로 제외
         if (attr.typeId == 0) return;
@@ -538,7 +538,7 @@ class ConquestGame extends FlameGame {
         final double lat = centerLatLng.latitude;
         final double lng = centerLatLng.longitude;
 
-        // LOD 3 이상 줌아웃에서는 일반 적군 타일도 은폐되므로 어드민 외곽선도 함께 은폐
+        // LOD 3 이상 줌아웃에서는 일반 적군 구역도 은폐되므로 어드민 외곽선도 함께 은폐
         if (dynamicHexSize >= GameConfig.lodSize3) return;
 
         if (lat >= minLat && lat <= maxLat && lng >= minLng && lng <= maxLng) {
@@ -559,7 +559,7 @@ class ConquestGame extends FlameGame {
       });
     }
 
-    // 2. 화면 영역 밖으로 벗어났거나 실제 점령 데이터가 없는 기존 컴포넌트 타일들은 즉시 소멸시켜 CPU/메모리 부하 차단 (단, 현재 점령 진행 중인 타일은 예외 수호)
+    // 2. 화면 영역 밖으로 벗어났거나 실제 점령 데이터가 없는 기존 컴포넌트 구역들은 즉시 소멸시켜 CPU/메모리 부하 차단 (단, 현재 점령 진행 중인 구역은 예외 수호)
     final existingIds = _tileMap.keys.toSet();
     for (final id in existingIds) {
       final isStillCapturing =
@@ -571,14 +571,14 @@ class ConquestGame extends FlameGame {
       }
     }
 
-    // 3. 화면 내 가식 영역에 속하는 타일들만 생성/업데이트
+    // 3. 화면 내 가식 영역에 속하는 구역들만 생성/업데이트
     for (final tileData in visibleTiles) {
       final String id = tileData.id;
       final int q = tileData.q;
       final int r = tileData.r;
 
-      // 동전 타일은 줌 배율에 변동하지 않고 항상 고정 크기(LOD 0)로 중심점/꼭짓점을 매핑하여 렌더 왜곡 방지
-      // (발자취 타일은 일반 점령 타일과 동일하게 현재 LOD 규격으로 병합되어 렌더링된다)
+      // 동전 구역은 줌 배율에 변동하지 않고 항상 고정 크기(LOD 0)로 중심점/꼭짓점을 매핑하여 렌더 왜곡 방지
+      // (발자취 구역은 일반 점령 구역과 동일하게 현재 LOD 규격으로 병합되어 렌더링된다)
       final double targetSize =
           tileData.userId == 'coin_marker' ? GameConfig.lodSize0 : dynamicHexSize;
 
@@ -630,14 +630,14 @@ class ConquestGame extends FlameGame {
     }
   }
 
-  /// 발자취 원본(LOD 0) 타일들을 현재 줌 LOD 규격으로 병합한 결과를 반환합니다.
+  /// 발자취 원본(LOD 0) 구역들을 현재 줌 LOD 규격으로 병합한 결과를 반환합니다.
   /// 병합 결과는 LOD 규격이 바뀌거나 발자취 데이터가 변경될 때만 재생성됩니다.
   Map<String, HexTile> _getClusteredFootprints(double hexSize) {
     if (_footprintClusterHexSize == hexSize) {
       return _footprintClusterCache;
     }
 
-    // 100m 원본 발자취 타일을 렌더링용 HexTile로 변환 (LOD 병합의 입력 데이터)
+    // 100m 원본 발자취 구역을 렌더링용 HexTile로 변환 (LOD 병합의 입력 데이터)
     final Map<String, HexTile> footprintTiles = {};
     _footprints.forEach((tileId, footprint) {
       final parsed = HexService.parseTileId(tileId);
@@ -653,7 +653,7 @@ class ConquestGame extends FlameGame {
       );
     });
 
-    // 일반 점령 타일과 동일하게 현재 줌 LOD 규격으로 병합
+    // 일반 점령 구역과 동일하게 현재 줌 LOD 규격으로 병합
     _footprintClusterCache = _clusterHelper.rebuildClusteredTiles(
       footprintTiles,
       hexSize,
@@ -663,8 +663,8 @@ class ConquestGame extends FlameGame {
     return _footprintClusterCache;
   }
 
-  /// 완료 패턴 원본(LOD 0) 타일들을 현재 줌 LOD 규격으로 병합한 결과를 반환합니다.
-  /// 병합 결과는 LOD 규격이 바뀌거나 소비 타일 목록이 변경될 때만 재생성됩니다.
+  /// 완료 패턴 원본(LOD 0) 구역들을 현재 줌 LOD 규격으로 병합한 결과를 반환합니다.
+  /// 병합 결과는 LOD 규격이 바뀌거나 소비 구역 목록이 변경될 때만 재생성됩니다.
   Map<String, HexTile> _getClusteredPatternTiles(double hexSize) {
     if (_patternClusterHexSize == hexSize) {
       return _patternClusterCache;
@@ -672,7 +672,7 @@ class ConquestGame extends FlameGame {
 
     final DateTime now = DateTime.now();
 
-    // 100m 원본 완료 패턴 타일을 렌더링용 HexTile로 변환 (LOD 병합의 입력 데이터)
+    // 100m 원본 완료 패턴 구역을 렌더링용 HexTile로 변환 (LOD 병합의 입력 데이터)
     final Map<String, HexTile> patternTiles = {};
     for (final tileId in _consumedTileIds) {
       final parsed = HexService.parseTileId(tileId);
@@ -682,13 +682,13 @@ class ConquestGame extends FlameGame {
         q: parsed['q'] as int,
         r: parsed['r'] as int,
         userId: 'pattern_consumed',
-        colorHex: '#0066FF', // 완료 패턴 타일용 특수 파란색
+        colorHex: '#0066FF', // 완료 패턴 구역용 특수 파란색
         capturedAt: now,
         captureCount: 1,
       );
     }
 
-    // 일반 점령 타일과 동일하게 현재 줌 LOD 규격으로 병합
+    // 일반 점령 구역과 동일하게 현재 줌 LOD 규격으로 병합
     _patternClusterCache = _clusterHelper.rebuildClusteredTiles(
       patternTiles,
       hexSize,
@@ -698,7 +698,7 @@ class ConquestGame extends FlameGame {
     return _patternClusterCache;
   }
 
-  /// 점령 타일 렌더링 업데이트 (LOD 병합 및 캐싱 최적화 버전)
+  /// 점령 구역 렌더링 업데이트 (LOD 병합 및 캐싱 최적화 버전)
   void updateCapturedTiles({
     required Map<String, HexTile> capturedTiles,
     String? capturingTileId,
@@ -720,7 +720,7 @@ class ConquestGame extends FlameGame {
     bool showFootprints = false,
     Map<String, FootprintTile>? footprints,
     String? selectedFootprintTileId,
-    // [신규] 어드민 정의 타일 타입/속성 맵. 미전달 시 기존 동작 유지.
+    // [신규] 어드민 정의 구역 타입/속성 맵. 미전달 시 기존 동작 유지.
     Map<int, TileType>? tileTypes,
     Map<String, TileAttribute>? tileAttributes,
   }) {
@@ -728,7 +728,7 @@ class ConquestGame extends FlameGame {
     _lastCapturingColorHex = capturingColorHex;
     _isScanMode = isScanMode;
     _currentUserId = currentUserId;
-    // 로그아웃 상태에서는 이전 계정의 타일 강조 표시가 남지 않게 한다.
+    // 로그아웃 상태에서는 이전 계정의 구역 강조 표시가 남지 않게 한다.
     if (currentUserId == null) {
       _highlightedTileId = null;
       _highlightUntil = null;
@@ -755,7 +755,7 @@ class ConquestGame extends FlameGame {
       _tileAttributes = tileAttributes;
     }
     final Set<String> nextConsumedTileIds = consumedTileIds ?? <String>{};
-    // 소비 타일 목록이 실제로 변경된 경우에만 패턴 LOD 병합 캐시를 무효화
+    // 소비 구역 목록이 실제로 변경된 경우에만 패턴 LOD 병합 캐시를 무효화
     if (!setEquals(_consumedTileIds, nextConsumedTileIds)) {
       _patternClusterCache = {};
       _patternClusterHexSize = null;
@@ -776,14 +776,14 @@ class ConquestGame extends FlameGame {
       _mapController!.camera.zoom,
     );
 
-    // 공통 타일 렌더링
+    // 공통 구역 렌더링
     _renderVisibleTiles(
       capturedTiles,
       capturingTileId: capturingTileId,
       satelliteCapturingTileId: satelliteCapturingTileId,
     );
 
-    // 점령 중인 타일 특수 상태 처리 (일반 점령 - 모든 LOD 단계에서 실시간 가시화 보장)
+    // 점령 중인 구역 특수 상태 처리 (일반 점령 - 모든 LOD 단계에서 실시간 가시화 보장)
     if (capturingTileId != null) {
       _updateActiveCaptureTile(
         tileId: capturingTileId,
@@ -795,7 +795,7 @@ class ConquestGame extends FlameGame {
       );
     }
 
-    // 점령 중인 타일 특수 상태 처리 (위성 원격 점령 - 모든 LOD 단계에서 실시간 가시화 보장)
+    // 점령 중인 구역 특수 상태 처리 (위성 원격 점령 - 모든 LOD 단계에서 실시간 가시화 보장)
     if (isSatelliteCapturing && satelliteCapturingTileId != null) {
       final bool shouldAnimateTile =
           _satelliteCapturePhase == SatelliteCapturePhase.capturing;
@@ -808,7 +808,7 @@ class ConquestGame extends FlameGame {
       );
     }
 
-    // 점령 중이 아닌 타일 상태 초기화
+    // 점령 중이 아닌 구역 상태 초기화
     _tileMap.forEach((id, tile) {
       final isStillCapturing =
           id == capturingTileId ||
@@ -819,7 +819,7 @@ class ConquestGame extends FlameGame {
     });
   }
 
-  /// 점령이 진행 중인 특정 타일(일반 물리 점령 및 위성 원격 점령 공용)의
+  /// 점령이 진행 중인 특정 구역(일반 물리 점령 및 위성 원격 점령 공용)의
   /// 실시간 점령 게이지 데이터 및 펄싱 여부를 동적으로 렌더링하고 동기화합니다.
   void _updateActiveCaptureTile({
     required String tileId,
@@ -842,7 +842,7 @@ class ConquestGame extends FlameGame {
       tile.highlightUntil = tileId == _highlightedTileId
           ? _activeHighlightUntil
           : null;
-      // 타일 고유의 격자 크기 획득 (LOD 줌 레벨과 무관하게 고정 위치 유지)
+      // 구역 고유의 격자 크기 획득 (LOD 줌 레벨과 무관하게 고정 위치 유지)
       final parsed = HexService.parseTileId(tileId);
       final double targetHexSize = (parsed != null && parsed['size'] != null)
           ? (parsed['size'] as num).toDouble()
@@ -879,7 +879,7 @@ class ConquestGame extends FlameGame {
       }
 
       if (q != null && r != null) {
-        // [중요 가드] 점령 중인 단일 타일의 화면 가시성 판정
+        // [중요 가드] 점령 중인 단일 구역의 화면 가시성 판정
         final bounds = _mapController!.camera.visibleBounds;
         final double minLat = bounds.southWest.latitude - 0.02;
         final double maxLat = bounds.northEast.latitude + 0.02;
@@ -932,7 +932,7 @@ class ConquestGame extends FlameGame {
     }
   }
 
-  /// 화면 스크린 변화 감지 시 렌더링 중인 플레이어 및 타일 컴포넌트들의 스크린 좌표를 일괄 재계산하여 이동시킵니다.
+  /// 화면 스크린 변화 감지 시 렌더링 중인 플레이어 및 구역 컴포넌트들의 스크린 좌표를 일괄 재계산하여 이동시킵니다.
   void _updateAllPositions() {
     if (_mapController == null) return;
 
@@ -957,8 +957,8 @@ class ConquestGame extends FlameGame {
         _appliedCameraSize!.height != currentSize.height;
     if (!cameraChanged) return;
 
-    // 줌/회전이 실제로 바뀐 경우에만 타일 패스 캐시 무효화.
-    // 헥사곤 패스는 타일 중심 기준 로컬 좌표계이므로 순수 이동(팬)에는 영향이 없어,
+    // 줌/회전이 실제로 바뀐 경우에만 구역 패스 캐시 무효화.
+    // 헥사곤 패스는 구역 중심 기준 로컬 좌표계이므로 순수 이동(팬)에는 영향이 없어,
     // 팬 중에는 캐시를 유지하고 position 갱신만 수행하여 렌더링 비용을 대폭 절감합니다.
     final double prevZoom = _appliedCameraZoom ?? currentZoom;
     final double prevRotation = _appliedCameraRotation ?? currentRotation;
@@ -974,7 +974,7 @@ class ConquestGame extends FlameGame {
       }
     }
 
-    // 점령 중인 타일 ID를 컴포넌트 상태에서 추출 (culling 제외 대상)
+    // 점령 중인 구역 ID를 컴포넌트 상태에서 추출 (culling 제외 대상)
     String? capturingTileId;
     String? satelliteCapturingId;
     for (final entry in _tileMap.entries) {
@@ -987,20 +987,20 @@ class ConquestGame extends FlameGame {
       }
     }
 
-    // 공통 타일 렌더링 (점령 중인 타일은 culling에서 보존)
+    // 공통 구역 렌더링 (점령 중인 구역은 culling에서 보존)
     _renderVisibleTiles(
       _lastCapturedTiles,
       capturingTileId: capturingTileId,
       satelliteCapturingTileId: satelliteCapturingId,
     );
 
-    // 점령 중인 모든 타일(중립 포함)의 스크린 포지션도 최신 카메라 상태에 맞게 실시간 갱신
+    // 점령 중인 모든 구역(중립 포함)의 스크린 포지션도 최신 카메라 상태에 맞게 실시간 갱신
     for (final entry in _tileMap.entries) {
       if (entry.value.isCapturing) {
         final tileId = entry.key;
         final component = entry.value;
 
-        // 타일 고유의 격자 크기 획득 (LOD 줌 레벨과 무관하게 고정 위치 유지)
+        // 구역 고유의 격자 크기 획득 (LOD 줌 레벨과 무관하게 고정 위치 유지)
         final parsed = HexService.parseTileId(tileId);
         final double targetHexSize = (parsed != null && parsed['size'] != null)
             ? (parsed['size'] as num).toDouble()
@@ -1029,7 +1029,7 @@ class ConquestGame extends FlameGame {
     _updateNonTileMarkersPosition();
   }
 
-  /// 본진 깃발, 위성 조준 마커, 발자취 조준 마커 등 논타일 마커들의 스크린 위치를
+  /// 본진 깃발, 위성 조준 마커, 발자취 조준 마커 등 논구역 마커들의 스크린 위치를
   /// 현재 카메라 상태에 맞춰 즉시 재계산합니다.
   void _updateNonTileMarkersPosition() {
     if (_mapController == null) return;
@@ -1087,7 +1087,7 @@ class ConquestGame extends FlameGame {
     }
   }
 
-  /// 위성 궤도 스캔 조준 상태 혹은 진행 중인 위성 점령 타일에 타겟 링 마커를 바인딩하고 좌표를 갱신합니다.
+  /// 위성 궤도 스캔 조준 상태 혹은 진행 중인 위성 점령 구역에 타겟 링 마커를 바인딩하고 좌표를 갱신합니다.
   void _updateScanTargetMarker(String? selectedScanTileId, bool isScanMode) {
     int? targetQ;
     int? targetR;
@@ -1106,7 +1106,7 @@ class ConquestGame extends FlameGame {
     }
 
     if (_scanTargetMarker != null) {
-      // 이미 같은 타일의 마커가 조준되어 있다면 새로 삭제/생성하지 않고 재사용함
+      // 이미 같은 구역의 마커가 조준되어 있다면 새로 삭제/생성하지 않고 재사용함
       if (targetQ != null &&
           targetR != null &&
           _scanTargetMarker!.q == targetQ &&
@@ -1154,8 +1154,8 @@ class ConquestGame extends FlameGame {
     }
   }
 
-  /// 발자취 모드에서 탭한 지점이 속한 현재 LOD 격자 안의 실제 발자취 타일 중
-  /// 탭 지점과 가장 가까운 타일 ID를 반환합니다. 해당 격자에 발자취가 없으면 null.
+  /// 발자취 모드에서 탭한 지점이 속한 현재 LOD 격자 안의 실제 발자취 구역 중
+  /// 탭 지점과 가장 가까운 구역 ID를 반환합니다. 해당 격자에 발자취가 없으면 null.
   String? findFootprintTileIdNear(LatLng point, double zoom) {
     if (_footprints.isEmpty) return null;
 
@@ -1179,7 +1179,7 @@ class ConquestGame extends FlameGame {
         GameConfig.lodSize0,
       );
 
-      // 발자취 원본 타일이 현재 LOD 격자 셀에 병합되는지 확인
+      // 발자취 원본 구역이 현재 LOD 격자 셀에 병합되는지 확인
       final cell = HexService.latLngToHex(centerLatLng, hexSize: hexSize);
       if (cell['q'] != targetQ || cell['r'] != targetR) return;
 
@@ -1194,7 +1194,7 @@ class ConquestGame extends FlameGame {
   }
 
   /// 패턴 도감 모드에서 탭한 지점이 속한 현재 LOD 격자 안에
-  /// 소비 완료된 패턴 타일이 존재하는지 반환합니다.
+  /// 소비 완료된 패턴 구역이 존재하는지 반환합니다.
   bool hasConsumedPatternTileNear(LatLng point, double zoom) {
     if (_consumedTileIds.isEmpty) return false;
 
@@ -1215,7 +1215,7 @@ class ConquestGame extends FlameGame {
         GameConfig.lodSize0,
       );
 
-      // 소비 타일이 현재 LOD 격자 셀에 병합되는지 확인
+      // 소비 구역이 현재 LOD 격자 셀에 병합되는지 확인
       final cell = HexService.latLngToHex(centerLatLng, hexSize: hexSize);
       if (cell['q'] == targetQ && cell['r'] == targetR) return true;
     }

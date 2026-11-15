@@ -13,8 +13,8 @@ import '../widgets/tactical_app_bar.dart';
 
 const int _dailyTileGoal = 30;
 
-/// 타일 수가 커져도 링이 과도하게 여러 바퀴 돌지 않도록,
-/// 자릿수에 따라 1바퀴당 타일 수를 30 → 300 → 3,000 → 30,000 …으로 키운다.
+/// 구역 수가 커져도 링이 과도하게 여러 바퀴 돌지 않도록,
+/// 자릿수에 따라 1바퀴당 구역 수를 30 → 300 → 3,000 → 30,000 …으로 키운다.
 double _tileLapSizeFor(int count) {
   if (count <= 100) return 30;
   if (count <= 1000) return 300;
@@ -24,7 +24,7 @@ double _tileLapSizeFor(int count) {
   return 3000000;
 }
 
-/// 현지 날짜별 이동 타일 수를 월 달력으로 보여주는 화면.
+/// 현지 날짜별 이동 구역 수를 월 달력으로 보여주는 화면.
 class DailyRecordsScreen extends StatefulWidget {
   const DailyRecordsScreen({super.key});
 
@@ -1096,7 +1096,7 @@ class _TileRingPainter extends CustomPainter {
     final double radius = size.width / 2 - strokeWidth / 2;
     if (radius <= 0) return;
 
-    // 타일 링은 진행률/달성 여부와 관계없이 항상 주황 계열로 표시한다.
+    // 구역 링은 진행률/달성 여부와 관계없이 항상 주황 계열로 표시한다.
     const Color tileColor = Palette.softRed;
 
     final Paint trackPaint = Paint()

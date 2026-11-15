@@ -22,7 +22,7 @@ class MapConfig {
   static const double focusZoom = 16.0;
 
   /// 앱에서 지원하는 지도 스타일 리스트.
-  /// CARTO 타일은 api_key 쿼리 파라미터가 없으면 일부 타일이
+  /// CARTO 지도 이미지는 api_key 쿼리 파라미터가 없으면 일부 지도 이미지가
   /// 'carto.com/basemaps/apikey' 워터마크로 치환되므로 런타임에 주입한다.
   static List<MapStyle> get mapStyles {
     final cartoKey = AppConfig.cartoApiKey;
@@ -57,7 +57,7 @@ class MapStyle {
   /// 스타일 식별 키 명칭
   final String name;
 
-  /// 타일 서버 URL
+  /// 지도 서버 URL
   final String url;
 
   /// 렌더링에 사용될 아이콘 명칭

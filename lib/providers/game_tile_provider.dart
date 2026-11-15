@@ -11,10 +11,10 @@ import '../providers/location_provider.dart';
 import '../services/hex_service.dart';
 import '../services/supabase_service.dart';
 
-/// 점령된 타일 데이터의 저장소, 실시간 스트림 구독, 침공 감지, 타일 정보 해제, 
-/// 닉네임 캐싱 등 타일에 특화된 상태를 전담 관리하는 프로바이더.
-/// 
-/// [GameProvider]에서 타일 관련 책임을 분리하여 단일 책임 원칙을 강화합니다.
+/// 점령된 구역 데이터의 저장소, 실시간 스트림 구독, 침공 감지, 구역 정보 해제,
+/// 닉네임 캐싱 등 구역에 특화된 상태를 전담 관리하는 프로바이더.
+///
+/// [GameProvider]에서 구역 관련 책임을 분리하여 단일 책임 원칙을 강화합니다.
 class GameTileProvider extends ChangeNotifier {
   final SupabaseService _supabase;
   AuthProvider? _authProvider;
@@ -29,36 +29,36 @@ class GameTileProvider extends ChangeNotifier {
   bool _hasInitializedLocation = false;
   bool get hasInitializedLocation => _hasInitializedLocation;
 
-  /// 점령된 타일 목록 (Key: 타일 ID, Value: 타일 상세 모델)
+  /// 점령된 구역 목록 (Key: 구역 ID, Value: 구역 상세 모델)
   final Map<String, HexTile> _capturedTiles = {};
 
-  /// 플레이어의 발자취 타일 목록 (Key: 타일 ID, Value: 발자취 모델)
+  /// 플레이어의 발자취 구역 목록 (Key: 구역 ID, Value: 발자취 모델)
   final Map<String, FootprintTile> _footprints = {};
 
-  /// 어드민이 정의한 타일 타입 캐시 (Key: 타입 ID, Value: TileType)
+  /// 어드민이 정의한 구역 타입 캐시 (Key: 타입 ID, Value: TileType)
   final Map<int, TileType> _tileTypes = {};
 
-  /// 어드민이 부여한 타일 속성 캐시 (Key: 모바일 정규화 타일 ID "hex_q_r", Value: TileAttribute)
+  /// 어드민이 부여한 구역 속성 캐시 (Key: 모바일 정규화 구역 ID "hex_q_r", Value: TileAttribute)
   final Map<String, TileAttribute> _tileAttributes = {};
 
   /// 발자취 맵 getter
   Map<String, FootprintTile> get footprints => Map.unmodifiable(_footprints);
 
-  /// 사진(갤러리)이 1개 이상 등록된 모든 타일 ID의 집합
+  /// 사진(갤러리)이 1개 이상 등록된 모든 구역 ID의 집합
   final Set<String> _photoTileIds = {};
   Set<String> get photoTileIds => Set.unmodifiable(_photoTileIds);
 
-  /// 어드민이 정의한 타일 타입 캐시 (Key: 타입 ID).
+  /// 어드민이 정의한 구역 타입 캐시 (Key: 타입 ID).
   Map<int, TileType> get tileTypes => Map.unmodifiable(_tileTypes);
 
-  /// 어드민이 부여한 타일 속성 캐시 (Key: 모바일 정규화 타일 ID `"hex_q_r"`).
+  /// 어드민이 부여한 구역 속성 캐시 (Key: 모바일 정규화 구역 ID `"hex_q_r"`).
   Map<String, TileAttribute> get tileAttributes =>
       Map.unmodifiable(_tileAttributes);
 
   /// 프로바이더 내부 데이터 초기화 완료 여부
   bool _isInitialized = false;
 
-  /// 마지막으로 2km REST 조회를 진행했던 타일 ID
+  /// 마지막으로 2km REST 조회를 진행했던 구역 ID
   String? _lastCheckedAreaTileId;
 
   /// 마지막으로 2km REST 조회를 수행한 시각
@@ -70,7 +70,7 @@ class GameTileProvider extends ChangeNotifier {
   /// 위치 변경 감지 시 서버 부하 방지용 3초 딜레이 타이머의 마지막 체크 시각
   DateTime? _lastServerCheckTime;
 
-  /// 정보가 보안 해제(Reveal)된 타일 ID와 해제 일시 맵
+  /// 정보가 보안 해제(Reveal)된 구역 ID와 해제 일시 맵
   final Map<String, DateTime> _revealedTileTimes = {};
 
   /// 유저 고유 ID를 닉네임으로 캐싱하는 메모리 버퍼
@@ -80,7 +80,7 @@ class GameTileProvider extends ChangeNotifier {
   /// 침공이 감지되었을 때 GameProvider가 알림/골드 동기화 등을 수행하도록 하는 콜백
   VoidCallback? onInvasionDetected;
 
-  /// 타일 캡처/업데이트 시 추가 후처리를 위한 콜백
+  /// 구역 캡처/업데이트 시 추가 후처리를 위한 콜백
   void Function(String tileId, HexTile tile)? onTileUpdated;
 
   GameTileProvider({required SupabaseService supabase}) : _supabase = supabase;
@@ -131,13 +131,13 @@ class GameTileProvider extends ChangeNotifier {
 
     _currentUserId = newUserId;
     // 계정이 바뀌면 이전 계정 캐시만 즉시 비운다.
-    // 발자취/사진 타일 로딩은 프로필(세션 토큰) 준비 후
+    // 발자취/사진 구역 로딩은 프로필(세션 토큰) 준비 후
     // loadUserSessionData에서 수행한다.
     _clearCaches();
   }
 
   /// 프로필 로딩 완료 시점에 호출됩니다.
-  /// 계정이 바뀐 경우 캐시를 먼저 비운 뒤 발자취/사진 타일 목록을 로드합니다.
+  /// 계정이 바뀐 경우 캐시를 먼저 비운 뒤 발자취/사진 구역 목록을 로드합니다.
   Future<void> loadUserSessionData(String userId) async {
     if (_currentUserId != userId) {
       _currentUserId = userId;
@@ -149,7 +149,7 @@ class GameTileProvider extends ChangeNotifier {
         loadPhotoTileIds(),
       ]);
     } catch (e) {
-      debugPrint('⚠️ 사용자 타일 데이터 로드 실패: $e');
+      debugPrint('⚠️ 사용자 구역 데이터 로드 실패: $e');
     }
   }
 
@@ -164,13 +164,13 @@ class GameTileProvider extends ChangeNotifier {
   Future<void> get initializationFuture => _initCompleter.future;
 
   /// [개편] 서버 전체 로드 대신 최초 위치 획득 후 5km 선별 조회를 대기하도록 설정합니다.
-  /// 로그인 사용자 데이터(발자취·사진 타일)는 프로필 로딩이 끝난 뒤
+  /// 로그인 사용자 데이터(발자취·사진 구역)는 프로필 로딩이 끝난 뒤
   /// GameProvider의 profile-ready 경로에서 로드합니다.
   Future<void> init() async {
     try {
-      // 어드민이 정의한 타일 타입은 전역 캐시이므로 초기화 시 1회 로드
+      // 어드민이 정의한 구역 타입은 전역 캐시이므로 초기화 시 1회 로드
       loadTileTypes().catchError((e) {
-        debugPrint('⚠️ 초기 타일 타입 백그라운드 로드 실패: $e');
+        debugPrint('⚠️ 초기 구역 타입 백그라운드 로드 실패: $e');
       });
     } catch (e) {
       debugPrint('GameTileProvider 초기 데이터 로드 실패: $e');
@@ -181,7 +181,7 @@ class GameTileProvider extends ChangeNotifier {
     }
   }
 
-  /// [신규] 사진이 등록된 모든 타일 ID 목록을 서버에서 일괄 로딩하여 로컬 캐시를 구성합니다.
+  /// [신규] 사진이 등록된 모든 구역 ID 목록을 서버에서 일괄 로딩하여 로컬 캐시를 구성합니다.
   Future<void> loadPhotoTileIds() async {
     final String? loadUserId = _userId;
     try {
@@ -192,40 +192,40 @@ class GameTileProvider extends ChangeNotifier {
       _photoTileIds.addAll(ids);
       notifyListeners();
     } catch (e) {
-      debugPrint('❌ 사진 등록 타일 ID 캐시 로드 실패: $e');
+      debugPrint('❌ 사진 등록 구역 ID 캐시 로드 실패: $e');
     }
   }
 
-  /// [신규] 어드민이 정의한 타일 타입(색상·차단 여부 포함)을 서버에서 일괄 로드하여 캐시에 저장합니다.
+  /// [신규] 어드민이 정의한 구역 타입(색상·차단 여부 포함)을 서버에서 일괄 로드하여 캐시에 저장합니다.
   Future<void> loadTileTypes() async {
     try {
       final types = await _supabase.fetchTileTypes();
       _tileTypes
         ..clear()
         ..addEntries(types.map((t) => MapEntry(t.id, t)));
-      debugPrint('🎨 타일 타입 ${_tileTypes.length}개 로드 완료');
+      debugPrint('🎨 구역 타입 ${_tileTypes.length}개 로드 완료');
       notifyListeners();
     } catch (e) {
-      debugPrint('❌ 타일 타입 로드 실패: $e');
+      debugPrint('❌ 구역 타입 로드 실패: $e');
     }
   }
 
-  /// [신규] 최초 위치(현재 GPS 또는 본진) 좌표가 획득되었을 때 지정된 반경의 타일을 최초로 선별 로딩합니다.
+  /// [신규] 최초 위치(현재 GPS 또는 본진) 좌표가 획득되었을 때 지정된 반경의 구역을 최초로 선별 로딩합니다.
   Future<void> initializeWithLocation(LatLng location) async {
     if (!_isInitialized || _hasInitializedLocation) return;
     _hasInitializedLocation = true;
     final hex = HexService.latLngToHex(location);
     final centerQ = hex['q']!;
     final centerR = hex['r']!;
-    
-    debugPrint('🗺️ [GameTileProvider] 최초 위치 기반 ${MapConfig.mapLoadRadiusKm}km 이내 지도 타일 로딩 개시 (${location.latitude}, ${location.longitude})');
+
+    debugPrint('🗺️ [GameTileProvider] 최초 위치 기반 ${MapConfig.mapLoadRadiusKm}km 이내 지도 구역 로딩 개시 (${location.latitude}, ${location.longitude})');
     await updateTilesInArea(centerQ, centerR, radiusKm: MapConfig.mapLoadRadiusKm, force: true);
   }
 
   // --- Footprint CRUD ---
 
   /// 서버에서 사용자의 발자취 데이터를 불러와 캐시를 구축합니다.
-  /// [개편] 일반 타일처럼 서버가 진실의 원천 — 서버 목록을 캐시에 병합하고,
+  /// [개편] 일반 구역처럼 서버가 진실의 원천 — 서버 목록을 캐시에 병합하고,
   /// 로컬에만 있고 서버에 아직 반영되지 않은 항목(저장 진행 중)은 유지합니다.
   Future<void> loadFootprints(String userId) async {
     try {
@@ -244,7 +244,7 @@ class GameTileProvider extends ChangeNotifier {
   }
 
   /// 새로운 발자취를 추가합니다. 이미 캐싱되어 있다면 서버 추가를 건너뜁니다.
-  /// [개편] 일반 타일과 동일하게 로컬 표시 캐시에 즉시 반영하고, 서버에는
+  /// [개편] 일반 구역과 동일하게 로컬 표시 캐시에 즉시 반영하고, 서버에는
   /// 곧바로 저장합니다. 서버 저장 실패 시 캐시에서 제거하여 다음 진입 때 재시도합니다.
   Future<void> addFootprint(String userId, String tileId, DateTime time) async {
     if (_footprints.containsKey(tileId)) return;
@@ -279,19 +279,19 @@ class GameTileProvider extends ChangeNotifier {
   }
 
   // --- Tile CRUD ---
-  /// 단일 타일을 갱신하거나 추가합니다.
+  /// 단일 구역을 갱신하거나 추가합니다.
   void updateTile(String id, HexTile tile) {
     _capturedTiles[id] = tile;
     notifyListeners();
   }
 
-  /// 단일 타일을 제거합니다.
+  /// 단일 구역을 제거합니다.
   void removeTile(String id) {
     _capturedTiles.remove(id);
     notifyListeners();
   }
 
-  /// 여러 타일을 한 번에 갱신합니다 (스트림 업데이트 등).
+  /// 여러 구역을 한 번에 갱신합니다 (스트림 업데이트 등).
   void setTiles(Map<String, HexTile> tiles) {
     _capturedTiles
       ..clear()
@@ -299,7 +299,7 @@ class GameTileProvider extends ChangeNotifier {
     notifyListeners();
   }
 
-  /// 특정 타일 ID의 현재 정보를 반환합니다.
+  /// 특정 구역 ID의 현재 정보를 반환합니다.
   HexTile? tileById(String id) => _capturedTiles[id];
 
   /// 마지막 서버 체크 시각을 갱신합니다.
@@ -311,7 +311,7 @@ class GameTileProvider extends ChangeNotifier {
   DateTime? get lastServerCheckTime => _lastServerCheckTime;
 
   // --- Public Getters ---
-  /// 실시간 점령된 타일 정보를 담은 불변 Map을 반환합니다.
+  /// 실시간 점령된 구역 정보를 담은 불변 Map을 반환합니다.
   /// 내 메인 기지는 가상으로 내 땅으로 강제 주입하여 반환합니다.
   Map<String, HexTile> get capturedTiles {
     final copy = Map<String, HexTile>.from(_capturedTiles);
@@ -341,14 +341,14 @@ class GameTileProvider extends ChangeNotifier {
           );
         }
       } catch (e) {
-        debugPrint('⚠️ 내 메인기지 가상 타일 주입 오류: $e');
+        debugPrint('⚠️ 내 메인기지 가상 구역 주입 오류: $e');
       }
     }
 
     return Map.unmodifiable(copy);
   }
 
-  /// 본인 플레이어가 획득한 영토(타일)의 총 개수
+  /// 본인 플레이어가 획득한 영토(구역)의 총 개수
   int get myCapturedCount {
     if (_userId == null) return 0;
     final myId = _userId!;
@@ -362,7 +362,7 @@ class GameTileProvider extends ChangeNotifier {
     return baseCount;
   }
 
-  /// 현재 GPS 위치에 대응하는 점령 타일 정보를 반환합니다.
+  /// 현재 GPS 위치에 대응하는 점령 구역 정보를 반환합니다.
   HexTile? currentTile(LocationProvider loc) {
     if (loc.currentLocation == null) return null;
     final hex = HexService.latLngToHex(loc.currentLocation!);
@@ -370,7 +370,7 @@ class GameTileProvider extends ChangeNotifier {
     return capturedTiles[tileId];
   }
 
-  /// 현재 위치한 타일이 이미 자신이 지배 중인 타일인지 여부
+  /// 현재 위치한 구역이 이미 자신이 지배 중인 구역인지 여부
   bool isAlreadyCapturedByMe(LocationProvider loc) {
     if (_authProvider?.user == null) return false;
     return currentTile(loc)?.userId == _authProvider!.user!.id;
@@ -380,27 +380,27 @@ class GameTileProvider extends ChangeNotifier {
 
 
 
-  /// 2km 사각형 범위 내의 타일 정보 머지 및 소거 처리
+  /// 2km 사각형 범위 내의 구역 정보 머지 및 소거 처리
   void _handleAreaTilesUpdate(List<HexTile> tiles, int minQ, int maxQ, int minR, int maxR) {
     bool changed = false;
 
-    // 1. 해당 영역 내에 속하는 기존 로컬 타일 ID 집합 추출
+    // 1. 해당 영역 내에 속하는 기존 로컬 구역 ID 집합 추출
     final localIdsInArea = _capturedTiles.entries
         .where((e) => e.value.q >= minQ && e.value.q <= maxQ && e.value.r >= minR && e.value.r <= maxR)
         .map((e) => e.key)
         .toSet();
 
-    // 2. 들어온 타일 ID 집합
+    // 2. 들어온 구역 ID 집합
     final incomingIds = tiles.map((t) => t.id).toSet();
 
-    // 3. 영역 내에서 사라진 타일들 캐시 소거
+    // 3. 영역 내에서 사라진 구역들 캐시 소거
     final removedIds = localIdsInArea.difference(incomingIds);
     for (final id in removedIds) {
       _capturedTiles.remove(id);
       changed = true;
     }
 
-    // 4. 신규 및 변경 타일 반영
+    // 4. 신규 및 변경 구역 반영
     for (final tile in tiles) {
       final oldTile = _capturedTiles[tile.id];
       if (oldTile == null ||
@@ -431,20 +431,20 @@ class GameTileProvider extends ChangeNotifier {
           }
         }
       }
-      
+
       if (targetLoc != null) {
         final hex = HexService.latLngToHex(targetLoc);
         await updateTilesInArea(hex['q']!, hex['r']!, radiusKm: MapConfig.mapLoadRadiusKm, force: true);
-        debugPrint('📦 서버 주변 타일 강제 동기화 완료');
+        debugPrint('📦 서버 주변 구역 강제 동기화 완료');
       }
     } catch (e) {
-      debugPrint('❌ 주변 타일 서버 동기화 실패: $e');
+      debugPrint('❌ 주변 구역 서버 동기화 실패: $e');
     }
   }
 
-  /// [개편] 내 현재 위치 또는 지도 중심 타일(q, r) 기준으로 지정된 반경(radiusKm) 영역의 타일을 서버에서 REST로 조회하여 갱신합니다.
-  /// 
-  /// 불필요한 서버 조회를 줄이기 위해 500m(타일 5칸) 이상 이동했거나 force가 true일 때만 백엔드 조회를 진행하며, 10초 쿨타임 가드가 적용됩니다.
+  /// [개편] 내 현재 위치 또는 지도 중심 구역(q, r) 기준으로 지정된 반경(radiusKm) 영역의 구역을 서버에서 REST로 조회하여 갱신합니다.
+  ///
+  /// 불필요한 서버 조회를 줄이기 위해 500m(구역 5칸) 이상 이동했거나 force가 true일 때만 백엔드 조회를 진행하며, 10초 쿨타임 가드가 적용됩니다.
   Future<void> updateTilesInArea(int centerQ, int centerR, {double radiusKm = MapConfig.mapLoadRadiusKm, bool force = false}) async {
     if (!_isInitialized) return;
 
@@ -457,8 +457,8 @@ class GameTileProvider extends ChangeNotifier {
       if (parsed != null) {
         final dist = HexService.hexDistance(centerQ, centerR, parsed['q']!, parsed['r']!);
         final timeDiff = now.difference(_lastAreaFetchTime!);
-        
-        // 500m (타일 5칸) 미만으로 움직였고, 마지막 조회 후 10초가 지나지 않았다면 불필요한 트래픽 유발 차단
+
+        // 500m (구역 5칸) 미만으로 움직였고, 마지막 조회 후 10초가 지나지 않았다면 불필요한 트래픽 유발 차단
         if (dist < 5 && timeDiff < const Duration(seconds: 10)) {
           return;
         }
@@ -478,9 +478,9 @@ class GameTileProvider extends ChangeNotifier {
       final minR = centerR - k;
       final maxR = centerR + k;
 
-      debugPrint('🛰️ [GameTileProvider] 영역 타일 비동기 동적 수신: 중심 ($centerQ, $centerR), 오프셋 $k (약 ${radiusKm}km 범위)');
+      debugPrint('🛰️ [GameTileProvider] 영역 구역 비동기 동적 수신: 중심 ($centerQ, $centerR), 오프셋 $k (약 ${radiusKm}km 범위)');
 
-      // 점령 타일과 어드민 속성을 병렬로 동시 수신하여 왕복 지연을 최소화한다.
+      // 점령 구역과 어드민 속성을 병렬로 동시 수신하여 왕복 지연을 최소화한다.
       final results = await Future.wait([
         _supabase.fetchCapturedTilesInArea(minQ, maxQ, minR, maxR),
         _supabase.fetchTileAttributesInArea(minQ, maxQ, minR, maxR),
@@ -498,13 +498,13 @@ class GameTileProvider extends ChangeNotifier {
       _handleAreaTilesUpdate(tiles, minQ, maxQ, minR, maxR);
       _handleAreaAttributesUpdate(attributes, minQ, maxQ, minR, maxR);
     } catch (e) {
-      debugPrint('❌ 주변 영역 타일 조회 실패 ($currentId): $e');
+      debugPrint('❌ 주변 영역 구역 조회 실패 ($currentId): $e');
     }
   }
 
-  /// [신규] 영역 내 어드민 부여 타일 속성을 머지/소거 처리합니다.
+  /// [신규] 영역 내 어드민 부여 구역 속성을 머지/소거 처리합니다.
   ///
-  /// 점령 타일과 동일한 머지 정책을 따르며, 모바일 정규화 ID(`hex_q_r`)로 변환하여 캐시합니다.
+  /// 점령 구역과 동일한 머지 정책을 따르며, 모바일 정규화 ID(`hex_q_r`)로 변환하여 캐시합니다.
   void _handleAreaAttributesUpdate(
     List<TileAttribute> attributes,
     int minQ,
@@ -575,7 +575,7 @@ class GameTileProvider extends ChangeNotifier {
         _capturedTiles[tileId] = serverTile;
         notifyListeners();
         debugPrint(
-          '🎨 [상대방 구역 갱신] 타일($tileId)을 상대방 점령색(${serverTile.colorHex})으로 실시간 갱신 완료.',
+          '🎨 [상대방 구역 갱신] 구역($tileId)을 상대방 점령색(${serverTile.colorHex})으로 실시간 갱신 완료.',
         );
       }
     } else if (status == TileStatus.mine) {
@@ -584,21 +584,21 @@ class GameTileProvider extends ChangeNotifier {
         _capturedTiles[tileId] = serverTile;
         notifyListeners();
         debugPrint(
-          '🎨 [내 구역 갱신] 타일($tileId)의 최신 상태를 실시간 동기화 완료.',
+          '🎨 [내 구역 갱신] 구역($tileId)의 최신 상태를 실시간 동기화 완료.',
         );
       }
     } else if (status == TileStatus.empty) {
       if (_capturedTiles.containsKey(tileId)) {
         _capturedTiles.remove(tileId);
         notifyListeners();
-        debugPrint('🎨 [중립 구역 갱신] 타일($tileId)이 빈 상태이므로 로컬에서 제거 완료.');
+        debugPrint('🎨 [중립 구역 갱신] 구역($tileId)이 빈 상태이므로 로컬에서 제거 완료.');
       }
     }
 
     return status;
   }
 
-  // --- 타일 정보 해제 (Reveal) ---
+  // --- 구역 정보 해제 (Reveal) ---
   void addRevealedTile(String tileId, DateTime time) {
     _revealedTileTimes[tileId] = time;
     notifyListeners();
@@ -609,7 +609,7 @@ class GameTileProvider extends ChangeNotifier {
     notifyListeners();
   }
 
-  /// 타일 정보가 열람 가능한 상태인지 판별합니다.
+  /// 구역 정보가 열람 가능한 상태인지 판별합니다.
   bool isTileInfoRevealed(String tileId) {
     final myMainBaseId = _userMainBaseTileId;
     if (myMainBaseId != null &&
@@ -643,7 +643,7 @@ class GameTileProvider extends ChangeNotifier {
     return isValid;
   }
 
-  /// 보안 해제된 타일의 남은 만료 시각을 반환합니다.
+  /// 보안 해제된 구역의 남은 만료 시각을 반환합니다.
   DateTime? getTileRevealExpiration(String tileId) {
     final revealedAt = _revealedTileTimes[tileId];
     if (revealedAt == null) return null;
@@ -651,7 +651,7 @@ class GameTileProvider extends ChangeNotifier {
         .add(const Duration(seconds: GameConfig.tileRevealDurationSeconds));
   }
 
-  /// 특정 타일의 남은 쉴드 보호 시간(초)을 반환합니다.
+  /// 특정 구역의 남은 쉴드 보호 시간(초)을 반환합니다.
   int getRemainingShieldSeconds(String tileId) {
     final tile = _capturedTiles[tileId];
     if (tile == null) return 0;
@@ -696,7 +696,7 @@ class GameTileProvider extends ChangeNotifier {
     return masked;
   }
 
-  /// 특정 타일 ID의 최신 정보를 서버에서 패치하여 캐시에 반영합니다.
+  /// 특정 구역 ID의 최신 정보를 서버에서 패치하여 캐시에 반영합니다.
   Future<void> fetchAndUpdateTile(String tileId) async {
     try {
       final serverTile = await _supabase.fetchTile(tileId);
@@ -707,11 +707,11 @@ class GameTileProvider extends ChangeNotifier {
       }
       notifyListeners();
     } catch (e) {
-      debugPrint('⚠️ 타일 정보 서버 패치 실패: $e');
+      debugPrint('⚠️ 구역 정보 서버 패치 실패: $e');
     }
   }
 
-  /// [신규] 특정 타일 ID의 어드민 속성 + 타입 정보를 한 번에 조회합니다.
+  /// [신규] 특정 구역 ID의 어드민 속성 + 타입 정보를 한 번에 조회합니다.
   ///
   /// 렌더링 단계에서 어드민 색상이 점령 색상보다 우선 적용되도록 결정하는 데 사용됩니다.
   /// - 속성이 없거나 type_id가 0이면 어드민 색상이 없는 것으로 간주 (null 반환).

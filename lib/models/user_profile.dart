@@ -21,7 +21,7 @@ class UserProfile {
   /// 계정 생성 일시
   final DateTime createdAt;
 
-  /// 플레이어의 본진(본부)으로 지정된 H3 헥사곤 타일 인덱스
+  /// 플레이어의 본진(본부)으로 지정된 H3 헥사곤 구역 인덱스
   final String? mainBaseTileId;
 
   /// 플레이어의 누적 이동 거리 (단위: 미터)
@@ -33,16 +33,16 @@ class UserProfile {
   /// 플레이어의 현재 보유 골드 재화
   final double gold;
 
-  /// 플레이어가 현재 점령 중인 타일의 총 개수
+  /// 플레이어가 현재 점령 중인 구역의 총 개수
   final int capturedTilesCount;
 
-  /// 하루 동안 이동한 헥사곤 타일 수
+  /// 하루 동안 이동한 헥사곤 구역 수
   final int dailyMovedTilesCount;
 
-  /// 누적 전체 이동한 헥사곤 타일 수
+  /// 누적 전체 이동한 헥사곤 구역 수
   final int totalMovedTilesCount;
 
-  /// 누적 적 영토 탈취 타일 수
+  /// 누적 적 영토 탈취 구역 수
   final int enemyCapturedTilesCount;
 
   /// 누적 위성 원격 점령 성공 횟수
@@ -241,7 +241,7 @@ class UserProfile {
     };
   }
 
-  /// 데이터베이스 업데이트 시 재화 및 점령 타일 수 등 시스템 관리 필드를 제외한
+  /// 데이터베이스 업데이트 시 재화 및 점령 구역 수 등 시스템 관리 필드를 제외한
   /// 프로필 기본 속성 변경을 처리하기 위해 사용하는 JSON 변환 메서드입니다.
   Map<String, dynamic> toUpdateJson() {
     return {
