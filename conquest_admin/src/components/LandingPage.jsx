@@ -31,7 +31,7 @@ const HERO_IMAGES = [
 
 const LIVE_FEED = [
   { emoji: '🎉', accent: '#38bdf8', region: '서울 강남구', action: '새 구역을 점령했다' },
-  { emoji: '🔥', accent: '#f472b6', region: '부산 해운대구', action: '영토가 빠르게 확장 중' },
+  { emoji: '🔥', accent: '#f472b6', region: '부산 해운대구', action: '영역이 빠르게 확장 중' },
   { emoji: '🏃', accent: '#34d399', region: '한강 러닝 코스', action: '러너가 지도를 채우는 중' },
   { emoji: '✨', accent: '#a78bfa', region: '제주 앞바다', action: '먼 바다 구역을 원격 점령' },
   { emoji: '📸', accent: '#fbbf24', region: '경북 경주시', action: '점령지에 사진이 올라왔다' }
@@ -156,15 +156,15 @@ export default function LandingPage() {
 
   const steps = [
     { no: '01', icon: <Smartphone size={22} />, title: '앱 설치 후 위치 권한을 켜세요', desc: '스마트폰 하나면 준비 끝. 이동 경로를 지도 위에 그대로 옮깁니다.' },
-    { no: '02', icon: <MapPin size={22} />, title: '움직일수록 영토가 늘어납니다', desc: '러닝, 출퇴근, 산책까지 모든 이동이 실시간으로 내 점령지가 됩니다.' },
+    { no: '02', icon: <MapPin size={22} />, title: '움직일수록 영역이 늘어납니다', desc: '러닝, 출퇴근, 산책까지 모든 이동이 실시간으로 내 점령지가 됩니다.' },
     { no: '03', icon: <Sparkles size={22} />, title: '나만의 지도를 완성하세요', desc: '점령 구역으로 맵 아트를 그리고, 사진을 남기고, 기록을 비교해보세요.' }
   ];
 
   const rows = [
     {
       items: [
-        { icon: <Zap size={20} />, title: '🏃 러닝 & 조깅 페이스메이커', text: '달리는 매 순간이 내 영토로 바뀝니다. 내가 그은 러닝 루트가 지도 위 점령지가 되고, 매일의 운동이 게임처럼 즐거워집니다.' },
-        { icon: <Navigation size={20} style={{ transform: 'rotate(45deg)' }} />, title: '🚌 출퇴근길 자동 영토 점령', text: '출퇴근 버스·지하철 이동이 자동으로 점령지가 됩니다. 앱을 켜두기만 하면 매일의 통근이 눈에 보이는 영토로 쌓입니다.' }
+        { icon: <Zap size={20} />, title: '🏃 러닝 & 조깅 페이스메이커', text: '달리는 매 순간이 내 영역으로 바뀝니다. 내가 그은 러닝 루트가 지도 위 점령지가 되고, 매일의 운동이 게임처럼 즐거워집니다.' },
+        { icon: <Navigation size={20} style={{ transform: 'rotate(45deg)' }} />, title: '🚌 출퇴근길 자동 영역 점령', text: '출퇴근 버스·지하철 이동이 자동으로 점령지가 됩니다. 앱을 켜두기만 하면 매일의 통근이 눈에 보이는 영역으로 쌓입니다.' }
       ]
     },
     {
@@ -175,7 +175,7 @@ export default function LandingPage() {
     },
     {
       items: [
-        { icon: <MapPin size={20} />, title: '🛋️ 집 안에서 즐기는 원격 점령', text: '강 건너나 먼 곳, 날씨가 안 좋은 날엔 모아둔 골드로 원격 점령합니다. 직접 가지 않아도 내 영토는 계속 넓어집니다.' },
+        { icon: <MapPin size={20} />, title: '🛋️ 집 안에서 즐기는 원격 점령', text: '강 건너나 먼 곳, 날씨가 안 좋은 날엔 모아둔 골드로 원격 점령합니다. 직접 가지 않아도 내 영역은 계속 넓어집니다.' },
         { icon: <Camera size={20} />, title: '📸 내 주변 현장 촬영 및 갤러리 공유', text: '점령한 구역에서 찍은 사진이 지도 갤러리에 남습니다. 내 발자국이 남긴 풍경을 다른 플레이어와 나눌 수 있습니다.' }
       ]
     }
@@ -183,7 +183,7 @@ export default function LandingPage() {
 
   const systems = [
     { icon: <Trophy size={22} />, title: '전 세계 랭킹', text: '내 점령 면적은 전 세계 랭킹에 기록됩니다. 동네를 넘어 전 세계 플레이어와 기록을 겨룰 수 있습니다.' },
-    { icon: <Layers size={22} />, title: '헥스 구역 정복', text: '지도는 육각 구역으로 이루어져 있습니다. 한 칸씩 방문해 채우며 전 세계를 내 영토로 만들어가세요.' },
+    { icon: <Layers size={22} />, title: '헥스 구역 정복', text: '지도는 육각 구역으로 이루어져 있습니다. 한 칸씩 방문해 채우며 전 세계를 내 영역으로 만들어가세요.' },
     { icon: <Award size={22} />, title: '골드 & 업적', text: '이동과 탐험으로 골드를 모으고, 다양한 업적을 달성하며 성장의 보상을 얻으세요.' }
   ];
 
@@ -215,7 +215,7 @@ export default function LandingPage() {
             <div className="hero-content">
               <div className="tag-badge animate-fade-in">
                 <Zap size={14} className="glow-icon" />
-                <span>실시간 위치 기반 영토 점령 게임</span>
+                <span>실시간 위치 기반 영역 점령 게임</span>
               </div>
               <h1 className="hero-title">
                 <span className="word-rise" style={{ animationDelay: '.05s' }}>지루했던</span>
@@ -223,12 +223,12 @@ export default function LandingPage() {
                 <span className="word-rise" style={{ animationDelay: '.17s' }}>일상을</span>
                 <br />
                 <span className="word-rise" style={{ animationDelay: '.32s' }}>
-                  <span className="gradient-text">나만의 영토</span>로!
+                  <span className="gradient-text">나만의 영역</span>으로!
                 </span>
               </h1>
               <p className="hero-desc animate-slide-up-delay">
-                '찜! 모험'은 실시간 내 위치를 기반으로 지도를 점령해 나가는 영토 점령 게임입니다.
-                꾸준한 일상의 이동으로 점령지를 넓히고 나만의 영토 기록을 완성해보세요.
+                '찜! 모험'은 실시간 내 위치를 기반으로 지도를 점령해 나가는 영역 점령 게임입니다.
+                꾸준한 일상의 이동으로 점령지를 넓히고 나만의 영역 기록을 완성해보세요.
               </p>
               <div className="download-badges animate-slide-up-delay-2">
                 <a href="https://play.google.com/store/apps/details?id=com.watercherry.conquestofkorea" target="_blank" rel="noopener noreferrer" className="badge-link">
@@ -273,7 +273,7 @@ export default function LandingPage() {
           </div>
           <div className="hero-mid" aria-hidden="true">
             <p className="hero-mid-line">걷고, 뛰고, 머무는 모든 순간이</p>
-            <p className="hero-mid-line hero-mid-accent">나만의 영토가 됩니다</p>
+            <p className="hero-mid-line hero-mid-accent">나만의 영역이 됩니다</p>
           </div>
         </div>
       </section>
@@ -294,7 +294,7 @@ export default function LandingPage() {
       <section className="territory-section">
         <div className="features-header" data-reveal>
           <span className="eyebrow">LIVE TERRITORY</span>
-          <h2 className="section-title">지금 점령된 영토</h2>
+          <h2 className="section-title">지금 점령된 영역</h2>
         </div>
         <div className="territory-panel" data-reveal>
           <LazyCapturedMap />
@@ -304,7 +304,7 @@ export default function LandingPage() {
       <section className="features-section">
         <div className="features-header" data-reveal>
           <span className="eyebrow">플레이 특징</span>
-          <h2 className="section-title">일상이 영토가 되는 순간들</h2>
+          <h2 className="section-title">일상이 영역이 되는 순간들</h2>
         </div>
         <div className="feature-rows">
           {rows.flatMap((row) => row.items).map((it, i) => (
@@ -354,7 +354,7 @@ export default function LandingPage() {
 
       <section className="cta-section">
         <div className="cta-panel" data-reveal>
-          <h2 className="cta-title">지금, 나만의 영토 점령을 시작하세요</h2>
+          <h2 className="cta-title">지금, 나만의 영역 점령을 시작하세요</h2>
           <p className="cta-desc">가까운 길부터 시작되는 실시간 위치 기반 점령 게임.</p>
           <div className="download-badges center">
             <a href="https://play.google.com/store/apps/details?id=com.watercherry.conquestofkorea" target="_blank" rel="noopener noreferrer" className="badge-link">
