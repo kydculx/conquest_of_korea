@@ -1,6 +1,6 @@
-import { useState, useEffect } from 'react';
-import { sendFcmNotification, sendLocalizedFcmNotification, fetchUsers } from '../api';
-import { Send, Bell, Info, Smartphone, Users, User } from 'lucide-react';
+import { useState, useEffect, useRef } from 'react';
+import { sendFcmNotification, sendLocalizedFcmNotification, fetchUsers, translateNotificationTexts } from '../api';
+import { Send, Bell, Info, Smartphone, Users, User, Languages } from 'lucide-react';
 
 const NOTICE_LANGUAGES = [
   { code: 'ko', label: '한국어' },
@@ -50,6 +50,12 @@ export default function NotificationsTab() {
     ko: '새로운 공지사항이 등록되었습니다. 최신 패치 및 이벤트 세부 사항을 확인해 보세요.',
   }));
   const [previewLanguage, setPreviewLanguage] = useState('ko');
+  const [translating, setTranslating] = useState(false);
+  const [autoTranslate, setAutoTranslate] = useState(true);
+  const [translationNotice, setTranslationNotice] = useState('');
+  const [translationNoticeError, setTranslationNoticeError] = useState(false);
+  const translatingRef = useRef(false);
+  const lastTranslatedRef = useRef({ title: '', body: '' });
 
   const handleNotifTypeChange = (type) => {
     setNotifType(type);
@@ -86,8 +92,69 @@ export default function NotificationsTab() {
     loadUsers();
   }, []);
 
+  const handleTranslateAll = async ({ silent = false } = {}) => {
+    const sourceTitle = (localizedTitle.ko || '').trim();
+    const sourceBody = (localizedBody.ko || '').trim();
+
+    if (!sourceTitle || !sourceBody) {
+      if (!silent) alert('한국어 제목과 본문을 모두 입력해 주세요.');
+      return;
+    }
+    if (translatingRef.current) return;
+    if (lastTranslatedRef.current.title === sourceTitle && lastTranslatedRef.current.body === sourceBody) return;
+
+    translatingRef.current = true;
+    setTranslating(true);
+    setTranslationNotice('');
+    setTranslationNoticeError(false);
+
+    try {
+      const targets = NOTICE_LANGUAGES
+        .filter(({ code }) => code !== 'ko')
+        .map(({ code }) => code);
+      const result = await translateNotificationTexts({ title: sourceTitle, body: sourceBody, targets });
+      const translations = result?.translations || {};
+      const entries = Object.entries(translations);
+
+      setLocalizedTitle((prev) => ({
+        ...prev,
+        ...Object.fromEntries(entries.map(([code, value]) => [code, value?.title || ''])),
+      }));
+      setLocalizedBody((prev) => ({
+        ...prev,
+        ...Object.fromEntries(entries.map(([code, value]) => [code, value?.body || ''])),
+      }));
+
+      lastTranslatedRef.current = { title: sourceTitle, body: sourceBody };
+      const providerLabel = result?.provider === 'google-cloud' ? 'Google Cloud Translation' : 'Google 번역';
+      setTranslationNotice(`${entries.length}개 언어 번역 완료 · ${providerLabel}`);
+    } catch (err) {
+      console.error('푸시 알림 번역 에러:', err);
+      setTranslationNoticeError(true);
+      setTranslationNotice('번역에 실패했습니다. 잠시 후 다시 시도해 주세요.');
+      if (!silent) alert(err?.message || '번역 중 오류가 발생했습니다.');
+    } finally {
+      translatingRef.current = false;
+      setTranslating(false);
+    }
+  };
+
+  const handleKoreanBlur = () => {
+    if (!autoTranslate) return;
+    const title = (localizedTitle.ko || '').trim();
+    const body = (localizedBody.ko || '').trim();
+    if (!title || !body) return;
+    if (lastTranslatedRef.current.title === title && lastTranslatedRef.current.body === body) return;
+    handleTranslateAll({ silent: true });
+  };
+
   const handleSend = async (e) => {
     e.preventDefault();
+
+    if (translatingRef.current) {
+      alert('번역이 진행 중입니다. 번역 완료 후 다시 발송해 주세요.');
+      return;
+    }
 
     if (notifType === 'system_notice') {
       const localized = {};
@@ -127,6 +194,9 @@ export default function NotificationsTab() {
           : '';
 
         alert(`[다국어 공지 전송 완료]\n언어 수: ${Object.keys(localized).length}\n발송 성공: ${result?.sent_count ?? 0}${failureText}`);
+        lastTranslatedRef.current = { title: '', body: '' };
+        setTranslationNotice('');
+        setTranslationNoticeError(false);
         setLocalizedTitle(Object.fromEntries(NOTICE_LANGUAGES.map(({ code }) => [code, ''])));
         setLocalizedBody(Object.fromEntries(NOTICE_LANGUAGES.map(({ code }) => [code, ''])));
       } catch (err) {
@@ -289,7 +359,35 @@ export default function NotificationsTab() {
             <div style={{ display: 'flex', flexDirection: 'column', gap: '0.8rem' }}>
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '0.8rem', flexWrap: 'wrap' }}>
                 <label className="field-label" style={{ margin: 0 }}>언어별 공지사항</label>
-                <span style={{ fontSize: '0.72rem', color: 'var(--text-muted)' }}>제목과 본문을 모두 입력한 언어만 발송됩니다.</span>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem', flexWrap: 'wrap' }}>
+                  <label style={{ display: 'flex', alignItems: 'center', gap: '0.35rem', fontSize: '0.72rem', color: 'var(--text-muted)', cursor: 'pointer' }}>
+                    <input
+                      type="checkbox"
+                      checked={autoTranslate}
+                      onChange={(e) => setAutoTranslate(e.target.checked)}
+                      disabled={translating}
+                    />
+                    한국어 입력 후 자동 번역
+                  </label>
+                  <button
+                    type="button"
+                    className="tactical-btn"
+                    onClick={() => handleTranslateAll()}
+                    disabled={translating || sending}
+                  >
+                    <Languages size={15} /> {translating ? '번역 중...' : '한국어 → 전체 언어'}
+                  </button>
+                </div>
+              </div>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '0.8rem', flexWrap: 'wrap' }}>
+                <span style={{ fontSize: '0.72rem', color: 'var(--text-muted)' }}>
+                  한국어 제목과 본문을 입력하면 나머지 9개 언어가 자동 입력됩니다. 제목과 본문을 모두 입력한 언어만 발송됩니다.
+                </span>
+                {translationNotice && (
+                  <span style={{ fontSize: '0.72rem', color: translationNoticeError ? '#f87171' : 'var(--accent-cyan)' }}>
+                    {translationNotice}
+                  </span>
+                )}
               </div>
               <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: '0.8rem' }}>
                 {NOTICE_LANGUAGES.map((language) => (
@@ -312,6 +410,7 @@ export default function NotificationsTab() {
                       placeholder={`${language.label} 제목`}
                       value={localizedTitle[language.code]}
                       onChange={(e) => setLocalizedTitle((prev) => ({ ...prev, [language.code]: e.target.value }))}
+                      onBlur={language.code === 'ko' ? handleKoreanBlur : undefined}
                     />
                     <textarea
                       className="tactical-input"
@@ -319,6 +418,7 @@ export default function NotificationsTab() {
                       placeholder={`${language.label} 본문`}
                       value={localizedBody[language.code]}
                       onChange={(e) => setLocalizedBody((prev) => ({ ...prev, [language.code]: e.target.value }))}
+                      onBlur={language.code === 'ko' ? handleKoreanBlur : undefined}
                     />
                   </div>
                 ))}
@@ -410,8 +510,8 @@ export default function NotificationsTab() {
 
           {/* 발송 버튼 */}
           <div className="notifications-submit-wrapper">
-            <button type="submit" className="tactical-btn primary" disabled={sending} style={{ minWidth: '140px' }}>
-              <Send size={15} /> {sending ? '발송 중...' : '알림 발송'}
+            <button type="submit" className="tactical-btn primary" disabled={sending || translating} style={{ minWidth: '140px' }}>
+              <Send size={15} /> {sending ? '발송 중...' : translating ? '번역 중...' : '알림 발송'}
             </button>
           </div>
         </form>

@@ -323,6 +323,111 @@ export async function sendLocalizedFcmNotification(localizedNotifications, notif
 }
 
 /**
+ * 5d. 관리자 푸시 알림 번역
+ * - Supabase Edge Function(translate)을 우선 사용한다.
+ * - GOOGLE_TRANSLATE_API_KEY가 없거나 Edge Function이 실패하면
+ *   브라우저에서 Google 번역 웹 엔드포인트로 대체한다.
+ */
+const GOOGLE_WEB_TRANSLATE_ENDPOINT = 'https://translate.googleapis.com/translate_a/single';
+const TRANSLATE_TARGET_CODES = {
+  zh: 'zh-CN',
+  zh_TW: 'zh-TW',
+};
+
+function decodeTranslatedHtml(value) {
+  return String(value ?? '')
+    .replace(/&quot;/g, '"')
+    .replace(/&#39;/g, "'")
+    .replace(/&amp;/g, '&')
+    .replace(/&lt;/g, '<')
+    .replace(/&gt;/g, '>');
+}
+
+async function translateTextViaGoogleWeb(text, target) {
+  const params = new URLSearchParams({
+    client: 'gtx',
+    sl: 'ko',
+    tl: target,
+    dt: 't',
+  });
+  const response = await fetch(`${GOOGLE_WEB_TRANSLATE_ENDPOINT}?${params.toString()}`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/x-www-form-urlencoded;charset=UTF-8',
+    },
+    body: new URLSearchParams({ q: text }).toString(),
+  });
+
+  if (!response.ok) {
+    throw new Error(`Google 번역 HTTP ${response.status}`);
+  }
+
+  const data = await response.json();
+  const translated = (data?.[0] ?? [])
+    .map((segment) => Array.isArray(segment) ? String(segment[0] ?? '') : '')
+    .join('');
+
+  if (!translated) {
+    throw new Error('Google 번역 응답이 비어 있습니다.');
+  }
+  return decodeTranslatedHtml(translated);
+}
+
+export async function translateNotificationTexts({ title, body, targets }) {
+  const sourceTitle = String(title ?? '').trim();
+  const sourceBody = String(body ?? '').trim();
+  const targetCodes = Array.isArray(targets) ? targets.filter(Boolean) : [];
+
+  if (targetCodes.length === 0) {
+    throw new Error('번역할 대상 언어가 없습니다.');
+  }
+  if (!sourceTitle && !sourceBody) {
+    throw new Error('번역할 한국어 제목 또는 본문이 없습니다.');
+  }
+
+  const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
+  const supabaseKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
+
+  // 1) 공식 키가 설정된 Edge Function 우선
+  if (supabaseUrl && supabaseKey) {
+    try {
+      const response = await fetch(`${supabaseUrl}/functions/v1/translate`, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${supabaseKey}`,
+          'apikey': supabaseKey,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          targets: targetCodes,
+          texts: { title: sourceTitle, body: sourceBody },
+        }),
+      });
+
+      const resData = await response.json().catch(() => ({}));
+      if (response.ok && resData?.translations) {
+        return resData;
+      }
+      console.warn('Edge translate 실패, Google 웹 번역으로 대체:', resData?.error || response.status);
+    } catch (err) {
+      console.warn('Edge translate 호출 실패, Google 웹 번역으로 대체:', err);
+    }
+  }
+
+  // 2) 브라우저 Google 번역 웹 엔드포인트 폴백
+  const translations = {};
+  for (const target of targetCodes) {
+    const apiTarget = TRANSLATE_TARGET_CODES[target] ?? target;
+    translations[target] = {
+      title: sourceTitle ? await translateTextViaGoogleWeb(sourceTitle, apiTarget) : '',
+      body: sourceBody ? await translateTextViaGoogleWeb(sourceBody, apiTarget) : '',
+    };
+  }
+
+  return { provider: 'google-web', translations };
+}
+
+/**
  * 5b. 갤러리(현장 사진) 목록 API
  */
 export async function fetchAllPhotos() {
