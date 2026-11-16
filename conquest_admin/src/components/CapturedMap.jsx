@@ -1,41 +1,73 @@
 import React from 'react';
-import L from 'leaflet';
-import 'leaflet/dist/leaflet.css';
 import { LocateFixed, RefreshCw } from 'lucide-react';
 import { getHexCorners, hexToLatLng } from '../hexGrid';
 
 const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL;
 const SUPABASE_ANON_KEY = import.meta.env.VITE_SUPABASE_ANON_KEY;
+const GOOGLE_MAPS_API_KEY = import.meta.env.VITE_GOOGLE_MAPS_API_KEY;
 const CACHE_KEY = 'public-captured-tiles-v3';
 const CACHE_TTL = 5 * 60 * 1000;
-const KOREA_BOUNDS = L.latLngBounds([[33.0, 124.0], [39.0, 132.0]]);
 const DEFAULT_TILE_COLOR = '#00e5ff';
+
+const DARK_MAP_STYLES = [
+  { elementType: 'geometry', stylers: [{ color: '#151b26' }] },
+  { elementType: 'labels.text.fill', stylers: [{ color: '#8b98a5' }] },
+  { elementType: 'labels.text.stroke', stylers: [{ color: '#151b26' }] },
+  { featureType: 'administrative', elementType: 'geometry', stylers: [{ color: '#2b3648' }] },
+  { featureType: 'poi', elementType: 'labels.text.fill', stylers: [{ color: '#6b7a8c' }] },
+  { featureType: 'poi.park', elementType: 'geometry', stylers: [{ color: '#1b2a2a' }] },
+  { featureType: 'road', elementType: 'geometry', stylers: [{ color: '#263041' }] },
+  { featureType: 'road', elementType: 'geometry.stroke', stylers: [{ color: '#1a2230' }] },
+  { featureType: 'road', elementType: 'labels.text.fill', stylers: [{ color: '#94a3b8' }] },
+  { featureType: 'transit', stylers: [{ visibility: 'off' }] },
+  { featureType: 'water', elementType: 'geometry', stylers: [{ color: '#0b1220' }] },
+  { featureType: 'water', elementType: 'labels.text.fill', stylers: [{ color: '#4b5e78' }] }
+];
+
+const LOCATION_ICON = `data:image/svg+xml;charset=UTF-8,${encodeURIComponent(`
+  <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 14 14">
+    <circle cx="7" cy="7" r="6" fill="#00e5ff" stroke="#ffffff" stroke-width="2"/>
+  </svg>
+`)}`;
 
 const authHeaders = {
   apikey: SUPABASE_ANON_KEY,
   Authorization: `Bearer ${SUPABASE_ANON_KEY}`
 };
 
+let googleMapsPromise = null;
+
+function loadGoogleMaps() {
+  if (window.google?.maps) return Promise.resolve(window.google.maps);
+  if (googleMapsPromise) return googleMapsPromise;
+  if (!GOOGLE_MAPS_API_KEY) return Promise.reject(new Error('Google Maps API key is missing'));
+
+  googleMapsPromise = new Promise((resolve, reject) => {
+    const callbackName = '__conquestHomeGoogleMapsReady';
+    window[callbackName] = () => {
+      delete window[callbackName];
+      resolve(window.google.maps);
+    };
+
+    const script = document.createElement('script');
+    script.src = `https://maps.googleapis.com/maps/api/js?key=${encodeURIComponent(
+      GOOGLE_MAPS_API_KEY
+    )}&v=weekly&loading=async&callback=${callbackName}`;
+    script.async = true;
+    script.defer = true;
+    script.onerror = () => {
+      delete window[callbackName];
+      googleMapsPromise = null;
+      reject(new Error('Google Maps script failed'));
+    };
+    document.head.appendChild(script);
+  });
+
+  return googleMapsPromise;
+}
+
 function normalizeColor(value) {
   return typeof value === 'string' && /^#[0-9a-fA-F]{6}$/.test(value) ? value : DEFAULT_TILE_COLOR;
-}
-
-function hexToRgba(hex, alpha) {
-  const value = hex.replace('#', '');
-  const r = parseInt(value.slice(0, 2), 16);
-  const g = parseInt(value.slice(2, 4), 16);
-  const b = parseInt(value.slice(4, 6), 16);
-  return `rgba(${r}, ${g}, ${b}, ${alpha})`;
-}
-
-function groupTilesByColor(tiles) {
-  const groups = new Map();
-  tiles.forEach((tile) => {
-    const color = normalizeColor(tile.color);
-    if (!groups.has(color)) groups.set(color, []);
-    groups.get(color).push(tile);
-  });
-  return groups;
 }
 
 function readCache() {
@@ -111,137 +143,52 @@ async function fetchTiles(force = false) {
 
 async function loadPreparedTiles(force = false) {
   const rows = await fetchTiles(force);
-  return rows.map(({ q, r, color }) => ({
-    q,
-    r,
-    color,
-    center: L.latLng(hexToLatLng(q, r))
-  }));
+  return rows.map(({ q, r, color }) => {
+    const [lat, lng] = hexToLatLng(q, r);
+    return { q, r, color, center: { lat, lng } };
+  });
 }
 
-const CapturedTilesLayer = L.Layer.extend({
-  initialize(tiles) {
-    this.setTiles(tiles);
-  },
+function clearPolygons(polygons) {
+  polygons.forEach((polygon) => polygon.setMap(null));
+  polygons.length = 0;
+}
 
-  setTiles(tiles) {
-    this._tiles = tiles;
-    this._groups = groupTilesByColor(tiles);
-    if (this._map) this._reset();
-  },
+function renderPolygons(map, prepared, polygons) {
+  const maps = window.google?.maps;
+  if (!maps) return;
+  clearPolygons(polygons);
 
-  onAdd(map) {
-    this._map = map;
-    this._zoom = map.getZoom();
-    this._center = map.getCenter();
-    const canvas = L.DomUtil.create('canvas', 'leaflet-zoom-animated');
-    canvas.style.pointerEvents = 'none';
-    this._canvas = canvas;
-    map.getPanes().overlayPane.appendChild(canvas);
-    map.on('moveend zoomend resize', this._reset, this);
-    map.on('zoom', this._onZoom, this);
-    map.on('zoomanim', this._onAnimZoom, this);
-    this._reset();
-  },
-
-  onRemove(map) {
-    map.off('moveend zoomend resize', this._reset, this);
-    map.off('zoom', this._onZoom, this);
-    map.off('zoomanim', this._onAnimZoom, this);
-    if (this._raf) cancelAnimationFrame(this._raf);
-    this._canvas.remove();
-  },
-
-  _onZoom() {
-    this._updateTransform(this._map.getCenter(), this._map.getZoom());
-  },
-
-  _onAnimZoom(event) {
-    this._updateTransform(event.center, event.zoom);
-  },
-
-  _updateTransform(center, zoom) {
-    const map = this._map;
-    const scale = map.getZoomScale(zoom, this._zoom);
-    const oldTopLeft = map.unproject(this._pixelOrigin, this._zoom);
-    const newTopLeft = map.project(oldTopLeft, zoom).subtract(map._getNewPixelOrigin(center, zoom));
-    L.DomUtil.setTransform(this._canvas, newTopLeft, scale);
-  },
-
-  _reset() {
-    const map = this._map;
-    this._zoom = map.getZoom();
-    this._center = map.getCenter();
-    this._pixelOrigin = map.getPixelOrigin();
-    const size = map.getSize();
-    const dpr = window.devicePixelRatio || 1;
-    const topLeft = map.containerPointToLayerPoint([0, 0]);
-
-    L.DomUtil.setPosition(this._canvas, topLeft);
-    this._canvas.width = Math.round(size.x * dpr);
-    this._canvas.height = Math.round(size.y * dpr);
-    this._canvas.style.width = `${size.x}px`;
-    this._canvas.style.height = `${size.y}px`;
-
-    const ctx = this._canvas.getContext('2d');
-    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
-    ctx.clearRect(0, 0, size.x, size.y);
-    this._draw(ctx);
-  },
-
-  _draw(ctx) {
-    const map = this._map;
-    const zoom = map.getZoom();
-    const bounds = map.getBounds().pad(0.05);
-
-    if (zoom < 9) {
-      const radius = zoom <= 2 ? 1 : zoom <= 3 ? 1.2 : 1.4;
-      this._groups.forEach((group, color) => {
-        ctx.fillStyle = hexToRgba(color, 0.9);
-        ctx.beginPath();
-        const seen = new Set();
-        group.forEach((tile) => {
-          if (!bounds.contains(tile.center)) return;
-          const point = map.latLngToContainerPoint(tile.center);
-          const key = `${Math.round(point.x)},${Math.round(point.y)}`;
-          if (seen.has(key)) return;
-          seen.add(key);
-          ctx.moveTo(point.x + radius, point.y);
-          ctx.arc(point.x, point.y, radius, 0, Math.PI * 2);
-        });
-        ctx.fill();
-      });
-      return;
-    }
-
-    this._groups.forEach((group, color) => {
-      ctx.fillStyle = hexToRgba(color, 0.45);
-      ctx.strokeStyle = hexToRgba(color, 0.95);
-      ctx.lineWidth = zoom < 10 ? 0.5 : 1;
-      ctx.beginPath();
-
-      group.forEach((tile) => {
-        if (!bounds.contains(tile.center)) return;
-        const corners = getHexCorners(tile.q, tile.r);
-        corners.forEach((corner, index) => {
-          const point = map.latLngToContainerPoint(corner);
-          if (index === 0) ctx.moveTo(point.x, point.y);
-          else ctx.lineTo(point.x, point.y);
-        });
-        ctx.closePath();
-      });
-
-      ctx.fill();
-      ctx.stroke();
+  prepared.forEach((tile) => {
+    const corners = getHexCorners(tile.q, tile.r);
+    const polygon = new maps.Polygon({
+      paths: corners.map(([lat, lng]) => ({ lat, lng })),
+      strokeColor: tile.color,
+      strokeOpacity: 0.95,
+      strokeWeight: 2,
+      fillColor: tile.color,
+      fillOpacity: 0.45,
+      map,
+      clickable: false,
+      zIndex: 1
     });
-  }
-});
+    polygons.push(polygon);
+  });
+}
+
+function fitTiles(map, prepared) {
+  const maps = window.google?.maps;
+  if (!maps || !prepared.length) return;
+  const bounds = new maps.LatLngBounds();
+  prepared.forEach((tile) => bounds.extend(tile.center));
+  if (!bounds.isEmpty()) map.fitBounds(bounds, 40);
+}
 
 export default function CapturedMap() {
   const containerRef = React.useRef(null);
   const mapRef = React.useRef(null);
-  const layerRef = React.useRef(null);
-  const locationMarkerRef = React.useRef(null);
+  const polygonsRef = React.useRef([]);
+  const markerRef = React.useRef(null);
   const [tiles, setTiles] = React.useState(null);
   const [count, setCount] = React.useState(0);
   const [error, setError] = React.useState('');
@@ -266,52 +213,44 @@ export default function CapturedMap() {
   }, []);
 
   React.useEffect(() => {
-    if (!containerRef.current || !tiles) return undefined;
+    const container = containerRef.current;
+    const polygons = polygonsRef.current;
+    if (!container || !tiles) return undefined;
+    let cancelled = false;
 
-    const map = L.map(containerRef.current, {
-      zoomControl: true,
-      attributionControl: true,
-      minZoom: 2,
-      maxZoom: 13,
-      scrollWheelZoom: true,
-      doubleClickZoom: false,
-      boxZoom: false,
-      keyboard: false,
-      dragging: true,
-      touchZoom: true
-    });
+    loadGoogleMaps()
+      .then((maps) => {
+        if (cancelled) return;
 
-    L.tileLayer(
-      'https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png?key=cb1_2pao_1_f708f02cfdb298af5ba94a21',
-      {
-        subdomains: 'abcd',
-        maxZoom: 19,
-        attribution: '&copy; OpenStreetMap &copy; CARTO'
-      }
-    ).addTo(map);
+        const map = new maps.Map(container, {
+          center: { lat: 36.3, lng: 127.8 },
+          zoom: 7,
+          mapTypeId: 'roadmap',
+          styles: DARK_MAP_STYLES,
+          backgroundColor: '#060911',
+          zoomControl: true,
+          mapTypeControl: false,
+          streetViewControl: false,
+          fullscreenControl: false,
+          clickableIcons: false,
+          gestureHandling: 'greedy'
+        });
 
-    const tileBounds = L.latLngBounds(tiles.map((tile) => tile.center));
-    map.fitBounds(tileBounds.isValid() ? tileBounds : KOREA_BOUNDS, {
-      padding: [24, 24],
-      maxZoom: 8
-    });
-    mapRef.current = map;
-    layerRef.current = new CapturedTilesLayer(tiles).addTo(map);
-
-    let resizeObserver;
-    if (typeof ResizeObserver !== 'undefined') {
-      resizeObserver = new ResizeObserver(() => map.invalidateSize());
-      resizeObserver.observe(containerRef.current);
-    }
-    const timer = setTimeout(() => map.invalidateSize(), 150);
+        mapRef.current = map;
+        renderPolygons(map, tiles, polygons);
+        fitTiles(map, tiles);
+      })
+      .catch(() => {
+        if (!cancelled) setError('지도를 불러오지 못했습니다.');
+      });
 
     return () => {
-      clearTimeout(timer);
-      resizeObserver?.disconnect();
-      map.remove();
+      cancelled = true;
+      clearPolygons(polygons);
+      markerRef.current?.setMap(null);
+      markerRef.current = null;
       mapRef.current = null;
-      layerRef.current = null;
-      locationMarkerRef.current = null;
+      container.replaceChildren();
     };
   }, [tiles]);
 
@@ -321,8 +260,8 @@ export default function CapturedMap() {
     setError('');
     try {
       const prepared = await loadPreparedTiles(true);
-      if (layerRef.current) {
-        layerRef.current.setTiles(prepared);
+      if (mapRef.current) {
+        renderPolygons(mapRef.current, prepared, polygonsRef.current);
       } else {
         setTiles(prepared);
       }
@@ -335,24 +274,29 @@ export default function CapturedMap() {
   };
 
   const handleLocate = () => {
+    const maps = window.google?.maps;
+    const map = mapRef.current;
+    if (!maps || !map) return;
     if (!navigator.geolocation) {
       setError('이 브라우저에서는 위치 기능을 사용할 수 없습니다.');
       return;
     }
+
     navigator.geolocation.getCurrentPosition(
       ({ coords }) => {
-        const map = mapRef.current;
-        if (!map) return;
-        const point = [coords.latitude, coords.longitude];
-        map.setView(point, Math.max(map.getZoom(), 13));
-        if (locationMarkerRef.current) locationMarkerRef.current.remove();
-        locationMarkerRef.current = L.circleMarker(point, {
-          radius: 7,
-          color: '#ffffff',
-          weight: 2,
-          fillColor: DEFAULT_TILE_COLOR,
-          fillOpacity: 1
-        }).addTo(map);
+        const position = { lat: coords.latitude, lng: coords.longitude };
+        map.panTo(position);
+        map.setZoom(13);
+        markerRef.current?.setMap(null);
+        markerRef.current = new maps.Marker({
+          position,
+          map,
+          icon: {
+            url: LOCATION_ICON,
+            scaledSize: new maps.Size(14, 14),
+            anchor: new maps.Point(7, 7)
+          }
+        });
         setError('');
       },
       () => setError('현재 위치를 가져오지 못했습니다. 위치 권한을 확인해 주세요.'),
