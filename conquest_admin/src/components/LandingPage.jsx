@@ -294,7 +294,7 @@ export default function LandingPage() {
       <section className="territory-section">
         <div className="features-header" data-reveal>
           <span className="eyebrow">LIVE TERRITORY</span>
-          <h2 className="section-title">지금 점령된 구역</h2>
+          <h2 className="section-title">실시간 점령 현황</h2>
         </div>
         <div className="territory-panel" data-reveal>
           <LazyCapturedMap />
