@@ -145,10 +145,13 @@ function AdminLayout({ user, onLogout }) {
             </div>
           </div>
           <button
-            className="mobile-only"
-            onClick={() => setIsSidebarOpen(false)}
+            onClick={() => {
+              setIsSidebarOpen(false);
+              navigate('/');
+            }}
             style={{ background: 'none', border: 'none', color: 'var(--text-secondary)', cursor: 'pointer', display: 'flex', alignItems: 'center' }}
-            aria-label="메뉴 닫기"
+            aria-label="홈페이지로 이동"
+            title="홈페이지로 이동"
           >
             <X size={20} />
           </button>
