@@ -6,7 +6,7 @@ import { getHexCorners, hexToLatLng } from '../hexGrid';
 
 const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL;
 const SUPABASE_ANON_KEY = import.meta.env.VITE_SUPABASE_ANON_KEY;
-const CACHE_KEY = 'public-captured-tiles-v2';
+const CACHE_KEY = 'public-captured-tiles-v3';
 const CACHE_TTL = 5 * 60 * 1000;
 const KOREA_BOUNDS = L.latLngBounds([[33.0, 124.0], [39.0, 132.0]]);
 const DEFAULT_TILE_COLOR = '#00e5ff';
@@ -163,18 +163,16 @@ const CapturedTilesLayer = L.Layer.extend({
   _updateTransform(center, zoom) {
     const map = this._map;
     const scale = map.getZoomScale(zoom, this._zoom);
-    const viewHalf = map.getSize().multiplyBy(0.5);
-    const currentCenterPoint = map.project(this._center, zoom);
-    const destCenterPoint = map.project(center, zoom);
-    const centerOffset = destCenterPoint.subtract(currentCenterPoint);
-    const topLeftOffset = viewHalf.multiplyBy(-1).add(centerOffset).add(map._getMapPanePos());
-    L.DomUtil.setTransform(this._canvas, topLeftOffset, scale);
+    const oldTopLeft = map.unproject(this._pixelOrigin, this._zoom);
+    const newTopLeft = map.project(oldTopLeft, zoom).subtract(map._getNewPixelOrigin(center, zoom));
+    L.DomUtil.setTransform(this._canvas, newTopLeft, scale);
   },
 
   _reset() {
     const map = this._map;
     this._zoom = map.getZoom();
     this._center = map.getCenter();
+    this._pixelOrigin = map.getPixelOrigin();
     const size = map.getSize();
     const dpr = window.devicePixelRatio || 1;
     const topLeft = map.containerPointToLayerPoint([0, 0]);
@@ -196,7 +194,7 @@ const CapturedTilesLayer = L.Layer.extend({
     const zoom = map.getZoom();
     const bounds = map.getBounds().pad(0.05);
 
-    if (zoom < 5) {
+    if (zoom < 9) {
       const radius = zoom <= 2 ? 1 : zoom <= 3 ? 1.2 : 1.4;
       this._groups.forEach((group, color) => {
         ctx.fillStyle = hexToRgba(color, 0.9);
