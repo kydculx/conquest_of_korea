@@ -509,7 +509,7 @@ export default function LandingPage() {
         .territory-map .leaflet-control-attribution a{color:#94a3b8}
         .territory-map .leaflet-control-zoom a{background:rgba(10,14,24,.82);color:#e2e8f0;border-color:rgba(255,255,255,.12)}
         .territory-map .leaflet-control-zoom a:hover{background:rgba(167,139,250,.18);color:#c4b5fd}
-        .territory-live{position:absolute;left:58px;top:14px;z-index:500;display:inline-flex;align-items:center;gap:.4rem;background:rgba(10,14,24,.78);border:1px solid rgba(255,255,255,.12);backdrop-filter:blur(10px);padding:.4rem .7rem;border-radius:10px;font-size:.7rem;font-weight:800;letter-spacing:.1em;color:#fecaca}
+        .territory-live{position:absolute;left:14px;top:14px;z-index:500;display:inline-flex;align-items:center;gap:.4rem;background:rgba(10,14,24,.78);border:1px solid rgba(255,255,255,.12);backdrop-filter:blur(10px);padding:.4rem .7rem;border-radius:10px;font-size:.7rem;font-weight:800;letter-spacing:.1em;color:#fecaca}
         .territory-live-dot{width:7px;height:7px;border-radius:50%;background:#ef4444;box-shadow:0 0 10px rgba(239,68,68,.9);animation:territoryLivePulse 1.2s ease-in-out infinite alternate}
         .territory-actions{position:absolute;right:14px;top:14px;z-index:500;display:flex;flex-direction:column;gap:8px}
         .territory-action-btn{width:38px;height:38px;display:flex;align-items:center;justify-content:center;background:rgba(10,14,24,.82);border:1px solid rgba(255,255,255,.12);border-radius:10px;color:#e2e8f0;cursor:pointer;backdrop-filter:blur(10px);transition:background .2s,color .2s,border-color .2s}

@@ -488,6 +488,7 @@ export default function DashboardTab() {
           streetViewControl: false,
           fullscreenControl: false,
           clickableIcons: false,
+          gestureHandling: 'greedy',
         });
 
         mapInstance.current = map;
