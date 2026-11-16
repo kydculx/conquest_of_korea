@@ -131,7 +131,7 @@ export default function TileAttributeEditorTab() {
     if (!mapRef.current || mapInstance.current) return;
 
     const map = L.map(mapRef.current, {
-      zoomControl: true,
+      zoomControl: false,
       attributionControl: false,
     }).setView([originLat, originLng], 15);
 

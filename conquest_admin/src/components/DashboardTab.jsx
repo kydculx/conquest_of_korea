@@ -483,11 +483,15 @@ export default function DashboardTab() {
           mapTypeId: 'roadmap',
           styles: DARK_MAP_STYLES,
           backgroundColor: '#060911',
-          zoomControl: true,
+          zoomControl: false,
           mapTypeControl: false,
           streetViewControl: false,
           fullscreenControl: false,
           clickableIcons: false,
+          cameraControl: false,
+          rotateControl: false,
+          scaleControl: false,
+          keyboardShortcuts: false,
           gestureHandling: 'greedy',
         });
 

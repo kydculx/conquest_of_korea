@@ -144,7 +144,7 @@ export default function MapEditorTab() {
 
     // 다크 테마 지도 셋업
     const map = L.map(mapRef.current, {
-      zoomControl: true,
+      zoomControl: false,
       attributionControl: false
     }).setView([originLat, originLng], 14);
 
