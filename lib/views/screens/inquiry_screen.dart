@@ -25,7 +25,8 @@ class InquiryScreen extends StatefulWidget {
   State<InquiryScreen> createState() => _InquiryScreenState();
 }
 
-class _InquiryScreenState extends State<InquiryScreen> {
+class _InquiryScreenState extends State<InquiryScreen>
+    with WidgetsBindingObserver {
   final TextEditingController _titleController = TextEditingController();
   final TextEditingController _contentController = TextEditingController();
   final TextEditingController _emailController = TextEditingController();
@@ -39,9 +40,17 @@ class _InquiryScreenState extends State<InquiryScreen> {
   @override
   void initState() {
     super.initState();
+    WidgetsBinding.instance.addObserver(this);
     WidgetsBinding.instance.addPostFrameCallback((_) {
       _loadHistory();
     });
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state == AppLifecycleState.resumed && mounted) {
+      _loadHistory();
+    }
   }
 
   @override
@@ -57,6 +66,7 @@ class _InquiryScreenState extends State<InquiryScreen> {
 
   @override
   void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
     _titleController.dispose();
     _contentController.dispose();
     _emailController.dispose();
@@ -284,31 +294,37 @@ class _InquiryScreenState extends State<InquiryScreen> {
         titleText: GameStrings.contactSupport,
         showBackButton: true,
       ),
-      body: SingleChildScrollView(
-        child: Padding(
-          padding: EdgeInsets.fromLTRB(
-            20.0 + media.padding.left,
-            20.0,
-            20.0 + media.padding.right,
-            32.0 + media.padding.bottom,
-          ),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                GameStrings.inquiryFormIntro,
-                style: TextStyle(
-                  color: GameColors.textSecondary,
-                  fontSize: 13,
-                  height: 1.5,
+      body: RefreshIndicator(
+        color: GameColors.accentNeon,
+        backgroundColor: GameColors.backgroundMedium,
+        onRefresh: _loadHistory,
+        child: SingleChildScrollView(
+          physics: const AlwaysScrollableScrollPhysics(),
+          child: Padding(
+            padding: EdgeInsets.fromLTRB(
+              20.0 + media.padding.left,
+              20.0,
+              20.0 + media.padding.right,
+              32.0 + media.padding.bottom,
+            ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  GameStrings.inquiryFormIntro,
+                  style: TextStyle(
+                    color: GameColors.textSecondary,
+                    fontSize: 13,
+                    height: 1.5,
+                  ),
                 ),
-              ),
-              const SizedBox(height: 18),
-              _buildForm(),
-              const SizedBox(height: 28),
-              _sectionTitle(GameStrings.inquiryHistoryTitle),
-              _buildHistory(context),
-            ],
+                const SizedBox(height: 18),
+                _buildForm(),
+                const SizedBox(height: 28),
+                _sectionTitle(GameStrings.inquiryHistoryTitle),
+                _buildHistory(context),
+              ],
+            ),
           ),
         ),
       ),

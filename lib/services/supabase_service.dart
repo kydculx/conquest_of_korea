@@ -780,21 +780,49 @@ class SupabaseService {
   }
 
   /// 현재 로그인한 사용자가 보낸 문의 내역을 최신순으로 조회합니다.
+  ///
+  /// 비로그인 상태로 접수된 문의는 같은 이메일로 로그인했을 때만 RLS가 조회를 허용하므로
+  /// 본인 계정 문의와 이메일이 일치하는 문의를 함께 모아 반환합니다.
   Future<List<UserInquiry>> fetchMyInquiries({int limit = 30}) async {
-    final userId = _client.auth.currentUser?.id;
-    if (userId == null) return [];
+    final user = _client.auth.currentUser;
+    if (user == null) return [];
+
+    const String columns =
+        'id, category, title, content, status, answer, created_at, answered_at';
+
     try {
-      final response = await _client
+      final List<UserInquiry> collected = [];
+
+      final owned = await _client
           .from('user_inquiries')
-          .select(
-            'id, category, title, content, status, answer, created_at, answered_at',
-          )
-          .eq('user_id', userId)
+          .select(columns)
+          .eq('user_id', user.id)
           .order('created_at', ascending: false)
           .limit(limit);
-      return (response as List)
-          .map((e) => UserInquiry.fromJson(_toMap(e)))
-          .toList();
+      collected.addAll(
+        (owned as List).map((e) => UserInquiry.fromJson(_toMap(e))),
+      );
+
+      final String? email = user.email?.trim().toLowerCase();
+      if (email != null && email.isNotEmpty) {
+        final guest = await _client
+            .from('user_inquiries')
+            .select(columns)
+            .isFilter('user_id', null)
+            .eq('email', email)
+            .order('created_at', ascending: false)
+            .limit(limit);
+        collected.addAll(
+          (guest as List).map((e) => UserInquiry.fromJson(_toMap(e))),
+        );
+      }
+
+      final Map<String, UserInquiry> unique = {
+        for (final inquiry in collected) inquiry.id: inquiry,
+      };
+      final List<UserInquiry> list = unique.values.toList()
+        ..sort((a, b) => b.createdAt.compareTo(a.createdAt));
+      return list.take(limit).toList();
     } catch (e) {
       debugPrint('❌ 내 문의 내역 조회 실패: $e');
       return [];
