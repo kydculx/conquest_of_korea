@@ -1470,6 +1470,89 @@ class GameStrings {
   static String cannotOpenMailApp(String email) =>
       'cannotOpenMailApp'.tr(namedArgs: {'email': email});
 
+  // --- 앱 내 문의하기 ---
+
+  /// 문의 폼 상단 안내 문구
+  static String get inquiryFormIntro => 'inquiryFormIntro'.tr();
+
+  /// 문의 유형 라벨
+  static String get inquiryCategoryLabel => 'inquiryCategoryLabel'.tr();
+
+  /// 문의 유형: 버그 신고
+  static String get inquiryCategoryBug => 'inquiryCategoryBug'.tr();
+
+  /// 문의 유형: 기능 건의
+  static String get inquiryCategoryFeature => 'inquiryCategoryFeature'.tr();
+
+  /// 문의 유형: 계정/데이터
+  static String get inquiryCategoryAccount => 'inquiryCategoryAccount'.tr();
+
+  /// 문의 유형: 기타
+  static String get inquiryCategoryEtc => 'inquiryCategoryEtc'.tr();
+
+  /// 문의 제목 라벨
+  static String get inquiryTitleLabel => 'inquiryTitleLabel'.tr();
+
+  /// 문의 제목 입력 힌트
+  static String get inquiryTitleHint => 'inquiryTitleHint'.tr();
+
+  /// 문의 내용 라벨
+  static String get inquiryContentLabel => 'inquiryContentLabel'.tr();
+
+  /// 문의 내용 입력 힌트
+  static String get inquiryContentHint => 'inquiryContentHint'.tr();
+
+  /// 답변받을 이메일 라벨
+  static String get inquiryEmailLabel => 'inquiryEmailLabel'.tr();
+
+  /// 답변받을 이메일 입력 힌트
+  static String get inquiryEmailHint => 'inquiryEmailHint'.tr();
+
+  /// 문의 전송 버튼 라벨
+  static String get inquirySend => 'inquirySend'.tr();
+
+  /// 문의 전송 중 라벨
+  static String get inquirySending => 'inquirySending'.tr();
+
+  /// 문의 접수 완료 안내
+  static String get inquirySent => 'inquirySent'.tr();
+
+  /// 내 문의 내역 제목
+  static String get inquiryHistoryTitle => 'inquiryHistoryTitle'.tr();
+
+  /// 내 문의 내역 비어 있음 안내
+  static String get inquiryHistoryEmpty => 'inquiryHistoryEmpty'.tr();
+
+  /// 문의 상태: 접수됨
+  static String get inquiryStatusOpen => 'inquiryStatusOpen'.tr();
+
+  /// 문의 상태: 답변 완료
+  static String get inquiryStatusAnswered => 'inquiryStatusAnswered'.tr();
+
+  /// 문의 상태: 종료
+  static String get inquiryStatusClosed => 'inquiryStatusClosed'.tr();
+
+  /// 문의 답변 라벨
+  static String get inquiryAnswerLabel => 'inquiryAnswerLabel'.tr();
+
+  /// 문의 개인정보 입력 주의 문구
+  static String get inquiryPrivacyNote => 'inquiryPrivacyNote'.tr();
+
+  /// 메일로 직접 보내기 라벨
+  static String get inquiryMailFallback => 'inquiryMailFallback'.tr();
+
+  /// 제목/내용 미입력 검증 문구
+  static String get inquiryValidationRequired => 'inquiryValidationRequired'.tr();
+
+  /// 이메일 형식 검증 문구
+  static String get inquiryValidationEmail => 'inquiryValidationEmail'.tr();
+
+  /// 문의 전송 횟수 제한 안내
+  static String get inquiryErrorRateLimited => 'inquiryErrorRateLimited'.tr();
+
+  /// 문의 전송 실패 안내
+  static String get inquiryErrorGeneric => 'inquiryErrorGeneric'.tr();
+
   static String get dailyRecordTitle => 'dailyRecordTitle'.tr();
   static String get dailyRecordMonthTotal => 'dailyRecordMonthTotal'.tr();
   static String get dailyRecordToday => 'dailyRecordToday'.tr();
