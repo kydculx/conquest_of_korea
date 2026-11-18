@@ -62,11 +62,10 @@ async function sendNotificationEmail(payload: {
   category: string;
   title: string;
   content: string;
-  email: string;
   locale: string;
   appVersion: string;
   platform: string;
-  userId: string | null;
+  userId: string;
   inquiryId: string;
 }): Promise<void> {
   if (!RESEND_API_KEY) {
@@ -80,15 +79,16 @@ async function sendNotificationEmail(payload: {
     "",
     `유형: ${categoryLabel}`,
     `제목: ${payload.title}`,
-    `회신 이메일: ${payload.email}`,
     `언어: ${payload.locale || "-"}`,
     `앱 버전: ${payload.appVersion || "-"}`,
     `플랫폼: ${payload.platform || "-"}`,
-    `사용자 ID: ${payload.userId ?? "비로그인"}`,
+    `사용자 ID: ${payload.userId}`,
     `문의 ID: ${payload.inquiryId}`,
     "",
     "내용:",
     payload.content,
+    "",
+    "답변은 관리자 콘솔의 문의 관리에서 등록하면 앱 문의 화면에 표시됩니다.",
   ];
 
   const response = await fetch("https://api.resend.com/emails", {
@@ -123,6 +123,11 @@ Deno.serve(async (req: Request) => {
       throw new Error("Supabase 서비스 설정이 없습니다.");
     }
 
+    const userId = await resolveUserId(req.headers.get("Authorization"));
+    if (!userId) {
+      return jsonResponse({ success: false, error: "unauthorized" }, 401);
+    }
+
     const body = await req.json().catch(() => null);
     if (!body || typeof body !== "object") {
       return jsonResponse({ success: false, error: "invalid_body" }, 400);
@@ -132,7 +137,6 @@ Deno.serve(async (req: Request) => {
     const category = toTrimmedString(record.category) || "etc";
     const title = toTrimmedString(record.title);
     const content = toTrimmedString(record.content);
-    const email = toTrimmedString(record.email).toLowerCase();
     const locale = toTrimmedString(record.locale).slice(0, 20);
     const appVersion = toTrimmedString(record.app_version).slice(0, 40);
     const platform = toTrimmedString(record.platform).slice(0, 20);
@@ -146,23 +150,17 @@ Deno.serve(async (req: Request) => {
     if (content.length < 5 || content.length > 5000) {
       return jsonResponse({ success: false, error: "invalid_content" }, 400);
     }
-    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email) || email.length > 254) {
-      return jsonResponse({ success: false, error: "invalid_email" }, 400);
-    }
 
-    const userId = await resolveUserId(req.headers.get("Authorization"));
     const admin = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY, {
       auth: { persistSession: false },
     });
 
     const since = new Date(Date.now() - 60 * 60 * 1000).toISOString();
-    const recentQuery = admin
+    const { count, error: countError } = await admin
       .from("user_inquiries")
       .select("id", { count: "exact", head: true })
+      .eq("user_id", userId)
       .gte("created_at", since);
-    const { count, error: countError } = await (userId
-      ? recentQuery.eq("user_id", userId)
-      : recentQuery.eq("email", email));
 
     if (countError) throw countError;
     if ((count ?? 0) >= MAX_PER_HOUR) {
@@ -173,7 +171,6 @@ Deno.serve(async (req: Request) => {
       .from("user_inquiries")
       .insert({
         user_id: userId,
-        email,
         category,
         title,
         content,
@@ -191,7 +188,6 @@ Deno.serve(async (req: Request) => {
         category,
         title,
         content,
-        email,
         locale,
         appVersion,
         platform,
