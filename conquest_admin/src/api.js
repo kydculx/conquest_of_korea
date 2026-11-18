@@ -768,7 +768,24 @@ export async function fetchInquiries({ status = 'all', limit = 200 } = {}) {
 
   const { data, error } = await query;
   if (error) throw error;
-  return data || [];
+
+  const rows = data || [];
+  const userIds = [...new Set(rows.map((row) => row.user_id).filter(Boolean))];
+  if (userIds.length === 0) return rows;
+
+  const { data: profiles, error: profileError } = await supabase
+    .from('profiles')
+    .select('id, nickname')
+    .in('id', userIds);
+  if (profileError) throw profileError;
+
+  const nicknameById = Object.fromEntries(
+    (profiles || []).map((profile) => [profile.id, profile.nickname]),
+  );
+  return rows.map((row) => ({
+    ...row,
+    nickname: nicknameById[row.user_id] ?? null,
+  }));
 }
 
 export async function answerInquiry({ id, answer, status = 'answered' }) {

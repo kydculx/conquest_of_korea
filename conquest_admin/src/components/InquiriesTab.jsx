@@ -1,13 +1,11 @@
 import { useEffect, useMemo, useState } from 'react';
 import {
   Inbox,
-  Mail,
   Search,
   RefreshCw,
   X,
   Send,
   CheckCircle2,
-  ClipboardCopy,
   Filter,
 } from 'lucide-react';
 import { fetchInquiries, answerInquiry, closeInquiry } from '../api';
@@ -62,7 +60,6 @@ export default function InquiriesTab() {
   const [draftDirty, setDraftDirty] = useState(false);
   const [saving, setSaving] = useState(false);
   const [notice, setNotice] = useState(null);
-  const [copied, setCopied] = useState(false);
 
   const load = async () => {
     setLoading(true);
@@ -129,7 +126,7 @@ export default function InquiriesTab() {
       const haystack = [
         row.title,
         row.content,
-        row.email,
+        row.nickname,
         row.category,
         categoryLabel(row.category),
       ]
@@ -149,7 +146,6 @@ export default function InquiriesTab() {
     setAnswerDraft(row.answer ?? '');
     setDraftDirty(false);
     setNotice(null);
-    setCopied(false);
   };
 
   const closeDetail = () => {
@@ -157,7 +153,6 @@ export default function InquiriesTab() {
     setAnswerDraft('');
     setDraftDirty(false);
     setNotice(null);
-    setCopied(false);
   };
 
   const handleSaveAnswer = async () => {
@@ -201,18 +196,6 @@ export default function InquiriesTab() {
       setNotice({ type: 'error', text: '문의 종료 처리에 실패했습니다.' });
     } finally {
       setSaving(false);
-    }
-  };
-
-  const handleCopyEmail = async () => {
-    if (!selected?.email) return;
-    try {
-      await navigator.clipboard.writeText(selected.email);
-      setCopied(true);
-      window.setTimeout(() => setCopied(false), 1500);
-    } catch (err) {
-      console.error(err);
-      setNotice({ type: 'error', text: '이메일을 복사하지 못했습니다.' });
     }
   };
 
@@ -262,7 +245,7 @@ export default function InquiriesTab() {
               type="text"
               className="tactical-input"
               style={{ paddingLeft: '2.5rem' }}
-              placeholder="제목·내용·이메일 검색..."
+              placeholder="제목·내용·닉네임 검색..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
             />
@@ -324,9 +307,7 @@ export default function InquiriesTab() {
               <div className="inquiry-card-title">{row.title}</div>
               <div className="inquiry-card-preview">{row.content}</div>
               <div className="inquiry-card-meta">
-                <span>
-                  <Mail size={13} /> {row.email}
-                </span>
+                <span>작성자 {row.nickname || shortId(row.user_id)}</span>
                 <span>언어 {row.locale || '-'}</span>
                 <span>버전 {row.app_version || '-'}</span>
                 <span>플랫폼 {row.platform || '-'}</span>
@@ -359,19 +340,8 @@ export default function InquiriesTab() {
 
             <div className="kv-grid inquiry-meta-grid">
               <div>
-                <span className="kv-label">회신 이메일</span>
-                <div className="kv-value mono" style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
-                  <span>{selected.email}</span>
-                  <button
-                    type="button"
-                    className="tactical-btn sm"
-                    onClick={handleCopyEmail}
-                    title="이메일 복사"
-                  >
-                    <ClipboardCopy size={13} />
-                    {copied ? '복사됨' : '복사'}
-                  </button>
-                </div>
+                <span className="kv-label">작성자</span>
+                <div className="kv-value">{selected.nickname || '알 수 없음'}</div>
               </div>
               <div>
                 <span className="kv-label">사용자 ID</span>
