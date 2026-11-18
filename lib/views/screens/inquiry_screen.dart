@@ -33,6 +33,7 @@ class _InquiryScreenState extends State<InquiryScreen>
   String _category = 'etc';
   bool _submitting = false;
   bool _loadingHistory = true;
+  bool _historyLoadFailed = false;
   List<UserInquiry> _history = const [];
 
   @override
@@ -62,12 +63,13 @@ class _InquiryScreenState extends State<InquiryScreen>
   Future<void> _loadHistory() async {
     if (!mounted) return;
     setState(() => _loadingHistory = true);
-    final List<UserInquiry> inquiries = await context
+    final List<UserInquiry>? inquiries = await context
         .read<SupabaseService>()
         .fetchMyInquiries();
     if (!mounted) return;
     setState(() {
-      _history = inquiries;
+      _history = inquiries ?? const [];
+      _historyLoadFailed = inquiries == null;
       _loadingHistory = false;
     });
   }
@@ -531,6 +533,40 @@ class _InquiryScreenState extends State<InquiryScreen>
               color: GameColors.accentNeon,
             ),
           ),
+        ),
+      );
+    }
+
+    if (_historyLoadFailed) {
+      return _card(
+        child: Row(
+          children: [
+            Icon(
+              Icons.error_outline_rounded,
+              size: 18,
+              color: GameColors.error,
+            ),
+            const SizedBox(width: 8),
+            Expanded(
+              child: Text(
+                GameStrings.inquiryErrorGeneric,
+                style: TextStyle(
+                  color: GameColors.textSecondary,
+                  fontSize: 12.5,
+                  height: 1.4,
+                ),
+              ),
+            ),
+            IconButton(
+              onPressed: _loadHistory,
+              tooltip: GameStrings.inquiryHistoryTitle,
+              icon: Icon(
+                Icons.refresh_rounded,
+                size: 18,
+                color: GameColors.accentNeon,
+              ),
+            ),
+          ],
         ),
       );
     }
