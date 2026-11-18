@@ -38,17 +38,22 @@ function stripHeaderBreaks(value: string): string {
 }
 
 async function resolveUserId(authHeader: string | null): Promise<string | null> {
-  if (!authHeader?.startsWith("Bearer ") || !SUPABASE_URL || !SUPABASE_ANON_KEY) {
+  const token = authHeader?.replace(/^Bearer\s+/i, "").trim();
+  if (!token || !SUPABASE_URL || !SUPABASE_ANON_KEY) {
     return null;
   }
   try {
     const client = createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
-      global: { headers: { Authorization: authHeader } },
+      auth: { persistSession: false },
     });
-    const { data, error } = await client.auth.getUser();
-    if (error) return null;
+    const { data, error } = await client.auth.getUser(token);
+    if (error) {
+      console.warn("문의 사용자 확인 실패:", error.message);
+      return null;
+    }
     return data.user?.id ?? null;
-  } catch {
+  } catch (error) {
+    console.warn("문의 사용자 확인 예외:", error);
     return null;
   }
 }
