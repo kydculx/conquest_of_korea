@@ -5,6 +5,7 @@ import { supabase } from './supabase';
 import {
   Users,
   Bell,
+  MailQuestion,
   Terminal,
   LayoutDashboard,
   Trophy,
@@ -30,6 +31,7 @@ const TileAttributeEditorTab = lazy(() => import('./components/TileAttributeEdit
 const UserTilesTab = lazy(() => import('./components/UserTilesTab'));
 const UserDailyRecordsTab = lazy(() => import('./components/UserDailyRecordsTab'));
 const GalleryTab = lazy(() => import('./components/GalleryTab'));
+const InquiriesTab = lazy(() => import('./components/InquiriesTab'));
 
 const THEME_KEY = 'conquest-admin-theme';
 const SIDEBAR_KEY = 'conquest-admin-sidebar';
@@ -90,6 +92,7 @@ function AdminLayout({ user, onLogout }) {
       label: '운영',
       items: [
         { id: 'notifications', label: '푸시 알림', icon: Bell, path: '/admin/notifications' },
+        { id: 'inquiries', label: '문의 관리', icon: MailQuestion, path: '/admin/inquiries' },
         { id: 'gallery', label: '갤러리', icon: Image, path: '/admin/gallery' },
       ],
     },
@@ -109,6 +112,7 @@ function AdminLayout({ user, onLogout }) {
     users: { title: '사용자 관리', desc: '가입자 정보와 재화를 관리합니다' },
     'user-daily': { title: '일일 이동 기록', desc: '사용자별 일일 이동 타일 기록입니다' },
     notifications: { title: '푸시 알림', desc: '전체 또는 개별 알림을 발송합니다' },
+    inquiries: { title: '문의 관리', desc: '앱에서 접수된 문의를 확인하고 답변합니다' },
     gallery: { title: '갤러리', desc: '현장 사진 목록을 확인합니다' },
     'tile-editor': { title: '타일 속성 에디터', desc: '타일 속성을 직접 편집합니다' },
     'map-editor': { title: '패턴 에디터', desc: '지도 위에 패턴을 그립니다' },
@@ -354,6 +358,7 @@ export default function AdminApp() {
           <Route path="user-tiles" element={<UserTilesTab />} />
           <Route path="user-daily" element={<UserDailyRecordsTab />} />
           <Route path="notifications" element={<NotificationsTab />} />
+          <Route path="inquiries" element={<InquiriesTab />} />
           <Route path="gallery" element={<GalleryTab />} />
           <Route path="tile-editor" element={<TileAttributeEditorTab />} />
           <Route path="map-editor" element={<MapEditorTab />} />
