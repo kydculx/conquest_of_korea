@@ -6,6 +6,7 @@ import '../models/tile_attribute_model.dart';
 import '../models/user_profile.dart';
 import '../models/user_coin.dart';
 import '../models/footprint_model.dart';
+import '../models/inquiry_model.dart';
 
 /// Supabase 백엔드 데이터베이스 및 Realtime 데이터 처리를 담당하는 네트워크 통신 서비스 클래스
 class SupabaseService {
@@ -730,5 +731,86 @@ class SupabaseService {
       debugPrint('⚠️ 구역 속성 영역 조회 실패: $e');
       return [];
     }
+  }
+
+  /// 앱 내 문의를 Edge Function으로 접수하고 결과를 반환합니다.
+  ///
+  /// 접수·알림 메일 발송·레이트 리밋은 서버(inquiry 함수)에서 처리합니다.
+  Future<InquirySubmitResult> submitInquiry({
+    required String category,
+    required String title,
+    required String content,
+    required String email,
+    required String locale,
+    required String appVersion,
+    required String platform,
+  }) async {
+    try {
+      lastError = null;
+      final response = await _client.functions.invoke(
+        'inquiry',
+        body: {
+          'category': category,
+          'title': title,
+          'content': content,
+          'email': email,
+          'locale': locale,
+          'app_version': appVersion,
+          'platform': platform,
+        },
+      );
+
+      final data = response.data;
+      if (data is Map && data['success'] == true) {
+        return InquirySubmitResult.success(data['id']?.toString());
+      }
+      final errorCode = data is Map ? data['error']?.toString() : null;
+      lastError = errorCode ?? 'server_error';
+      return InquirySubmitResult.failure(lastError);
+    } on FunctionException catch (e) {
+      final errorCode = _inquiryErrorCode(e.details);
+      lastError = errorCode;
+      debugPrint('❌ 문의 접수 실패 (${e.status}): $errorCode');
+      return InquirySubmitResult.failure(errorCode);
+    } catch (e) {
+      lastError = e.toString();
+      debugPrint('❌ 문의 접수 예외: $e');
+      return const InquirySubmitResult.failure('server_error');
+    }
+  }
+
+  /// 현재 로그인한 사용자가 보낸 문의 내역을 최신순으로 조회합니다.
+  Future<List<UserInquiry>> fetchMyInquiries({int limit = 30}) async {
+    final userId = _client.auth.currentUser?.id;
+    if (userId == null) return [];
+    try {
+      final response = await _client
+          .from('user_inquiries')
+          .select(
+            'id, category, title, content, status, answer, created_at, answered_at',
+          )
+          .eq('user_id', userId)
+          .order('created_at', ascending: false)
+          .limit(limit);
+      return (response as List)
+          .map((e) => UserInquiry.fromJson(_toMap(e)))
+          .toList();
+    } catch (e) {
+      debugPrint('❌ 내 문의 내역 조회 실패: $e');
+      return [];
+    }
+  }
+
+  /// Edge Function 오류 응답에서 문의 오류 코드를 추출합니다.
+  String _inquiryErrorCode(dynamic details) {
+    if (details is Map) {
+      final code = details['error'];
+      if (code != null) return code.toString();
+    }
+    if (details is String) {
+      final match = RegExp(r'"error"\s*:\s*"([^"]+)"').firstMatch(details);
+      if (match != null) return match.group(1) ?? 'server_error';
+    }
+    return 'server_error';
   }
 }
