@@ -11,11 +11,11 @@ import '../widgets/tactical_app_bar.dart';
 import '../widgets/fold_aware.dart';
 import '../widgets/profile_widgets.dart';
 import '../widgets/profile/account_dialogs.dart';
-import '../widgets/profile/contact_support.dart';
 import '../widgets/profile/gps_accuracy_dialog.dart';
 import '../widgets/profile/nickname_change_dialog.dart';
 import '../widgets/profile/profile_header_card.dart';
 import '../widgets/profile/rebase_flow.dart';
+import 'inquiry_screen.dart';
 import 'language_settings_screen.dart';
 import 'policy_webview_screen.dart';
 
@@ -235,7 +235,14 @@ class _ProfileScreenState extends State<ProfileScreen>
                       icon: Icons.mail_outline_rounded,
                       title: GameStrings.contactSupport,
                       subtitle: GameStrings.contactSupportSub,
-                      onTap: () => handleContactSupport(context),
+                      onTap: () {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (context) => const InquiryScreen(),
+                          ),
+                        );
+                      },
                     ),
                     const ProfileMenuDivider(),
 
