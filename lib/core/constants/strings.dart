@@ -291,9 +291,6 @@ class GameStrings {
   /// 문의하기 안내 문구
   static String get contactSupportSub => 'contactSupportSub'.tr();
 
-  /// 문의 메일 기본 제목
-  static String get supportEmailSubject => 'supportEmailSubject'.tr();
-
   /// 닉네임 수정 버튼 라벨
   static String get changeNickname => 'changeNickname'.tr();
 
@@ -1463,17 +1460,13 @@ class GameStrings {
   static String patternTilesCountCompleted(String count) =>
       'patternTilesCountCompleted'.tr(namedArgs: {'count': count});
 
-  /// 문의 내용 템플릿
-  static String get supportEmailBody => 'supportEmailBody'.tr();
-
-  /// 메일 앱을 열 수 없음
-  static String cannotOpenMailApp(String email) =>
-      'cannotOpenMailApp'.tr(namedArgs: {'email': email});
-
   // --- 앱 내 문의하기 ---
 
   /// 문의 폼 상단 안내 문구
   static String get inquiryFormIntro => 'inquiryFormIntro'.tr();
+
+  /// 비로그인 상태 문의 안내 문구
+  static String get inquiryLoginRequired => 'inquiryLoginRequired'.tr();
 
   /// 문의 유형 라벨
   static String get inquiryCategoryLabel => 'inquiryCategoryLabel'.tr();
@@ -1501,12 +1494,6 @@ class GameStrings {
 
   /// 문의 내용 입력 힌트
   static String get inquiryContentHint => 'inquiryContentHint'.tr();
-
-  /// 답변받을 이메일 라벨
-  static String get inquiryEmailLabel => 'inquiryEmailLabel'.tr();
-
-  /// 답변받을 이메일 입력 힌트
-  static String get inquiryEmailHint => 'inquiryEmailHint'.tr();
 
   /// 문의 전송 버튼 라벨
   static String get inquirySend => 'inquirySend'.tr();
@@ -1538,14 +1525,8 @@ class GameStrings {
   /// 문의 개인정보 입력 주의 문구
   static String get inquiryPrivacyNote => 'inquiryPrivacyNote'.tr();
 
-  /// 메일로 직접 보내기 라벨
-  static String get inquiryMailFallback => 'inquiryMailFallback'.tr();
-
   /// 제목/내용 미입력 검증 문구
   static String get inquiryValidationRequired => 'inquiryValidationRequired'.tr();
-
-  /// 이메일 형식 검증 문구
-  static String get inquiryValidationEmail => 'inquiryValidationEmail'.tr();
 
   /// 문의 전송 횟수 제한 안내
   static String get inquiryErrorRateLimited => 'inquiryErrorRateLimited'.tr();
@@ -1591,5 +1572,4 @@ class GameStrings {
 class GameUrls {
   static const String termsOfService = 'https://jjim.vercel.app/terms';
   static const String privacyPolicy = 'https://jjim.vercel.app/privacy';
-  static const String supportEmail = 'kydculx@gmail.com';
 }
