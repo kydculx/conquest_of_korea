@@ -751,3 +751,54 @@ export async function saveTileAttributes(currentMap, initialMap = {}, onProgress
   }
 }
 
+
+/**
+ * 8. 앱 문의 관리 API (user_inquiries)
+ */
+export async function fetchInquiries({ status = 'all', limit = 200 } = {}) {
+  let query = supabase
+    .from('user_inquiries')
+    .select('*')
+    .order('created_at', { ascending: false })
+    .limit(limit);
+
+  if (status && status !== 'all') {
+    query = query.eq('status', status);
+  }
+
+  const { data, error } = await query;
+  if (error) throw error;
+  return data || [];
+}
+
+export async function answerInquiry({ id, answer, status = 'answered' }) {
+  const { data: userData } = await supabase.auth.getUser();
+  const answeredBy = userData?.user?.id ?? null;
+
+  const { data, error } = await supabase
+    .from('user_inquiries')
+    .update({
+      answer,
+      status,
+      answered_at: new Date().toISOString(),
+      answered_by: answeredBy,
+    })
+    .eq('id', id)
+    .select()
+    .single();
+
+  if (error) throw error;
+  return data;
+}
+
+export async function closeInquiry(id) {
+  const { data, error } = await supabase
+    .from('user_inquiries')
+    .update({ status: 'closed' })
+    .eq('id', id)
+    .select()
+    .single();
+
+  if (error) throw error;
+  return data;
+}
