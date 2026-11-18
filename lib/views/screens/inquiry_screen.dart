@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:intl/intl.dart' hide TextDirection;
 import 'package:provider/provider.dart';
 
+import '../../core/constants/app_routes.dart';
 import '../../core/constants/colors.dart';
 import '../../core/constants/strings.dart';
 import '../../core/constants/version_config.dart';
@@ -11,7 +12,6 @@ import '../../core/utils/toast_helper.dart';
 import '../../models/inquiry_model.dart';
 import '../../providers/auth_provider.dart';
 import '../../services/supabase_service.dart';
-import '../widgets/profile/contact_support.dart';
 import '../widgets/tactical_app_bar.dart';
 
 const List<String> _inquiryCategories = ['bug', 'feature', 'account', 'etc'];
@@ -29,13 +29,11 @@ class _InquiryScreenState extends State<InquiryScreen>
     with WidgetsBindingObserver {
   final TextEditingController _titleController = TextEditingController();
   final TextEditingController _contentController = TextEditingController();
-  final TextEditingController _emailController = TextEditingController();
 
   String _category = 'etc';
   bool _submitting = false;
   bool _loadingHistory = true;
   List<UserInquiry> _history = const [];
-  bool _emailPrefilled = false;
 
   @override
   void initState() {
@@ -54,22 +52,10 @@ class _InquiryScreenState extends State<InquiryScreen>
   }
 
   @override
-  void didChangeDependencies() {
-    super.didChangeDependencies();
-    if (_emailPrefilled) return;
-    final String? email = context.read<AuthProvider>().user?.email;
-    if (email != null && email.isNotEmpty) {
-      _emailController.text = email;
-      _emailPrefilled = true;
-    }
-  }
-
-  @override
   void dispose() {
     WidgetsBinding.instance.removeObserver(this);
     _titleController.dispose();
     _contentController.dispose();
-    _emailController.dispose();
     super.dispose();
   }
 
@@ -88,23 +74,22 @@ class _InquiryScreenState extends State<InquiryScreen>
 
   Future<void> _submit() async {
     if (_submitting) return;
+    if (!context.read<AuthProvider>().isAuthenticated) {
+      ToastHelper.show(
+        context: context,
+        message: GameStrings.inquiryLoginRequired,
+        isSuccess: false,
+      );
+      return;
+    }
 
     final String title = _titleController.text.trim();
     final String content = _contentController.text.trim();
-    final String email = _emailController.text.trim();
 
     if (title.length < 2 || content.length < 5) {
       ToastHelper.show(
         context: context,
         message: GameStrings.inquiryValidationRequired,
-        isSuccess: false,
-      );
-      return;
-    }
-    if (!_isValidEmail(email)) {
-      ToastHelper.show(
-        context: context,
-        message: GameStrings.inquiryValidationEmail,
         isSuccess: false,
       );
       return;
@@ -117,7 +102,6 @@ class _InquiryScreenState extends State<InquiryScreen>
           category: _category,
           title: title,
           content: content,
-          email: email,
           locale: _localeCode(Localizations.localeOf(context)),
           appVersion: '${VersionConfig.version} (${VersionConfig.buildNumber})',
           platform: detectDevicePlatform(),
@@ -141,16 +125,10 @@ class _InquiryScreenState extends State<InquiryScreen>
     await _loadHistory();
   }
 
-  bool _isValidEmail(String value) {
-    return RegExp(r'^[^\s@]+@[^\s@]+\.[^\s@]+$').hasMatch(value);
-  }
-
   String _errorMessage(String? errorCode) {
     switch (errorCode) {
       case 'rate_limited':
         return GameStrings.inquiryErrorRateLimited;
-      case 'invalid_email':
-        return GameStrings.inquiryValidationEmail;
       case 'invalid_title':
       case 'invalid_content':
       case 'invalid_body':
@@ -288,6 +266,17 @@ class _InquiryScreenState extends State<InquiryScreen>
   Widget build(BuildContext context) {
     final MediaQueryData media = MediaQuery.of(context);
 
+    if (!context.watch<AuthProvider>().isAuthenticated) {
+      return Scaffold(
+        backgroundColor: GameColors.tacticalBlack,
+        appBar: TacticalAppBar(
+          titleText: GameStrings.contactSupport,
+          showBackButton: true,
+        ),
+        body: _buildLoginRequired(media),
+      );
+    }
+
     return Scaffold(
       backgroundColor: GameColors.tacticalBlack,
       appBar: TacticalAppBar(
@@ -408,18 +397,6 @@ class _InquiryScreenState extends State<InquiryScreen>
               alignLabelWithHint: true,
             ),
           ),
-          const SizedBox(height: 6),
-          TextField(
-            controller: _emailController,
-            enabled: !_submitting,
-            keyboardType: TextInputType.emailAddress,
-            textInputAction: TextInputAction.done,
-            style: TextStyle(color: GameColors.textPrimary, fontSize: 14),
-            decoration: _fieldDecoration(
-              label: GameStrings.inquiryEmailLabel,
-              hint: GameStrings.inquiryEmailHint,
-            ),
-          ),
           const SizedBox(height: 12),
           Row(
             crossAxisAlignment: CrossAxisAlignment.start,
@@ -492,24 +469,51 @@ class _InquiryScreenState extends State<InquiryScreen>
                     ),
             ),
           ),
-          const SizedBox(height: 6),
-          Center(
-            child: TextButton.icon(
-              onPressed: _submitting
-                  ? null
-                  : () => handleContactSupport(context),
-              icon: Icon(
-                Icons.mail_outline_rounded,
-                size: 16,
-                color: GameColors.textMuted,
-              ),
-              label: Text(
-                GameStrings.inquiryMailFallback,
-                style: TextStyle(color: GameColors.textMuted, fontSize: 12),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildLoginRequired(MediaQueryData media) {
+    return Center(
+      child: Padding(
+        padding: EdgeInsets.fromLTRB(
+          28.0 + media.padding.left,
+          28.0,
+          28.0 + media.padding.right,
+          28.0,
+        ),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(
+              Icons.lock_outline_rounded,
+              color: GameColors.textMuted,
+              size: 34,
+            ),
+            const SizedBox(height: 12),
+            Text(
+              GameStrings.inquiryLoginRequired,
+              textAlign: TextAlign.center,
+              style: TextStyle(
+                color: GameColors.textSecondary,
+                fontSize: 13,
+                height: 1.4,
               ),
             ),
-          ),
-        ],
+            const SizedBox(height: 14),
+            TextButton.icon(
+              onPressed: () {
+                Navigator.pushNamed(context, AppRoutes.login);
+              },
+              icon: const Icon(Icons.login_rounded, size: 17),
+              label: Text(GameStrings.login),
+              style: TextButton.styleFrom(
+                foregroundColor: GameColors.accentNeon,
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }

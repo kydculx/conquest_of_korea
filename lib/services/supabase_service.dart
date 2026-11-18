@@ -735,12 +735,11 @@ class SupabaseService {
 
   /// 앱 내 문의를 Edge Function으로 접수하고 결과를 반환합니다.
   ///
-  /// 접수·알림 메일 발송·레이트 리밋은 서버(inquiry 함수)에서 처리합니다.
+  /// 접수·관리자 알림 메일·레이트 리밋은 서버(inquiry 함수)에서 처리합니다.
   Future<InquirySubmitResult> submitInquiry({
     required String category,
     required String title,
     required String content,
-    required String email,
     required String locale,
     required String appVersion,
     required String platform,
@@ -753,7 +752,6 @@ class SupabaseService {
           'category': category,
           'title': title,
           'content': content,
-          'email': email,
           'locale': locale,
           'app_version': appVersion,
           'platform': platform,
